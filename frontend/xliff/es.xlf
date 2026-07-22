@@ -7476,173 +7476,228 @@
         <source>Please wait for collection to finish indexing to continue.</source>
         <target state="translated">Espere que la colección finalice el indexado para continuar.</target>
       </trans-unit>
-      <trans-unit id="saf876f0b9c5b9aa1">
+      <trans-unit id="saf876f0b9c5b9aa1" xml:space="preserve">
         <source>No deduplication sources found.</source>
+        <target state="translated">No se encontraron ningunos orígenes de deduplicación.</target>
       </trans-unit>
-      <trans-unit id="s8aa7efefbbc392d4">
+      <trans-unit id="s8aa7efefbbc392d4" xml:space="preserve">
         <source>Indexed URLs</source>
+        <target state="translated">Las URL indizadas</target>
       </trans-unit>
-      <trans-unit id="sb6c72ef3ff8ac88a">
+      <trans-unit id="sb6c72ef3ff8ac88a" xml:space="preserve">
         <source>Indexed Items</source>
+        <target state="translated">Elementos indizados</target>
       </trans-unit>
-      <trans-unit id="sbe65f580b5f75228">
+      <trans-unit id="sbe65f580b5f75228" xml:space="preserve">
         <source>Purgeable Items</source>
+        <target state="translated">Elementos purgables</target>
       </trans-unit>
-      <trans-unit id="s881848fde1f4fb20">
+      <trans-unit id="s881848fde1f4fb20" xml:space="preserve">
         <source>Purged</source>
+        <target state="translated">Purgado</target>
       </trans-unit>
-      <trans-unit id="s9082c8006bafc3c5">
+      <trans-unit id="s9082c8006bafc3c5" xml:space="preserve">
         <source>Imported</source>
+        <target state="translated">Importado</target>
       </trans-unit>
-      <trans-unit id="sfef1b18e83ce0e36">
+      <trans-unit id="sfef1b18e83ce0e36" xml:space="preserve">
         <source>duplicate</source>
+        <target state="translated">duplicar</target>
       </trans-unit>
-      <trans-unit id="se259bd7d39cd70ec">
+      <trans-unit id="se259bd7d39cd70ec" xml:space="preserve">
         <source>Go to Collection</source>
+        <target state="translated">Ir a Colección</target>
       </trans-unit>
-      <trans-unit id="sbcc3283c822ac998">
+      <trans-unit id="sbcc3283c822ac998" xml:space="preserve">
         <source>Purging deduplication index...</source>
+        <target state="translated">Purgar índice deduplicación…</target>
       </trans-unit>
-      <trans-unit id="s1279f51e483a78d7">
+      <trans-unit id="s1279f51e483a78d7" xml:space="preserve">
         <source>Sorry, couldn’t purge index at this time.</source>
+        <target state="translated">Lo siento, no pude purgar índice en este momento.</target>
       </trans-unit>
-      <trans-unit id="s6509fde92e89541f">
+      <trans-unit id="s6509fde92e89541f" xml:space="preserve">
         <source>Deleted deduplication index.</source>
+        <target state="translated">Índice deduplicación eliminado.</target>
       </trans-unit>
-      <trans-unit id="s07e8ea9eb99c1eaf">
+      <trans-unit id="s07e8ea9eb99c1eaf" xml:space="preserve">
         <source>Sorry, couldn’t delete index at this time.</source>
+        <target state="translated">Disculpe, no pude eliminar índice en este momento.</target>
       </trans-unit>
-      <trans-unit id="sbeb08a996dce3478">
+      <trans-unit id="sbeb08a996dce3478" xml:space="preserve">
         <source>Deduplication Sources</source>
+        <target state="translated">Orígenes de Deduplicación</target>
       </trans-unit>
-      <trans-unit id="s407bfee03ccb2d94">
+      <trans-unit id="s407bfee03ccb2d94" xml:space="preserve">
         <source>Manage crawl workflows and browser profiles</source>
+        <target state="translated">Gestiona rastro de flujos de trabajo y perfiles de navegador</target>
       </trans-unit>
-      <trans-unit id="s6cf47b353ec62e4b">
+      <trans-unit id="s6cf47b353ec62e4b" xml:space="preserve">
         <source>Run QA analysis, rate, and review archived items</source>
+        <target state="needs-translation">Ejecuta análisis QA, proporción, y revisión de elementos archivados</target>
       </trans-unit>
-      <trans-unit id="s63129b44989f8274">
+      <trans-unit id="s63129b44989f8274" xml:space="preserve">
         <source>Enable crawl deduplication</source>
+        <target state="translated">Habilite deduplicación de rastro</target>
       </trans-unit>
-      <trans-unit id="sa4b4abd80b1c564c">
+      <trans-unit id="sa4b4abd80b1c564c" xml:space="preserve">
         <source>Purge and delete deduplication indices</source>
+        <target state="translated">Purgue y borre índices deduplicación</target>
       </trans-unit>
-      <trans-unit id="sa652182f9f0fd515">
+      <trans-unit id="sa652182f9f0fd515" xml:space="preserve">
         <source>Crawl waiting for deduplication index...</source>
+        <target state="translated">Rastro esperando índice de deduplicación…</target>
       </trans-unit>
       <trans-unit id="he3b5fa4158dd13f3">
         <source>Started crawl from <x id="0" equiv-text="&lt;strong&gt;${renderName(workflow)}&lt;/strong&gt;&#10;            &lt;br&gt;&#10;            &lt;a class=&quot;underline hover:no-underline&quot; href=&quot;${this.navigate&#10;    .orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}&quot; @click=&quot;${this.navigate.link.bind(this)}&quot;&gt;"/>Watch crawl<x id="1" equiv-text="&lt;/a&gt;"/></source>
       </trans-unit>
-      <trans-unit id="sea05550c32f47d50">
+      <trans-unit id="sea05550c32f47d50" xml:space="preserve">
         <source>Date range</source>
+        <target state="translated">Intervalo de fecha</target>
       </trans-unit>
-      <trans-unit id="s615dd6124cc60027">
+      <trans-unit id="s615dd6124cc60027" xml:space="preserve">
         <source>Dedupe source</source>
+        <target state="translated">Deduplicar origen</target>
       </trans-unit>
-      <trans-unit id="se52d0508d7ec7801">
+      <trans-unit id="se52d0508d7ec7801" xml:space="preserve">
         <source>Sorry, couldn’t delete collection at this time.</source>
+        <target state="translated">Lo siento, no pude borrar colección en este momento.</target>
       </trans-unit>
-      <trans-unit id="s97e1d95426203d8c">
+      <trans-unit id="s97e1d95426203d8c" xml:space="preserve">
         <source>Sorry, couldn’t retrieve collection at this time.</source>
+        <target state="translated">Lo siento, no pude obtener colección en este momento.</target>
       </trans-unit>
-      <trans-unit id="sea274e702c6f3d20">
+      <trans-unit id="sea274e702c6f3d20" xml:space="preserve">
         <source>Create Deduplication Index</source>
+        <target state="translated">Crear Índice Deduplación</target>
       </trans-unit>
-      <trans-unit id="hf9394bbcde685022">
+      <trans-unit id="hf9394bbcde685022" xml:space="preserve">
         <source>Are you sure you want to manually create a deduplication index for <x id="0" equiv-text="${collection_name}"/>?</source>
+        <target state="translated">¿Seguro que desea crear manualmente un índice de deduplicación para <x id="0" equiv-text="${collection_name}"/>?</target>
       </trans-unit>
-      <trans-unit id="h893bdf452e294da1">
+      <trans-unit id="h893bdf452e294da1" xml:space="preserve">
         <source><x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/> will be imported into the index.</source>
+        <target state="translated"><x id="0" equiv-text="${items_count}"/> archivado <x id="1" equiv-text="${plural_of_items}"/> será importado al índice.</target>
       </trans-unit>
-      <trans-unit id="sb392bac0d378574d">
+      <trans-unit id="sb392bac0d378574d" xml:space="preserve">
         <source>Create Index</source>
+        <target state="translated">Crear Índice</target>
       </trans-unit>
-      <trans-unit id="sa53d4f555afca49a">
+      <trans-unit id="sa53d4f555afca49a" xml:space="preserve">
         <source>Please wait for replay load</source>
+        <target state="translated">Espere para cargar reproducción</target>
       </trans-unit>
-      <trans-unit id="s2f9cd3faa2ea0023">
+      <trans-unit id="s2f9cd3faa2ea0023" xml:space="preserve">
         <source>Remove Dependency from Collection?</source>
+        <target state="translated">¿Retirar Dependencia desde Colección?</target>
       </trans-unit>
-      <trans-unit id="h854732622e82b644">
+      <trans-unit id="h854732622e82b644" xml:space="preserve">
         <source>Are you sure you want to remove <x id="0" equiv-text="${archived_item_name}"/> from this collection?</source>
+        <target state="translated">¿Seguro que desea retirar <x id="0" equiv-text="${archived_item_name}"/> desde esta colección?</target>
       </trans-unit>
-      <trans-unit id="s39c775d68145b8b1">
+      <trans-unit id="s39c775d68145b8b1" xml:space="preserve">
         <source><x id="0" equiv-text="${number_of_items} ${plural_of_items}"/> depend on this item.</source>
+        <target state="translated"><x id="0" equiv-text="${number_of_items} ${plural_of_items}"/> depende de este elemento.</target>
       </trans-unit>
-      <trans-unit id="sbb246f12f3750a30">
+      <trans-unit id="sbb246f12f3750a30" xml:space="preserve">
         <source>Removing this item may result in incomplete replay and downloads until dependent URLs are crawled again.</source>
+        <target state="translated">Retirar este elemento puede resultar en reproducción incompleta y descargas hasta que las dependencias de las URL sean arrastradas de nuevo.</target>
       </trans-unit>
-      <trans-unit id="s336c8e1678a8ff80">
+      <trans-unit id="s336c8e1678a8ff80" xml:space="preserve">
         <source>Remove Item</source>
+        <target state="translated">Retirar Elementos</target>
       </trans-unit>
-      <trans-unit id="s38345a63bf10de0a">
+      <trans-unit id="s38345a63bf10de0a" xml:space="preserve">
         <source>Deletion Not Allowed</source>
+        <target state="translated">Borrado No Concedido</target>
       </trans-unit>
-      <trans-unit id="hef7bb50bc3af9666">
+      <trans-unit id="hef7bb50bc3af9666" xml:space="preserve">
         <source><x id="0" equiv-text="${collection_name}"/> cannot be deleted because it is being used as a deduplication source.</source>
+        <target state="translated"><x id="0" equiv-text="${collection_name}"/> no puede ser borrado porque está siendo utilizado como un origen deduplicación.</target>
       </trans-unit>
-      <trans-unit id="s52790b83835b5026">
+      <trans-unit id="s52790b83835b5026" xml:space="preserve">
         <source>To delete this collection, delete the deduplication index first.</source>
+        <target state="translated">Para borrar esta colección, primero borre el índice de deduplicación.</target>
       </trans-unit>
-      <trans-unit id="s7684fc61ca474263">
+      <trans-unit id="s7684fc61ca474263" xml:space="preserve">
         <source>Deduplication Settings</source>
+        <target state="translated">Ajustes de Deduplicación</target>
       </trans-unit>
-      <trans-unit id="sd093dd03e3cb1161">
+      <trans-unit id="sd093dd03e3cb1161" xml:space="preserve">
         <source>Please wait for pending update</source>
+        <target state="translated">Espere que se actualicen los cambios pendientes</target>
       </trans-unit>
-      <trans-unit id="hab987d2897bb3e8e">
+      <trans-unit id="hab987d2897bb3e8e" xml:space="preserve">
         <source>Describe your collection in long-form rich text (e.g. <x id="0" equiv-text="&lt;strong&gt;"/>bold<x id="1" equiv-text="&lt;/strong&gt;"/> and <x id="2" equiv-text="&lt;em&gt;"/>italicized<x id="3" equiv-text="&lt;/em&gt;"/> text.)</source>
+        <target state="translated">Describa su colección en formato largo en texto enriquecido (p.ej. texto <x id="0" equiv-text="&lt;strong&gt;"/>negrita<x id="1" equiv-text="&lt;/strong&gt;"/> e <x id="2" equiv-text="&lt;em&gt;"/>itálico<x id="3" equiv-text="&lt;/em&gt;"/>.)</target>
       </trans-unit>
-      <trans-unit id="h126df4202a8e492e">
+      <trans-unit id="h126df4202a8e492e" xml:space="preserve">
         <source>If this collection is shareable, this will appear in the “About This Collection” section of the shared collection.</source>
+        <target state="translated">Si es compartible esta colección, esto aparecerá en la sección «Acerca de Esta Colección» de la colección compartida.</target>
       </trans-unit>
-      <trans-unit id="s352719d86112de9a">
+      <trans-unit id="s352719d86112de9a" xml:space="preserve">
         <source>Help</source>
+        <target state="translated">Ayuda</target>
       </trans-unit>
-      <trans-unit id="s8fb30ee49bfe5176">
+      <trans-unit id="s8fb30ee49bfe5176" xml:space="preserve">
         <source>No archived items yet</source>
+        <target state="translated">Aún sin ningún elemento archivado</target>
       </trans-unit>
-      <trans-unit id="sedeb63cccbbeff43">
+      <trans-unit id="sedeb63cccbbeff43" xml:space="preserve">
         <source>Select individual items or automatically add new crawled items.</source>
+        <target state="translated">Seleccione elementos individuales o automáticamente añada elementos arrastrados nuevos.</target>
       </trans-unit>
-      <trans-unit id="sca91d7c3d969e858">
+      <trans-unit id="sca91d7c3d969e858" xml:space="preserve">
         <source>Created deduplication index.</source>
+        <target state="translated">Índice deduplicación creado.</target>
       </trans-unit>
-      <trans-unit id="s010013e283716998">
+      <trans-unit id="s010013e283716998" xml:space="preserve">
         <source>Importing <x id="0" equiv-text="${items_count}"/> archived <x id="1" equiv-text="${plural_of_items}"/>.</source>
+        <target state="translated">Se importa <x id="0" equiv-text="${items_count}"/> archivados <x id="1" equiv-text="${plural_of_items}"/>.</target>
       </trans-unit>
-      <trans-unit id="se44833ed5fef92c2">
+      <trans-unit id="se44833ed5fef92c2" xml:space="preserve">
         <source>Sorry, couldn't created index at this time.</source>
+        <target state="translated">Disculpe, no pudo crear índice en este momento.</target>
       </trans-unit>
-      <trans-unit id="s9d45eccec5887a48">
+      <trans-unit id="s9d45eccec5887a48" xml:space="preserve">
         <source>Space Conserved</source>
+        <target state="translated">Espacio Conservado</target>
       </trans-unit>
-      <trans-unit id="sbd9ad15bd36b8bce">
+      <trans-unit id="sbd9ad15bd36b8bce" xml:space="preserve">
         <source>Actual Stored</source>
+        <target state="translated">Almacenado Actual</target>
       </trans-unit>
-      <trans-unit id="sb93513b15292739b">
+      <trans-unit id="sb93513b15292739b" xml:space="preserve">
         <source>Estimated Total</source>
+        <target state="translated">Total Estimado</target>
       </trans-unit>
-      <trans-unit id="s6a851d5ab9a25433">
+      <trans-unit id="s6a851d5ab9a25433" xml:space="preserve">
         <source>Deduplicated Crawls</source>
+        <target state="translated">Rastros Deduplicados</target>
       </trans-unit>
-      <trans-unit id="sea47c2a10d9bd694">
+      <trans-unit id="sea47c2a10d9bd694" xml:space="preserve">
         <source>Deduplication creates interdependence between crawled and indexed items.</source>
+        <target state="translated">Deduplicación crea interdependencia entre arrastrar y elementos indizados.</target>
       </trans-unit>
-      <trans-unit id="s574e210fa92a10e5">
+      <trans-unit id="s574e210fa92a10e5" xml:space="preserve">
         <source>Crawl dependencies are indexed items that are required by a deduplicated crawled item in order to provide a complete replay.</source>
+        <target state="translated">Dependencias rastro son elementos indizados que son requeridos por un elemento arrastrado deduplicado con el fin de proporcionar una reproducción completa.</target>
       </trans-unit>
-      <trans-unit id="s16efddceb8416b7a">
+      <trans-unit id="s16efddceb8416b7a" xml:space="preserve">
         <source>Deduplication is not enabled</source>
+        <target state="translated">Deduplicación no está habilitada</target>
       </trans-unit>
-      <trans-unit id="s15504d46fa1f8bfc">
+      <trans-unit id="s15504d46fa1f8bfc" xml:space="preserve">
         <source>Deduplication can help conserve storage space and reduce crawl time.</source>
+        <target state="translated">La deduplicación puede ayudar a conservar el espacio de almacenamiento y reducir el tiempo de rastreo.</target>
       </trans-unit>
-      <trans-unit id="sa4222ef3fb3027d6">
+      <trans-unit id="sa4222ef3fb3027d6" xml:space="preserve">
         <source>Configure with Auto-Add</source>
+        <target state="translated">Configura con Auto-Añadir</target>
       </trans-unit>
-      <trans-unit id="s21242bcdcb7f2754">
+      <trans-unit id="s21242bcdcb7f2754" xml:space="preserve">
         <source>Create Dedupe Index</source>
+        <target state="translated">Crear Índice eliminar duplicado</target>
       </trans-unit>
       <trans-unit id="se57e5d1695ed4035">
         <source>An index update is currently in progress.</source>
