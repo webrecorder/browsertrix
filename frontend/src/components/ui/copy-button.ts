@@ -21,7 +21,6 @@ import { tw } from "@/utils/tailwind";
  * ```
  *
  * @fires btrix-copied
- * @cssPart icon
  */
 @customElement("btrix-copy-button")
 @localized()
@@ -82,7 +81,6 @@ export class CopyButton extends TailwindElement {
                 : "copy"}
             label=${msg("Copy to clipboard")}
             class=${this.size === "medium" ? tw`size-4` : tw`size-3.5`}
-            part="icon"
           ></sl-icon>
         </btrix-button>
       </sl-tooltip>
