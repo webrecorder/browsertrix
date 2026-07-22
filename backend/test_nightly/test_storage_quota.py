@@ -20,8 +20,9 @@ def run_crawl(org_id, headers):
         "runNow": True,
         "name": "Storage Quota",
         "config": {
-            "seeds": [{"url": "https://specs.webrecorder.net/"}],
-            "extraHops": 1,
+            "seeds": [
+                {"url": "https://old.webrecorder.net/", "scopeType": "domain"},
+            ],
         },
     }
     r = requests.post(
