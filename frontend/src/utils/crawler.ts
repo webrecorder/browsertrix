@@ -110,7 +110,7 @@ export function renderName(
     return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
   if (item.name)
-    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
+    return html`<span class=${clsx("truncate", className)}>${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";

@@ -129,12 +129,13 @@ export class ExclusionEditorDialog extends BtrixElement {
       this.deleteRuleTask.render({ error: (errorMessage) => errorMessage });
 
     return html`<btrix-dialog
-      class="[--body-spacing:0] [--width:--btrix-screen-desktop] part-[body]:flex part-[footer]:flex part-[panel]:h-screen part-[footer]:flex-wrap part-[body]:content-stretch part-[footer]:items-center part-[header-actions]:items-center part-[footer]:justify-end part-[body]:justify-stretch part-[footer]:gap-3 part-[body]:overflow-hidden"
+      class="[--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)] part-[body]:flex part-[footer]:flex part-[panel]:h-screen part-[footer]:flex-wrap part-[body]:content-stretch part-[footer]:items-center part-[header-actions]:items-center part-[footer]:justify-end part-[body]:justify-stretch part-[footer]:gap-3 part-[body]:overflow-hidden part-[title]:overflow-hidden"
       .label=${msg("Edit Exclusion Rules")}
       .open=${this.open}
       @sl-show=${() => (this.visible = true)}
       @sl-after-hide=${() => (this.visible = false)}
     >
+      <slot name="dialog-label" slot="label"></slot>
       <btrix-popover
         slot="header-actions"
         content="${msg(

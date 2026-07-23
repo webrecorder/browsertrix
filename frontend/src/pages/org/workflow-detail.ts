@@ -1973,6 +1973,12 @@ export class WorkflowDetail extends BtrixElement {
         }}
         @btrix-saved=${this.handleExclusionChange}
       >
+        <div slot="dialog-label" class="flex items-center gap-3 divide-x">
+          <div class="whitespace-nowrap">${msg("Edit Exclusion Rules")}</div>
+          <div class="truncate px-3 text-sm leading-none text-neutral-500">
+            ${renderName(this.workflow)}
+          </div>
+        </div>
       </btrix-exclusion-editor-dialog>
     `;
   }

@@ -330,8 +330,7 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
-      class="part-[title]:overflow-hidden"
-      style="--width: calc(var(--btrix-screen-desktop) - 3.5rem); --body-spacing: 0;"
+      class="[--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)] part-[title]:overflow-hidden"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
