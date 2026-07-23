@@ -69,7 +69,7 @@ export class QueueExclusionTable extends TailwindElement {
 
   // TODO switch to LitElement & slotted label
   @property({ type: String })
-  label = msg("Exclusions");
+  label = msg("Exclusion Rules");
   @property({ type: String })
   labelClassName?: string;
 
