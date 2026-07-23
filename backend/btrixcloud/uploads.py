@@ -426,6 +426,9 @@ class UploadOps(BaseCrawlOps):
         crawl state is updated - e.g. if the background job pod or the
         backend itself (for small uploads processed synchronously) is
         killed. Post-processing is idempotent, so it's safe to re-dispatch.
+
+        Raises if dispatching fails for any stuck upload, so the cron job
+        is marked as failed rather than silently doing nothing.
         """
         query = {
             "type": "upload",
@@ -433,6 +436,8 @@ class UploadOps(BaseCrawlOps):
             "started": {"$lt": dt_now() - STUCK_UPLOAD_GRACE_PERIOD},
             "deleted": {"$ne": True},
         }
+
+        failures = 0
 
         async for upload in self.crawls.find(query):
             crawl_id = upload["_id"]
@@ -454,10 +459,23 @@ class UploadOps(BaseCrawlOps):
                 has_previous_job=existing_job is not None,
             )
 
-            await self.background_job_ops.create_postprocess_upload_job(
+            new_job_id = await self.background_job_ops.create_postprocess_upload_job(
                 upload["oid"],
                 crawl_id,
                 existing_job_id=job_id if existing_job else None,
+            )
+
+            if not new_job_id:
+                # Dispatch may have lost a race with another creator - only
+                # count it as failed if the job really doesn't exist now
+                job_exists = await self.background_job_ops.crawl_manager.has_job(job_id)
+                if not job_exists:
+                    upload_logger.error("stuck_upload_dispatch_failed", job_id=job_id)
+                    failures += 1
+
+        if failures:
+            raise RuntimeError(
+                f"Failed to dispatch post-processing for {failures} stuck upload(s)"
             )
 
     async def _get_child_wacz_files(
