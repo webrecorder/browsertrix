@@ -22,6 +22,7 @@ import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
@@ -88,13 +89,20 @@ export class WorkflowDetail extends BtrixElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?:
-    | "scale"
-    | "exclusions"
-    | "cancel"
-    | "stop"
-    | "delete"
-    | "deleteCrawl";
+  openDialogName?: "scale" | "cancel" | "stop" | "delete" | "deleteCrawl";
+
+  private readonly editDialog = new SearchParamsValue<null | "exclusions">(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set("editDialog", value);
+      } else {
+        params.delete("editDialog");
+      }
+      return params;
+    },
+    (params) => params.get("editDialog") as "exclusions" | null,
+  );
 
   @property({ type: Number })
   maxBrowserWindows = DEFAULT_MAX_SCALE;
@@ -260,9 +268,9 @@ export class WorkflowDetail extends BtrixElement {
           if (
             wasActive &&
             (this.openDialogName === "scale" ||
-              this.openDialogName === "exclusions")
+              this.editDialog.value == "exclusions")
           ) {
-            this.openDialogName = undefined;
+            this.closeDialogs();
           }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
@@ -444,14 +452,16 @@ export class WorkflowDetail extends BtrixElement {
     ) {
       this.workflowTab = WorkflowTab.LatestCrawl;
     }
+    if (changedProperties.has("openDialogName") && this.openDialogName) {
+      this.closeEditDialog();
+    }
   }
 
   firstUpdated() {
-    if (
-      this.openDialogName &&
-      (this.openDialogName === "scale" || this.openDialogName === "exclusions")
-    ) {
+    if (this.openDialogName === "scale") {
       void this.showDialog();
+    } else if (this.editDialog.value === "exclusions") {
+      this.openEditDialog();
     }
   }
 
@@ -1051,7 +1061,7 @@ export class WorkflowDetail extends BtrixElement {
         this.openDialogName = "scale";
         break;
       case Action.EditExclusions:
-        this.openDialogName = "exclusions";
+        this.openEditDialog();
         break;
       case Action.Duplicate:
         void this.duplicateConfig();
@@ -1934,7 +1944,7 @@ export class WorkflowDetail extends BtrixElement {
         <sl-button
           size="small"
           variant="primary"
-          @click=${() => (this.openDialogName = "exclusions")}
+          @click=${() => this.openEditDialog()}
         >
           <sl-icon slot="prefix" name="table"></sl-icon>
           ${msg("Edit Exclusions")}
@@ -1959,10 +1969,10 @@ export class WorkflowDetail extends BtrixElement {
               stopping: this.workflow.lastCrawlStopping,
             })
           : false}
-        ?open=${this.openDialogName === "exclusions"}
+        ?open=${this.editDialog.value === "exclusions"}
         @sl-hide=${(e: CustomEvent) => {
           e.stopPropagation();
-          this.openDialogName = undefined;
+          this.closeEditDialog();
         }}
         @btrix-saved=${this.handleExclusionChange}
       >
@@ -2041,6 +2051,20 @@ export class WorkflowDetail extends BtrixElement {
     html`<div class="my-24 flex w-full items-center justify-center text-3xl">
       <sl-spinner></sl-spinner>
     </div>`;
+
+  private openEditDialog() {
+    this.openDialogName = undefined;
+    this.editDialog.setValue("exclusions");
+  }
+
+  private closeEditDialog() {
+    this.editDialog.setValue(null);
+  }
+
+  private closeDialogs() {
+    this.openDialogName = undefined;
+    this.closeEditDialog();
+  }
 
   private readonly showDialog = async () => {
     await this.workflowTask.taskComplete;

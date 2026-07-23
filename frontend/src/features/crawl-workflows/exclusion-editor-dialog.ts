@@ -1,6 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
-import { html, nothing } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { map } from "lit/directives/map.js";
@@ -110,6 +110,12 @@ export class ExclusionEditorDialog extends BtrixElement {
     args: () => [undefined] as readonly [string | undefined],
   });
 
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("open")) {
+      this.visible = this.open;
+    }
+  }
+
   render() {
     const errorMessage =
       this.addRuleTask.render({ error: (errorMessage) => errorMessage }) ||
@@ -124,6 +130,7 @@ export class ExclusionEditorDialog extends BtrixElement {
     >
       ${this.exclusions && this.visible
         ? html`<btrix-exclusion-editor
+            class="block size-full overflow-hidden"
             .crawlId=${this.crawlId}
             .exclusions=${this.exclusions}
             ?isActiveCrawl=${this.activeCrawl}
