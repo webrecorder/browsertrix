@@ -234,6 +234,7 @@ export class WorkflowDetail extends BtrixElement {
           // Handle edge case where workflow may have finished and started
           // within the same poll interval:
           workflow.lastCrawlId !== currWorkflow.lastCrawlId;
+        const wasActive = isActive(workflow);
 
         // Retrieve additional data based on current tab
         if (this.isRunning) {
@@ -255,6 +256,15 @@ export class WorkflowDetail extends BtrixElement {
           void this.latestCrawlTask.run();
           void this.logTotalsTask.run();
           void this.crawlsTask.run();
+
+          // Reset dialog if previously running
+          if (
+            wasActive &&
+            (this.openDialogName === "scale" ||
+              this.openDialogName === "exclusions")
+          ) {
+            this.openDialogName = undefined;
+          }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
     },
@@ -1942,6 +1952,7 @@ export class WorkflowDetail extends BtrixElement {
       )}
 
       <btrix-dialog
+        class="[--body-spacing:0] part-[body]:flex part-[panel]:h-screen part-[body]:content-stretch part-[body]:justify-stretch part-[body]:overflow-hidden"
         .label=${msg("Crawl Queue Editor")}
         .open=${this.openDialogName === "exclusions"}
         style=${`--width: var(--btrix-screen-desktop)`}
@@ -1951,6 +1962,7 @@ export class WorkflowDetail extends BtrixElement {
       >
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
+              class="block w-full overflow-hidden"
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
               ?isActiveCrawl=${this.workflow.lastCrawlState
