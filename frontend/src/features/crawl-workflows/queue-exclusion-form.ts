@@ -1,8 +1,10 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { type SlInput, type SlSelect } from "@shoelace-style/shoelace";
 import { type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import debounce from "lodash/fp/debounce";
+
+import { MIN_LENGTH } from "./queue-exclusion-table";
 
 import type { UnderlyingFunction } from "@/types/utils";
 import LiteElement, { html } from "@/utils/LiteElement";
@@ -22,7 +24,7 @@ export type ExclusionAddEvent = CustomEvent<{
   regex: string;
 }>;
 
-const MIN_LENGTH = 2;
+const MAX_LENGTH = 1000;
 
 /**
  * Inline form for adding a new crawl exclusion while the crawl is running.
@@ -67,7 +69,6 @@ export class QueueExclusionForm extends LiteElement {
     ) {
       this.fieldErrorMessage = "";
       this.checkInputValidity();
-      void this.dispatchChangeEvent();
     }
   }
 
@@ -77,6 +78,11 @@ export class QueueExclusionForm extends LiteElement {
   }
 
   render() {
+    const invalidRegex =
+      !this.regex || this.isRegexInvalid || this.regex.length > MAX_LENGTH;
+    const minimum_number_of_characters = this.localize.number(MIN_LENGTH);
+    const maximum_number_of_characters = this.localize.number(MAX_LENGTH);
+
     return html`
       <fieldset>
         <div class="flex">
@@ -91,6 +97,7 @@ export class QueueExclusionForm extends LiteElement {
                 this.selectValue = (e.target as SlSelect).value as
                   | "text"
                   | "regex";
+                void this.dispatchChangeEvent();
               }}
             >
               <sl-option value="text">${msg("Matches Text")}</sl-option>
@@ -147,18 +154,25 @@ export class QueueExclusionForm extends LiteElement {
               </sl-input>
             </div>
             <div class="flex-0 w-10 text-center">
-              <btrix-button
-                variant="neutral"
-                raised
-                filled
-                ?disabled=${!this.regex ||
-                this.isRegexInvalid ||
-                this.isSubmitting}
-                ?loading=${this.isSubmitting}
-                @click=${this.onButtonClick}
+              <btrix-popover
+                ?disabled=${!invalidRegex}
+                content=${msg(
+                  str`Please enter a valid regular expression between ${minimum_number_of_characters} and ${maximum_number_of_characters} characters.`,
+                )}
+                hoist
+                placement="right"
               >
-                <sl-icon name="plus-lg"></sl-icon>
-              </btrix-button>
+                <btrix-button
+                  variant="neutral"
+                  raised
+                  filled
+                  ?disabled=${invalidRegex || this.isSubmitting}
+                  ?loading=${this.isSubmitting}
+                  @click=${this.onButtonClick}
+                >
+                  <sl-icon name="plus-lg"></sl-icon>
+                </btrix-button>
+              </btrix-popover>
             </div>
           </div>
         </div>
@@ -168,6 +182,7 @@ export class QueueExclusionForm extends LiteElement {
 
   private readonly onInput = debounce(200)(() => {
     this.regex = this.input?.value || "";
+    void this.dispatchChangeEvent();
   });
 
   private onButtonClick() {
