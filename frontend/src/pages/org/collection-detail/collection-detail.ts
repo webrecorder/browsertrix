@@ -1,5 +1,6 @@
-import { consume } from "@lit/context";
+import { consume, provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -9,15 +10,21 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
-import type { Embed as ReplayWebPage } from "replaywebpage";
+import type {
+  ReplayWebPage,
+  RwpPageLoadingEvent,
+  RwpUrlChangeEvent,
+} from "replaywebpage";
 
 import {
   CollectionSearchParam,
   EditingSearchParamValue,
   Tab,
+  type CollectionSavedEvent,
   type Dialog,
   type OpenDialogEventDetail,
 } from "./types";
+import { getThumbnailBlob } from "./utils/getThumbnailBlob";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { MarkdownEditor } from "@/components/ui/markdown-editor";
@@ -25,12 +32,13 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
-import { type BtrixChangeEvent } from "@/events/btrix-change";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
-import type { EditDialogTab } from "@/features/collections/collection-edit-dialog";
+import type { CollectionPageHeader } from "@/features/collections/collection-page-header";
+import { DEFAULT_THUMBNAIL } from "@/features/collections/collection-thumbnail";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
+import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
 import { collectionShareLink } from "@/features/collections/helpers/share-link";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
-import type { ShareCollection } from "@/features/collections/share-collection";
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
@@ -39,7 +47,7 @@ import {
   metadataItemWithCollection,
 } from "@/layouts/collections/metadataColumn";
 import { emptyMessage } from "@/layouts/emptyMessage";
-import { pageNav, pageTitle, type Breadcrumb } from "@/layouts/pageHeader";
+import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { panelBody, panelHeader } from "@/layouts/panel";
 import { updatingOverlay } from "@/layouts/updatingOverlay";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
@@ -49,9 +57,6 @@ import {
   type APISortQuery,
 } from "@/types/api";
 import {
-  COLLECTION_CAPTION_MAX_LENGTH,
-  COLLECTION_NAME_MAX_LENGTH,
-  CollectionAccess,
   collectionSchema,
   type Collection,
   type PublicCollection,
@@ -59,14 +64,17 @@ import {
 import type { ArchivedItem, Crawl, Upload } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import type { DedupeIndexState } from "@/types/dedupe";
+import type { PageSnapshot } from "@/types/page";
+import { SortDirection } from "@/types/utils";
+import { isApiError } from "@/utils/api";
 import { isCrawlReplay, renderName } from "@/utils/crawler";
 import { indexAvailable, indexInUse, indexUpdating } from "@/utils/dedupe";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { richText } from "@/utils/rich-text";
-import slugifyStrict from "@/utils/slugify";
 import { tw } from "@/utils/tailwind";
+
+import "@/features/collections/collection-page-header";
 
 const ABORT_REASON_THROTTLE = "throttled";
 const INITIAL_ITEMS_PAGE_SIZE = 20;
@@ -95,9 +103,6 @@ export class CollectionDetail extends BtrixElement {
   private itemToRemove?: ArchivedItem;
 
   @state()
-  private editTab?: EditDialogTab;
-
-  @state()
   private isEditingDescription = false;
 
   @state()
@@ -106,14 +111,17 @@ export class CollectionDetail extends BtrixElement {
   @state()
   private rwpDoFullReload = false;
 
+  @state()
+  private replayCurrentView?: { url: string; ts?: string };
+
   @consume({ context: viewStateContext })
   viewState?: ViewStateContext;
 
-  @query("replay-web-page")
-  private readonly replayEmbed?: ReplayWebPage | null;
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
 
-  @query("btrix-share-collection")
-  private readonly shareCollection?: ShareCollection | null;
+  @query("btrix-collection-page-header")
+  private readonly pageHeader?: CollectionPageHeader | null;
 
   @query("btrix-markdown-editor")
   private readonly descriptionEditor?: MarkdownEditor | null;
@@ -147,8 +155,8 @@ export class CollectionDetail extends BtrixElement {
     { icon: { name: string; library: string }; text: string; beta?: boolean }
   > = {
     [Tab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
-      text: msg("Replay"),
+      icon: { name: "collection-play", library: "default" },
+      text: msg("Browse Collection"),
     },
     [Tab.Items]: {
       icon: { name: "list-ul", library: "default" },
@@ -177,6 +185,193 @@ export class CollectionDetail extends BtrixElement {
     return this.appState.isCrawler;
   }
 
+  /**
+   * Get page ID from URL and timestamp
+   */
+  private readonly replayCurrentPage = new Task(this, {
+    task: async ([replayCurrentView], { signal }) => {
+      if (!replayCurrentView) return;
+
+      const { url, ts } = replayCurrentView;
+      const { items } = await this.getPages(
+        { url, sortBy: "ts", sortDirection: SortDirection.Descending },
+        signal,
+      );
+      let page: PageSnapshot | undefined = items[0];
+
+      if (ts) {
+        page = items.find((page) => formatRwpTimestamp(page.ts) === ts);
+      }
+
+      return page || null;
+    },
+    args: () => [this.replayCurrentView] as const,
+  });
+
+  /**
+   * Revert thumbnail change
+   */
+  private readonly revertThumbnailTask = new Task(this, {
+    task: async ([oldThumbnail, oldDefaultThumbnailName], { signal }) => {
+      try {
+        if (oldDefaultThumbnailName) {
+          await this.updateThumbnail(
+            {
+              defaultThumbnailName: oldDefaultThumbnailName,
+            },
+            signal,
+          );
+        } else {
+          if (oldThumbnail) {
+            this.notify.toast({
+              message: msg("Reverting thumbnail..."),
+              variant: "info",
+              icon: "info-circle",
+              id: "update",
+            });
+
+            await this.uploadThumbnail(
+              {
+                url: oldThumbnail.url,
+                timestamp: oldThumbnail.urlTs,
+                pageId: oldThumbnail.urlPageId,
+              },
+              signal,
+            );
+          }
+          await this.updateThumbnail(
+            {
+              defaultThumbnailName: oldThumbnail ? null : DEFAULT_THUMBNAIL,
+            },
+            signal,
+          );
+        }
+
+        this.notify.toast({
+          message: msg("Thumbnail updated."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "update",
+        });
+
+        await this.fetchCollection();
+      } catch {
+        this.notify.toast({
+          message: msg("Sorry, couldn’t revert thumbnail at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "update",
+        });
+      }
+    },
+    args: () =>
+      [undefined, undefined] as readonly [
+        Collection["thumbnailSource"] | undefined,
+        Collection["defaultThumbnailName"] | undefined,
+      ],
+    autoRun: false,
+  });
+
+  /**
+   * Update Replay/collection initial view
+   */
+  private readonly updateHomepageTask = new Task(this, {
+    task: async ([page], { signal }) => {
+      this.revertThumbnailTask.abort();
+
+      try {
+        const oldThumbnail = this.collection?.thumbnailSource;
+        const oldDefaultThumbnailName = this.collection?.defaultThumbnailName;
+        let thumbnailUpdated = false;
+
+        await this.updateHomepage({ pageId: page?.id ?? null }, signal);
+
+        if (page) {
+          this.notify.toast({
+            message: msg("Updating homepage..."),
+            variant: "info",
+            icon: "info-circle",
+            id: "update",
+            duration: Infinity,
+          });
+
+          try {
+            await this.uploadThumbnail(
+              { url: page.url, timestamp: page.ts, pageId: page.id },
+              signal,
+            );
+            await this.updateThumbnail({ defaultThumbnailName: null }, signal);
+
+            thumbnailUpdated = true;
+          } catch (err) {
+            console.debug(err);
+          }
+        }
+
+        // Optimistic update
+        if (this.collection) {
+          this.collection = {
+            ...this.collection,
+            homeUrl: page?.url || null,
+            homeUrlTs: page?.ts || null,
+            homeUrlPageId: null,
+          };
+        }
+
+        if (thumbnailUpdated) {
+          const undo = () =>
+            void this.revertThumbnailTask.run([
+              oldThumbnail,
+              oldDefaultThumbnailName,
+            ]);
+          const undoButton = html`<button
+            class="font-semibold text-primary-500 underline hover:text-primary-600 hover:no-underline"
+            @click=${undo}
+          >
+            ${msg("Undo")}
+          </button>`;
+          this.notify.toast({
+            title: msg("Homepage updated"),
+            message: html`${msg("Thumbnail updated to match.")} ${undoButton}`,
+            variant: "success",
+            icon: "check2-circle",
+            duration: 10000,
+            id: "update",
+          });
+        } else {
+          this.notify.toast({
+            message: msg("Homepage updated."),
+            variant: "success",
+            icon: "check2-circle",
+            id: "update",
+          });
+        }
+
+        await this.fetchCollection();
+      } catch (err) {
+        if (isApiError(err) && err.details === "invalid_collection_page") {
+          this.notify.toast({
+            message: msg("Please choose another homepage."),
+            variant: "warning",
+            icon: "exclamation-triangle",
+            id: "update",
+          });
+        } else {
+          console.debug(err);
+
+          this.notify.toast({
+            message: msg("Sorry, couldn’t update homepage at this time."),
+            variant: "danger",
+            icon: "exclamation-octagon",
+            id: "update",
+          });
+        }
+      }
+    },
+    args: () => [undefined] as readonly [PageSnapshot | undefined],
+    autoRun: false,
+  });
+
   disconnectedCallback(): void {
     window.clearTimeout(this.timerId);
     super.disconnectedCallback();
@@ -186,6 +381,7 @@ export class CollectionDetail extends BtrixElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.has("collectionId")) {
+      this.replayEmbed = undefined;
       void this.fetchCollection();
       void this.fetchArchivedItems({
         page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -217,128 +413,64 @@ export class CollectionDetail extends BtrixElement {
         }, 200);
       }
     }
+
+    if (changedProperties.has("collection") && this.collection) {
+      const prevCollection = changedProperties.get("collection");
+
+      if (
+        prevCollection &&
+        (prevCollection as Collection).modified !== this.collection.modified
+      ) {
+        void this.refreshReplay();
+      }
+    }
   }
 
   render() {
     const collection_name = html`<strong class="font-semibold"
       >${this.collection?.name}</strong
     >`;
-    const caption = (text?: Collection["caption"]) => {
-      if (text) {
-        return html`<div
-          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
-        >
-          ${richText(text)}
-        </div>`;
-      }
-    };
 
     return html`
-      <div class="mb-7 flex flex-wrap justify-between gap-y-3 align-baseline">
-        ${this.renderBreadcrumbs()}
-        ${this.collection &&
-        (this.collection.access === CollectionAccess.Unlisted ||
-          this.collection.access === CollectionAccess.Public)
-          ? html`
-              <sl-button
-                href=${this.shareLink}
-                size="small"
-                variant="text"
-                class="-mx-3 -mb-3.5 -mt-1.5"
-              >
-                <sl-icon
-                  slot="prefix"
-                  name=${this.collection.access === CollectionAccess.Unlisted
-                    ? SelectCollectionAccess.Options.unlisted.icon
-                    : SelectCollectionAccess.Options.public.icon}
-                ></sl-icon>
-                ${this.collection.access === CollectionAccess.Unlisted
-                  ? msg("Go to Unlisted Page")
-                  : msg("Go to Public Page")}
-              </sl-button>
-            `
-          : nothing}
-      </div>
-      <header
-        class=${clsx(
-          tw`mt-5 grid gap-3 lg:grid-cols-[1fr_auto]`,
-          this.isCrawler && tw`min-h-16`,
-        )}
-      >
-        <div class="flex items-center gap-2.5">
-          ${this.renderAccessIcon()}${pageTitle(
-            this.isCrawler
-              ? html`<btrix-editable-text-field
-                  class="-m-4 overflow-hidden p-4"
-                  minLength=${1}
-                  maxLength=${COLLECTION_NAME_MAX_LENGTH}
-                  .value=${this.collection?.name}
-                  placeholder=${msg("Collection name")}
-                  @btrix-change=${(e: BtrixChangeEvent<string>) => {
-                    void this.updateName(e.detail.value);
-                  }}
-                  extraWidth=${24}
-                >
-                  <sl-icon
-                    slot="suffix"
-                    name="pencil"
-                    class="ml-2 size-4"
-                    aria-label=${msg("Edit Collection Name")}
-                  ></sl-icon>
-                </btrix-editable-text-field>`
-              : this.collection?.name,
-            tw`mb-2 h-6 w-60`,
-            tw`grid`,
-          )}
-        </div>
-        <div
-          class="-mx-3 -mb-3 -mt-3 grid overflow-clip px-3 pb-3 lg:col-span-2"
-        >
-          ${this.isCrawler
-            ? when(
-                this.collection,
-                (col) =>
-                  html`<btrix-editable-text-field
-                    class="-mx-4 -my-3 -mb-2 overflow-hidden p-4 text-neutral-600"
-                    maxLength=${COLLECTION_CAPTION_MAX_LENGTH}
-                    .value=${col.caption}
-                    placeholder=${msg("Add a summary...")}
-                    .renderContent=${this.renderCaption}
-                    @btrix-change=${(e: BtrixChangeEvent<string>) => {
-                      void this.updateSummary(e.detail.value);
-                    }}
-                    extraWidth=${24}
-                  >
-                    <sl-icon
-                      slot="suffix"
-                      name="pencil"
-                      class="ml-2 size-3"
-                      aria-label=${msg("Edit Collection Name")}
-                    ></sl-icon>
-                  </btrix-editable-text-field>`,
-              )
-            : caption(this.collection?.caption)}
-        </div>
+      <div class="mb-7">${this.renderBreadcrumbs()}</div>
 
-        <div
-          class="mb-0.5 ml-auto flex flex-shrink-0 flex-wrap items-center justify-end gap-2 lg:col-start-2 lg:row-start-1"
-        >
-          <btrix-share-collection
-            orgSlug=${this.orgSlugState || ""}
-            collectionId=${this.collectionId}
-            .collection=${this.collection}
-            context="private"
-            @btrix-change=${(e: CustomEvent) => {
-              e.stopPropagation();
-              void this.fetchCollection();
-            }}
-          ></btrix-share-collection>
-          ${when(this.isCrawler, this.renderActions)}
-        </div>
-      </header>
+      <btrix-collection-page-header
+        context="private"
+        ?canEdit=${this.appState.isCrawler}
+        ?loading=${!this.collection}
+        collectionId=${this.collectionId}
+        collectionName=${ifDefined(this.collection?.name)}
+        slug=${ifDefined(this.collection?.slug)}
+        caption=${ifDefined(this.collection?.caption ?? undefined)}
+        access=${ifDefined(this.collection?.access)}
+        collectionSize=${ifDefined(this.collection?.totalSize)}
+        homeUrl=${ifDefined(this.collection?.homeUrl || undefined)}
+        homeUrlTs=${ifDefined(this.collection?.homeUrlTs || undefined)}
+        thumbnailName=${ifDefined(
+          this.collection?.defaultThumbnailName || undefined,
+        )}
+        thumbnailPath=${ifDefined(this.collection?.thumbnail?.path)}
+        .thumbnailSource=${this.collection?.thumbnailSource}
+        pageCount=${ifDefined(this.collection?.pageCount)}
+        ?allowPublicDownload=${this.collection?.allowPublicDownload}
+        @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+          e.stopPropagation();
+
+          if (this.collection) {
+            this.collection = {
+              ...this.collection,
+              ...e.detail,
+            };
+          }
+
+          void this.fetchCollection();
+        }}
+      >
+        <div slot="actions" class="contents">${this.renderActions()}</div>
+      </btrix-collection-page-header>
 
       <div
-        class="relative mt-3 rounded-lg border bg-white px-4 py-2"
+        class="relative mt-4 rounded-lg border bg-white px-4 py-2"
         aria-busy="${
           // TODO Switch to task and use task status
           this.collection === undefined || this.collection.runningUpdatesCount
@@ -355,29 +487,53 @@ export class CollectionDetail extends BtrixElement {
               () =>
                 this.collection?.crawlCount
                   ? html`
-                      <sl-button
-                        size="small"
-                        @click=${() => {
-                          this.openDialogName = "replaySettings";
-                        }}
-                        title=${ifDefined(
-                          this.isRwpLoaded
-                            ? undefined
-                            : msg("Please wait for replay load"),
-                        )}
-                        ?disabled=${!this.isRwpLoaded ||
-                        this.collection.runningUpdatesCount}
-                      >
-                        ${this.isRwpLoaded &&
-                        !this.collection.runningUpdatesCount
-                          ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
-                          : html`<sl-spinner slot="prefix"></sl-spinner>`}
-                        ${msg("Set Initial View")}
-                      </sl-button>
+                      <sl-button-group label=${msg("Replay Toolbar")}>
+                        <sl-tooltip
+                          content=${msg("Go to Homepage")}
+                          placement="left"
+                        >
+                          <sl-button
+                            size="small"
+                            ?disabled=${!this.replayEmbed ||
+                            this.updateHomepageTask.status ===
+                              TaskStatus.PENDING}
+                            @click=${this.goToHomepage}
+                          >
+                            <sl-icon slot="prefix" name="house"></sl-icon>
+                          </sl-button>
+                        </sl-tooltip>
+                        <sl-dropdown placement="bottom-end" distance="4">
+                          <sl-button slot="trigger" size="small" caret>
+                            ${msg("Set Homepage")}</sl-button
+                          >
+                          <sl-menu>
+                            <sl-menu-item
+                              ?disabled=${!this.replayCurrentPage.value}
+                              @click=${() => {
+                                if (this.replayCurrentPage.value) {
+                                  void this.updateHomepageTask.run([
+                                    this.replayCurrentPage.value,
+                                  ]);
+                                }
+                              }}
+                            >
+                              <sl-icon
+                                slot="prefix"
+                                name="file-earmark-richtext"
+                              ></sl-icon>
+                              ${msg("Current Page")}
+                            </sl-menu-item>
+                            <sl-menu-item
+                              @click=${() => void this.updateHomepageTask.run()}
+                            >
+                              <sl-icon slot="prefix" name="list-ul"></sl-icon>
+                              ${msg("Page List")}
+                            </sl-menu-item>
+                          </sl-menu>
+                        </sl-dropdown>
+                      </sl-button-group>
                     `
-                  : this.collection?.runningUpdatesCount
-                    ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                    : nothing,
+                  : nothing,
             ],
             [
               Tab.Items,
@@ -396,8 +552,19 @@ export class CollectionDetail extends BtrixElement {
           ]),
         )}
       </div>
+
+      <section
+        class=${clsx(
+          this.collectionTab === Tab.Replay
+            ? tw`overflow-hidden rounded-lg`
+            : // Always render replay to keep reference for thumbnails and reload
+              tw`offscreen`,
+        )}
+      >
+        ${when(this.collection, this.guardedRenderReplay, this.renderSpinner)}
+      </section>
+
       ${choose(this.collectionTab, [
-        [Tab.Replay, () => guard([this.collection], this.renderReplay)],
         [
           Tab.Items,
           () => guard([this.archivedItems], this.renderArchivedItems),
@@ -554,55 +721,30 @@ export class CollectionDetail extends BtrixElement {
         ?isCrawler=${this.isCrawler}
         ?open=${Boolean(
           this.editing.value === EditingSearchParamValue.Items &&
-            this.collection,
+          this.collection,
         )}
         @sl-hide=${() => this.editing.setValue(null)}
-        @btrix-collection-saved=${() => {
-          this.refreshReplay();
-          void this.fetchCollection();
+        @btrix-collection-saved=${async () => {
           void this.fetchArchivedItems();
+          await this.fetchCollection();
+          await this.updateComplete;
+
+          this.pageHeader?.refresh();
         }}
       >
       </btrix-collection-items-dialog>
 
-      <btrix-collection-initial-view-dialog
-        ?open=${this.openDialogName === "replaySettings"}
-        @btrix-change=${() => {
-          // Don't do full refresh of rwp so that rwp-url-change fires
-          this.isRwpLoaded = false;
-
-          void this.fetchCollection();
-        }}
-        @sl-hide=${async () => (this.openDialogName = undefined)}
-        collectionId=${this.collectionId}
-        .collection=${this.collection}
-        ?replayLoaded=${this.isRwpLoaded}
-      >
-      </btrix-collection-initial-view-dialog>
-
       <btrix-collection-edit-dialog
         .collection=${this.collection}
-        .tab=${this.editTab ?? "general"}
         ?open=${this.openDialogName === "edit"}
         @sl-hide=${() => (this.openDialogName = undefined)}
         @btrix-collection-saved=${() => {
-          this.refreshReplay();
           // TODO maybe we can return the updated collection from the update endpoint, and avoid an extra fetch?
           void this.fetchCollection();
         }}
-        @btrix-collection-edit-dialog-tab-change=${(
-          e: CustomEvent<EditDialogTab>,
-        ) => {
-          this.editTab = e.detail;
-        }}
         @btrix-change=${() => {
-          // Don't do full refresh of rwp so that rwp-url-change fires
-          this.isRwpLoaded = false;
-
           void this.fetchCollection();
         }}
-        .replayWebPage=${this.replayEmbed}
-        ?replayLoaded=${this.isRwpLoaded}
       ></btrix-collection-edit-dialog>
 
       ${createIndexDialog({
@@ -626,256 +768,69 @@ export class CollectionDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderCaption = (text: string) =>
-    richText(text, {
-      linkClass: tw`text-cyan-500 transition-colors hover:text-cyan-600`,
-    });
-
-  private renderAccessIcon() {
-    return choose(this.collection?.access, [
-      [
-        CollectionAccess.Private,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Private]
-              .label}
-          >
-            ${this.isCrawler
-              ? html` <sl-icon-button
-                  class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
-                  name=${SelectCollectionAccess.Options[
-                    CollectionAccess.Private
-                  ].icon}
-                  @click=${() => {
-                    this.openDialogName = "edit";
-                    this.editTab = "sharing";
-                  }}
-                ></sl-icon-button>`
-              : html`
-                  <sl-icon
-                    class="text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Private
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-      [
-        CollectionAccess.Unlisted,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Unlisted]
-              .label}
-          >
-            ${this.isCrawler
-              ? html`
-                  <sl-icon-button
-                    class="z-10 -mx-2 -mb-0.5 text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].icon}
-                    @click=${() => {
-                      this.openDialogName = "edit";
-                      this.editTab = "sharing";
-                    }}
-                  ></sl-icon-button>
-                `
-              : html`
-                  <sl-icon
-                    class="text-lg text-neutral-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Unlisted
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-      [
-        CollectionAccess.Public,
-        () => html`
-          <sl-tooltip
-            content=${SelectCollectionAccess.Options[CollectionAccess.Public]
-              .label}
-          >
-            ${this.isCrawler
-              ? html`
-                  <sl-icon-button
-                    class="z-10 -mx-2 -mb-0.5 text-lg text-success-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].icon}
-                    @click=${() => {
-                      this.openDialogName = "edit";
-                      this.editTab = "sharing";
-                    }}
-                  ></sl-icon-button>
-                `
-              : html`
-                  <sl-icon
-                    class="text-lg text-success-600"
-                    name=${SelectCollectionAccess.Options[
-                      CollectionAccess.Public
-                    ].icon}
-                  ></sl-icon>
-                `}
-          </sl-tooltip>
-        `,
-      ],
-    ]);
-  }
-
-  private refreshReplay() {
-    if (this.replayEmbed) {
-      try {
-        void this.replayEmbed.fullReload();
-      } catch (e) {
-        console.warn("Full reload not available in RWP");
-      }
-    } else {
-      this.rwpDoFullReload = true;
-    }
-  }
-
-  private readonly renderBreadcrumbs = () => {
-    const breadcrumbs: Breadcrumb[] = [
-      {
-        href: `${this.navigate.orgBasePath}/collections`,
-        content: msg("Collections"),
-      },
-      {
-        content: this.collection?.name,
-      },
-    ];
-
-    return pageNav(breadcrumbs);
-  };
-
-  private readonly renderTabs = () => {
-    let tabs = Object.values(Tab);
-
-    if (this.featureFlags.excludes("dedupeEnabled")) {
-      tabs = tabs.filter((tab) => tab !== Tab.Deduplication);
-    }
-
-    return html`
-      <btrix-overflow-scroll
-        class="-mx-3 -my-2 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3 part-[content]:py-2"
-      >
-        <nav class="flex min-w-max gap-2">
-          ${tabs.map((tabName) => {
-            const isSelected = tabName === this.collectionTab;
-            const tab = this.tabLabels[tabName];
-
-            return html`
-              <btrix-navigation-button
-                .active=${isSelected}
-                aria-selected="${isSelected}"
-                href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
-                @click=${this.navigate.link}
-              >
-                <sl-icon
-                  name=${tab.icon.name}
-                  library=${tab.icon.library}
-                ></sl-icon>
-                ${tab.text}
-                ${when(
-                  tab.beta,
-                  () => html`<btrix-beta-badge></btrix-beta-badge>`,
-                )}
-              </btrix-navigation-button>
-            `;
-          })}
-        </nav>
-      </btrix-overflow-scroll>
-    `;
-  };
-
   private readonly renderActions = () => {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
+    const showShare = this.collection?.crawlCount;
 
     return html`
-      <sl-tooltip content=${msg("Share")}>
-        <sl-icon-button
-          name="box-arrow-up"
-          @click=${() => {
-            this.openDialogName = "edit";
-            this.editTab = "sharing";
-          }}
-        ></sl-icon-button>
-      </sl-tooltip>
-      <sl-tooltip content=${msg("Edit Collection Settings")}>
-        <sl-icon-button
-          name="gear"
-          @click=${() => {
-            this.openDialogName = "edit";
-            this.editTab = "general";
-          }}
-        >
-          <sl-icon slot="prefix"></sl-icon>
-        </sl-icon-button>
-      </sl-tooltip>
-      <sl-dropdown distance="4">
-        <sl-button slot="trigger" size="small" caret
-          >${msg("Actions")}</sl-button
-        >
+      ${showShare
+        ? html`<btrix-popover placement="bottom">
+            ${when(
+              this.collection,
+              (collection) => html`
+                <div slot="content">
+                  <div class="text-sm font-semibold">
+                    ${SelectCollectionAccess.Options[collection.access].label}
+                  </div>
+                  <p>
+                    ${SelectCollectionAccess.Options[collection.access].detail}
+                  </p>
+                </div>
+              `,
+            )}
+            <sl-button
+              size="small"
+              variant=${this.collection?.crawlCount ? "primary" : "default"}
+              @click=${() => {
+                this.openDialogName = "edit";
+              }}
+            >
+              <sl-icon
+                slot="prefix"
+                name=${this.collection
+                  ? SelectCollectionAccess.Options[this.collection.access].icon
+                  : ""}
+              ></sl-icon>
+              ${msg("Share")}
+            </sl-button>
+          </btrix-popover>`
+        : nothing}
+      <sl-dropdown distance="4" placement="bottom-end">
+        ${when(
+          this.collection,
+          () =>
+            html`<sl-button slot="trigger" size="small" caret>
+              ${showShare
+                ? html`<sl-icon
+                    name="three-dots"
+                    label=${msg("More Actions")}
+                  ></sl-icon>`
+                : msg("Actions")}
+            </sl-button>`,
+          () =>
+            html`<sl-skeleton slot="trigger" class="h-8 w-20"></sl-skeleton>`,
+        )}
         <sl-menu>
-          <sl-menu-item
-            @click=${async () => {
-              // replay-web-page needs to be available in order to configure start page
-              if (this.collectionTab !== Tab.Replay) {
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
-                );
-                await this.updateComplete;
-              }
-
-              this.openDialogName = "edit";
-              this.editTab = "sharing";
-            }}
-          >
-            <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
-            ${msg("Share Collection")}
-          </sl-menu-item>
-          <sl-menu-item
-            @click=${async () => {
-              // replay-web-page needs to be available in order to configure start page
-              if (this.collectionTab !== Tab.Replay) {
-                this.navigate.to(
-                  `${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${Tab.Replay}`,
-                );
-                await this.updateComplete;
-              }
-
-              this.openDialogName = "edit";
-              this.editTab = "general";
-            }}
-          >
-            <sl-icon name="gear" slot="prefix"></sl-icon>
-            ${msg("Edit Collection Settings")}
-          </sl-menu-item>
-          ${when(
-            this.collection?.crawlCount,
-            () => html`
-              <sl-menu-item
+          ${showShare
+            ? nothing
+            : html`<sl-menu-item
                 @click=${() => {
-                  this.openDialogName = "replaySettings";
+                  this.openDialogName = "edit";
                 }}
-                ?disabled=${!this.isRwpLoaded}
               >
-                ${this.isRwpLoaded
-                  ? html`<sl-icon name="house" slot="prefix"></sl-icon>`
-                  : html`<sl-spinner slot="prefix"></sl-spinner>`}
-                ${msg("Set Initial View")}
-              </sl-menu-item>
-            `,
-            () =>
-              this.collection?.runningUpdatesCount
-                ? html`<sl-spinner slot="prefix"></sl-spinner>`
-                : nothing,
-          )}
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share Collection")}
+              </sl-menu-item>`}
           <sl-menu-item
             @click=${async () => {
               this.navigate.to(
@@ -955,6 +910,72 @@ export class CollectionDetail extends BtrixElement {
           </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
+    `;
+  };
+
+  private async refreshReplay() {
+    if (this.replayEmbed) {
+      try {
+        await this.replayEmbed.fullReload();
+      } catch (e) {
+        console.warn("Full reload not available in RWP");
+      }
+    } else {
+      this.rwpDoFullReload = true;
+    }
+  }
+
+  private readonly renderBreadcrumbs = () => {
+    const breadcrumbs: Breadcrumb[] = [
+      {
+        href: `${this.navigate.orgBasePath}/collections`,
+        content: msg("Collections"),
+      },
+      {
+        content: this.collection?.name,
+      },
+    ];
+
+    return pageNav(breadcrumbs);
+  };
+
+  private readonly renderTabs = () => {
+    let tabs = Object.values(Tab);
+
+    if (this.featureFlags.excludes("dedupeEnabled")) {
+      tabs = tabs.filter((tab) => tab !== Tab.Deduplication);
+    }
+
+    return html`
+      <btrix-overflow-scroll
+        class="-mx-3 -my-2 max-w-[calc(100%+theme(spacing.6))] part-[content]:px-3 part-[content]:py-2"
+      >
+        <nav class="flex min-w-max gap-2">
+          ${tabs.map((tabName) => {
+            const isSelected = tabName === this.collectionTab;
+            const tab = this.tabLabels[tabName];
+
+            return html`
+              <btrix-navigation-button
+                .active=${isSelected}
+                aria-selected="${isSelected}"
+                href=${`${this.navigate.orgBasePath}/collections/view/${this.collectionId}/${tabName}`}
+                @click=${this.navigate.link}
+              >
+                <sl-icon
+                  name=${tab.icon.name}
+                  library=${tab.icon.library}
+                ></sl-icon>
+                ${tab.text}
+                ${when(
+                  tab.beta,
+                  () => html`<btrix-beta-badge></btrix-beta-badge>`,
+                )}
+              </btrix-navigation-button>
+            `;
+          })}
+        </nav>
+      </btrix-overflow-scroll>
     `;
   };
 
@@ -1335,42 +1356,68 @@ export class CollectionDetail extends BtrixElement {
     </btrix-archived-item-list-item>
   `;
 
-  private readonly renderReplay = () => {
-    if (!this.collection) {
-      return this.renderSpinner();
-    }
-    if (!this.collection.crawlCount) {
-      return this.renderEmptyState();
-    }
+  private readonly guardedRenderReplay = (collection: Collection) => {
+    return guard([collection.crawlCount], () =>
+      collection.crawlCount
+        ? guard([this.collectionId], this.renderReplay)
+        : this.renderEmptyState(),
+    );
+  };
 
+  private readonly renderReplay = () => {
     const replaySource = `/api/orgs/${this.orgId}/collections/${this.collectionId}/replay.json`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html` <section class="overflow-hidden rounded-lg border">
+    return html`
       <replay-web-page
-        class="h-[calc(100vh-6.5rem)]"
+        class="h-[calc(100vh-4rem)]"
         source=${replaySource}
         config="${config}"
         coll=${this.collectionId}
-        url=${this.collection.homeUrl ||
+        url=${this.collection?.homeUrl ||
         /* must be empty string to reset the attribute: */ ""}
-        ts=${formatRwpTimestamp(this.collection.homeUrlTs) ||
+        ts=${formatRwpTimestamp(this.collection?.homeUrlTs) ||
         /* must be empty string to reset the attribute: */ ""}
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
-        @rwp-url-change=${() => {
+        hideCollectionMetadata
+        @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
+          if (
+            !e.detail.loading &&
+            "replayNotFoundError" in e.detail &&
+            e.detail.replayNotFoundError
+          ) {
+            this.replayCurrentView = undefined;
+          }
+        }}
+        @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+          if (!this.replayEmbed) {
+            this.replayEmbed = e.currentTarget as ReplayWebPage;
+            injectRwpStyles(this.replayEmbed);
+          }
           if (!this.isRwpLoaded) {
             this.isRwpLoaded = true;
           }
-          if (this.rwpDoFullReload && this.replayEmbed) {
+          if (this.rwpDoFullReload) {
             void this.replayEmbed.fullReload();
             this.rwpDoFullReload = false;
           }
+
+          const { url, ts } = e.detail;
+
+          if (
+            !(
+              "replayNotFoundError" in e.detail && e.detail.replayNotFoundError
+            ) &&
+            url
+          ) {
+            this.replayCurrentView = { url, ts };
+          }
         }}
       ></replay-web-page>
-    </section>`;
+    `;
   };
 
   private readonly renderSpinner = () => html`
@@ -1380,6 +1427,28 @@ export class CollectionDetail extends BtrixElement {
       <sl-spinner></sl-spinner>
     </div>
   `;
+
+  /**
+   * Navigate RWP to collection home URL.
+   */
+  private readonly goToHomepage = async () => {
+    if (!this.collection) {
+      console.debug("no this.collection");
+      return;
+    }
+
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      this.collection.homeUrl || "pages",
+      this.collection.homeUrlTs
+        ? { ts: formatRwpTimestamp(this.collection.homeUrlTs) || "" }
+        : undefined,
+    );
+  };
 
   private readonly confirmDelete = () => {
     this.openDialogName = "delete";
@@ -1543,7 +1612,6 @@ export class CollectionDetail extends BtrixElement {
         icon: "check2-circle",
         id: "update",
       });
-      this.refreshReplay();
       void this.fetchCollection();
       void this.fetchArchivedItems({
         // Update page if last item
@@ -1557,87 +1625,6 @@ export class CollectionDetail extends BtrixElement {
         ),
         variant: "danger",
         icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async updateName(name: string) {
-    if (name === this.collection?.name) return;
-    try {
-      await this.api.fetch<Collection>(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            name,
-            slug: slugifyStrict(name),
-          }),
-        },
-      );
-
-      this.notify.toast({
-        message: msg("Name updated."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "update",
-      });
-
-      if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          name,
-        };
-      }
-
-      void this.fetchCollection();
-    } catch (err) {
-      console.debug(err);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn’t save collection name at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-      });
-    }
-  }
-
-  private async updateSummary(caption: string) {
-    caption = caption.trim();
-    if (caption === this.collection?.caption) return;
-    try {
-      await this.api.fetch<Collection>(
-        `/orgs/${this.orgId}/collections/${this.collectionId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            caption,
-          }),
-        },
-      );
-
-      this.notify.toast({
-        message: msg("Summary updated."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "update",
-      });
-
-      if (this.collection) {
-        this.collection = {
-          ...this.collection,
-          caption,
-        };
-      }
-
-      void this.fetchCollection();
-    } catch (err) {
-      console.debug(err);
-
-      this.notify.toast({
-        message: msg("Sorry, couldn’t save collection summary at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "update",
       });
     }
   }
@@ -1740,7 +1727,6 @@ export class CollectionDetail extends BtrixElement {
           method: "POST",
         },
       );
-      this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
@@ -1772,7 +1758,6 @@ export class CollectionDetail extends BtrixElement {
           body: JSON.stringify(params),
         },
       );
-      this.refreshReplay();
       await this.fetchCollection();
 
       this.notify.toast({
@@ -1793,5 +1778,90 @@ export class CollectionDetail extends BtrixElement {
         id: "update",
       });
     }
+  }
+
+  private async getPages(
+    params: { url?: string; ts?: string } & APISortQuery & APIPaginationQuery,
+    signal: AbortSignal,
+  ) {
+    const query = queryString.stringify({ ...params });
+
+    return this.api.fetch<APIPaginatedList<PageSnapshot>>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/pages?${query}`,
+      { signal },
+    );
+  }
+
+  private async uploadThumbnail(
+    {
+      url,
+      timestamp,
+      pageId,
+    }: { url: string; timestamp: string; pageId: string },
+    signal: AbortSignal,
+  ) {
+    const blob = await getThumbnailBlob(
+      {
+        collectionId: this.collectionId,
+        rwp: this.replayEmbed,
+        url,
+        timestamp,
+      },
+      signal,
+    );
+
+    if (!blob) {
+      throw new Error("thumbnail not found");
+    }
+
+    const fileName = `page-thumbnail_${pageId}.jpeg`;
+    const file = new File([blob], fileName, {
+      type: blob.type,
+    });
+
+    const searchParams = new URLSearchParams({
+      filename: fileName,
+      sourceUrl: url,
+      sourceTs: timestamp,
+      sourcePageId: pageId,
+    });
+
+    return this.api.upload(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/thumbnail?${searchParams.toString()}`,
+      file,
+      signal,
+    );
+  }
+
+  private async updateThumbnail(
+    {
+      defaultThumbnailName,
+    }: {
+      defaultThumbnailName: string | null;
+    },
+    signal: AbortSignal,
+  ) {
+    return this.api.fetch<{ updated: boolean }>(
+      `/orgs/${this.orgId}/collections/${this.collectionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ defaultThumbnailName }),
+        signal,
+      },
+    );
+  }
+
+  private async updateHomepage(
+    params: { pageId?: string | null; url?: string; ts?: string },
+    signal: AbortSignal,
+  ) {
+    return this.api.fetch(
+      `/orgs/${this.orgId}/collections/${this.collectionId}/home-url`,
+      {
+        method: "POST",
+        body: JSON.stringify(params),
+        signal,
+      },
+    );
   }
 }

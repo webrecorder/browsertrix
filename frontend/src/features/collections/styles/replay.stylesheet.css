@@ -1,0 +1,29 @@
+replay-app-main {
+  --rwp-gutter-border: 0;
+  inset: 0;
+}
+
+::part(wr-item__replay-bar-container) {
+  --rwp-bar-background-color: var(--sl-color-neutral-50);
+}
+
+::part(wr-item__replay-bar) {
+  border: 1px solid var(--sl-panel-border-color);
+  border-radius: var(--sl-border-radius-large);
+}
+
+::part(wr-item__replay-tabs-nav) {
+  border-bottom: 0;
+  margin-top: calc(-1 * var(--sl-spacing-x-small));
+}
+
+::part(wr-item__replay-content) {
+  margin-top: var(--sl-spacing-small);
+}
+
+::part(wr-item__replay-tabs-panel),
+::part(wr-item__replay-main) {
+  border: 1px solid var(--sl-panel-border-color);
+  border-radius: var(--sl-border-radius-large);
+  overflow: hidden;
+}

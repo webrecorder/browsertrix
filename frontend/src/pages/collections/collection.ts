@@ -1,19 +1,26 @@
+import { provide } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html, type TemplateResult } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { html, nothing, type TemplateResult } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import type { ReplayWebPage, RwpUrlChangeEvent } from "replaywebpage";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
+import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
+import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
-import { RouteNamespace } from "@/routes";
-import type { PublicCollection } from "@/types/collection";
+import { type CollectionSavedEvent } from "@/pages/org/collection-detail/types";
+import { CommonTab, OrgTab, RouteNamespace } from "@/routes";
+import { CollectionAccess, type PublicCollection } from "@/types/collection";
 import { formatRwpTimestamp } from "@/utils/replay";
-import { richText } from "@/utils/rich-text";
 
-enum Tab {
+import "@/features/collections/collection-page-header";
+
+enum PublicTab {
   Replay = "replay",
   About = "about",
 }
@@ -21,6 +28,9 @@ enum Tab {
 @localized()
 @customElement("btrix-collection")
 export class Collection extends BtrixElement {
+  @provide({ context: collectionRwpContext })
+  replayEmbed?: ReplayWebPage | null;
+
   @property({ type: String })
   orgSlug?: string;
 
@@ -28,21 +38,28 @@ export class Collection extends BtrixElement {
   collectionSlug?: string;
 
   @property({ type: String })
-  tab: Tab | string = Tab.Replay;
+  tab: PublicTab | string = PublicTab.Replay;
+
+  @state()
+  private showEditDialog = false;
 
   get canEditCollection() {
     return this.orgSlug === this.orgSlugState && this.appState.isCrawler;
   }
 
+  get privatePageUrl() {
+    return `${this.navigate.orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${this.collection.value?.id ?? ""}`;
+  }
+
   private readonly tabLabels: Record<
-    Tab,
+    PublicTab,
     { icon: { name: string; library: string }; text: string }
   > = {
-    [Tab.Replay]: {
-      icon: { name: "replaywebpage", library: "app" },
+    [PublicTab.Replay]: {
+      icon: { name: "collection-play", library: "default" },
       text: msg("Browse Collection"),
     },
-    [Tab.About]: {
+    [PublicTab.About]: {
       icon: { name: "info-square-fill", library: "default" },
       text: msg("About This Collection"),
     },
@@ -63,8 +80,11 @@ export class Collection extends BtrixElement {
         );
       }
 
-      if (!collection.crawlCount && (this.tab as unknown) === Tab.Replay) {
-        this.tab = Tab.About;
+      if (
+        !collection.crawlCount &&
+        (this.tab as unknown) === PublicTab.Replay
+      ) {
+        this.tab = PublicTab.About;
       }
 
       return collection;
@@ -73,10 +93,72 @@ export class Collection extends BtrixElement {
   });
 
   render() {
-    return this.collection.render({
-      complete: this.renderComplete,
-      error: this.renderError,
-    });
+    return html`
+      ${this.collection.render({
+        complete: this.renderComplete,
+        pending: () =>
+          this.collection.value
+            ? this.renderComplete(this.collection.value)
+            : // TODO Add skeleton layout
+              nothing,
+        error: this.renderError,
+      })}
+      ${when(
+        this.collection.value,
+        (collection) =>
+          html`<btrix-collection-edit-dialog
+            .collection=${collection}
+            ?open=${this.showEditDialog}
+            @sl-hide=${() => (this.showEditDialog = false)}
+            @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+              if (e.detail.access === CollectionAccess.Private) {
+                // Redirect to private page
+                this.navigate.to(this.privatePageUrl);
+              } else {
+                void this.collection.run();
+              }
+            }}
+          ></btrix-collection-edit-dialog>`,
+      )}
+    `;
+  }
+
+  private renderActions() {
+    const collection = this.collection.value;
+
+    if (!collection) return;
+
+    return html`<div class="-mb-3 flex justify-end gap-2">
+      <btrix-popover placement="bottom">
+        <div slot="content">
+          <div class="text-sm font-semibold">
+            ${SelectCollectionAccess.Options[collection.access].label}
+          </div>
+          <p>${SelectCollectionAccess.Options[collection.access].detail}</p>
+        </div>
+        <sl-button
+          size="small"
+          @click=${() => {
+            this.showEditDialog = true;
+          }}
+        >
+          <sl-icon
+            slot="prefix"
+            name=${SelectCollectionAccess.Options[collection.access].icon}
+          ></sl-icon>
+          ${msg("Share")}
+        </sl-button>
+      </btrix-popover>
+      <sl-button
+        variant="primary"
+        size="small"
+        href=${this.privatePageUrl}
+        @click=${this.navigate.link}
+      >
+        <sl-icon slot="prefix" name="gear"></sl-icon>
+        ${msg("Manage")}
+      </sl-button>
+    </div>`;
   }
 
   private readonly renderComplete = (collection: PublicCollection) => {
@@ -90,44 +172,34 @@ export class Collection extends BtrixElement {
               },
             ]
           : undefined,
-      title: collection.name || "",
-      actions: html`
-        <btrix-share-collection
-          orgSlug=${this.orgSlug || ""}
+      title: collection.name,
+      content: html`<btrix-collection-page-header
+          context="public"
+          ?canEdit=${this.canEditCollection}
           collectionId=${collection.id}
-          .collection=${collection}
-        ></btrix-share-collection>
-        ${when(
-          this.canEditCollection,
-          () => html`
-            <sl-button
-              href="${this.navigate
-                .orgBasePath}/collections/view/${collection.id}"
-              size="small"
-              variant="text"
-              class="-mx-3"
-              @click=${this.navigate.link}
-            >
-              ${msg("Go to Private Page")}
-            </sl-button>
-          `,
-        )}
-      `,
+          collectionName=${collection.name}
+          slug=${collection.slug}
+          caption=${collection.caption ?? ""}
+          access=${collection.access}
+          collectionSize=${collection.totalSize}
+          homeUrl=${collection.homeUrl || ""}
+          homeUrlTs=${collection.homeUrlTs || ""}
+          thumbnailName=${collection.defaultThumbnailName || ""}
+          thumbnailPath=${collection.thumbnail?.path || ""}
+          pageCount=${collection.pageCount}
+          ?allowPublicDownload=${collection.allowPublicDownload}
+          @btrix-collection-saved=${(e: CollectionSavedEvent) => {
+            e.stopPropagation();
+            void this.collection.run();
+          }}
+        ></btrix-collection-page-header>
+        <hr />`,
+      aside: this.canEditCollection ? this.renderActions() : undefined,
     };
 
-    if (collection.caption) {
-      header.secondary = html`
-        <div
-          class="max-w-full hyphens-auto text-pretty break-words text-neutral-600"
-        >
-          ${richText(collection.caption)}
-        </div>
-      `;
-    }
-
-    const panel = (tab: Tab, content: TemplateResult) => html`
+    const panel = (tab: PublicTab, content: TemplateResult) => html`
       <div
-        class=${(this.tab as Tab) !== tab
+        class=${(this.tab as PublicTab) !== tab
           ? "offscreen"
           : "flex-1 flex flex-col"}
       >
@@ -140,14 +212,16 @@ export class Collection extends BtrixElement {
         header,
         () => html`
           <nav class="mb-3 flex gap-2">
-            ${when(collection.crawlCount, () => this.renderTab(Tab.Replay))}
-            ${this.renderTab(Tab.About)}
+            ${when(collection.crawlCount, () =>
+              this.renderTab(PublicTab.Replay),
+            )}
+            ${this.renderTab(PublicTab.About)}
           </nav>
 
           ${when(collection.crawlCount, () =>
-            panel(Tab.Replay, this.renderReplay(collection)),
+            panel(PublicTab.Replay, this.renderReplay(collection)),
           )}
-          ${panel(Tab.About, this.renderAbout(collection))}
+          ${panel(PublicTab.About, this.renderAbout(collection))}
         `,
       )}
     `;
@@ -161,8 +235,8 @@ export class Collection extends BtrixElement {
     </div>`;
   };
 
-  private readonly renderTab = (tab: Tab) => {
-    const isSelected = tab === (this.tab as Tab);
+  private readonly renderTab = (tab: PublicTab) => {
+    const isSelected = tab === (this.tab as PublicTab);
 
     return html`
       <btrix-navigation-button
@@ -187,7 +261,7 @@ export class Collection extends BtrixElement {
     ).href;
 
     return html`
-      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg border">
+      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg">
         <replay-web-page
           source=${replaySource}
           url=${ifDefined(collection.homeUrl || undefined)}
@@ -200,6 +274,13 @@ export class Collection extends BtrixElement {
           noSandbox="true"
           noCache="true"
           deepLink
+          hideCollectionMetadata
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            if (!this.replayEmbed) {
+              this.replayEmbed = e.currentTarget as ReplayWebPage;
+              injectRwpStyles(this.replayEmbed);
+            }
+          }}
         ></replay-web-page>
       </section>
     `;

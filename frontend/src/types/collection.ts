@@ -103,9 +103,7 @@ export const collectionUpdateSchema = z
     description: z.string(),
     caption: z.string(),
     access: z.string(),
-    defaultThumbnailName: z.string().nullable(),
     allowPublicDownload: z.boolean(),
-    thumbnailSource: collectionThumbnailSourceSchema.nullable(),
   })
   .partial();
 

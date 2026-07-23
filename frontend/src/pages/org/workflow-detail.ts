@@ -1326,7 +1326,7 @@ export class WorkflowDetail extends BtrixElement {
         >
           ${showReplay
             ? html`
-                <sl-icon name="replaywebpage" library="app"></sl-icon>
+                <sl-icon name="collection-play"></sl-icon>
                 ${msg("Replay")}
               `
             : html`

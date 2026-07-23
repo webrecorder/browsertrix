@@ -6416,7 +6416,7 @@ __metadata:
     query-string: "npm:^8.1.0"
     regex-colorizer: "npm:^1.0.2"
     remark-gfm: "npm:^4.0.1"
-    replaywebpage: "npm:^2.4.6"
+    replaywebpage: "npm:^2.5.0-rc.2"
     rollup-plugin-typescript-paths: "npm:^1.5.0"
     sinon: "npm:^22.0.0"
     slugify: "npm:^1.6.9"
@@ -14109,9 +14109,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"replaywebpage@npm:^2.4.6":
-  version: 2.4.6
-  resolution: "replaywebpage@npm:2.4.6"
+"replaywebpage@npm:^2.5.0-rc.2":
+  version: 2.5.0-rc.2
+  resolution: "replaywebpage@npm:2.5.0-rc.2"
   dependencies:
     "@fortawesome/fontawesome-free": "npm:^5.15.4"
     "@shoelace-style/shoelace": "npm:~2.15.1"
@@ -14134,7 +14134,7 @@ __metadata:
     split.js: "npm:^1.6.4"
     stream-browserify: "npm:^3.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.1.0"
-  checksum: 10c0/cca961ea069c5a555512f43153ebc1f993ea8139dfb3ef99e648c63294505066c661408b3ef2a5f6c927ad707ba8900f9ee7f13418fcdfb1d0ffde6fe999a549
+  checksum: 10c0/5c91ae101f6f895206436dae450b6c33475a53b9277fe15e08cce2c19024fc165a1d02a0d9a325ab4085db152bd9015f82f208552d338bc0a15af0cfe33e7d5f
   languageName: node
   linkType: hard
 
