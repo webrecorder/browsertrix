@@ -234,6 +234,7 @@ export class WorkflowDetail extends BtrixElement {
           // Handle edge case where workflow may have finished and started
           // within the same poll interval:
           workflow.lastCrawlId !== currWorkflow.lastCrawlId;
+        const wasActive = isActive(workflow);
 
         // Retrieve additional data based on current tab
         if (this.isRunning) {
@@ -255,6 +256,15 @@ export class WorkflowDetail extends BtrixElement {
           void this.latestCrawlTask.run();
           void this.logTotalsTask.run();
           void this.crawlsTask.run();
+
+          // Reset dialog if previously running
+          if (
+            wasActive &&
+            (this.openDialogName === "scale" ||
+              this.openDialogName === "exclusions")
+          ) {
+            this.openDialogName = undefined;
+          }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
     },
