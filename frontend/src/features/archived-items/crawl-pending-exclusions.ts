@@ -3,7 +3,7 @@ import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 
 type URLs = string[];
 
@@ -26,7 +26,7 @@ export class CrawlPendingExclusions extends BtrixElement {
   matchedURLs: URLs | null = null;
 
   @state()
-  private page = parsePage(new URLSearchParams(location.search).get("page"));
+  private page = 1;
 
   private get pageSize() {
     return 10;
@@ -62,6 +62,7 @@ export class CrawlPendingExclusions extends BtrixElement {
               size=${this.pageSize}
               totalCount=${this.total}
               compact
+              disablePersist
               @page-change=${(e: PageChangeEvent) => {
                 this.page = e.detail.page;
               }}
