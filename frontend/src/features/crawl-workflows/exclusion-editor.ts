@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { type PropertyValues } from "lit";
+import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import type {
@@ -8,9 +8,9 @@ import type {
 } from "./queue-exclusion-form";
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 type URLs = string[];
 type ResponseData = {
@@ -35,7 +35,7 @@ type ResponseData = {
  */
 @customElement("btrix-exclusion-editor")
 @localized()
-export class ExclusionEditor extends LiteElement {
+export class ExclusionEditor extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
@@ -160,7 +160,7 @@ export class ExclusionEditor extends LiteElement {
   private async deleteExclusion({ regex }: { regex: string }) {
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
@@ -170,7 +170,7 @@ export class ExclusionEditor extends LiteElement {
       );
 
       if (data.success) {
-        this.notify({
+        this.notify.toast({
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
@@ -182,7 +182,7 @@ export class ExclusionEditor extends LiteElement {
         throw data;
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message:
           isApiError(e) && e.message === "crawl_running_cant_deactivate"
             ? msg("Cannot remove exclusion when crawl is no longer running.")
@@ -209,7 +209,7 @@ export class ExclusionEditor extends LiteElement {
       if (isApiError(e) && e.message === "invalid_regex") {
         this.exclusionFieldErrorMessage = msg("Invalid Regex");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg(
             "Sorry, couldn't fetch pending exclusions at this time.",
           ),
@@ -226,7 +226,7 @@ export class ExclusionEditor extends LiteElement {
   private async getQueueMatches() {
     const regex = this.regex;
     const params = new URLSearchParams({ regex });
-    const data = await this.apiFetch<ResponseData>(
+    const data = await this.api.fetch<ResponseData>(
       `/orgs/${this.orgId}/crawls/${
         this.crawlId
       }/queueMatchAll?${params.toString()}`,
@@ -253,7 +253,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
@@ -263,7 +263,7 @@ export class ExclusionEditor extends LiteElement {
       );
 
       if (data.success) {
-        this.notify({
+        this.notify.toast({
           message: msg("Exclusion added."),
           variant: "success",
           icon: "check2-circle",
@@ -289,7 +289,7 @@ export class ExclusionEditor extends LiteElement {
           this.exclusionFieldErrorMessage = msg("Invalid Regex");
         }
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't add exclusion at this time."),
           variant: "danger",
           icon: "exclamation-octagon",
