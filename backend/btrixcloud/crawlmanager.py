@@ -340,14 +340,38 @@ class CrawlManager(K8sAPI):
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
 
-        job_id = "cleanup-seed-files-cron"
-
         # Default schedule is midnight every Sunday
         default_schedule = "0 0 * * 0"
         job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
-        # Don't create a duplicate cron job if already exists
-        cleanup_logger = logger.bind(schedule=job_schedule)
+        await self._ensure_bg_cron_job_exists(
+            "cleanup-seed-files-cron",
+            BgJobType.CLEANUP_SEED_FILES.value,
+            job_schedule,
+        )
+
+    async def ensure_retry_stuck_uploads_cron_job_exists(self):
+        """ensure cron background job to retry stuck uploads exists"""
+
+        # Default schedule is every 15 minutes
+        default_schedule = "*/15 * * * *"
+        job_schedule = os.environ.get(
+            "RETRY_STUCK_UPLOADS_CRON_SCHEDULE", default_schedule
+        )
+
+        await self._ensure_bg_cron_job_exists(
+            "retry-stuck-uploads-cron",
+            BgJobType.RETRY_STUCK_UPLOADS.value,
+            job_schedule,
+        )
+
+    async def _ensure_bg_cron_job_exists(
+        self, job_id: str, job_type: str, job_schedule: str
+    ):
+        """ensure cron background job with given schedule exists, creating or
+        updating it if needed"""
+
+        cron_logger = logger.bind(job_id=job_id, schedule=job_schedule)
 
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
@@ -355,10 +379,7 @@ class CrawlManager(K8sAPI):
                 namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
-                cleanup_logger.info(
-                    "cleanup_cron_job_exists",
-                    unstructured_message="Cron job to clean up unused seed files already exists",
-                )
+                cron_logger.info("bg_cron_job_exists")
 
                 if cron_job.spec.schedule != job_schedule:
                     cron_job.spec.schedule = job_schedule
@@ -368,29 +389,17 @@ class CrawlManager(K8sAPI):
                         namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
-                    cleanup_logger.info(
-                        "cleanup_cron_job_updated",
-                        unstructured_message=(
-                            f"Cron job to clean up unused seed files updated,"
-                            f" schedule: {job_schedule}"
-                        ),
-                    )
+                    cron_logger.info("bg_cron_job_updated")
                 return
         # pylint: disable=broad-exception-caught
         except Exception:
             pass
 
-        cleanup_logger.info(
-            "cleanup_cron_job_creating",
-            unstructured_message=(
-                f"Creating cron job to clean up unused seed files,"
-                f" schedule: {job_schedule}"
-            ),
-        )
+        cron_logger.info("bg_cron_job_creating")
 
         params = {
             "id": job_id,
-            "job_type": BgJobType.CLEANUP_SEED_FILES.value,
+            "job_type": job_type,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             "schedule": job_schedule,

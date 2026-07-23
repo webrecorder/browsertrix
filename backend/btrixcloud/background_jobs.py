@@ -28,6 +28,7 @@ from .models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    RetryStuckUploadsJob,
     StorageRef,
     SuccessResponse,
     SuccessResponseId,
@@ -619,9 +620,10 @@ class BackgroundJobOps:
             )
             return None
 
-    async def ensure_cron_cleanup_jobs_exist(self):
-        """Ensure background job to clean up unused seed files weekly exists"""
+    async def ensure_cron_jobs_exist(self):
+        """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
+        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
 
     async def job_finished(
         self,
@@ -635,21 +637,28 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        # For seed file cleanup jobs, no database record will exist for each
+        # For periodic cron jobs, no database record will exist for each
         # run before this point, so create it here
-        if job_type == BgJobType.CLEANUP_SEED_FILES:
+        if job_type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.RETRY_STUCK_UPLOADS):
             if not started:
                 started = finished
-            cleanup_job = CleanupSeedFilesJob(
-                id=f"seed-files-{secrets.token_hex(5)}",
-                type=BgJobType.CLEANUP_SEED_FILES,
-                started=started,
-                finished=finished,
-                success=success,
-            )
-            await self.jobs.insert_one(cleanup_job.to_dict())
+            if job_type == BgJobType.CLEANUP_SEED_FILES:
+                cron_job: BackgroundJob = CleanupSeedFilesJob(
+                    id=f"seed-files-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            else:
+                cron_job = RetryStuckUploadsJob(
+                    id=f"stuck-uploads-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            await self.jobs.insert_one(cron_job.to_dict())
             if not success:
-                await self._send_bg_job_failure_email(cleanup_job, finished)
+                await self._send_bg_job_failure_email(cron_job, finished)
             return
 
         # If org has been successfully deleted in job, delete k8s resources
@@ -715,6 +724,7 @@ class BackgroundJobOps:
         | CleanupSeedFilesJob
         | UpdateCollStatsJob
         | PostProcessUploadJob
+        | RetryStuckUploadsJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -753,6 +763,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.POSTPROCESS_UPLOAD:
             return PostProcessUploadJob.from_dict(data)
+
+        if data["type"] == BgJobType.RETRY_STUCK_UPLOADS:
+            return RetryStuckUploadsJob.from_dict(data)
 
         if data["type"] == BgJobType.DELETE_ORG:
             return DeleteOrgJob.from_dict(data)

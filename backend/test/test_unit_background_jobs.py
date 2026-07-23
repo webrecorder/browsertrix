@@ -17,6 +17,7 @@ from btrixcloud.models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    RetryStuckUploadsJob,
     UpdateCollStatsJob,
 )
 
@@ -30,6 +31,7 @@ JOB_TYPE_TO_CLASS = {
     BgJobType.CLEANUP_SEED_FILES: CleanupSeedFilesJob,
     BgJobType.UPDATE_COLL_STATS: UpdateCollStatsJob,
     BgJobType.POSTPROCESS_UPLOAD: PostProcessUploadJob,
+    BgJobType.RETRY_STUCK_UPLOADS: RetryStuckUploadsJob,
 }
 
 _TYPE_EXTRAS = {

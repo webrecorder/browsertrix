@@ -4,6 +4,7 @@ import asyncio
 import os
 import uuid
 from collections.abc import AsyncGenerator, Callable
+from datetime import timedelta
 from io import BufferedReader
 from typing import Any
 from urllib.parse import unquote
@@ -54,6 +55,10 @@ MAX_WACZ_FILE_SIZE = int(
 MAX_CONCURRENT_SPLITS = int(
     os.environ.get("MAX_CONCURRENT_SPLITS", 4)
 )  # max number of multi-WACZ files to split simultaneously
+
+STUCK_UPLOAD_GRACE_PERIOD = timedelta(
+    minutes=int(os.environ.get("STUCK_UPLOAD_GRACE_MINUTES", 10))
+)  # how long an upload must be in processing before it's considered stuck
 
 
 # ============================================================================
@@ -412,6 +417,48 @@ class UploadOps(BaseCrawlOps):
                 {"_id": crawl_id}, {"$set": {"state": "failed"}}
             )
             raise
+
+    async def retry_stuck_uploads(self) -> None:
+        """Find uploads stuck in the processing state without a running
+        background job and dispatch new background jobs to process them.
+
+        Uploads can get stuck if post-processing is interrupted before the
+        crawl state is updated - e.g. if the background job pod or the
+        backend itself (for small uploads processed synchronously) is
+        killed. Post-processing is idempotent, so it's safe to re-dispatch.
+        """
+        query = {
+            "type": "upload",
+            "state": "processing-upload",
+            "started": {"$lt": dt_now() - STUCK_UPLOAD_GRACE_PERIOD},
+            "deleted": {"$ne": True},
+        }
+
+        async for upload in self.crawls.find(query):
+            crawl_id = upload["_id"]
+            upload_logger = logger.bind(crawl_id=crawl_id, oid=upload["oid"])
+
+            # Post-process job ids are deterministic per upload
+            job_id = f"postprocess-upload-{crawl_id}"
+
+            # If the k8s job still exists, it's running or queued - leave it be
+            if await self.background_job_ops.crawl_manager.has_job(job_id):
+                continue
+
+            # Reuse the existing job record, if any, to preserve attempt history
+            existing_job = await self.background_job_ops.jobs.find_one({"_id": job_id})
+
+            upload_logger.info(
+                "stuck_upload_dispatching_job",
+                job_id=job_id,
+                has_previous_job=existing_job is not None,
+            )
+
+            await self.background_job_ops.create_postprocess_upload_job(
+                upload["oid"],
+                crawl_id,
+                existing_job_id=job_id if existing_job else None,
+            )
 
     async def _get_child_wacz_files(
         self, crawl_id: str, wacz_url: str

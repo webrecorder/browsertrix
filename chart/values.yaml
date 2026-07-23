@@ -188,6 +188,11 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Cron schedule for checking for uploads stuck in processing
+# without a running background job and retrying them
+# Defaults to every 15 minutes
+stuck_uploads_cron_schedule: "*/15 * * * *"
+
 # Emails Image
 # =========================================
 emails_image: "docker.io/webrecorder/browsertrix-emails:1.24.0"
