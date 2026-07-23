@@ -1942,13 +1942,9 @@ export class WorkflowDetail extends BtrixElement {
         <h3 class="mb-2 text-base font-semibold leading-none">
           ${msg("Upcoming Pages")}
         </h3>
-        <sl-button
-          size="small"
-          variant="primary"
-          @click=${() => this.openEditDialog()}
-        >
-          <sl-icon slot="prefix" name="table"></sl-icon>
-          ${msg("Edit Exclusions")}
+        <sl-button size="small" @click=${() => this.openEditDialog()}>
+          <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
+          ${msg("Edit Exclusion Rules")}
         </sl-button>
       </header>
 

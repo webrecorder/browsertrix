@@ -122,12 +122,24 @@ export class ExclusionEditorDialog extends BtrixElement {
       this.deleteRuleTask.render({ error: (errorMessage) => errorMessage });
 
     return html`<btrix-dialog
-      class="[--body-spacing:0] [--width:--btrix-screen-desktop] part-[body]:flex part-[footer]:flex part-[panel]:h-screen part-[footer]:flex-wrap part-[body]:content-stretch part-[footer]:items-center part-[footer]:justify-end part-[body]:justify-stretch part-[footer]:gap-3 part-[body]:overflow-hidden"
-      .label=${msg("Edit Exclusions")}
+      class="[--body-spacing:0] [--width:--btrix-screen-desktop] part-[body]:flex part-[footer]:flex part-[panel]:h-screen part-[footer]:flex-wrap part-[body]:content-stretch part-[footer]:items-center part-[header-actions]:items-center part-[footer]:justify-end part-[body]:justify-stretch part-[footer]:gap-3 part-[body]:overflow-hidden"
+      .label=${msg("Edit Exclusion Rules")}
       .open=${this.open}
       @sl-show=${() => (this.visible = true)}
       @sl-after-hide=${() => (this.visible = false)}
     >
+      <btrix-popover
+        slot="header-actions"
+        content="${msg(
+          "Add or remove exclusion rules to filter URLs out from the page queue.",
+        )} ${msg(
+          "Edited exclusion rules will apply to the current crawl run and to subsequent crawl runs.",
+        )}"
+        placement="bottom-end"
+        hoist
+      >
+        <sl-icon name="question-circle" class="text-neutral-600"></sl-icon>
+      </btrix-popover>
       ${this.exclusions && this.visible
         ? html`<btrix-exclusion-editor
             class="block size-full overflow-hidden"

@@ -12,11 +12,11 @@ You can watch the current state of the browser windows as the crawler visits pag
 
 ## Live Exclusion Editing
 
-While [exclusions](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
+While [exclusion rules](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, you may want to update rules based on the real-time page queue: the crawler may find new parts of the site that shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
 
-If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
+If the page queue contains URLs that should not be crawled, use the _Edit Exclusion Rules_ button in the **Watch** tab or from the workflow’s action menu.
 
-Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
+Edited exclusion rules will take effect immediately on the running crawl. Additionally, the workflow’s settings will automatically update with the edited exclusion rules so that subsequent crawls use the same rules.
 
 ## Changing the Number of Browser Windows
 
@@ -63,7 +63,7 @@ If a crawl workflow is not crawling websites as intended it may be preferable to
 
 ### Stopping
 
-Stopping a crawl will throw away the crawl queue but otherwise gracefully end the process and save anything that has been collected. Stopped crawls show up in **Archived Items** and can be used like any other item in the app.
+Stopping a crawl will gracefully finish crawling the open page and save all content that has been captured so far. Stopped crawls are shown in **Archived Items** and can be used like any other archived item in the app, such as being added to collections.
 
 ### Canceling
 

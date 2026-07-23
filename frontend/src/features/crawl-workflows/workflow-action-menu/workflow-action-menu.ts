@@ -138,8 +138,8 @@ export class WorkflowActionMenu extends BtrixElement {
                   data-action=${Action.EditExclusions}
                   ?disabled=${!crawling}
                 >
-                  <sl-icon name="table" slot="prefix"></sl-icon>
-                  ${msg("Edit Exclusions")}
+                  <sl-icon name="file-earmark-diff" slot="prefix"></sl-icon>
+                  ${msg("Edit Exclusion Rules")}
                 </sl-menu-item>
               `,
             )}
