@@ -9,6 +9,7 @@ import os
 import re
 import signal
 import sys
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -279,6 +280,18 @@ def run_async_task(func) -> None:
     task = asyncio.create_task(func)
     bg_tasks.add(task)
     task.add_done_callback(bg_tasks.discard)
+
+
+async def to_async_iterable(sync_iterable: Iterable[bytes]):
+    """Convert a sync iterable of bytes to an async iterable using a thread.
+
+    Uses a sentinel to detect the end, since to_thread raises if
+    StopIteration is raised inside it.
+    """
+    done = object()
+    it = iter(sync_iterable)
+    while (value := await asyncio.to_thread(next, it, done)) is not done:
+        yield value
 
 
 def drop_privileges():

@@ -188,6 +188,11 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Cron schedule for checking for uploads stuck in processing
+# without a running background job and retrying them
+# Defaults to every 15 minutes
+stuck_uploads_cron_schedule: "*/15 * * * *"
+
 # Emails Image
 # =========================================
 emails_image: "docker.io/webrecorder/browsertrix-emails:1.24.0"
@@ -406,6 +411,13 @@ crawler_min_avail_storage_ratio: 2.5
 
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
+
+# max uncompressed size (bytes) for individual WACZ entries in a multi-WACZ upload;
+# entries exceeding this are rejected before streaming to guard against zip bombs
+# max_wacz_file_size_bytes: "50000000000000"
+
+# max number of multi-WACZ files to split simultaneously when processing multi-WACZ uploads
+# max_concurrent_splits: 4
 
 # max time in seconds after which crawler will restart, if set
 crawler_session_time_limit_seconds: 18000

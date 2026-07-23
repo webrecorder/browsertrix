@@ -73,6 +73,32 @@ def replaced_upload_id(
     return actual_id
 
 
+@pytest.fixture(scope="module")
+def multi_wacz_upload_id(admin_auth_headers, default_org_id):
+    """Upload a multi-WACZ file (zip containing child .wacz files).
+    Post-processing splits the multi-WACZ into individual child WACZ files."""
+    with open(os.path.join(curr_dir, "data", "multi-wacz.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream"
+            "?filename=test-multi.wacz"
+            "&name=Multi-WACZ%20Upload",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+
+    assert r.status_code == 200
+    assert r.json()["added"]
+
+    upload_id = r.json()["id"]
+    assert upload_id
+
+    # Post-processing is synchronous (called with await), so no sleep needed.
+    # But give a brief moment for page counts to settle.
+    time.sleep(2)
+
+    return upload_id
+
+
 def test_list_stream_upload(
     admin_auth_headers, default_org_id, uploads_collection_id, upload_id
 ):
@@ -244,7 +270,7 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["total"] > 0
+    assert data["total"] == 4
 
     pages = data["items"]
     for page in pages:
@@ -1160,6 +1186,521 @@ def test_uploads_tag_counts(crawler_auth_headers, default_org_id):
             {"tag": "wr-test-2-updated-again", "count": 1},
         ]
     }
+
+
+def test_multi_wacz_upload_split(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify that a multi-WACZ upload is split into child WACZ files."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+
+    # Should have 2 child WACZ resources (not the original multi-WACZ container)
+    resources = result["resources"]
+    assert len(resources) == 2, f"Expected 2 child WACZ resources, got {len(resources)}"
+
+    for res in resources:
+        assert res["name"].endswith(".wacz"), (
+            f"Resource {res['name']} should be a .wacz"
+        )
+        assert res["path"], f"Resource {res['name']} should have a path"
+        assert res["size"] > 0, f"Resource {res['name']} should have size > 0"
+        assert res["hash"], f"Resource {res['name']} should have a hash"
+
+    # Verify upload metadata reflects the split
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    upload_data = r.json()
+
+    assert upload_data["fileCount"] == 2, (
+        f"Expected fileCount=2 after split, got {upload_data['fileCount']}"
+    )
+    assert upload_data["state"] == "complete", (
+        f"Expected state=complete, got {upload_data['state']}"
+    )
+
+
+def test_multi_wacz_upload_pages(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify that pages are extracted from the split child WACZ files."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] == 2, (
+        f"Expected pages from multi-WACZ children, got {data['total']}"
+    )
+
+    for page in data["items"]:
+        assert page["id"]
+        assert page["crawl_id"] == multi_wacz_upload_id
+        assert page["url"]
+
+    # Verify page counts on the upload metadata
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    upload_data = r.json()
+    assert upload_data["pageCount"] == 2
+    assert upload_data["uniquePageCount"] == 1
+
+
+def test_multi_wacz_upload_download(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify download as single WACZ still works after multi-WACZ split."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}/download",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    downloaded = r.content
+    assert len(downloaded) > 0
+
+    # The downloaded file should be a valid zip (combined WACZ)
+    with TemporaryFile() as tmp:
+        tmp.write(downloaded)
+        tmp.seek(0)
+        with ZipFile(tmp, "r") as zf:
+            names = zf.namelist()
+            assert any(name.endswith(".wacz") for name in names), (
+                f"Downloaded zip should contain .wacz files, got {names}"
+            )
+
+
+def test_multi_wacz_upload_list(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify that the multi-WACZ upload appears correctly in the uploads list."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    results = r.json()
+
+    found = None
+    for item in results["items"]:
+        if item["id"] == multi_wacz_upload_id:
+            found = item
+            break
+
+    assert found, "Multi-WACZ upload should appear in uploads list"
+    assert found["name"] == "Multi-WACZ Upload"
+    assert found["fileCount"] == 2
+    assert found["state"] == "complete"
+    assert found["fileSize"] > 0
+
+
+def test_multi_wacz_upload_all_crawls(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify that the multi-WACZ upload appears in /all-crawls with correct state."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["id"] == multi_wacz_upload_id
+    assert data["type"] == "upload"
+    assert data["state"] == "complete"
+    assert data["fileCount"] == 2
+    assert data["fileSize"] > 0
+
+    # Also verify it appears in the paginated list
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls?crawlType=upload",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    results = r.json()
+    ids = [item["id"] for item in results["items"]]
+    assert multi_wacz_upload_id in ids
+
+
+def test_multi_wacz_upload_all_crawls_replay_json(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify replay.json via /all-crawls shows split child WACZs."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{multi_wacz_upload_id}"
+        "/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+
+    resources = result["resources"]
+    assert len(resources) == 2
+
+    for res in resources:
+        assert res["name"].endswith(".wacz")
+        assert res["path"]
+        assert res["size"] > 0
+        assert res["hash"]
+
+
+def test_multi_wacz_upload_child_wacz_download(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify each child WACZ file is individually downloadable."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{multi_wacz_upload_id}"
+        "/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+    resources = result["resources"]
+
+    for res in resources:
+        dl_url = urljoin(API_PREFIX, res["path"])
+        dl_resp = requests.get(dl_url)
+        assert dl_resp.status_code == 200, (
+            f"Child WACZ {res['name']} should be downloadable, got {dl_resp.status_code}: "
+            f"{dl_resp.text}"
+        )
+        assert len(dl_resp.content) > 0, f"Child WACZ {res['name']} should not be empty"
+
+        # Verify it's a valid WACZ (zip starts with PK)
+        assert dl_resp.content[:2] == b"PK", (
+            f"Child WACZ {res['name']} should be a valid zip/WACZ"
+        )
+
+
+def test_multi_wacz_upload_state_visible(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify the upload reached 'complete' state after processing."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["state"] == "complete", (
+        f"Expected state=complete after multi-WACZ processing, got {data['state']}"
+    )
+
+    # Verify the upload is counted in all-crawls with only successful states
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls"
+        "?crawlType=upload"
+        "&state=complete",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    results = r.json()
+    ids = [item["id"] for item in results["items"]]
+    assert multi_wacz_upload_id in ids, (
+        "Completed multi-WACZ upload should be visible when filtering by state=complete"
+    )
+
+
+def test_multi_wacz_upload_in_collection(
+    admin_auth_headers, default_org_id, multi_wacz_upload_id
+):
+    """Verify the multi-WACZ upload's pages contribute to org-side collection stats."""
+    # Create a fresh collection for this multi-WACZ upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "Multi-WACZ Collection Test"},
+    )
+    assert r.status_code == 200
+    coll_id = r.json()["id"]
+
+    # Upload a multi-WACZ file assigned to this collection
+    with open(os.path.join(curr_dir, "data", "multi-wacz.wacz"), "rb") as fh:
+        r = requests.put(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/stream"
+            f"?filename=test-multi-coll.wacz"
+            f"&name=Multi-WACZ%20Collection%20Upload"
+            f"&collections={coll_id}",
+            headers=admin_auth_headers,
+            data=read_in_chunks(fh),
+        )
+    assert r.status_code == 200
+    assert r.json()["added"]
+    coll_upload_id = r.json()["id"]
+
+    # Post-processing is synchronous for small files, but give a brief moment
+    # for pages and collection stats to settle
+    time.sleep(2)
+
+    # Wait for the background job to update collection stats
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        if data.get("pageCount", 0) > 0:
+            break
+        if count + 1 == MAX_ATTEMPTS:
+            assert False, "Max attempts reached waiting for collection stats update"
+        time.sleep(10)
+        count += 1
+
+    # Verify collection stats reflect the multi-WACZ upload's pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["crawlCount"] == 1
+    assert data["pageCount"] == 2
+    assert data["uniquePageCount"] == 1
+    assert data["totalSize"] == 260082
+
+    # Verify the collection's pages endpoint returns the upload's pages
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{coll_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    pages_data = r.json()
+    assert len(pages_data["items"]) == 2
+    for page in pages_data["items"]:
+        assert page["id"]
+        assert page["url"]
+
+    # Verify the upload has the collection in its collectionIds
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{coll_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    upload_data = r.json()
+    assert coll_id in upload_data.get("collectionIds", [])
+    assert upload_data["pageCount"] == 2
+    assert upload_data["uniquePageCount"] == 1
+
+    # Also verify the existing multi_wacz_upload_id (uploaded without a collection)
+    # still has pages correctly extracted
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    no_coll_data = r.json()
+    assert no_coll_data["pageCount"] == 2
+    assert no_coll_data["uniquePageCount"] == 1
+    assert no_coll_data["fileSize"] == 260082
+
+
+@pytest.fixture(scope="module")
+def formdata_multi_wacz_upload_id(admin_auth_headers, default_org_id):
+    """Upload a multi-WACZ file and a regular WACZ file together via formdata.
+    Post-processing should split the multi-WACZ into child WACZ files while
+    leaving the regular WACZ file intact."""
+    with open(os.path.join(curr_dir, "data", "multi-wacz.wacz"), "rb") as fh:
+        multi_wacz_data = fh.read()
+    with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
+        example_data = fh.read()
+
+    files = [
+        ("uploads", ("multi.wacz", multi_wacz_data, "application/octet-stream")),
+        ("uploads", ("example.wacz", example_data, "application/octet-stream")),
+    ]
+
+    r = requests.put(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/formdata"
+        "?name=Formdata%20Multi-WACZ%20Upload",
+        headers=admin_auth_headers,
+        files=files,
+    )
+    assert r.status_code == 200
+    assert r.json()["added"]
+    upload_id = r.json()["id"]
+    assert upload_id
+
+    # Post-processing is synchronous for small files, but give a brief moment
+    # for page counts to settle.
+    time.sleep(2)
+    return upload_id
+
+
+def test_formdata_multi_wacz_split(
+    admin_auth_headers, default_org_id, formdata_multi_wacz_upload_id
+):
+    """Verify that a formdata upload with a multi-WACZ and a regular WACZ
+    results in the multi-WACZ being split while the regular WACZ is preserved."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+
+    # The multi-WACZ contributes 2 child WACZs, plus the regular WACZ = 3 total
+    resources = result["resources"]
+    assert len(resources) == 3, (
+        f"Expected 3 resources (2 split children + 1 regular), got {len(resources)}"
+    )
+
+    for res in resources:
+        assert res["name"].endswith(".wacz"), (
+            f"Resource {res['name']} should be a .wacz"
+        )
+        assert res["path"], f"Resource {res['name']} should have a path"
+        assert res["size"] > 0, f"Resource {res['name']} should have size > 0"
+        assert res["hash"], f"Resource {res['name']} should have a hash"
+
+    # Verify upload metadata reflects the split
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    upload_data = r.json()
+
+    assert upload_data["fileCount"] == 3, (
+        f"Expected fileCount=3 after split, got {upload_data['fileCount']}"
+    )
+    assert upload_data["state"] == "complete", (
+        f"Expected state=complete, got {upload_data['state']}"
+    )
+
+
+def test_formdata_multi_wacz_pages(
+    admin_auth_headers, default_org_id, formdata_multi_wacz_upload_id
+):
+    """Verify that pages are extracted from both the split child WACZ files
+    and the regular WACZ file."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    # The multi-WACZ children contribute 2 pages (1 each), example.wacz
+    # contributes 4 pages — 6 total
+    assert data["total"] == 6, (
+        f"Expected 6 pages (2 from multi-WACZ children + 4 from regular WACZ), "
+        f"got {data['total']}"
+    )
+
+    for page in data["items"]:
+        assert page["id"]
+        assert page["crawl_id"] == formdata_multi_wacz_upload_id
+        assert page["url"]
+
+
+def test_formdata_multi_wacz_child_download(
+    admin_auth_headers, default_org_id, formdata_multi_wacz_upload_id
+):
+    """Verify each WACZ file in a formdata upload with a multi-WACZ is individually
+    downloadable."""
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{formdata_multi_wacz_upload_id}"
+        "/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    result = r.json()
+    resources = result["resources"]
+
+    assert len(resources) == 3
+
+    for res in resources:
+        dl_url = urljoin(API_PREFIX, res["path"])
+        dl_resp = requests.get(dl_url)
+        assert dl_resp.status_code == 200, (
+            f"WACZ {res['name']} should be downloadable, got {dl_resp.status_code}: "
+            f"{dl_resp.text}"
+        )
+        assert len(dl_resp.content) > 0, f"WACZ {res['name']} should not be empty"
+        assert dl_resp.content[:2] == b"PK", (
+            f"WACZ {res['name']} should be a valid zip/WACZ"
+        )
+
+
+def test_formdata_multi_wacz_delete(
+    admin_auth_headers, default_org_id, formdata_multi_wacz_upload_id
+):
+    """Verify that deleting a processed multi-WACZ upload removes all
+    split child WACZ files from storage and the upload listing."""
+    # Confirm the upload exists with 3 files (2 split children + 1 regular)
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["fileCount"] == 3
+
+    # Grab pre-signed download URLs before deletion so we can verify the S3
+    # objects are actually removed
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{formdata_multi_wacz_upload_id}"
+        "/replay.json",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    download_urls = [urljoin(API_PREFIX, res["path"]) for res in r.json()["resources"]]
+    assert len(download_urls) == 3
+
+    # Delete the upload
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+        headers=admin_auth_headers,
+        json={"crawl_ids": [formdata_multi_wacz_upload_id]},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"]
+
+    # Verify it's gone from the uploads list
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    for item in r.json()["items"]:
+        assert item["id"] != formdata_multi_wacz_upload_id, (
+            "Deleted formdata multi-WACZ upload should not appear in uploads list"
+        )
+
+    # Verify direct access returns 404
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/uploads/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    # Verify it's gone from all-crawls too
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/{formdata_multi_wacz_upload_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    # Verify the S3 objects are actually deleted
+    for url in download_urls:
+        dl_resp = requests.get(url)
+        assert dl_resp.status_code == 404, (
+            f"Pre-signed URL for deleted WACZ should return 404, "
+            f"got {dl_resp.status_code}"
+        )
 
 
 def test_delete_form_upload_and_crawls_from_all_crawls(

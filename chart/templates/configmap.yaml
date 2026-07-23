@@ -63,6 +63,10 @@ data:
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
   MAX_BROWSER_WINDOWS: "{{ .Values.max_browser_windows | default 8 }}"
 
+  MAX_WACZ_FILE_SIZE_BYTES: "{{ .Values.max_wacz_file_size_bytes | default 50000000000000 }}"
+
+  MAX_CONCURRENT_SPLITS: "{{ .Values.max_concurrent_splits | default 4 }}"
+
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
@@ -118,6 +122,8 @@ data:
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
+
+  RETRY_STUCK_UPLOADS_CRON_SCHEDULE: "{{ .Values.stuck_uploads_cron_schedule }}"
 
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
