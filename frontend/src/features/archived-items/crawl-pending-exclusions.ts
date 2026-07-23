@@ -47,27 +47,29 @@ export class CrawlPendingExclusions extends BtrixElement {
 
   render() {
     return html`
-      <btrix-section-heading
-        part="heading"
-        class="[--margin:--sl-spacing-small]"
+      <btrix-details
+        class="[--margin-bottom:--sl-spacing-small]"
+        exportparts="summary:heading"
+        open
       >
-        <div class="flex w-full items-center justify-between">
-          <div>${msg("Pending Exclusions")} ${this.renderBadge()}</div>
-          ${this.total && this.total > this.pageSize
-            ? html`<btrix-pagination
-                page=${this.page}
-                size=${this.pageSize}
-                totalCount=${this.total}
-                compact
-                @page-change=${(e: PageChangeEvent) => {
-                  this.page = e.detail.page;
-                }}
-              >
-              </btrix-pagination>`
-            : ""}
+        <div slot="title">
+          ${msg("Pending Exclusions")} ${this.renderBadge()}
         </div>
-      </btrix-section-heading>
-      ${this.renderContent()}
+        ${this.total && this.total > this.pageSize
+          ? html`<btrix-pagination
+              slot="summary-description"
+              page=${this.page}
+              size=${this.pageSize}
+              totalCount=${this.total}
+              compact
+              @page-change=${(e: PageChangeEvent) => {
+                this.page = e.detail.page;
+              }}
+            >
+            </btrix-pagination>`
+          : ""}
+        ${this.renderContent()}
+      </btrix-details>
     `;
   }
 

@@ -1,7 +1,8 @@
 import { localized, msg } from "@lit/localize";
-import { html, type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import stylesheet from "./exclusion-editor.stylesheet.css";
 import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
@@ -11,6 +12,8 @@ import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
+
+const styles = unsafeCSS(stylesheet);
 
 type URLs = string[];
 type ResponseData = {
@@ -36,6 +39,8 @@ type ResponseData = {
 @customElement("btrix-exclusion-editor")
 @localized()
 export class ExclusionEditor extends BtrixElement {
+  static styles = styles;
+
   @property({ type: String })
   crawlId?: string;
 
@@ -77,12 +82,18 @@ export class ExclusionEditor extends BtrixElement {
         >
           ${this.renderTable()}
         </div>
-        <div class="col-span-1 px-4 lg:overflow-y-auto lg:overflow-x-hidden">
+        <div class="col-span-1 flex flex-col lg:overflow-hidden">
           ${this.isActiveCrawl && this.regex
-            ? html`<section>${this.renderPending()}</section>`
+            ? html`<section
+                class="lg:flex-0 px-4 lg:max-h-[calc(100vh-12rem)] lg:overflow-auto"
+              >
+                ${this.renderPending()}
+              </section>`
             : ""}
           ${this.isActiveCrawl
-            ? html`<section>${this.renderQueue()}</section>`
+            ? html`<section class="px-4 lg:flex-1 lg:overflow-auto">
+                ${this.renderQueue()}
+              </section>`
             : ""}
         </div>
       </div>
@@ -115,14 +126,18 @@ export class ExclusionEditor extends BtrixElement {
             </div>
           `}
       ${this.isActiveCrawl
-        ? html`<div class="sticky bottom-0 bg-white py-2">
-            <btrix-queue-exclusion-form
-              ?isSubmitting=${this.isSubmitting}
-              fieldErrorMessage=${this.exclusionFieldErrorMessage}
-              @btrix-change=${this.handleRegexChange}
-              @btrix-add=${this.handleAddRegex}
-            >
-            </btrix-queue-exclusion-form>
+        ? html`<div
+            class="sticky bottom-0 [container-name:sticky-form] [container-type:scroll-state]"
+          >
+            <div class="form-wrapper bg-white py-2">
+              <btrix-queue-exclusion-form
+                ?isSubmitting=${this.isSubmitting}
+                fieldErrorMessage=${this.exclusionFieldErrorMessage}
+                @btrix-change=${this.handleRegexChange}
+                @btrix-add=${this.handleAddRegex}
+              >
+              </btrix-queue-exclusion-form>
+            </div>
           </div>`
         : ""}
     `;
@@ -131,7 +146,7 @@ export class ExclusionEditor extends BtrixElement {
   private renderPending() {
     return html`
       <btrix-crawl-pending-exclusions
-        class="part-[heading]:block part-[heading]:pt-2.5"
+        class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-20 part-[heading]:bg-white part-[heading]:pt-1.5"
         .matchedURLs=${this.matchedURLs}
       ></btrix-crawl-pending-exclusions>
     `;
@@ -139,7 +154,7 @@ export class ExclusionEditor extends BtrixElement {
 
   private renderQueue() {
     return html`<btrix-crawl-queue
-      class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-10 part-[heading]:block part-[heading]:bg-white part-[heading]:pt-2.5"
+      class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-10 part-[heading]:block part-[heading]:bg-white part-[heading]:pt-1.5"
       crawlId=${this.crawlId!}
       regex=${this.regex}
       .exclusions=${this.config?.exclude || []}
