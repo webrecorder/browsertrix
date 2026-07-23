@@ -1,6 +1,9 @@
 name: Nightly tests (K3d)
 
 on:
+  push:
+    branches:
+      - issue-3173-replace-k3d-action
   schedule:
     # Run daily at 8am UTC
     - cron: "0 8 * * *"
@@ -36,20 +39,27 @@ jobs:
           remove-browsers: true
           verbose: true
 
-      - name: Create k3d Cluster
-        uses: AbsaOSS/k3d-action@v2
-        with:
-          k3d-version: v5.8.3
-          cluster-name: btrix-nightly
-          args: >-
-            -p "30870:30870@agent:0:direct"
-            -p "30090:30090@agent:0:direct"
-            --agents 1
-            --no-lb
-            --k3s-arg "--disable=traefik,servicelb@server:*"
-
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Install k3d
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/install-k3d.sh
+          k3d version
+
+      - name: Create K3d Cluster
+        run: |
+          k3d cluster create btrix-nightly \
+            --servers 1 \
+            --agents 1 \
+            -p "30870:30870@agent:0:direct" \
+            -p "30090:30090@agent:0:direct" \
+            --no-lb \
+            --k3s-arg "--disable=traefik,servicelb@server:*" \
+            --wait \
+            --timeout 60s
 
       - name: Set Env Vars
         run: |
@@ -160,3 +170,7 @@ jobs:
       - name: Print K8S Events
         if: ${{ always() }}
         run: kubectl events --all-namespaces
+
+      - name: Cleanup Cluster
+        if: ${{ always() }}
+        run: k3d cluster delete btrix-nightly

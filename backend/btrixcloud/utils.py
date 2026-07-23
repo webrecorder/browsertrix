@@ -39,6 +39,8 @@ case_insensitive_collation = Collation(locale="en", strength=1)
 # see: https://stackoverflow.com/a/74059981
 bg_tasks = set()
 
+# Temp comment to trigger backend CI
+
 
 class JSONSerializer(json.JSONEncoder):
     """Serializer class for json.dumps with UUID and datetime support"""

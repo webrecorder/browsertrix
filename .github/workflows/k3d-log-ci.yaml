@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - issue-3173-replace-k3d-action
     paths:
       - "backend/**"
       - "chart/**"
@@ -13,18 +14,25 @@ jobs:
   btrix-k3d-admin-logging-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Create k3d Cluster
-        uses: AbsaOSS/k3d-action@v2
-        with:
-          k3d-version: v5.8.3
-          cluster-name: btrix-1
-          args: >-
-            --agents 1
-            -p "443:443@loadbalancer"
-            --k3s-arg "--no-deploy=traefik,metrics-server@server:*"
-
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Install k3d
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/install-k3d.sh
+          k3d version
+
+      - name: Create K3d Cluster
+        run: |
+          k3d cluster create btrix-1 \
+            --servers 1 \
+            --agents 1 \
+            -p "443:443@loadbalancer" \
+            --k3s-arg "--disable=traefik,servicelb,metrics-server@server:*" \
+            --wait \
+            --timeout 60s
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
@@ -89,3 +97,8 @@ jobs:
         run: |
           helm uninstall btrix-admin-log
           ./chart/admin/logging/scripts/eck_uninstall.sh
+
+      - name: Cleanup Cluster
+        if: ${{ always() }}
+        run: k3d cluster delete btrix-1
+
