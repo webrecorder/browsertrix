@@ -60,13 +60,15 @@ export class ExclusionEditorDialog extends BtrixElement {
         }
 
         this.dispatchEvent(new CustomEvent("btrix-saved"));
-      } catch (e) {
+      } catch (err) {
+        if (signal.aborted) return;
+
         let error = msg("Sorry, couldn't add exclusion at this time.");
 
-        if (isApiError(e)) {
-          if (e.message === "exclusion_already_exists") {
+        if (isApiError(err)) {
+          if (err.message === "exclusion_already_exists") {
             error = msg("Exclusion already exists");
-          } else if (e.message === "invalid_regex") {
+          } else if (err.message === "invalid_regex") {
             error = msg("Invalid Regex");
           }
         }
@@ -93,10 +95,15 @@ export class ExclusionEditorDialog extends BtrixElement {
         }
 
         this.dispatchEvent(new CustomEvent("btrix-saved"));
-      } catch (e) {
+      } catch (err) {
+        if (signal.aborted) return;
+
         let error = msg("Sorry, couldn't remove exclusion at this time.");
 
-        if (isApiError(e) && e.message === "crawl_running_cant_deactivate") {
+        if (
+          isApiError(err) &&
+          err.message === "crawl_running_cant_deactivate"
+        ) {
           error = msg(
             "Cannot remove exclusion when crawl is no longer running.",
           );
@@ -146,7 +153,7 @@ export class ExclusionEditorDialog extends BtrixElement {
             .crawlId=${this.crawlId}
             .exclusions=${this.exclusions}
             ?isActiveCrawl=${this.activeCrawl}
-            errorMessage=${ifDefined(
+            formErrorMessage=${ifDefined(
               typeof errorMessage === "string" ? errorMessage : undefined,
             )}
             ?submitting=${this.addRuleTask.status === TaskStatus.PENDING}

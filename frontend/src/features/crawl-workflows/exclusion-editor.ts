@@ -1,6 +1,8 @@
 import { localized, msg } from "@lit/localize";
-import { html, unsafeCSS, type PropertyValues } from "lit";
+import { Task, TaskStatus } from "@lit/task";
+import { html, unsafeCSS } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import stylesheet from "./exclusion-editor.stylesheet.css";
 import type {
@@ -61,32 +63,39 @@ export class ExclusionEditor extends BtrixElement {
   submitting?: boolean;
 
   @property({ type: String })
-  errorMessage = "";
+  formErrorMessage = "";
 
   @state()
   /** `new RegExp` constructor string */
   private regex = "";
 
-  @state()
-  matchedURLs: URLs | null = null;
+  private readonly getMatchesTask = new Task(this, {
+    task: async ([crawlId, exclusions, regex], { signal }) => {
+      if (!crawlId || !exclusions || !regex) return null;
 
-  @state()
-  private isLoading = false;
-
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("crawlId")) {
-      void this.fetchQueueMatches();
-    }
-
-    if (changedProperties.has("exclusions") && this.exclusions) {
-      if (this.regex && this.exclusions.includes(this.regex)) {
+      if (regex && exclusions.includes(this.regex)) {
         this.regex = "";
-        this.matchedURLs = null;
+        return null;
       }
-    } else if (changedProperties.has("regex")) {
-      void this.fetchQueueMatches();
-    }
-  }
+
+      try {
+        const { matched } = await this.getQueueMatches(regex, signal);
+
+        return matched;
+      } catch (err) {
+        if (signal.aborted) return;
+
+        console.debug(err);
+
+        if (isApiError(err) && err.message === "invalid_regex") {
+          this.formErrorMessage = msg("Invalid Regex");
+        }
+
+        throw msg("Sorry, couldn't fetch pending exclusions at this time.");
+      }
+    },
+    args: () => [this.crawlId, this.exclusions, this.regex],
+  });
 
   render() {
     return html`
@@ -161,7 +170,7 @@ export class ExclusionEditor extends BtrixElement {
               <btrix-queue-exclusion-form
                 regex=${this.regex}
                 ?isSubmitting=${this.submitting}
-                fieldErrorMessage=${this.errorMessage}
+                fieldErrorMessage=${this.formErrorMessage}
                 @btrix-change=${this.handleRegexChange}
                 @btrix-add=${this.handleAddRegex}
               >
@@ -173,10 +182,18 @@ export class ExclusionEditor extends BtrixElement {
   }
 
   private renderPending() {
+    const errorMessage = this.getMatchesTask.render({
+      error: (errorMessage) => errorMessage,
+    });
+
     return html`
       <btrix-crawl-pending-exclusions
         class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-20 part-[heading]:bg-white part-[heading]:pt-1.5"
-        .matchedURLs=${this.matchedURLs}
+        .matchedURLs=${this.getMatchesTask.value ?? null}
+        ?loading=${this.getMatchesTask.status === TaskStatus.PENDING}
+        errorMessage=${ifDefined(
+          typeof errorMessage === "string" ? errorMessage : undefined,
+        )}
       ></btrix-crawl-pending-exclusions>
     `;
   }
@@ -187,7 +204,7 @@ export class ExclusionEditor extends BtrixElement {
       crawlId=${this.crawlId!}
       regex=${this.regex}
       .exclusions=${this.exclusions || []}
-      matchedTotal=${this.matchedURLs?.length || 0}
+      matchedTotal=${this.getMatchesTask.value?.length || 0}
     ></btrix-crawl-queue>`;
   }
 
@@ -201,42 +218,13 @@ export class ExclusionEditor extends BtrixElement {
     }
   }
 
-  private async fetchQueueMatches() {
-    if (!this.regex) {
-      this.matchedURLs = null;
-      return;
-    }
-
-    this.isLoading = true;
-
-    try {
-      const { matched } = await this.getQueueMatches();
-      this.matchedURLs = matched;
-    } catch (e) {
-      if (isApiError(e) && e.message === "invalid_regex") {
-        this.errorMessage = msg("Invalid Regex");
-      } else {
-        this.notify.toast({
-          message: msg(
-            "Sorry, couldn't fetch pending exclusions at this time.",
-          ),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "exclusion-edit-status",
-        });
-      }
-    }
-
-    this.isLoading = false;
-  }
-
-  private async getQueueMatches() {
-    const regex = this.regex;
+  private async getQueueMatches(regex: string, signal: AbortSignal) {
     const params = new URLSearchParams({ regex });
     const data = await this.api.fetch<ResponseData>(
       `/orgs/${this.orgId}/crawls/${
         this.crawlId
       }/queueMatchAll?${params.toString()}`,
+      { signal },
     );
 
     return data;
