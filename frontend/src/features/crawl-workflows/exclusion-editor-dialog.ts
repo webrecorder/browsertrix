@@ -123,7 +123,7 @@ export class ExclusionEditorDialog extends BtrixElement {
 
     return html`<btrix-dialog
       class="[--body-spacing:0] [--width:--btrix-screen-desktop] part-[body]:flex part-[footer]:flex part-[panel]:h-screen part-[footer]:flex-wrap part-[body]:content-stretch part-[footer]:items-center part-[footer]:justify-end part-[body]:justify-stretch part-[footer]:gap-3 part-[body]:overflow-hidden"
-      .label=${msg("Crawl Queue Editor")}
+      .label=${msg("Edit Exclusions")}
       .open=${this.open}
       @sl-show=${() => (this.visible = true)}
       @sl-after-hide=${() => (this.visible = false)}
@@ -152,7 +152,7 @@ export class ExclusionEditorDialog extends BtrixElement {
           void (e.target as HTMLElement)
             .closest<Dialog>("btrix-dialog")
             ?.hide()}
-        >${msg("Done Editing")}</sl-button
+        >${msg("Done")}</sl-button
       >
     </btrix-dialog>`;
   }
