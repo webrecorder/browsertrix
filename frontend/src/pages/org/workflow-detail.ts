@@ -1952,7 +1952,7 @@ export class WorkflowDetail extends BtrixElement {
 
       <btrix-exclusion-editor-dialog
         crawlId=${ifDefined(this.lastCrawlId || undefined)}
-        .config=${this.workflow?.config}
+        .exclusions=${this.workflow?.config.exclude}
         ?activeCrawl=${this.workflow?.lastCrawlState
           ? isActive({
               state: this.workflow.lastCrawlState,

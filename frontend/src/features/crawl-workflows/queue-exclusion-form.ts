@@ -20,7 +20,6 @@ export type ExclusionChangeEvent = CustomEvent<{
 
 export type ExclusionAddEvent = CustomEvent<{
   regex: string;
-  onSuccess: () => void;
 }>;
 
 const MIN_LENGTH = 2;
@@ -43,8 +42,8 @@ export class QueueExclusionForm extends LiteElement {
   @state()
   private selectValue: Exclusion["type"] = "text";
 
-  @state()
-  private regex = "";
+  @property({ type: String })
+  regex = "";
 
   @state()
   private isRegexInvalid = false;
@@ -55,6 +54,12 @@ export class QueueExclusionForm extends LiteElement {
   async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
+    if (changedProperties.get("regex") && this.regex === "") {
+      if (this.input) {
+        this.input.value = "";
+      }
+    }
+
     if (
       changedProperties.get("selectValue") ||
       (changedProperties.has("regex") &&
@@ -212,24 +217,15 @@ export class QueueExclusionForm extends LiteElement {
     await this.updateComplete;
     if (!this.regex || this.isRegexInvalid) return;
 
-    if (this.input) {
-      this.input.value = "";
-    }
-
     let regex = this.regex;
     if (this.selectValue === "text") {
       regex = regexEscape(this.regex);
     }
 
     this.dispatchEvent(
-      new CustomEvent("btrix-add", {
-        detail: {
-          regex,
-          onSuccess: () => {
-            this.regex = "";
-          },
-        },
-      }) as ExclusionAddEvent,
+      new CustomEvent<ExclusionAddEvent["detail"]>("btrix-add", {
+        detail: { regex },
+      }),
     );
   }
 

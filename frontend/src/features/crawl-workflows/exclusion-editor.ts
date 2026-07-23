@@ -10,13 +10,16 @@ import type {
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type BtrixAddEvent } from "@/events/btrix-add";
 import type { BtrixRemoveEvent } from "@/events/btrix-remove";
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
+import { isNotEqual } from "@/utils/is-not-equal";
 
 const styles = unsafeCSS(stylesheet);
 
 export type RemoveExclusionEvent = BtrixRemoveEvent<string>;
+export type AddExclusionEvent = BtrixAddEvent<string>;
 
 type URLs = string[];
 type ResponseData = {
@@ -37,6 +40,7 @@ type ResponseData = {
  * </btrix-exclusion-editor>
  * ```
  *
+ * @fires btrix-add
  * @fires btrix-remove
  */
 @customElement("btrix-exclusion-editor")
@@ -47,17 +51,17 @@ export class ExclusionEditor extends BtrixElement {
   @property({ type: String })
   crawlId?: string;
 
-  @property({ attribute: false })
-  config?: SeedConfig;
+  @property({ attribute: false, hasChanged: isNotEqual })
+  exclusions?: SeedConfig["exclude"];
 
   @property({ type: Boolean })
   isActiveCrawl = false;
 
-  @state()
-  private isSubmitting = false;
+  @property({ type: Boolean })
+  submitting?: boolean;
 
-  @state()
-  private exclusionFieldErrorMessage = "";
+  @property({ type: String })
+  errorMessage = "";
 
   @state()
   /** `new RegExp` constructor string */
@@ -70,7 +74,16 @@ export class ExclusionEditor extends BtrixElement {
   private isLoading = false;
 
   willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("crawlId") || changedProperties.has("regex")) {
+    if (changedProperties.has("crawlId")) {
+      void this.fetchQueueMatches();
+    }
+
+    if (changedProperties.has("exclusions") && this.exclusions) {
+      if (this.regex && this.exclusions.includes(this.regex)) {
+        this.regex = "";
+        this.matchedURLs = null;
+      }
+    } else if (changedProperties.has("regex")) {
       void this.fetchQueueMatches();
     }
   }
@@ -105,20 +118,20 @@ export class ExclusionEditor extends BtrixElement {
 
   private renderTable() {
     return html`
-      ${this.config
+      ${this.exclusions
         ? html`<btrix-queue-exclusion-table
             pageSize="10"
             ?removable=${this.isActiveCrawl}
-            .exclusions=${this.config.exclude || []}
+            .exclusions=${this.exclusions}
             @btrix-change=${async (e: ExclusionRemoveEvent) => {
               await this.updateComplete;
               const { index, regex } = e.detail;
-              if (this.config?.exclude && index === 0 && !regex) {
+              if (this.exclusions && index === 0 && !regex) {
                 this.dispatchEvent(
                   new CustomEvent<RemoveExclusionEvent["detail"]>(
                     "btrix-remove",
                     {
-                      detail: { item: this.config.exclude[index] },
+                      detail: { item: this.exclusions[index] },
                     },
                   ),
                 );
@@ -146,8 +159,9 @@ export class ExclusionEditor extends BtrixElement {
           >
             <div class="form-wrapper bg-white py-2">
               <btrix-queue-exclusion-form
-                ?isSubmitting=${this.isSubmitting}
-                fieldErrorMessage=${this.exclusionFieldErrorMessage}
+                regex=${this.regex}
+                ?isSubmitting=${this.submitting}
+                fieldErrorMessage=${this.errorMessage}
                 @btrix-change=${this.handleRegexChange}
                 @btrix-add=${this.handleAddRegex}
               >
@@ -172,7 +186,7 @@ export class ExclusionEditor extends BtrixElement {
       class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-10 part-[heading]:block part-[heading]:bg-white part-[heading]:pt-1.5"
       crawlId=${this.crawlId!}
       regex=${this.regex}
-      .exclusions=${this.config?.exclude || []}
+      .exclusions=${this.exclusions || []}
       matchedTotal=${this.matchedURLs?.length || 0}
     ></btrix-crawl-queue>`;
   }
@@ -200,7 +214,7 @@ export class ExclusionEditor extends BtrixElement {
       this.matchedURLs = matched;
     } catch (e) {
       if (isApiError(e) && e.message === "invalid_regex") {
-        this.exclusionFieldErrorMessage = msg("Invalid Regex");
+        this.errorMessage = msg("Invalid Regex");
       } else {
         this.notify.toast({
           message: msg(
@@ -229,71 +243,15 @@ export class ExclusionEditor extends BtrixElement {
   }
 
   async handleAddRegex(e?: ExclusionAddEvent) {
-    this.isSubmitting = true;
+    const regex = e?.detail.regex ?? this.regex;
 
-    let regex = null;
-    let onSuccess = null;
-
-    if (e) {
-      ({ regex, onSuccess } = e.detail);
-    } else {
-      // if not provided, use current regex, if set
-      if (!this.regex) {
-        return;
-      }
-      regex = this.regex;
-    }
-
-    try {
-      const params = new URLSearchParams({ regex });
-      const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${
-          this.crawlId
-        }/exclusions?${params.toString()}`,
-        {
-          method: "POST",
-        },
+    if (regex) {
+      this.dispatchEvent(
+        new CustomEvent<AddExclusionEvent["detail"]>("btrix-add", {
+          detail: { item: regex },
+        }),
       );
-
-      if (data.success) {
-        this.notify.toast({
-          message: msg("Exclusion added."),
-          variant: "success",
-          icon: "check2-circle",
-          id: "exclusion-edit-status",
-        });
-
-        this.regex = "";
-        this.matchedURLs = null;
-        await this.updateComplete;
-
-        if (onSuccess) {
-          onSuccess();
-        }
-        this.dispatchEvent(new CustomEvent("btrix-saved"));
-      } else {
-        throw data;
-      }
-    } catch (e) {
-      if (isApiError(e)) {
-        if (e.message === "exclusion_already_exists") {
-          this.exclusionFieldErrorMessage = msg("Exclusion already exists");
-        } else if (e.message === "invalid_regex") {
-          this.exclusionFieldErrorMessage = msg("Invalid Regex");
-        }
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't add exclusion at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "exclusion-edit-status",
-        });
-      }
-
-      this.dispatchEvent(new CustomEvent("btrix-error"));
     }
-
-    this.isSubmitting = false;
   }
 
   async onClose() {
