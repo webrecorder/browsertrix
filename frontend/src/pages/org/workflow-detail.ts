@@ -24,7 +24,6 @@ import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
-import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
   Action,
@@ -1951,34 +1950,23 @@ export class WorkflowDetail extends BtrixElement {
         `,
       )}
 
-      <btrix-dialog
-        class="[--body-spacing:0] part-[body]:flex part-[panel]:h-screen part-[body]:content-stretch part-[body]:justify-stretch part-[body]:overflow-hidden"
-        .label=${msg("Crawl Queue Editor")}
-        .open=${this.openDialogName === "exclusions"}
-        style=${`--width: var(--btrix-screen-desktop)`}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${this.showDialog}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      <btrix-exclusion-editor-dialog
+        crawlId=${ifDefined(this.lastCrawlId || undefined)}
+        .config=${this.workflow?.config}
+        ?activeCrawl=${this.workflow?.lastCrawlState
+          ? isActive({
+              state: this.workflow.lastCrawlState,
+              stopping: this.workflow.lastCrawlStopping,
+            })
+          : false}
+        ?open=${this.openDialogName === "exclusions"}
+        @sl-hide=${(e: CustomEvent) => {
+          e.stopPropagation();
+          this.openDialogName = undefined;
+        }}
+        @btrix-saved=${this.handleExclusionChange}
       >
-        ${this.workflow && this.isDialogVisible
-          ? html`<btrix-exclusion-editor
-              .crawlId=${this.lastCrawlId ?? undefined}
-              .config=${this.workflow.config}
-              ?isActiveCrawl=${this.workflow.lastCrawlState
-                ? isActive({
-                    state: this.workflow.lastCrawlState,
-                    stopping: this.workflow.lastCrawlStopping,
-                  })
-                : false}
-              @on-success=${this.handleExclusionChange}
-            ></btrix-exclusion-editor>`
-          : ""}
-        <div slot="footer">
-          <sl-button size="small" @click=${this.onCloseExclusions}
-            >${msg("Done Editing")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
+      </btrix-exclusion-editor-dialog>
     `;
   }
 
@@ -2104,14 +2092,6 @@ export class WorkflowDetail extends BtrixElement {
       { signal },
     );
     return data;
-  }
-
-  private async onCloseExclusions() {
-    const editor = this.querySelector("btrix-exclusion-editor");
-    if (editor && editor instanceof ExclusionEditor) {
-      await editor.onClose();
-    }
-    this.openDialogName = undefined;
   }
 
   private async getSeeds(workflowId: string, signal: AbortSignal) {

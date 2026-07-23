@@ -10,10 +10,13 @@ import type {
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { BtrixRemoveEvent } from "@/events/btrix-remove";
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
 
 const styles = unsafeCSS(stylesheet);
+
+export type RemoveExclusionEvent = BtrixRemoveEvent<string>;
 
 type URLs = string[];
 type ResponseData = {
@@ -34,7 +37,7 @@ type ResponseData = {
  * </btrix-exclusion-editor>
  * ```
  *
- * @event on-success On successful edit
+ * @fires btrix-remove
  */
 @customElement("btrix-exclusion-editor")
 @localized()
@@ -111,13 +114,25 @@ export class ExclusionEditor extends BtrixElement {
               await this.updateComplete;
               const { index, regex } = e.detail;
               if (this.config?.exclude && index === 0 && !regex) {
-                void this.deleteExclusion({
-                  regex: this.config.exclude[index],
-                });
+                this.dispatchEvent(
+                  new CustomEvent<RemoveExclusionEvent["detail"]>(
+                    "btrix-remove",
+                    {
+                      detail: { item: this.config.exclude[index] },
+                    },
+                  ),
+                );
               }
             }}
             @btrix-remove=${(e: ExclusionRemoveEvent) =>
-              void this.deleteExclusion({ regex: e.detail.regex })}
+              this.dispatchEvent(
+                new CustomEvent<RemoveExclusionEvent["detail"]>(
+                  "btrix-remove",
+                  {
+                    detail: { item: e.detail.regex },
+                  },
+                ),
+              )}
           >
           </btrix-queue-exclusion-table>`
         : html`
@@ -169,43 +184,6 @@ export class ExclusionEditor extends BtrixElement {
       this.regex = value;
     } else {
       this.regex = "";
-    }
-  }
-
-  private async deleteExclusion({ regex }: { regex: string }) {
-    try {
-      const params = new URLSearchParams({ regex });
-      const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${
-          this.crawlId
-        }/exclusions?${params.toString()}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (data.success) {
-        this.notify.toast({
-          message: msg(html`Removed exclusion: <code>${regex}</code>`),
-          variant: "success",
-          icon: "check2-circle",
-          id: "exclusion-edit-status",
-        });
-
-        this.dispatchEvent(new CustomEvent("on-success"));
-      } else {
-        throw data;
-      }
-    } catch (e) {
-      this.notify.toast({
-        message:
-          isApiError(e) && e.message === "crawl_running_cant_deactivate"
-            ? msg("Cannot remove exclusion when crawl is no longer running.")
-            : msg("Sorry, couldn't remove exclusion at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "exclusion-edit-status",
-      });
     }
   }
 
@@ -292,7 +270,7 @@ export class ExclusionEditor extends BtrixElement {
         if (onSuccess) {
           onSuccess();
         }
-        this.dispatchEvent(new CustomEvent("on-success"));
+        this.dispatchEvent(new CustomEvent("btrix-saved"));
       } else {
         throw data;
       }
@@ -311,6 +289,8 @@ export class ExclusionEditor extends BtrixElement {
           id: "exclusion-edit-status",
         });
       }
+
+      this.dispatchEvent(new CustomEvent("btrix-error"));
     }
 
     this.isSubmitting = false;
