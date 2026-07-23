@@ -3248,6 +3248,7 @@ class BgJobType(StrEnum):
     CLEANUP_SEED_FILES = "cleanup-seed-files"
     UPDATE_COLL_STATS = "update-coll-stats"
     POSTPROCESS_UPLOAD = "postprocess-upload"
+    RETRY_STUCK_UPLOADS = "retry-stuck-uploads"
 
 
 # ============================================================================
@@ -3343,6 +3344,13 @@ class PostProcessUploadJob(BackgroundJob):
 
 
 # ============================================================================
+class RetryStuckUploadsJob(BackgroundJob):
+    """Model for tracking jobs to retry uploads stuck in processing"""
+
+    type: Literal[BgJobType.RETRY_STUCK_UPLOADS] = BgJobType.RETRY_STUCK_UPLOADS
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -3356,6 +3364,7 @@ AnyJob = RootModel[
     | CleanupSeedFilesJob
     | UpdateCollStatsJob
     | PostProcessUploadJob
+    | RetryStuckUploadsJob
 ]
 
 

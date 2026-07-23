@@ -95,6 +95,17 @@ async def main():
             )
             return 1
 
+    if job_type == BgJobType.RETRY_STUCK_UPLOADS:
+        try:
+            await upload_ops.retry_stuck_uploads()
+            return 0
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            crawl_logger.exception(
+                "bg_job_failed",
+            )
+            return 1
+
     # Run job (org-specific)
     if not oid:
         crawl_logger.error(

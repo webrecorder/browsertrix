@@ -123,6 +123,8 @@ data:
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
+  RETRY_STUCK_UPLOADS_CRON_SCHEDULE: "{{ .Values.stuck_uploads_cron_schedule }}"
+
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
   ENABLE_AUTO_RESIZE_INDEX_STORAGE: "{{ .Values.dedupe.enable_auto_resize }}"
