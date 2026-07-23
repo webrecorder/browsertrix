@@ -30,7 +30,7 @@ For a single-machine remote deployment, we recommend using [MicroK8s](https://mi
 
 Another option for a single-machine remote deployment is [k3s](https://k3s.io)
 
-1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--no-deploy traefik` to the `systemd` unit when installing k3s
+1. Install K3s, as suggested in the [local deployment guide](../deploy/local.md). Make sure to **disable traefik** which can be done by adding `--disable traefik` to the `systemd` unit when installing k3s. (Note: in previous versions of k3s, the `--disable` flag was named `--no-deploy`. If upgrading an existing installation, ensure you've updated the `systemd` unit with the new flag.)
 
 2. Install `nginx-ingress` with:
 
