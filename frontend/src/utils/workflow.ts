@@ -11,9 +11,11 @@ import {
   Behavior,
   CrawlerChannelImage,
   ScopeType,
+  type ListWorkflow,
   type Profile,
   type Seed,
   type SeedConfig,
+  type Workflow,
   type WorkflowSettings,
 } from "@/types/crawler";
 import type { OrgData } from "@/types/org";
@@ -123,6 +125,28 @@ export function isPrimarySeedScope(
   scope?: (typeof WorkflowScopeType)[keyof typeof WorkflowScopeType],
 ) {
   return scope !== undefined && WorkflowPrimarySeedScopeSet.has(scope);
+}
+
+/**
+ * Whether crawler has started running and is not expected to stop or pause.
+ */
+export function isRunningNotStopping(workflow: ListWorkflow | Workflow) {
+  return (
+    workflow.isCrawlRunning &&
+    !workflow.lastCrawlStopping &&
+    !workflow.lastCrawlShouldPause
+  );
+}
+
+/**
+ * Whether crawler is actively crawling pages and is not expected to stop or pause.
+ */
+export function isActivelyCrawling(workflow: ListWorkflow | Workflow) {
+  return (
+    isRunningNotStopping(workflow) &&
+    workflow.lastCrawlState &&
+    ["running", "rate-limited"].includes(workflow.lastCrawlState)
+  );
 }
 
 export function makeUserGuideEvent(
