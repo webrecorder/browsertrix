@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timedelta
 
 import structlog
+import yaml
 from fastapi import HTTPException
 
 from .auth import create_custom_jwt_token
@@ -373,30 +374,6 @@ class CrawlManager(K8sAPI):
 
         cron_logger = logger.bind(job_id=job_id, schedule=job_schedule)
 
-        try:
-            cron_job = await self.batch_api.read_namespaced_cron_job(
-                name=job_id,
-                namespace=DEFAULT_NAMESPACE,
-            )
-            if cron_job:
-                cron_logger.info("bg_cron_job_exists")
-
-                if cron_job.spec.schedule != job_schedule:
-                    cron_job.spec.schedule = job_schedule
-
-                    await self.batch_api.patch_namespaced_cron_job(
-                        name=cron_job.metadata.name,
-                        namespace=DEFAULT_NAMESPACE,
-                        body=cron_job,
-                    )
-                    cron_logger.info("bg_cron_job_updated")
-                return
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            pass
-
-        cron_logger.info("bg_cron_job_creating")
-
         params = {
             "id": job_id,
             "job_type": job_type,
@@ -410,6 +387,26 @@ class CrawlManager(K8sAPI):
             params
         )
 
+        try:
+            await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
+        else:
+            # Replace with the freshly rendered cron job so that schedule
+            # and template changes are applied on backend restart
+            cron_logger.info("bg_cron_job_updating")
+            await self.batch_api.replace_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+                body=yaml.safe_load(data),
+            )
+            return
+
+        cron_logger.info("bg_cron_job_creating")
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
     async def create_crawl_job(

@@ -87,9 +87,7 @@ async def test_dispatches_job_when_no_job_exists(upload_ops):
 async def test_skips_upload_with_running_k8s_job(upload_ops):
     """Stuck upload with an existing k8s job is left alone"""
     set_stuck_uploads(upload_ops, [make_upload("upload-abc")])
-    upload_ops.background_job_ops.crawl_manager.has_job = AsyncMock(
-        return_value=True
-    )
+    upload_ops.background_job_ops.crawl_manager.has_job = AsyncMock(return_value=True)
 
     await upload_ops.retry_stuck_uploads()
 
@@ -116,6 +114,34 @@ async def test_redispatches_with_existing_job_id_when_record_exists(upload_ops):
         "upload-abc",
         existing_job_id="postprocess-upload-upload-abc",
     )
+
+
+@pytest.mark.asyncio
+async def test_raises_when_dispatch_fails(upload_ops):
+    """If dispatching fails and no job exists, the run fails loudly"""
+    set_stuck_uploads(upload_ops, [make_upload("upload-abc")])
+    upload_ops.background_job_ops.create_postprocess_upload_job = AsyncMock(
+        return_value=None
+    )
+
+    with pytest.raises(RuntimeError, match="1 stuck upload"):
+        await upload_ops.retry_stuck_uploads()
+
+
+@pytest.mark.asyncio
+async def test_no_raise_when_dispatch_loses_race(upload_ops):
+    """If dispatching returns None but the job now exists, another creator
+    won the race, so not a failure"""
+    set_stuck_uploads(upload_ops, [make_upload("upload-abc")])
+    upload_ops.background_job_ops.create_postprocess_upload_job = AsyncMock(
+        return_value=None
+    )
+    # First call: initial running-job check; second: post-dispatch re-check
+    upload_ops.background_job_ops.crawl_manager.has_job = AsyncMock(
+        side_effect=[False, True]
+    )
+
+    await upload_ops.retry_stuck_uploads()
 
 
 @pytest.mark.asyncio
