@@ -114,10 +114,12 @@ if TYPE_CHECKING:
     from .invites import InviteOps
     from .pages import PageOps
     from .profiles import ProfileOps
+    from .storages import StorageOps
     from .users import UserManager
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = CrawlConfigOps = object
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
+    StorageOps = object
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
@@ -245,6 +247,7 @@ class OrgOps(BaseOrgs):
         page_ops: PageOps,
         file_ops: FileUploadOps,
         crawl_config_ops: CrawlConfigOps,
+        storage_ops: StorageOps,
     ) -> None:
         """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
@@ -255,6 +258,7 @@ class OrgOps(BaseOrgs):
         self.page_ops = page_ops
         self.file_ops = file_ops
         self.crawl_config_ops = crawl_config_ops
+        self.storage_ops = storage_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -572,12 +576,12 @@ class OrgOps(BaseOrgs):
             {"_id": org.id}, {"$set": org.dict(include=include)}
         )
 
-    async def check_all_org_default_storages(self, storage_ops) -> None:
+    async def check_all_org_default_storages(self) -> None:
         """ensure all default storages references by this org actually exist
 
         designed to help prevent removal of a 'storage' entry if
         an org is still referencing that storage"""
-        storage_names = list(storage_ops.default_storages.keys())
+        storage_names = list(self.storage_ops.default_storages.keys())
         errors = 0
 
         async for org_data in self.orgs.find(
@@ -1616,7 +1620,9 @@ class OrgOps(BaseOrgs):
             item_ids = [item["_id"] for item in items]
 
             await self.base_crawl_ops.delete_crawls_all_types(
-                delete_list=DeleteCrawlList(crawl_ids=item_ids), org=org
+                delete_list=DeleteCrawlList(crawl_ids=item_ids),
+                org=org,
+                skip_deleting_replicas=True,
             )
 
             items = await cursor.to_list(length=DEL_ITEMS)
@@ -1637,7 +1643,11 @@ class OrgOps(BaseOrgs):
 
         # Delete profiles
         async for profile in self.profiles_db.find({"oid": org.id}, projection=["_id"]):
-            await self.profile_ops.delete_profile(profile["_id"], org)
+            await self.profile_ops.delete_profile(
+                profile["_id"],
+                org,
+                skip_deleting_replicas=True,
+            )
 
         # Delete collections
         async for coll_raw in self.colls_db.find({"oid": org.id}, projection=["_id"]):
@@ -1665,11 +1675,15 @@ class OrgOps(BaseOrgs):
         await self.invites_db.delete_many({"oid": org.id})
 
         # Delete all background jobs except this one from database,
-        # so that we are left with some record of the org having
-        # existed and successfully deleted
+        # so that all that is left behind in the database is this
+        # job and any delete_org_files jobs that might be spawned
         await self.jobs_db.delete_many(
             {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
+
+        # Launch job to delete files at org prefix from primary storage
+        # and any configured replica locations
+        await self.background_job_ops.create_delete_org_files_jobs(org)
 
         # Delete org last so that if the job fails at any point before
         # this and need to be retried, the org still exists

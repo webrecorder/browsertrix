@@ -905,7 +905,7 @@ def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(valu
 @pytest.mark.parametrize("value", LINE_BREAK_VALUES)
 def test_replica_deletion_cron_job_values_stay_single_scalars(value):
     docs = _render_template(
-        "replica_deletion_cron_job.yaml",
+        "delete_replica_cron_job.yaml",
         {
             "id": value,
             "oid": value,
