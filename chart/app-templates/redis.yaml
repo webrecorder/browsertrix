@@ -128,8 +128,17 @@ spec:
           cpu: {{ cpu }}
           memory: {{ memory }}
 
+      startupProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 60
+        exec:
+          command:
+            - bash
+            - -c
+            - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
+
       readinessProbe:
-        initialDelaySeconds: 10
         timeoutSeconds: 5
         exec:
           command:
@@ -138,7 +147,6 @@ spec:
             - "res=$(redis-cli ping); [[ $res = 'PONG' ]]"
 
       livenessProbe:
-        initialDelaySeconds: 10
         timeoutSeconds: 5
         exec:
           command:
