@@ -575,7 +575,7 @@ class ProfileOps:
         return ""
 
     async def delete_profile(
-        self, profileid: UUID, org: Organization
+        self, profileid: UUID, org: Organization, skip_deleting_replicas: bool = False
     ) -> dict[str, Any]:
         """delete profile, if not used in active crawlconfig"""
         profile = await self.get_profile(profileid, org)
@@ -593,9 +593,10 @@ class ProfileOps:
             await self.orgs.inc_org_bytes_stored(
                 org.id, -profile.resource.size, "profile"
             )
-            await self.background_job_ops.create_delete_replica_jobs(
-                org, profile.resource, str(profile.id), "profile"
-            )
+            if not skip_deleting_replicas:
+                await self.background_job_ops.create_delete_replica_jobs(
+                    org, profile.resource, str(profile.id), "profile"
+                )
 
         res = await self.profiles.delete_one(query)
         if not res or res.deleted_count != 1:

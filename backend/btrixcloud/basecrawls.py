@@ -354,6 +354,7 @@ class BaseCrawlOps:
         delete_list: DeleteCrawlList,
         type_: TYPE_CRAWL_TYPES,
         user: User | None = None,
+        skip_deleting_replicas: bool = False,
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
         cids_to_update: dict[UUID, dict[str, int]] = {}
@@ -402,7 +403,9 @@ class BaseCrawlOps:
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
-            crawl_size, file_failures = await self._delete_crawl_files(crawl, org)
+            crawl_size, file_failures = await self._delete_crawl_files(
+                crawl, org, skip_deleting_replicas
+            )
             size += crawl_size
             all_file_failures.extend(file_failures)
 
@@ -454,7 +457,10 @@ class BaseCrawlOps:
         return res.deleted_count, cids_to_update, quota_reached
 
     async def _delete_crawl_files(
-        self, crawl: BaseCrawl | QARun, org: Organization
+        self,
+        crawl: BaseCrawl | QARun,
+        org: Organization,
+        skip_deleting_replicas: bool = False,
     ) -> tuple[int, list[str]]:
         """Delete files associated with crawl from storage.
 
@@ -481,7 +487,7 @@ class BaseCrawlOps:
 
             # Schedule replica deletion regardless of primary deletion success
             # (replicas may still exist even if primary delete failed)
-            if not isinstance(crawl, QARun):
+            if not isinstance(crawl, QARun) and not skip_deleting_replicas:
                 await self.background_job_ops.create_delete_replica_jobs(
                     org, file_, crawl.id, crawl.type
                 )
@@ -957,6 +963,7 @@ class BaseCrawlOps:
         delete_list: DeleteCrawlList,
         org: Organization,
         user: User | None = None,
+        skip_deleting_replicas: bool = False,
     ) -> dict[str, bool]:
         """Delete uploaded crawls"""
         crawls: list[str] = []
@@ -982,7 +989,7 @@ class BaseCrawlOps:
         if crawls_length:
             crawl_delete_list = DeleteCrawlList(crawl_ids=crawls)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
-                org, crawl_delete_list, "crawl", user
+                org, crawl_delete_list, "crawl", user, skip_deleting_replicas
             )
             deleted_count += deleted
 
@@ -997,7 +1004,7 @@ class BaseCrawlOps:
         if uploads_length:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads)
             deleted, _, quota_reached = await self.delete_crawls(
-                org, upload_delete_list, "upload", user
+                org, upload_delete_list, "upload", user, skip_deleting_replicas
             )
             deleted_count += deleted
 

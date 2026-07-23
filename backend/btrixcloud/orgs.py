@@ -1605,7 +1605,9 @@ class OrgOps(BaseOrgs):
             item_ids = [item["_id"] for item in items]
 
             await self.base_crawl_ops.delete_crawls_all_types(
-                delete_list=DeleteCrawlList(crawl_ids=item_ids), org=org
+                delete_list=DeleteCrawlList(crawl_ids=item_ids),
+                org=org,
+                skip_deleting_replicas=True,
             )
 
             items = await cursor.to_list(length=DEL_ITEMS)
@@ -1626,7 +1628,11 @@ class OrgOps(BaseOrgs):
 
         # Delete profiles
         async for profile in self.profiles_db.find({"oid": org.id}, projection=["_id"]):
-            await self.profile_ops.delete_profile(profile["_id"], org)
+            await self.profile_ops.delete_profile(
+                profile["_id"],
+                org,
+                skip_deleting_replicas=True,
+            )
 
         # Delete collections
         async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
@@ -1653,6 +1659,21 @@ class OrgOps(BaseOrgs):
         await self.jobs_db.delete_many(
             {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
+
+        # TODO: Clear out org storage
+        # - Delete everything at prefix for org in primary storage
+        #   (if we're doing this, maybe just don't do per-file deletion
+        #    anywhere?)
+        # await self.background_job_ops.create_delete_org_primary_storage_job(
+        #     org
+        # )
+
+        # - Make bg jobs to delete everything at prefix for org
+        #   in replica storages (but respect the replica delay deletion)
+        # for replica_storage in replica_storage_locations:
+        #     await self.background_job_ops.create_delete_org_replica_storage_job(
+        #         org, replica_storage
+        #     )
 
         # Delete org last so that if the job fails at any point before
         # this and need to be retried, the org still exists
