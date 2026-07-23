@@ -1,0 +1,13 @@
+/* Only supported in Chrome */
+@container sticky-form not scroll-state(stuck: none) {
+  .form-wrapper {
+    border-top: 1px solid var(--sl-panel-border-color);
+    margin-top: var(--sl-spacing-x-small);
+  }
+}
+
+@container sticky-form scroll-state(stuck: none) {
+  .form-wrapper {
+    border-top: 1px solid transparent;
+  }
+}

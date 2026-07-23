@@ -1,16 +1,19 @@
 import { localized, msg } from "@lit/localize";
-import { type PropertyValues } from "lit";
+import { html, unsafeCSS, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import stylesheet from "./exclusion-editor.stylesheet.css";
 import type {
   ExclusionAddEvent,
   ExclusionChangeEvent,
 } from "./queue-exclusion-form";
 import type { ExclusionRemoveEvent } from "./queue-exclusion-table";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { SeedConfig } from "@/pages/org/types";
 import { isApiError } from "@/utils/api";
-import LiteElement, { html } from "@/utils/LiteElement";
+
+const styles = unsafeCSS(stylesheet);
 
 type URLs = string[];
 type ResponseData = {
@@ -35,7 +38,9 @@ type ResponseData = {
  */
 @customElement("btrix-exclusion-editor")
 @localized()
-export class ExclusionEditor extends LiteElement {
+export class ExclusionEditor extends BtrixElement {
+  static styles = styles;
+
   @property({ type: String })
   crawlId?: string;
 
@@ -69,14 +74,26 @@ export class ExclusionEditor extends LiteElement {
 
   render() {
     return html`
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="col-span-1">${this.renderTable()}</div>
-        <div class="col-span-1">
+      <div
+        class="grid size-full grid-cols-1 overflow-auto lg:grid-cols-2 lg:divide-x lg:overflow-hidden"
+      >
+        <div
+          class="col-span-1 px-4 pt-4 lg:overflow-y-auto lg:overflow-x-hidden"
+        >
+          ${this.renderTable()}
+        </div>
+        <div class="col-span-1 flex flex-col lg:overflow-hidden">
           ${this.isActiveCrawl && this.regex
-            ? html` <section class="mt-5">${this.renderPending()}</section> `
+            ? html`<section
+                class="lg:flex-0 px-4 lg:max-h-[calc(100vh-12rem)] lg:overflow-auto"
+              >
+                ${this.renderPending()}
+              </section>`
             : ""}
           ${this.isActiveCrawl
-            ? html` <section class="mt-5">${this.renderQueue()}</section> `
+            ? html`<section class="px-4 lg:flex-1 lg:overflow-auto">
+                ${this.renderQueue()}
+              </section>`
             : ""}
         </div>
       </div>
@@ -87,6 +104,7 @@ export class ExclusionEditor extends LiteElement {
     return html`
       ${this.config
         ? html`<btrix-queue-exclusion-table
+            pageSize="10"
             ?removable=${this.isActiveCrawl}
             .exclusions=${this.config.exclude || []}
             @btrix-change=${async (e: ExclusionRemoveEvent) => {
@@ -108,14 +126,18 @@ export class ExclusionEditor extends LiteElement {
             </div>
           `}
       ${this.isActiveCrawl
-        ? html`<div class="mt-2">
-            <btrix-queue-exclusion-form
-              ?isSubmitting=${this.isSubmitting}
-              fieldErrorMessage=${this.exclusionFieldErrorMessage}
-              @btrix-change=${this.handleRegexChange}
-              @btrix-add=${this.handleAddRegex}
-            >
-            </btrix-queue-exclusion-form>
+        ? html`<div
+            class="sticky bottom-0 [container-name:sticky-form] [container-type:scroll-state]"
+          >
+            <div class="form-wrapper bg-white py-2">
+              <btrix-queue-exclusion-form
+                ?isSubmitting=${this.isSubmitting}
+                fieldErrorMessage=${this.exclusionFieldErrorMessage}
+                @btrix-change=${this.handleRegexChange}
+                @btrix-add=${this.handleAddRegex}
+              >
+              </btrix-queue-exclusion-form>
+            </div>
           </div>`
         : ""}
     `;
@@ -124,6 +146,7 @@ export class ExclusionEditor extends LiteElement {
   private renderPending() {
     return html`
       <btrix-crawl-pending-exclusions
+        class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-20 part-[heading]:bg-white part-[heading]:pt-1.5"
         .matchedURLs=${this.matchedURLs}
       ></btrix-crawl-pending-exclusions>
     `;
@@ -131,6 +154,7 @@ export class ExclusionEditor extends LiteElement {
 
   private renderQueue() {
     return html`<btrix-crawl-queue
+      class="part-[heading]:sticky part-[heading]:top-0 part-[heading]:z-10 part-[heading]:block part-[heading]:bg-white part-[heading]:pt-1.5"
       crawlId=${this.crawlId!}
       regex=${this.regex}
       .exclusions=${this.config?.exclude || []}
@@ -151,7 +175,7 @@ export class ExclusionEditor extends LiteElement {
   private async deleteExclusion({ regex }: { regex: string }) {
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
@@ -161,7 +185,7 @@ export class ExclusionEditor extends LiteElement {
       );
 
       if (data.success) {
-        this.notify({
+        this.notify.toast({
           message: msg(html`Removed exclusion: <code>${regex}</code>`),
           variant: "success",
           icon: "check2-circle",
@@ -173,7 +197,7 @@ export class ExclusionEditor extends LiteElement {
         throw data;
       }
     } catch (e) {
-      this.notify({
+      this.notify.toast({
         message:
           isApiError(e) && e.message === "crawl_running_cant_deactivate"
             ? msg("Cannot remove exclusion when crawl is no longer running.")
@@ -200,7 +224,7 @@ export class ExclusionEditor extends LiteElement {
       if (isApiError(e) && e.message === "invalid_regex") {
         this.exclusionFieldErrorMessage = msg("Invalid Regex");
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg(
             "Sorry, couldn't fetch pending exclusions at this time.",
           ),
@@ -217,7 +241,7 @@ export class ExclusionEditor extends LiteElement {
   private async getQueueMatches() {
     const regex = this.regex;
     const params = new URLSearchParams({ regex });
-    const data = await this.apiFetch<ResponseData>(
+    const data = await this.api.fetch<ResponseData>(
       `/orgs/${this.orgId}/crawls/${
         this.crawlId
       }/queueMatchAll?${params.toString()}`,
@@ -244,7 +268,7 @@ export class ExclusionEditor extends LiteElement {
 
     try {
       const params = new URLSearchParams({ regex });
-      const data = await this.apiFetch<{ success: boolean }>(
+      const data = await this.api.fetch<{ success: boolean }>(
         `/orgs/${this.orgId}/crawls/${
           this.crawlId
         }/exclusions?${params.toString()}`,
@@ -254,7 +278,7 @@ export class ExclusionEditor extends LiteElement {
       );
 
       if (data.success) {
-        this.notify({
+        this.notify.toast({
           message: msg("Exclusion added."),
           variant: "success",
           icon: "check2-circle",
@@ -280,7 +304,7 @@ export class ExclusionEditor extends LiteElement {
           this.exclusionFieldErrorMessage = msg("Invalid Regex");
         }
       } else {
-        this.notify({
+        this.notify.toast({
           message: msg("Sorry, couldn't add exclusion at this time."),
           variant: "danger",
           icon: "exclamation-octagon",

@@ -31,6 +31,8 @@ const POLL_INTERVAL_SECONDS = 5;
  *   regex="skip-me"
  * ></btrix-crawl-queue>
  * ```
+ *
+ * @cssPart heading
  */
 @customElement("btrix-crawl-queue")
 @localized()
@@ -91,7 +93,10 @@ export class CrawlQueue extends BtrixElement {
 
   render() {
     return html`
-      <btrix-section-heading style="--margin: var(--sl-spacing-small)">
+      <btrix-section-heading
+        part="heading"
+        class="[--margin:--sl-spacing-small]"
+      >
         ${this.renderOffsetControl()} ${this.renderBadge()}
       </btrix-section-heading>
       ${this.renderContent()}

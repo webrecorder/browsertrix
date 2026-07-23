@@ -15,7 +15,7 @@ import { when } from "lit/directives/when.js";
 import type { Exclusion } from "./queue-exclusion-form";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 import type { SeedConfig } from "@/pages/org/types";
 import { regexEscape, regexUnescape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
@@ -69,7 +69,7 @@ export class QueueExclusionTable extends TailwindElement {
 
   // TODO switch to LitElement & slotted label
   @property({ type: String })
-  label = msg("Exclusions");
+  label = msg("Exclusion Rules");
   @property({ type: String })
   labelClassName?: string;
 
@@ -86,7 +86,7 @@ export class QueueExclusionTable extends TailwindElement {
   private results: Exclusion[] = [];
 
   @state()
-  private page = parsePage(new URLSearchParams(location.search).get("page"));
+  private page = 1;
 
   @state()
   private exclusionToRemove?: string;
@@ -171,6 +171,7 @@ export class QueueExclusionTable extends TailwindElement {
                     size=${this.pageSize}
                     totalCount=${this.total}
                     compact
+                    disablePersist
                     @page-change=${(e: PageChangeEvent) => {
                       this.page = e.detail.page;
                     }}

@@ -3,7 +3,7 @@ import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { type PageChangeEvent } from "@/components/ui/pagination";
 
 type URLs = string[];
 
@@ -16,6 +16,8 @@ type URLs = string[];
  *   .matchedURLs=${this.matchedURLs}
  * ></btrix-crawl-pending-exclusions>
  * ```
+ *
+ * @cssPart heading
  */
 @customElement("btrix-crawl-pending-exclusions")
 @localized()
@@ -24,7 +26,7 @@ export class CrawlPendingExclusions extends BtrixElement {
   matchedURLs: URLs | null = null;
 
   @state()
-  private page = parsePage(new URLSearchParams(location.search).get("page"));
+  private page = 1;
 
   private get pageSize() {
     return 10;
@@ -45,24 +47,30 @@ export class CrawlPendingExclusions extends BtrixElement {
 
   render() {
     return html`
-      <btrix-section-heading style="--margin: var(--sl-spacing-small)">
-        <div class="flex w-full items-center justify-between">
-          <div>${msg("Pending Exclusions")} ${this.renderBadge()}</div>
-          ${this.total && this.total > this.pageSize
-            ? html`<btrix-pagination
-                page=${this.page}
-                size=${this.pageSize}
-                totalCount=${this.total}
-                compact
-                @page-change=${(e: PageChangeEvent) => {
-                  this.page = e.detail.page;
-                }}
-              >
-              </btrix-pagination>`
-            : ""}
+      <btrix-details
+        class="[--margin-bottom:--sl-spacing-small]"
+        exportparts="summary:heading"
+        open
+      >
+        <div slot="title">
+          ${msg("Pending Exclusions")} ${this.renderBadge()}
         </div>
-      </btrix-section-heading>
-      ${this.renderContent()}
+        ${this.total && this.total > this.pageSize
+          ? html`<btrix-pagination
+              slot="summary-description"
+              page=${this.page}
+              size=${this.pageSize}
+              totalCount=${this.total}
+              compact
+              disablePersist
+              @page-change=${(e: PageChangeEvent) => {
+                this.page = e.detail.page;
+              }}
+            >
+            </btrix-pagination>`
+          : ""}
+        ${this.renderContent()}
+      </btrix-details>
     `;
   }
 
@@ -82,7 +90,7 @@ export class CrawlPendingExclusions extends BtrixElement {
 
   private renderContent() {
     if (!this.total) {
-      return html`<p class="px-5 text-sm text-neutral-400">
+      return html`<p class="pb-5 text-neutral-400">
         ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
           : msg(
