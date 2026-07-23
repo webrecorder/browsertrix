@@ -1,7 +1,7 @@
 import { localized, msg } from "@lit/localize";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
+import { map } from "lit/directives/map.js";
 
 import { type RemoveExclusionEvent } from "./exclusion-editor";
 
@@ -35,7 +35,7 @@ export class ExclusionEditorDialog extends BtrixElement {
   private visible = false;
 
   @state()
-  private removed = 0;
+  private removed = new Set<string>();
 
   render() {
     return html`<btrix-dialog
@@ -54,20 +54,26 @@ export class ExclusionEditorDialog extends BtrixElement {
               void this.deleteExclusion({ regex: e.detail.item })}
           ></btrix-exclusion-editor>`
         : nothing}
-      ${when(
-        this.removed,
-        (removed) =>
-          html`<div slot="footer" class="flex items-center gap-1.5">
-            <sl-icon
-              name="check-lg"
-              class="text-base text-success-500"
-            ></sl-icon>
-            <span class="text-neutral-600"
-              >${msg("Removed")} ${this.localize.number(removed)}
-              ${pluralOf("exclusions", removed)}</span
-            >
-          </div>`,
-      )}
+      ${this.removed.size
+        ? html`<btrix-popover slot="footer">
+            <ul slot="content" class="list-disc px-2">
+              ${map(
+                this.removed,
+                (value) => html`<li class="font-mono">${value}</li>`,
+              )}
+            </ul>
+            <div class="flex cursor-default items-center gap-1.5">
+              <sl-icon
+                name="check-lg"
+                class="text-base text-success-500"
+              ></sl-icon>
+              <span class="text-neutral-600"
+                >${msg("Removed")} ${this.localize.number(this.removed.size)}
+                ${pluralOf("exclusions", this.removed.size)}</span
+              >
+            </div>
+          </btrix-popover>`
+        : nothing}
       <sl-button
         slot="footer"
         size="small"
@@ -93,7 +99,7 @@ export class ExclusionEditorDialog extends BtrixElement {
       );
 
       if (data.success) {
-        this.removed = this.removed + 1;
+        this.removed = this.removed.add(regex);
 
         this.dispatchEvent(new CustomEvent("btrix-saved"));
       } else {
