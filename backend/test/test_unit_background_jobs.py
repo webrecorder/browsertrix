@@ -2,9 +2,11 @@
 
 import uuid
 from datetime import UTC, datetime, timezone
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from kubernetes_asyncio.client.exceptions import ApiException
+from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 
 from btrixcloud.background_jobs import BackgroundJobOps
 from btrixcloud.models import (
@@ -112,3 +114,42 @@ def test_unknown_type_raises(bg_job_ops):
 
     with pytest.raises(ValueError, match="Unhandled background job type"):
         bg_job_ops._get_job_by_type_from_data(data)
+
+
+@pytest.mark.asyncio
+async def test_postprocess_upload_job_conflict_treated_as_success(bg_job_ops):
+    """A 409 conflict on job creation means the job already exists and will
+    do the work - return the job id rather than failing"""
+    bg_job_ops.crawl_manager.run_postprocess_upload_job = AsyncMock(
+        side_effect=FailToCreateError([ApiException(status=409)])
+    )
+
+    oid = uuid.uuid4()
+    crawl_id = "upload-test-crawl"
+
+    # Fresh dispatch: returns the deterministic job id
+    job_id = await bg_job_ops.create_postprocess_upload_job(oid, crawl_id)
+    assert job_id == f"postprocess-upload-{crawl_id}"
+
+    # Retry dispatch: returns the existing job id
+    existing = f"postprocess-upload-{crawl_id}"
+    job_id = await bg_job_ops.create_postprocess_upload_job(
+        oid, crawl_id, existing_job_id=existing
+    )
+    assert job_id == existing
+
+    # The winning creator owns the database record - we must not touch it
+    bg_job_ops.jobs.find_one_and_update.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_postprocess_upload_job_other_create_failure_returns_none(bg_job_ops):
+    """A non-conflict creation failure still returns None"""
+    bg_job_ops.crawl_manager.run_postprocess_upload_job = AsyncMock(
+        side_effect=FailToCreateError([ApiException(status=500)])
+    )
+
+    job_id = await bg_job_ops.create_postprocess_upload_job(
+        uuid.uuid4(), "upload-test-crawl"
+    )
+    assert job_id is None

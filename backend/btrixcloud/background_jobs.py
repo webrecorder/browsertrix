@@ -10,6 +10,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
+from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 
 from .crawlmanager import CrawlManager
 from .models import (
@@ -613,6 +614,18 @@ class BackgroundJobOps:
             )
 
             return job_id
+        except FailToCreateError as exc:
+            # If the job already exists (e.g. it was dispatched concurrently
+            # by the stuck-upload cron job), the existing job will do the
+            # work, so treat this as success. The winning creator owns the
+            # database record, so there's nothing to update here.
+            if any(e.status == 409 for e in exc.api_exceptions):
+                pp_logger.warning("postprocess_upload_job_already_exists")
+                return existing_job_id or f"postprocess-upload-{crawl_id}"
+            pp_logger.exception(
+                "postprocess_upload_job_failed",
+            )
+            return None
         # pylint: disable=broad-exception-caught
         except Exception:
             pp_logger.exception(
