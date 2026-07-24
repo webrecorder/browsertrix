@@ -78,3 +78,9 @@ Workflow runs may be automatically paused, stopped, or skipped due to an enforce
 | **Storage Quota Reached** | Disk space allocated for the org is full. |
 | **Time Quota Reached** | All execution time allocated for the org has been spent. |
 | **Crawling Disabled** | Crawling has been disabled for the entire org. |
+
+## Crawl Run History
+
+A list of all crawl runs are shown in the **Crawls** section of the workflow. Selecting the latest crawl run will take you to the **[Watch](running-crawl.md#watch-crawl)** section of the workflow. Selecting a finished crawl will take you to an overview of the archived item where you can review and replay the crawl.
+
+To delete a crawl run and its associated archived item, select the :bootstrap-three-dots-vertical: action menu button in the row that the crawl is displayed and choose _Delete Crawl_. The crawl run and archived item will be permanently deleted from the organization and will no longer be visible in workflows or collections.
