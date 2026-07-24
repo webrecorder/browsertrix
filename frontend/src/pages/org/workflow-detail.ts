@@ -1962,7 +1962,6 @@ export class WorkflowDetail extends BtrixElement {
       >
         ${this.workflow && this.isDialogVisible
           ? html`<btrix-exclusion-editor
-              class="block w-full overflow-hidden"
               .crawlId=${this.lastCrawlId ?? undefined}
               .config=${this.workflow.config}
               ?isActiveCrawl=${this.workflow.lastCrawlState

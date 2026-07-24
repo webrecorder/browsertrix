@@ -4,6 +4,7 @@ import type {
   SlInput,
   SlInputEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -11,9 +12,10 @@ import throttle from "lodash/fp/throttle";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { IntersectEvent } from "@/controllers/observable";
+import { tw } from "@/utils/tailwind";
 
 type Pages = string[];
-type ResponseData = {
+export type ResponseData = {
   total: number;
   results: Pages;
   matched: Pages;
@@ -174,30 +176,23 @@ export class CrawlQueue extends BtrixElement {
     }
 
     return html`
-      <btrix-numbered-list class="break-all text-xs" aria-live="polite">
-        ${this.queue.results.map((url, idx) => {
-          const isMatch = this.queue!.matched.some((v) => v === url);
-          const isExcluded = !isMatch && this.isExcluded(url);
-          return html`
-            <btrix-numbered-list-item>
-              <span class="${isMatch ? "text-red-600" : ""}" slot="marker">
-                ${this.localize.number(idx + this.pageOffset + 1)}.
-              </span>
-              <a
-                class="${isMatch
-                  ? "text-red-500 hover:text-red-400"
-                  : isExcluded
-                    ? "text-gray-500 hover:text-gray-400 line-through"
-                    : "text-blue-500 hover:text-blue-400"}"
-                href=${url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                >${url}</a
-              >
-            </btrix-numbered-list-item>
-          `;
-        })}
-      </btrix-numbered-list>
+      <btrix-url-list
+        class=${clsx(
+          tw`part-[row-match]:[--btrix-row-bg-color:--sl-color-danger-100] part-[row-match]:[--btrix-row-hover-bg-color:--sl-color-danger-200] part-[row-match]:[--btrix-row-hover-border-color:--sl-color-danger-300]`,
+          tw`part-[order-match]:text-danger part-[order-exclude]:opacity-60`,
+          tw`part-[url-exclude]:line-through part-[url-exclude]:opacity-60`,
+        )}
+        .urls=${this.queue.results}
+        offset=${this.pageOffset + 1}
+        .includeUrl=${(url: string) =>
+          this.queue?.matched.some((v) => v === url) || false}
+        .excludeUrl=${this.isExcluded}
+        aria-live="polite"
+        ordered
+        border
+        highlight
+        animateChange
+      ></btrix-url-list>
 
       <footer class="text-center">
         ${when(
@@ -281,7 +276,7 @@ export class CrawlQueue extends BtrixElement {
     }
   }
 
-  isExcluded(url: string) {
+  private readonly isExcluded = (url: string) => {
     for (const rx of this.exclusionsRx) {
       if (rx.test(url)) {
         return true;
@@ -289,7 +284,7 @@ export class CrawlQueue extends BtrixElement {
     }
 
     return false;
-  }
+  };
 
   private async getQueue(): Promise<ResponseData> {
     const count = this.pageSize.toString();

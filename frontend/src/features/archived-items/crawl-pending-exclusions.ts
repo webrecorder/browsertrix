@@ -100,24 +100,14 @@ export class CrawlPendingExclusions extends BtrixElement {
     }
 
     return html`
-      <btrix-numbered-list class="break-all text-xs" aria-live="polite">
-        ${this.pageResults.map(
-          (url, idx) => html`
-            <btrix-numbered-list-item>
-              <span class="text-red-600" slot="marker"
-                >${idx + 1 + (this.page - 1) * this.pageSize}.</span
-              >
-              <a
-                class="text-red-600 hover:text-red-500"
-                href=${url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                >${url}</a
-              >
-            </btrix-numbered-list-item>
-          `,
-        )}
-      </btrix-numbered-list>
+      <btrix-url-list
+        .urls=${this.pageResults}
+        offset=${1 + (this.page - 1) * this.pageSize}
+        aria-live="polite"
+        ordered
+        border
+        highlight
+      ></btrix-url-list>
     `;
   }
 }
