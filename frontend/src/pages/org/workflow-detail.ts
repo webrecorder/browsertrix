@@ -2,7 +2,6 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -1146,6 +1145,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
+    const showReplay = !this.isRunning;
+
     return html`
       <section>
         <div
@@ -1187,25 +1188,6 @@ export class WorkflowDetail extends BtrixElement {
           </div>
         </div>
 
-        ${when(
-          this.workflow?.isCrawlRunning,
-          () =>
-            html`<div class="mb-4">
-              <btrix-alert variant="success">
-                ${this.isRunning
-                  ? msg("Workflow crawl is currently in progress.")
-                  : msg("This workflow has an active crawl.")}
-                <a
-                  href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-                  class="underline hover:no-underline"
-                  @click=${this.navigate.link}
-                >
-                  ${this.isRunning ? msg("Watch Crawl") : msg("View Crawl")}
-                </a>
-              </btrix-alert>
-            </div>`,
-        )}
-
         <div class="mx-2">
           <btrix-crawl-list workflowId=${this.workflowId}>
             ${when(
@@ -1214,14 +1196,9 @@ export class WorkflowDetail extends BtrixElement {
                 crawls.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      class=${clsx(
-                        isActive(crawl) && tw`cursor-default text-neutral-500`,
-                      )}
-                      href=${ifDefined(
-                        isActive(crawl)
-                          ? undefined
-                          : `${this.basePath}/crawls/${crawl.id}`,
-                      )}
+                      href="${this.basePath}/${isActive(crawl) && !showReplay
+                        ? WorkflowTab.LatestCrawl
+                        : `${WorkflowTab.Crawls}/${crawl.id}`}"
                       .crawl=${crawl}
                     >
                       <sl-menu slot="menu">
