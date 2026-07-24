@@ -2,7 +2,6 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -1132,7 +1131,10 @@ export class WorkflowDetail extends BtrixElement {
     renderContent: (workflow: Workflow) => TemplateResult | string | number,
   ) {
     return html`
-      <btrix-desc-list-item label=${label}>
+      <btrix-desc-list-item
+        label=${label}
+        ?live=${this.workflow?.isCrawlRunning}
+      >
         ${when(
           this.workflow,
           renderContent,
@@ -1143,6 +1145,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
+    const showReplay = !this.isRunning;
+
     return html`
       <section>
         <div
@@ -1184,25 +1188,6 @@ export class WorkflowDetail extends BtrixElement {
           </div>
         </div>
 
-        ${when(
-          this.workflow?.isCrawlRunning,
-          () =>
-            html`<div class="mb-4">
-              <btrix-alert variant="success">
-                ${this.isRunning
-                  ? msg("Workflow crawl is currently in progress.")
-                  : msg("This workflow has an active crawl.")}
-                <a
-                  href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-                  class="underline hover:no-underline"
-                  @click=${this.navigate.link}
-                >
-                  ${this.isRunning ? msg("Watch Crawl") : msg("View Crawl")}
-                </a>
-              </btrix-alert>
-            </div>`,
-        )}
-
         <div class="mx-2">
           <btrix-crawl-list workflowId=${this.workflowId}>
             ${when(
@@ -1211,14 +1196,9 @@ export class WorkflowDetail extends BtrixElement {
                 crawls.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      class=${clsx(
-                        isActive(crawl) && tw`cursor-default text-neutral-500`,
-                      )}
-                      href=${ifDefined(
-                        isActive(crawl)
-                          ? undefined
-                          : `${this.basePath}/crawls/${crawl.id}`,
-                      )}
+                      href="${this.basePath}/${isActive(crawl) && !showReplay
+                        ? WorkflowTab.LatestCrawl
+                        : `${WorkflowTab.Crawls}/${crawl.id}`}"
                       .crawl=${crawl}
                     >
                       <sl-menu slot="menu">
@@ -1602,33 +1582,26 @@ export class WorkflowDetail extends BtrixElement {
       });
     };
 
-    const pages = (workflow: Workflow) => {
+    const crawledPages = (workflow: Workflow) => {
       if (!latestCrawl) return skeleton;
 
       if (workflow.isCrawlRunning) {
-        return [
-          this.localize.number(+(latestCrawl.stats?.done || 0)),
-          this.localize.number(+(latestCrawl.stats?.found || 0)),
-        ].join(` ${msg("of")} `);
+        return this.localize.number(+(latestCrawl.stats?.done || 0));
       }
 
       return this.localize.number(latestCrawl.pageCount || 0);
     };
 
+    const foundPages = () => {
+      if (!latestCrawl) return skeleton;
+
+      const found = +(latestCrawl.stats?.found || 0);
+
+      return this.localize.number(found);
+    };
+
     const qa = (workflow: Workflow) => {
       if (!latestCrawl) return html`<sl-skeleton class="w-24"></sl-skeleton>`;
-
-      if (workflow.isCrawlRunning) {
-        return html`<span class="text-neutral-400">
-          ${noData}
-          <btrix-popover
-            content=${msg("QA will be enabled once this crawl is complete.")}
-            distance="12"
-          >
-            <sl-icon name="question-circle"></sl-icon>
-          </btrix-popover>
-        </span>`;
-      }
 
       if (!isSuccessfullyFinished({ state: workflow.lastCrawlState })) {
         return notApplicable;
@@ -1675,13 +1648,18 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : execTime(),
         )}
-        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
+        ${this.renderDetailItem(msg("Pages Crawled"), crawledPages)}
+        ${this.workflow && this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("Pages Found"), foundPages)
+          : nothing}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
           }),
         )}
-        ${this.renderDetailItem(msg("QA Rating"), qa)}
+        ${this.workflow && !this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("QA Rating"), qa)
+          : nothing}
       </btrix-desc-list>
     `;
   };
