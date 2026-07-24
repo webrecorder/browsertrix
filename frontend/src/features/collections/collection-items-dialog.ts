@@ -330,8 +330,7 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
-      class="part-[title]:overflow-hidden"
-      style="--width: calc(var(--btrix-screen-desktop) - 3.5rem); --body-spacing: 0;"
+      class="[--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)] part-[title]:overflow-hidden"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
@@ -345,9 +344,6 @@ export class CollectionItemsDialog extends BtrixElement {
         ${when(this.isReady, this.renderContent)}
       </div>
       <div slot="footer" class="flex items-center justify-end gap-3">
-        <sl-button class="mr-auto" size="small" @click=${() => this.close()}
-          >${msg("Cancel")}</sl-button
-        >
         ${this.renderSave()}
       </div>
     </btrix-dialog>`;
@@ -991,6 +987,15 @@ export class CollectionItemsDialog extends BtrixElement {
     };
 
     return html`
+      ${hasChange
+        ? html`<sl-button
+            class="mr-auto"
+            size="small"
+            @click=${() => this.close()}
+            >${msg("Cancel")}</sl-button
+          >`
+        : nothing}
+
       <div class="inline-flex items-center gap-1.5 text-warning">
         <span>${selectionMessage}</span>
         ${this.renderDependencyWarning()}
@@ -1020,7 +1025,7 @@ export class CollectionItemsDialog extends BtrixElement {
         </div>
 
         <sl-button
-          variant="primary"
+          variant=${hasChange ? "primary" : "default"}
           size="small"
           ?disabled=${this.isSubmitting}
           ?loading=${this.isSubmitting}

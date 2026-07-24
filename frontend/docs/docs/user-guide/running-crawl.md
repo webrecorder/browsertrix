@@ -12,9 +12,9 @@ You can watch the current state of the browser windows as the crawler visits pag
 
 ## Live Exclusion Editing
 
-While [exclusions](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
+While [exclusion rules](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
 
-If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
+If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusion Rules_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
 
 Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
 

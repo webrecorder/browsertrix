@@ -12,6 +12,7 @@ import { WorkflowTab } from "@/routes";
 import type { Crawl, ListWorkflow, Workflow } from "@/types/crawler";
 import { isNotFailed, isPaused, isSuccessfullyFinished } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
+import { isActivelyCrawling, isRunningNotStopping } from "@/utils/workflow";
 
 @customElement("btrix-workflow-action-menu")
 @localized()
@@ -42,11 +43,8 @@ export class WorkflowActionMenu extends BtrixElement {
     const canCrawl = this.appState.isCrawler;
     const archivingDisabled = isArchivingDisabled(this.org, true);
     const paused = isPaused(workflow.lastCrawlState || "");
-    const crawling =
-      workflow.isCrawlRunning &&
-      !workflow.lastCrawlStopping &&
-      !workflow.lastCrawlShouldPause &&
-      workflow.lastCrawlState === "running";
+    const running = isRunningNotStopping(workflow) && !this.cancelingRun;
+    const crawling = isActivelyCrawling(workflow);
 
     return html`<sl-menu
       @sl-select=${(e: SlSelectEvent) => {
@@ -130,9 +128,7 @@ export class WorkflowActionMenu extends BtrixElement {
         canCrawl,
         () =>
           html`${when(
-              workflow.isCrawlRunning &&
-                !workflow.lastCrawlStopping &&
-                !this.cancelingRun,
+              running,
               () => html`
                 <sl-menu-item data-action=${Action.EditBrowserWindows}>
                   <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
@@ -140,10 +136,10 @@ export class WorkflowActionMenu extends BtrixElement {
                 </sl-menu-item>
                 <sl-menu-item
                   data-action=${Action.EditExclusions}
-                  ?disabled=${!crawling && !paused}
+                  ?disabled=${!crawling}
                 >
-                  <sl-icon name="table" slot="prefix"></sl-icon>
-                  ${msg("Edit Exclusions")}
+                  <sl-icon name="file-earmark-diff" slot="prefix"></sl-icon>
+                  ${msg("Edit Exclusion Rules")}
                 </sl-menu-item>
               `,
             )}

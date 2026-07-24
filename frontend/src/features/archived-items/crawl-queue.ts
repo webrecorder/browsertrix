@@ -268,7 +268,7 @@ export class CrawlQueue extends BtrixElement {
       }
 
       this.notify.toast({
-        message: msg("Sorry, couldn't fetch crawl queue at this time."),
+        message: msg("Sorry, couldn't fetch page queue at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "crawl-queue-status",

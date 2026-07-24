@@ -9,6 +9,7 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { type ListWorkflow, type Seed, type Workflow } from "./types";
+import { EDIT_DIALOG_PARAM_NAME, EditDialogValues } from "./workflow-detail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -718,10 +719,7 @@ export class WorkflowsList extends BtrixElement {
               break;
             case Action.EditExclusions:
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
-                {
-                  dialog: "exclusions",
-                },
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}?${new URLSearchParams({ [EDIT_DIALOG_PARAM_NAME]: EditDialogValues.Exclusions }).toString()}`,
               );
               break;
             case Action.Duplicate:

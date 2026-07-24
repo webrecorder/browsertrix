@@ -25,6 +25,12 @@ export class CrawlPendingExclusions extends BtrixElement {
   @property({ type: Array })
   matchedURLs: URLs | null = null;
 
+  @property({ type: Boolean })
+  loading?: boolean;
+
+  @property({ type: String })
+  errorMessage?: string;
+
   @state()
   private page = 1;
 
@@ -89,7 +95,11 @@ export class CrawlPendingExclusions extends BtrixElement {
   }
 
   private renderContent() {
-    if (!this.total) {
+    if (this.errorMessage) {
+      return html`<p class="pb-5 text-danger">${this.errorMessage}</p>`;
+    }
+
+    if (!this.loading && !this.total) {
       return html`<p class="pb-5 text-neutral-400">
         ${this.matchedURLs
           ? msg("No matching URLs found in queue.")
