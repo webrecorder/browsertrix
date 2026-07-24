@@ -1618,18 +1618,6 @@ export class WorkflowDetail extends BtrixElement {
     const qa = (workflow: Workflow) => {
       if (!latestCrawl) return html`<sl-skeleton class="w-24"></sl-skeleton>`;
 
-      if (workflow.isCrawlRunning) {
-        return html`<span class="text-neutral-400">
-          ${noData}
-          <btrix-popover
-            content=${msg("QA will be enabled once this crawl is complete.")}
-            distance="12"
-          >
-            <sl-icon name="question-circle"></sl-icon>
-          </btrix-popover>
-        </span>`;
-      }
-
       if (!isSuccessfullyFinished({ state: workflow.lastCrawlState })) {
         return notApplicable;
       }
@@ -1681,7 +1669,9 @@ export class WorkflowDetail extends BtrixElement {
             unitDisplay: "narrow",
           }),
         )}
-        ${this.renderDetailItem(msg("QA Rating"), qa)}
+        ${this.workflow && !this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("QA Rating"), qa)
+          : nothing}
       </btrix-desc-list>
     `;
   };
