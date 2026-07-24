@@ -533,32 +533,6 @@ const plurals = {
       id: "levels.plural.other",
     }),
   },
-  exclusions: {
-    zero: msg("exclusions", {
-      desc: 'plural form of "exclusion" for zero exclusions',
-      id: "exclusions.plural.zero",
-    }),
-    one: msg("exclusion", {
-      desc: 'singular form for "exclusion"',
-      id: "exclusions.plural.one",
-    }),
-    two: msg("exclusions", {
-      desc: 'plural form of "exclusion" for two exclusions',
-      id: "exclusions.plural.two",
-    }),
-    few: msg("exclusions", {
-      desc: 'plural form of "exclusion" for few exclusions',
-      id: "exclusions.plural.few",
-    }),
-    many: msg("exclusions", {
-      desc: 'plural form of "exclusion" for many exclusions',
-      id: "exclusions.plural.many",
-    }),
-    other: msg("exclusions", {
-      desc: 'plural form of "exclusion" for multiple/other exclusions',
-      id: "exclusions.plural.other",
-    }),
-  },
 };
 
 /**

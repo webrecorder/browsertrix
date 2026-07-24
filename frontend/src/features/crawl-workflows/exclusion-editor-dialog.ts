@@ -13,10 +13,11 @@ import {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { textSeparator } from "@/layouts/separator";
+import { pluralOfAddedExclusionRules } from "@/plurals/added-exclusion-rules";
+import { pluralOfRemovedExclusionRules } from "@/plurals/removed-exclusion-rules";
 import type { SeedConfig } from "@/types/crawler";
 import { isApiError } from "@/utils/api";
 import { isNotEqual } from "@/utils/is-not-equal";
-import { pluralOf } from "@/utils/pluralize";
 
 /**
  * @fires btrix-saved
@@ -121,6 +122,13 @@ export class ExclusionEditorDialog extends BtrixElement {
     if (changedProperties.has("open")) {
       this.visible = this.open;
     }
+
+    if (changedProperties.get("visible")) {
+      if (!this.visible) {
+        this.added = new Set();
+        this.removed = new Set();
+      }
+    }
   }
 
   render() {
@@ -198,22 +206,14 @@ export class ExclusionEditorDialog extends BtrixElement {
         ${added.size
           ? html`<btrix-popover>
               ${list(added)}
-              <span
-                >${msg("Added")} ${this.localize.number(added.size)}
-                ${added.size && removed.size
-                  ? nothing
-                  : pluralOf("exclusions", added.size)}</span
-              >
+              <span>${pluralOfAddedExclusionRules(added.size)}</span>
             </btrix-popover>`
           : nothing}
         ${added.size && removed.size ? textSeparator() : nothing}
         ${removed.size
           ? html`<btrix-popover>
               ${list(removed)}
-              <span
-                >${msg("Removed")} ${this.localize.number(removed.size)}
-                ${pluralOf("exclusions", removed.size)}</span
-              >
+              <span>${pluralOfRemovedExclusionRules(removed.size)}</span>
             </btrix-popover>`
           : nothing}
       </div>
