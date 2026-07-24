@@ -1605,7 +1605,7 @@ export class WorkflowDetail extends BtrixElement {
       });
     };
 
-    const pages = (workflow: Workflow) => {
+    const crawledPages = (workflow: Workflow) => {
       if (!latestCrawl) return skeleton;
 
       if (workflow.isCrawlRunning) {
@@ -1615,10 +1615,12 @@ export class WorkflowDetail extends BtrixElement {
       return this.localize.number(latestCrawl.pageCount || 0);
     };
 
-    const queuedPages = () => {
+    const foundPages = () => {
       if (!latestCrawl) return skeleton;
 
-      return this.localize.number(+(latestCrawl.stats?.found || 0));
+      const found = +(latestCrawl.stats?.found || 0);
+
+      return this.localize.number(found);
     };
 
     const qa = (workflow: Workflow) => {
@@ -1669,9 +1671,9 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : execTime(),
         )}
-        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
+        ${this.renderDetailItem(msg("Pages Crawled"), crawledPages)}
         ${this.workflow && this.workflow.isCrawlRunning
-          ? this.renderDetailItem(msg("Pages Queued"), queuedPages)
+          ? this.renderDetailItem(msg("Pages Found"), foundPages)
           : nothing}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {

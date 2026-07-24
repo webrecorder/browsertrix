@@ -61,14 +61,13 @@ export class CrawlList extends TailwindElement {
   render() {
     const columns = [
       "min-content [clickable-start]",
-      this.workflowId ? undefined : "minmax(22ch, 36ch)", // Name
-      "minmax(min-content, 22ch)", // Started
-      "minmax(min-content, 22ch)", // Finished
+      this.workflowId ? undefined : "minmax(24ch, 40ch)", // Name
+      "minmax(min-content, 24ch)", // Started
+      "minmax(min-content, 24ch)", // Finished
       "1fr", // Execution time
       "1fr", // Pages
       "1fr", // Size
-      "[clickable-end] minmax(max-content, 20ch)", // Run by
-      "min-content",
+      "[clickable-end] min-content", // Actions
     ]
       .filter((v) => v)
       .join(" ");
@@ -89,19 +88,16 @@ export class CrawlList extends TailwindElement {
                   ${msg("Name")}
                 </btrix-table-header-cell>
               `}
+          <btrix-table-header-cell>${msg("Started")}</btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Date Started")}
-          </btrix-table-header-cell>
-          <btrix-table-header-cell>
-            ${msg("Date Finished")}
+            ${msg("Finished")}
           </btrix-table-header-cell>
           <btrix-table-header-cell title=${msg("Execution Time")}
             >${msg("Exec Time")}</btrix-table-header-cell
           >
           <btrix-table-header-cell>${msg("Pages")}</btrix-table-header-cell>
           <btrix-table-header-cell>${msg("Size")}</btrix-table-header-cell>
-          <btrix-table-header-cell> ${msg("Run By")} </btrix-table-header-cell>
-          <btrix-table-header-cell class="pl-1 pr-1">
+          <btrix-table-header-cell class="px-1">
             <span class="sr-only">${msg("Row actions")}</span>
           </btrix-table-header-cell>
         </btrix-table-head>
