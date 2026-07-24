@@ -164,7 +164,7 @@ export class ExclusionEditor extends BtrixElement {
           `}
       ${this.isActiveCrawl
         ? html`<div
-            class="sticky bottom-0 [container-name:sticky-form] [container-type:scroll-state]"
+            class="sticky bottom-0 z-20 [container-name:sticky-form] [container-type:scroll-state]"
           >
             <div class="form-wrapper bg-white py-2">
               <btrix-queue-exclusion-form
