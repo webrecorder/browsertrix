@@ -1132,7 +1132,10 @@ export class WorkflowDetail extends BtrixElement {
     renderContent: (workflow: Workflow) => TemplateResult | string | number,
   ) {
     return html`
-      <btrix-desc-list-item label=${label}>
+      <btrix-desc-list-item
+        label=${label}
+        ?live=${this.workflow?.isCrawlRunning}
+      >
         ${when(
           this.workflow,
           renderContent,
@@ -1606,13 +1609,16 @@ export class WorkflowDetail extends BtrixElement {
       if (!latestCrawl) return skeleton;
 
       if (workflow.isCrawlRunning) {
-        return [
-          this.localize.number(+(latestCrawl.stats?.done || 0)),
-          this.localize.number(+(latestCrawl.stats?.found || 0)),
-        ].join(` ${msg("of")} `);
+        return this.localize.number(+(latestCrawl.stats?.done || 0));
       }
 
       return this.localize.number(latestCrawl.pageCount || 0);
+    };
+
+    const queuedPages = () => {
+      if (!latestCrawl) return skeleton;
+
+      return this.localize.number(+(latestCrawl.stats?.found || 0));
     };
 
     const qa = (workflow: Workflow) => {
@@ -1664,6 +1670,9 @@ export class WorkflowDetail extends BtrixElement {
             : execTime(),
         )}
         ${this.renderDetailItem(msg("Pages Crawled"), pages)}
+        ${this.workflow && this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("Pages Queued"), queuedPages)
+          : nothing}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
