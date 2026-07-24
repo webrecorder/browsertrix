@@ -1,3 +1,4 @@
+// eslint-disable import-x/no-unresolved -- Dev dependency
 import { faker } from "@faker-js/faker";
 
 // Fixed seed for reproducibility

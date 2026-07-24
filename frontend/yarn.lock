@@ -1833,6 +1833,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lit-labs/motion@npm:1.1.0":
+  version: 1.1.0
+  resolution: "@lit-labs/motion@npm:1.1.0"
+  dependencies:
+    lit: "npm:^3.1.2"
+    wobble: "npm:^1.5.1"
+  checksum: 10c0/62654bdda95487407887e5d2baacb3c0b9858f56b73b567a5f7e8470b6451befa3da126738b8b1247a4e2fbf93b9d2785565b84d267ebb9266d019cd0ceb6032
+  languageName: node
+  linkType: hard
+
 "@lit-labs/ssr-client@npm:^1.1.7, @lit-labs/ssr-client@npm:^1.1.8":
   version: 1.1.8
   resolution: "@lit-labs/ssr-client@npm:1.1.8"
@@ -6329,6 +6339,7 @@ __metadata:
     "@formatjs/intl-durationformat": "npm:^0.10.15"
     "@formatjs/intl-localematcher": "npm:^0.8.10"
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.7.1"
+    "@lit-labs/motion": "npm:1.1.0"
     "@lit/context": "npm:^1.1.6"
     "@lit/localize": "npm:^0.12.2"
     "@lit/localize-tools": "npm:^0.8.2"
@@ -17163,6 +17174,13 @@ __metadata:
   version: 2.0.0
   resolution: "wildcard@npm:2.0.0"
   checksum: 10c0/4e22a45f4fa7f0f0d3e11860ee9ce9225246d41af6ec507e6a7d64c2692afb40d695b92c8f801deda8d3536007c2ec07981079fd0c8bb38b8521de072b33ab7a
+  languageName: node
+  linkType: hard
+
+"wobble@npm:^1.5.1":
+  version: 1.5.1
+  resolution: "wobble@npm:1.5.1"
+  checksum: 10c0/9071ed784254aa999d41529111bc8262eabbb836eba1be42a861a1e3b204c0728b4dd6e381c11e5760b227f4b4703b7c1633e3954c88a6c6c656483d99d153ec
   languageName: node
   linkType: hard
 

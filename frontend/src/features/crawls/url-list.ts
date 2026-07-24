@@ -1,3 +1,5 @@
+import { animate } from "@lit-labs/motion";
+// eslint-disable-next-line import-x/order -- FIXME Order is different between vscode plugin and lint on commit
 import { localized, msg } from "@lit/localize";
 import clsx from "clsx";
 import { css, html, nothing } from "lit";
@@ -9,6 +11,7 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { FloatingPopover } from "@/components/ui/floating-popover";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { Seed } from "@/types/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -145,14 +148,14 @@ export class UrlList extends TailwindElement {
     }
 
     .url-order {
-      color: var(--sl-color-neutral-400);
+      color: var(--sl-color-neutral-500);
       font-family: var(--sl-font-mono);
       justify-content: end;
       padding-inline-end: var(--sl-spacing-2x-small);
     }
   `;
 
-  @property({ type: Array })
+  @property({ type: Array, hasChanged: isNotEqual })
   urls?: (string | Seed)[] = [];
 
   /**
@@ -172,6 +175,12 @@ export class UrlList extends TailwindElement {
    */
   @property({ type: Boolean, noAccessor: true })
   border = false;
+
+  /**
+   * Animate changes to the list
+   */
+  @property({ type: Boolean, noAccessor: true })
+  animateChange = false;
 
   /**
    * Offset ordered list
@@ -223,6 +232,7 @@ export class UrlList extends TailwindElement {
                 match && "row-match",
                 exclude && "row-exclude",
               )}
+              ${this.animateChange ? animate() : ""}
             >
               ${this.ordered
                 ? html`
