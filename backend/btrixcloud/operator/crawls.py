@@ -2000,7 +2000,7 @@ class CrawlOperator(BaseOperator):
                 new_status = "rate-limited"
                 if not status.rateLimitedAtTime:
                     status.rateLimitedAtTime = date_to_str(dt_now())
-            if status_count.get("generate-wacz"):
+            elif status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
                 new_status = "uploading-wacz"
