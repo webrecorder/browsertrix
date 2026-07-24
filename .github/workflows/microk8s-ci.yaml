@@ -37,7 +37,7 @@ jobs:
           echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
         with:
           driver-opts: network=host
 
@@ -45,7 +45,7 @@ jobs:
         run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:32000/v2/
 
       - name: Build Backend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6  # v3
         with:
           context: backend
           push: true
@@ -57,7 +57,7 @@ jobs:
           cache-to: type=gha,scope=backend,mode=max
 
       - name: Build Emails
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6  # v3
         with:
           context: emails
           push: true
@@ -70,7 +70,7 @@ jobs:
           cache-to: type=gha,scope=emails,mode=max
 
       - name: Build Frontend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6  # v3
         with:
           context: frontend
           push: true
