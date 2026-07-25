@@ -26,6 +26,7 @@ import type {
   SortChangeEventDetail,
   SortOptions,
 } from "@/features/archived-items/item-list-controls";
+import { dialogClassesForHeader, dialogLabel } from "@/layouts/dialogHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -330,16 +331,14 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
-      class="[--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)] part-[title]:overflow-hidden"
+      class="${dialogClassesForHeader} [--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)]"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
-      <div slot="label" class="flex items-center gap-3 divide-x">
-        <div class="whitespace-nowrap">${msg("Configure Items")}</div>
-        <div class="truncate px-3 text-sm leading-none text-neutral-500">
-          ${this.collectionName}
-        </div>
-      </div>
+      ${dialogLabel({
+        title: msg("Configure Items"),
+        subtitle: this.collectionName,
+      })}
       <div class="dialogContent flex flex-col">
         ${when(this.isReady, this.renderContent)}
       </div>

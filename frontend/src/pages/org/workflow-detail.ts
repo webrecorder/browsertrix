@@ -31,6 +31,7 @@ import {
   type BtrixSelectActionEvent,
 } from "@/features/crawl-workflows/workflow-action-menu/types";
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
+import { dialogLabel } from "@/layouts/dialogHeader";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
@@ -1989,12 +1990,10 @@ export class WorkflowDetail extends BtrixElement {
         }}
         @btrix-saved=${this.handleExclusionChange}
       >
-        <div slot="dialog-label" class="flex items-center gap-3 divide-x">
-          <div class="whitespace-nowrap">${msg("Edit Exclusion Rules")}</div>
-          <div class="truncate px-3 text-sm leading-none text-neutral-500">
-            ${renderName(this.workflow)}
-          </div>
-        </div>
+        ${dialogLabel({
+          title: msg("Edit Exclusion Rules"),
+          subtitle: renderName(this.workflow),
+        })}
       </btrix-exclusion-editor-dialog>
     `;
   }
