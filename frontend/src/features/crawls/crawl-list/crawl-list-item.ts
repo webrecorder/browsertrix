@@ -10,7 +10,7 @@ import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { textSeparator } from "@/layouts/separator";
 import type { Crawl } from "@/types/crawler";
-import { isSkipped, renderName } from "@/utils/crawler";
+import { isRunning, isSkipped, renderName } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { tw } from "@/utils/tailwind";
 
@@ -146,9 +146,17 @@ export class CrawlListItem extends BtrixElement {
             const found = +(crawl.stats?.found || 0);
             const ratio = done && found ? done / found : 0;
             const percentage = ratio * 100;
-            const { cssColor, cssDarkerColor } = CrawlStatus.getContent({
-              state: crawl.state,
-            });
+
+            let indicatorColor = "var(--sl-color-neutral-400)";
+            let borderColor = "var(--sl-color-neutral-500)";
+
+            if (isRunning(crawl)) {
+              const status = CrawlStatus.getContent({
+                state: crawl.state,
+              });
+              indicatorColor = status.cssColor;
+              borderColor = status.cssDarkerColor || status.cssColor;
+            }
 
             return html`<sl-tooltip
               content=${this.localize.number(ratio, {
@@ -159,12 +167,8 @@ export class CrawlListItem extends BtrixElement {
               <sl-progress-bar
                 class="w-full"
                 style=${styleMap({
-                  "--indicator-color": ratio
-                    ? cssColor
-                    : "var(--sl-color-neutral-400)",
-                  "--btrix-indicator-border-color": ratio
-                    ? cssDarkerColor || cssColor
-                    : "var(--sl-color-neutral-400)",
+                  "--indicator-color": indicatorColor,
+                  "--btrix-indicator-border-color": borderColor,
                 })}
                 value=${ifDefined(percentage < 1 ? undefined : percentage)}
                 label=${msg("Page Crawl Progress")}

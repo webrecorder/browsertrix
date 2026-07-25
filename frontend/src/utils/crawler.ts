@@ -15,6 +15,7 @@ import {
   FAILED_STATES,
   PAUSED_STATES,
   RUNNING_AND_WAITING_STATES,
+  RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
 } from "@/types/crawlState";
@@ -47,6 +48,10 @@ export function isCrawlReplay(
   item: ArchivedItem | CrawlReplay,
 ): item is CrawlReplay {
   return isCrawl(item) && "config" in item;
+}
+
+export function isRunning({ state }: Partial<Crawl>) {
+  return (RUNNING_STATES as readonly (typeof state)[]).includes(state);
 }
 
 export function isActive({ state }: Partial<Crawl | QARun>) {

@@ -219,7 +219,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "pending-wait":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -231,7 +232,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "generate-wacz":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -243,7 +245,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "uploading-wacz":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
