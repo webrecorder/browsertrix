@@ -22,7 +22,7 @@ import type { OrgData } from "@/types/org";
 import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
 import { BYTES_PER_GB } from "@/utils/bytes";
 import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
-import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import { DEFAULT_MAX_SCALE, isPaused, isRunning } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import localize, { getDefaultLang } from "@/utils/localize";
 
@@ -128,24 +128,35 @@ export function isPrimarySeedScope(
 }
 
 /**
- * Whether crawler has started running and is not expected to stop or pause.
+ * Whether crawler is starting or has started running and is not paused.
  */
-export function isRunningNotStopping(workflow: ListWorkflow | Workflow) {
-  return (
+export function isRunningNotPaused(workflow: ListWorkflow | Workflow) {
+  return Boolean(
     workflow.isCrawlRunning &&
-    !workflow.lastCrawlStopping &&
-    !workflow.lastCrawlShouldPause
+    workflow.lastCrawlState &&
+    !isPaused(workflow.lastCrawlState),
   );
 }
 
 /**
- * Whether crawler is actively crawling pages and is not expected to stop or pause.
+ * Whether crawler has started running, is not paused, and is not expected to stop or pause.
+ */
+export function isRunningNotStopping(workflow: ListWorkflow | Workflow) {
+  return Boolean(
+    isRunningNotPaused(workflow) &&
+    !workflow.lastCrawlStopping &&
+    !workflow.lastCrawlShouldPause,
+  );
+}
+
+/**
+ * Whether crawler is in an explicit running state (i.e. crawling pages) and is not expected to stop or pause.
  */
 export function isActivelyCrawling(workflow: ListWorkflow | Workflow) {
-  return (
+  return Boolean(
     isRunningNotStopping(workflow) &&
     workflow.lastCrawlState &&
-    ["running", "rate-limited"].includes(workflow.lastCrawlState)
+    isRunning({ state: workflow.lastCrawlState }),
   );
 }
 

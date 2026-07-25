@@ -52,6 +52,12 @@ export class CrawlQueue extends BtrixElement {
   @property({ type: Array })
   exclusions: string[] = [];
 
+  /**
+   * Crawl is starting
+   */
+  @property({ type: Boolean })
+  starting?: Boolean;
+
   @state()
   private exclusionsRx: RegExp[] = [];
 
@@ -171,7 +177,9 @@ export class CrawlQueue extends BtrixElement {
       }
 
       return html`
-        <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
+        <p class="text-sm text-neutral-400">
+          ${this.starting ? msg("Crawl starting...") : msg("No pages queued.")}
+        </p>
       `;
     }
 

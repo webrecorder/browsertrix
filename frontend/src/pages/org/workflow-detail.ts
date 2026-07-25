@@ -57,7 +57,12 @@ import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
-import { isActivelyCrawling, rangeBrowserWindows } from "@/utils/workflow";
+import {
+  isActivelyCrawling,
+  isRunningNotPaused,
+  isRunningNotStopping,
+  rangeBrowserWindows,
+} from "@/utils/workflow";
 
 export const EDIT_DIALOG_PARAM_NAME = "editDialog";
 export enum EditDialogValues {
@@ -379,7 +384,8 @@ export class WorkflowDetail extends BtrixElement {
 
   // Workflow is active and not paused
   private get isRunning() {
-    return this.workflow?.isCrawlRunning && !this.isPaused;
+    if (!this.workflow) return;
+    return isRunningNotPaused(this.workflow);
   }
 
   private get isSkippedOrCanceled() {
@@ -1320,7 +1326,8 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     const logTotals = this.logTotalsTask.value;
-    const showReplay = !this.isRunning;
+    const watchable = this.isRunning;
+    const showReplay = !watchable;
 
     return html`
       <div class="mb-3 rounded-lg border px-4 py-2">
@@ -1558,10 +1565,12 @@ export class WorkflowDetail extends BtrixElement {
   private renderLatestCrawlAction() {
     if (!this.workflow || !this.lastCrawlId) return;
 
-    if (this.isRunning) {
+    const watchable = this.isRunning;
+
+    if (watchable) {
       if (!this.isCrawler) return;
 
-      const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
+      const canEditRunning = isRunningNotStopping(this.workflow);
       const windowCount = this.workflow.browserWindows || 1;
 
       return html`
@@ -1570,21 +1579,20 @@ export class WorkflowDetail extends BtrixElement {
           ${pluralOf("browserWindows", windowCount)}
         </div>
 
-        <sl-tooltip
-          content=${enableEditBrowserWindows
-            ? msg("Edit Browser Windows")
-            : msg(
-                "Browser windows can only be edited while a crawl is starting or running",
-              )}
+        <btrix-popover
+          content=${msg(
+            "Browser windows can only be edited while a crawl is starting or running",
+          )}
+          ?disabled=${canEditRunning}
         >
           <sl-icon-button
             name="plus-slash-minus"
             label=${msg("Increase or decrease")}
-            ?disabled=${!enableEditBrowserWindows}
+            ?disabled=${!canEditRunning}
             @click=${() => (this.openDialogName = "scale")}
           >
           </sl-icon-button>
-        </sl-tooltip>
+        </btrix-popover>
       `;
     }
   }
@@ -1724,25 +1732,23 @@ export class WorkflowDetail extends BtrixElement {
           waitingMsg = msg("Crawl waiting for deduplication index...");
           break;
 
-        case "pending-wait":
-        case "generate-wacz":
-        case "uploading-wacz":
-          waitingMsg = msg("Crawl finishing...");
-          break;
-
         default:
-          if (this.workflow.lastCrawlStopping) {
-            waitingMsg = msg("Crawl stopping...");
+          if (this.isCancelingRun) {
+            waitingMsg = msg("Canceling crawl run...");
+          } else {
+            // TODO Handle finishing by checking if there are any URLs left in the queue
+            console.debug("crawl may be finishing");
           }
           break;
       }
     }
 
+    const watchable = this.isRunning && !this.isCancelingRun;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(
-        this.isCrawling && this.workflow,
+        watchable && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1937,15 +1943,24 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderExclusions() {
+    const canEditRunning = this.workflow && isRunningNotStopping(this.workflow);
+
     return html`
       <header class="flex items-center justify-between">
         <h3 class="mb-2 text-base font-semibold leading-none">
           ${msg("Upcoming Pages")}
         </h3>
-        <sl-button size="small" @click=${() => this.openEditDialog()}>
-          <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
-          ${msg("Edit Exclusion Rules")}
-        </sl-button>
+        <btrix-popover
+          content=${msg(
+            "Exclusion rules can only be edited while a crawl is starting or running",
+          )}
+          ?disabled=${canEditRunning}
+        >
+          <sl-button size="small" @click=${() => this.openEditDialog()}>
+            <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
+            ${msg("Edit Exclusion Rules")}
+          </sl-button>
+        </btrix-popover>
       </header>
 
       ${when(
@@ -1953,6 +1968,7 @@ export class WorkflowDetail extends BtrixElement {
         () => html`
           <btrix-crawl-queue
             .crawlId=${this.lastCrawlId ?? undefined}
+            ?starting=${this.workflow?.lastCrawlState === "starting"}
           ></btrix-crawl-queue>
         `,
       )}

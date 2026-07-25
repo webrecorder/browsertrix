@@ -12,7 +12,11 @@ import { WorkflowTab } from "@/routes";
 import type { Crawl, ListWorkflow, Workflow } from "@/types/crawler";
 import { isNotFailed, isPaused, isSuccessfullyFinished } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
-import { isActivelyCrawling, isRunningNotStopping } from "@/utils/workflow";
+import {
+  isActivelyCrawling,
+  isRunningNotPaused,
+  isRunningNotStopping,
+} from "@/utils/workflow";
 
 @customElement("btrix-workflow-action-menu")
 @localized()
@@ -43,7 +47,9 @@ export class WorkflowActionMenu extends BtrixElement {
     const canCrawl = this.appState.isCrawler;
     const archivingDisabled = isArchivingDisabled(this.org, true);
     const paused = isPaused(workflow.lastCrawlState || "");
-    const running = isRunningNotStopping(workflow) && !this.cancelingRun;
+    const watchable = isRunningNotPaused(workflow);
+    const canEditRunning =
+      watchable && isRunningNotStopping(workflow) && !this.cancelingRun;
     const crawling = isActivelyCrawling(workflow);
 
     return html`<sl-menu
@@ -128,7 +134,7 @@ export class WorkflowActionMenu extends BtrixElement {
         canCrawl,
         () =>
           html`${when(
-              running,
+              canEditRunning,
               () => html`
                 <sl-menu-item data-action=${Action.EditBrowserWindows}>
                   <sl-icon name="plus-slash-minus" slot="prefix"></sl-icon>
