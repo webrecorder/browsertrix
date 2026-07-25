@@ -15,7 +15,12 @@ import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { activeCrawlStates, isActive } from "@/utils/crawler";
 
-type SortField = "started" | "firstSeed" | "fileSize";
+type SortField =
+  | "started"
+  | "crawlExecSeconds"
+  | "firstSeed"
+  | "pageCount"
+  | "fileSize";
 type SortDirection = "asc" | "desc";
 const sortableFields: Record<
   SortField,
@@ -25,8 +30,16 @@ const sortableFields: Record<
     label: msg("Date Started"),
     defaultDirection: "desc",
   },
+  crawlExecSeconds: {
+    label: msg("Execution Time"),
+    defaultDirection: "desc",
+  },
   firstSeed: {
     label: msg("Crawl Start URL"),
+    defaultDirection: "desc",
+  },
+  pageCount: {
+    label: msg("Pages Crawled"),
     defaultDirection: "desc",
   },
   fileSize: {
@@ -266,7 +279,7 @@ export class Crawls extends BtrixElement {
     if (!this.crawls) return;
 
     return html`
-      <btrix-crawl-list>
+      <btrix-crawl-list runningOnly>
         ${this.crawls.items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;

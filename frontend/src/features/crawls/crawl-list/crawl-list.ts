@@ -55,6 +55,9 @@ export class CrawlList extends TailwindElement {
   @property({ type: String })
   workflowId?: string;
 
+  @property({ type: Boolean, noAccessor: true })
+  runningOnly = false;
+
   @queryAssignedElements({ selector: "btrix-crawl-list-item" })
   listItems!: HTMLElement[];
 
@@ -63,7 +66,7 @@ export class CrawlList extends TailwindElement {
       "min-content [clickable-start]",
       this.workflowId ? undefined : "minmax(24ch, 40ch)", // Name
       "minmax(min-content, 24ch)", // Started
-      "minmax(min-content, 24ch)", // Finished
+      "minmax(min-content, 24ch)", // Finished/Progress
       "1fr", // Execution time
       "1fr", // Pages
       "1fr", // Size
@@ -90,7 +93,7 @@ export class CrawlList extends TailwindElement {
               `}
           <btrix-table-header-cell>${msg("Started")}</btrix-table-header-cell>
           <btrix-table-header-cell>
-            ${msg("Finished")}
+            ${this.runningOnly ? msg("Progress") : msg("Finished")}
           </btrix-table-header-cell>
           <btrix-table-header-cell title=${msg("Execution Time")}
             >${msg("Exec Time")}</btrix-table-header-cell

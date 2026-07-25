@@ -61,7 +61,7 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
   pageCount: {
-    label: msg("Pages"),
+    label: msg("Pages Crawled"),
     defaultDirection: "desc",
   },
   fileSize: {
