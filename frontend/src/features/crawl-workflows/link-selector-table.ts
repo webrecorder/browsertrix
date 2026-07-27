@@ -231,7 +231,7 @@ export class LinkSelectorTable extends FormControl(BtrixElement) {
                       ),
                     },
                     () => {
-                      this.cssParser(`div[${value}="x-test"]`);
+                      this.cssParser(`a[${value}="x-test"]`);
                     },
                   );
 
