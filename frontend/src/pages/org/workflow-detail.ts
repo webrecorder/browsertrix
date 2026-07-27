@@ -1571,7 +1571,8 @@ export class WorkflowDetail extends BtrixElement {
     if (watchable) {
       if (!this.isCrawler) return;
 
-      const canEditRunning = isRunningNotStopping(this.workflow);
+      const canEditBrowserWindows =
+        isRunningNotStopping(this.workflow) && !this.isCancelingRun;
       const windowCount = this.workflow.browserWindows || 1;
 
       return html`
@@ -1584,12 +1585,12 @@ export class WorkflowDetail extends BtrixElement {
           content=${msg(
             "Browser windows can only be edited while a crawl is starting or running",
           )}
-          ?disabled=${canEditRunning}
+          ?disabled=${canEditBrowserWindows}
         >
           <sl-icon-button
             name="plus-slash-minus"
             label=${msg("Increase or decrease")}
-            ?disabled=${!canEditRunning}
+            ?disabled=${!canEditBrowserWindows}
             @click=${() => (this.openDialogName = "scale")}
           >
           </sl-icon-button>
@@ -1944,7 +1945,10 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderExclusions() {
-    const canEditRunning = this.workflow && isRunningNotStopping(this.workflow);
+    const canEditExclusions =
+      this.workflow &&
+      isActivelyCrawling(this.workflow) &&
+      !this.isCancelingRun;
 
     return html`
       <header class="flex items-center justify-between">
@@ -1952,10 +1956,8 @@ export class WorkflowDetail extends BtrixElement {
           ${msg("Upcoming Pages")}
         </h3>
         <btrix-popover
-          content=${msg(
-            "Exclusion rules can only be edited while a crawl is starting or running",
-          )}
-          ?disabled=${canEditRunning}
+          content=${msg("Enabled when crawl starts running.")}
+          ?disabled=${canEditExclusions}
         >
           <sl-button size="small" @click=${() => this.openEditDialog()}>
             <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
