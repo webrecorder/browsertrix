@@ -51,10 +51,7 @@ export function dialogHelpPopover({
   content: string | TemplateResult;
 }) {
   return html`<btrix-popover slot="header-actions" placement="bottom-end" hoist>
-      <div slot="content">${content}</div>
-      <sl-icon
-        name="question-circle"
-        class="text-neutral-600"
-      ></sl-icon></btrix-popover
-    >>`;
+    <div slot="content">${content}</div>
+    <sl-icon name="question-circle" class="text-neutral-600"></sl-icon
+  ></btrix-popover>`;
 }
