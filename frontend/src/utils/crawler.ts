@@ -126,8 +126,8 @@ export function renderName(
       </span>`;
     }
     return html`
-      <span class="inline-flex overflow-hidden whitespace-nowrap">
-        <div class=${clsx("min-w-0 truncate", className)}>
+      <span class="inline-flex max-w-full overflow-hidden whitespace-nowrap">
+        <div class=${clsx("min-w-0 truncate max-w-[30ch]", className)}>
           ${item.firstSeed}
         </div>
         ${nameSuffix}
