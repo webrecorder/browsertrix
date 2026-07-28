@@ -27,6 +27,7 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
+    RUNNING_STATES,
     SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
     ConfigRevision,
@@ -35,6 +36,7 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlConfigIn,
     CrawlConfigOut,
+    CrawlConfigRunningCountsResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlerChannel,
@@ -1689,6 +1691,90 @@ class CrawlConfigOps:
 
         return {"success": True}
 
+    async def get_running_counts(
+        self, org: Organization | None = None
+    ) -> CrawlConfigRunningCountsResponse:
+        """Return counts of running workflows, total and status, optionally by org"""
+
+        try:
+            base_query: dict[str, UUID | dict[str, list[str]]] = {}
+            if org:
+                base_query["oid"] = org.id
+
+            total = await self.crawls.count_documents(
+                {**base_query, "state": {"$in": RUNNING_STATES}}
+            )
+            running = await self.crawls.count_documents(
+                {**base_query, "state": "running"}
+            )
+            pending_wait = await self.crawls.count_documents(
+                {**base_query, "state": "pending-wait"}
+            )
+            generate_wacz = await self.crawls.count_documents(
+                {**base_query, "state": "generate-wacz"}
+            )
+            uploading_wacz = await self.crawls.count_documents(
+                {**base_query, "state": "uploading-wacz"}
+            )
+            rate_limited = await self.crawls.count_documents(
+                {**base_query, "state": "rate-limited"}
+            )
+            paused = await self.crawls.count_documents(
+                {**base_query, "state": "paused"}
+            )
+            paused_storage = await self.crawls.count_documents(
+                {**base_query, "state": "paused_storage_quota_reached"}
+            )
+            paused_time = await self.crawls.count_documents(
+                {**base_query, "state": "paused_time_quota_reached"}
+            )
+            paused_read_only = await self.crawls.count_documents(
+                {**base_query, "state": "paused_org_readonly"}
+            )
+            paused_rate_limit = await self.crawls.count_documents(
+                {**base_query, "state": "paused_rate_limit_time_reached"}
+            )
+            starting = await self.crawls.count_documents(
+                {**base_query, "state": "starting"}
+            )
+            waiting_capacity = await self.crawls.count_documents(
+                {**base_query, "state": "waiting_capacity"}
+            )
+            waiting_org_limit = await self.crawls.count_documents(
+                {**base_query, "state": "waiting_org_limit"}
+            )
+            waiting_dedupe = await self.crawls.count_documents(
+                {**base_query, "state": "waiting_dedupe_index"}
+            )
+
+            return CrawlConfigRunningCountsResponse(
+                totalRunningPausedWaiting=total,
+                # Running states
+                running=running,
+                pendingWait=pending_wait,
+                generateWACZ=generate_wacz,
+                uploadingWACZ=uploading_wacz,
+                rateLimited=rate_limited,
+                # Paused states
+                paused=paused,
+                pausedStorageQuotaReached=paused_storage,
+                pausedTimeQuotaReached=paused_time,
+                pausedOrgReadOnly=paused_read_only,
+                pausedRateLimitTimeReached=paused_rate_limit,
+                # Waiting states
+                starting=starting,
+                waitingCapacity=waiting_capacity,
+                waitingOrgLimit=waiting_org_limit,
+                waitingDedupeIndex=waiting_dedupe,
+            )
+        except Exception:
+            logger.exception(
+                "running_workflow_counts_calculation_failed",
+                oid=org.id if org else None,
+            )
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="calculation_failure")
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1944,6 +2030,24 @@ def init_crawl_config_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return ops.get_crawler_proxies()
+
+    @router.get("/running", response_model=CrawlConfigRunningCountsResponse)
+    async def get_org_crawl_config_running_counts(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_running_counts(org)
+
+    @app.get(
+        "/orgs/all/crawlconfigs/running",
+        response_model=CrawlConfigRunningCountsResponse,
+    )
+    async def get_all_crawl_config_running_counts(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_running_counts()
 
     @app.get(
         "/orgs/{oid}/crawlconfigs/{cid}/public/replay.json",
