@@ -79,7 +79,7 @@ storages:
 ```
 
 
-When using an external S3 provider, a custom `access_endpoint_url` can also be provided
+When using an external S3 provider, a custom `access_endpoint_url` can also be provided.
 This URL is used for direct access to WACZ files, and can be used to specify a custom domain or CDN to access the bucket.
 
 The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
@@ -129,7 +129,7 @@ For example, the following:
 ```
 ...
 endpoint_url: https://s3provider.example.com/
-bucket_name: my-bucket
+bucket_name: bucket_name
 ...
 ```
 
