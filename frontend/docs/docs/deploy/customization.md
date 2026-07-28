@@ -78,8 +78,6 @@ storages:
     is_default_primary: true
 ```
 
-When using an external S3 provider, a custom `access_endpoint_url` can also be provided.
-This URL is used for direct access to WACZ files, and can be used to specify a custom domain or CDN to access the bucket.
 
 The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
 `https://s3provider.example.com/bucket/path/`.
@@ -108,11 +106,15 @@ Since the local Minio service is not used, `minio_local: false` can be set to sa
 
 ### Custom Access Endpoint URL
 
-It may be useful to provide a custom access endpoint for accessing WACZ files and other data. If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
+To provide replay and download, WACZ files and other data are accessed directly in the browser from the S3 bucket.
+If the S3 bucket `endpoint_url` can be accessed directly in the browser, no other configuration is required.
 
-Note that the bucket name if provided is not automatically appended to the `access_endpoint_url`, as this may be a completely custom URL.
+However, if it is an internal URL, a different access point URL is needed.
+It may also be desirable to have the browser connect to the S3 bucket through a custom domain or CDN.
+This can be done via the `access_endpoint_url` setting, which is the URL provided to the browser to access the data.
+If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
 
-Here are two example of the addressing modes:
+Since the `access_endpoint_url` may use either path or virtual host addressing, the bucket name is not automatically appended the URL.
 
 #### Virtual Host vs Path Addressing for Access Endpoints
 
