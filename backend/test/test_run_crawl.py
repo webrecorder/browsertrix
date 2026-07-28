@@ -176,6 +176,41 @@ def test_remove_exclusion(admin_auth_headers, default_org_id):
     assert r.json()["success"] == True
 
 
+def test_running_workflow_counts(
+    admin_auth_headers, crawler_auth_headers, default_org_id
+):
+    # Verify running workflow counts are updated
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/running",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["totalRunningPausedWaiting"] >= 1
+    assert (
+        data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
+    )
+
+    # Verify again but from non-org-specific endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawlconfigs/running",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["totalRunningPausedWaiting"] >= 1
+    assert (
+        data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
+    )
+
+    # Check that non-org-specific endpoint is only available to superadmins
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawlconfigs/running",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+
+
 def test_wait_for_complete(admin_auth_headers, default_org_id):
     state = None
     data = None
