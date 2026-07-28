@@ -1959,7 +1959,11 @@ export class WorkflowDetail extends BtrixElement {
           content=${msg("Enabled when crawl starts running.")}
           ?disabled=${canEditExclusions}
         >
-          <sl-button size="small" @click=${() => this.openEditDialog()}>
+          <sl-button
+            size="small"
+            @click=${() => this.openEditDialog()}
+            ?disabled=${!canEditExclusions}
+          >
             <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
             ${msg("Edit Exclusion Rules")}
           </sl-button>
