@@ -188,6 +188,10 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Cron schedule for periodically syncing replica storage
+# locations from primary storage
+replication_job_cron_schedule: ""
+
 # Emails Image
 # =========================================
 emails_image: "docker.io/webrecorder/browsertrix-emails:1.24.2"

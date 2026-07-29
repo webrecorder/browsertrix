@@ -384,6 +384,69 @@ class CrawlManager(K8sAPI):
 
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
+    async def ensure_file_replication_cron_job_exists(self):
+        """ensure cron background job to periodically replicate all files exists
+
+        Each time the background job runs, it will spawn one additional background
+        job for each configured replica storage location, and run `rclone copy` from
+        primary storage to each replica location to keep them in sync without the
+        possibility of deleting anything from the destination.
+
+        Deletions are handled separately with individual jobs and are subject to
+        the replica deletion delay.
+        """
+
+        job_id = "replicate-files-cron"
+
+        # Default schedule is every 2 hours
+        default_schedule = "0 */2 * * *"
+        job_schedule = os.environ.get("REPLICATION_JOB_CRON_SCHEDULE", default_schedule)
+
+        # Don't create a duplicate cron job if already exists
+        replication_logger = logger.bind(schedule=job_schedule)
+
+        try:
+            cron_job = await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=self.namespace,
+            )
+            if cron_job:
+                replication_logger.info("replication_cron_job_exists")
+
+                if cron_job.spec.schedule != job_schedule:
+                    cron_job.spec.schedule = job_schedule
+
+                    await self.batch_api.patch_namespaced_cron_job(
+                        name=cron_job.metadata.name,
+                        namespace=self.namespace,
+                        body=cron_job,
+                    )
+                    replication_logger.info(
+                        "replication_cron_job_updated",
+                        prev_schedule=cron_job.spec.schedule,
+                    )
+                return
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            pass
+
+        replication_logger.info("replication_cron_job_creating")
+
+        params = {
+            "id": job_id,
+            "job_type": BgJobType.REPLICATE_FILES_CRON.value,
+            "backend_image": os.environ.get("BACKEND_IMAGE", ""),
+            "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
+            "schedule": job_schedule,
+            "larger_resources": False,
+        }
+
+        data = self.templates.env.get_template("background_cron_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data)
+
     async def create_crawl_job(
         self,
         crawlconfig: CrawlConfig,

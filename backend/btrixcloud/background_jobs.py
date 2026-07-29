@@ -26,6 +26,7 @@ from .models import (
     PaginatedBackgroundJobResponse,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    ReplicateFilesCronJob,
     StorageRef,
     SuccessResponse,
     SuccessResponseId,
@@ -438,9 +439,10 @@ class BackgroundJobOps:
             )
             return None
 
-    async def ensure_cron_cleanup_jobs_exist(self):
-        """Ensure background job to clean up unused seed files weekly exists"""
+    async def ensure_cron_bg_jobs_exist(self):
+        """Ensure background cron jobs for cleanup and file replication exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
+        await self.crawl_manager.ensure_file_replication_cron_job_exists()
 
     async def job_finished(
         self,
@@ -454,8 +456,8 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        # For seed file cleanup jobs, no database record will exist for each
-        # run before this point, so create it here
+        # For cron jobs (seed file cleanup, file replication), no database
+        # record will exist for each run before this point, so create it here
         if job_type == BgJobType.CLEANUP_SEED_FILES:
             if not started:
                 started = finished
@@ -469,6 +471,21 @@ class BackgroundJobOps:
             await self.jobs.insert_one(cleanup_job.to_dict())
             if not success:
                 await self._send_bg_job_failure_email(cleanup_job, finished)
+            return
+
+        if job_type == BgJobType.REPLICATE_FILES_CRON:
+            if not started:
+                started = finished
+            replicate_job = ReplicateFilesCronJob(
+                id=f"replicate-cron-{secrets.token_hex(5)}",
+                type=BgJobType.REPLICATE_FILES_CRON,
+                started=started,
+                finished=finished,
+                success=success,
+            )
+            await self.jobs.insert_one(replicate_job.to_dict())
+            if not success:
+                await self._send_bg_job_failure_email(replicate_job, finished)
             return
 
         # If org has been successfully deleted in job, delete k8s resources
@@ -530,6 +547,7 @@ class BackgroundJobOps:
         | OptimizePagesJob
         | CleanupSeedFilesJob
         | UpdateCollStatsJob
+        | ReplicateFilesCronJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -565,6 +583,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.UPDATE_COLL_STATS:
             return UpdateCollStatsJob.from_dict(data)
+
+        if data["type"] == BgJobType.REPLICATE_FILES_CRON:
+            return ReplicateFilesCronJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -735,7 +756,7 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
-        if job.type == BgJobType.CLEANUP_SEED_FILES:
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}
