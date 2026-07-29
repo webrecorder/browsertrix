@@ -29,6 +29,7 @@ from .models import (
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
     RetryStuckUploadsJob,
+    ReplicateFilesCronJob,
     StorageRef,
     SuccessResponse,
     SuccessResponseId,
@@ -507,6 +508,7 @@ class BackgroundJobOps:
         """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
         await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
+        await self.crawl_manager.ensure_file_replication_cron_job_exists()
 
     async def job_finished(
         self,
@@ -522,12 +524,23 @@ class BackgroundJobOps:
 
         # For periodic cron jobs, no database record will exist for each
         # run before this point, so create it here
-        if job_type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.RETRY_STUCK_UPLOADS):
+        if job_type in (
+            BgJobType.CLEANUP_SEED_FILES,
+            BgJobType.RETRY_STUCK_UPLOADS,
+            BgJobType.REPLICATE_FILES_CRON
+        ):
             if not started:
                 started = finished
             if job_type == BgJobType.CLEANUP_SEED_FILES:
                 cron_job: BackgroundJob = CleanupSeedFilesJob(
                     id=f"seed-files-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            if job_type == BgJobType.REPLICATE_FILES_CRON:
+                cron_job = ReplicateFilesCronJob(
+                    id=f"replicate-cron-{secrets.token_hex(5)}",
                     started=started,
                     finished=finished,
                     success=success,
@@ -605,6 +618,7 @@ class BackgroundJobOps:
         | UpdateCollStatsJob
         | PostProcessUploadJob
         | RetryStuckUploadsJob
+        | ReplicateFilesCronJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -646,6 +660,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.RETRY_STUCK_UPLOADS:
             return RetryStuckUploadsJob.from_dict(data)
+
+        if data["type"] == BgJobType.REPLICATE_FILES_CRON:
+            return ReplicateFilesCronJob.from_dict(data)
 
         if data["type"] == BgJobType.DELETE_ORG:
             return DeleteOrgJob.from_dict(data)
@@ -829,7 +846,7 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
-        if job.type == BgJobType.CLEANUP_SEED_FILES:
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}

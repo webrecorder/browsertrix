@@ -3239,7 +3239,6 @@ class WebhookNotification(BaseMongoModel):
 class BgJobType(StrEnum):
     """Background Job Types"""
 
-    CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
@@ -3249,6 +3248,10 @@ class BgJobType(StrEnum):
     UPDATE_COLL_STATS = "update-coll-stats"
     POSTPROCESS_UPLOAD = "postprocess-upload"
     RETRY_STUCK_UPLOADS = "retry-stuck-uploads"
+    # Deprecated per-file replication jobs
+    CREATE_REPLICA = "create-replica"
+    # New replication job that spins up rclone copy jobs as needed
+    REPLICATE_FILES_CRON = "replicate-files-cron"
 
 
 # ============================================================================
@@ -3326,6 +3329,13 @@ class CleanupSeedFilesJob(BackgroundJob):
 
 
 # ============================================================================
+class ReplicateFilesCronJob(BackgroundJob):
+    """Model for tracking cron jobs to replicate files"""
+
+    type: Literal[BgJobType.REPLICATE_FILES_CRON] = BgJobType.REPLICATE_FILES_CRON
+
+
+# ============================================================================
 class UpdateCollStatsJob(BackgroundJob):
     """Model for tracking jobs to readd pages for an org or single crawl"""
 
@@ -3365,6 +3375,7 @@ AnyJob = RootModel[
     | UpdateCollStatsJob
     | PostProcessUploadJob
     | RetryStuckUploadsJob
+    | ReplicateFilesCronJob
 ]
 
 
