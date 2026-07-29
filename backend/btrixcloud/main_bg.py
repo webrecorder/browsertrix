@@ -107,6 +107,16 @@ async def main():
             )
             return ExitCode.ERROR
 
+    if job_type == BgJobType.REPLICATE_FILES_CRON:
+        try:
+            # Call method to launch actual rclone copy jobs - from storage_ops?
+            crawl_logger.info("replicate_files_cron_reached")
+            return ExitCode.SUCCESS
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            crawl_logger.exception("bg_job_failed")
+            return ExitCode.ERROR
+
     # Run job (org-specific)
     if not oid:
         crawl_logger.error(
