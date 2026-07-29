@@ -26,8 +26,6 @@ class Migration(BaseMigration):
         """Perform migration up.
 
         Add oid prefix to profile resource filenames that don't already have it.
-        For any profiles that match, also delete the database record for any
-        existing replicas and then spawn new replication jobs.
         """
         profiles_mdb = self.mdb["profiles"]
 
@@ -59,25 +57,9 @@ class Migration(BaseMigration):
                         {
                             "$set": {
                                 "resource.filename": new_filename,
-                                "resource.replicas": [],
                             }
                         },
                     )
-
-                    profile.resource.filename = new_filename
-                    profile.resource.replicas = []
-
-                    # TODO: Remove
-                    # logger.info(
-                    #     "profile_replication_job_started",
-                    #     profile_id=profile.id,
-                    #     unstructured_message=(
-                    #         f"Starting background jobs to replicate profile {profile.id}"
-                    #     ),
-                    # )
-                    # await self.background_job_ops.create_replica_jobs(
-                    #     profile.oid, profile.resource, str(profile.id), "profile"
-                    # )
                 # pylint: disable=broad-exception-caught
                 except Exception:
                     logger.exception(
