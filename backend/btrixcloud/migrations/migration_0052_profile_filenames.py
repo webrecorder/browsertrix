@@ -60,6 +60,21 @@ class Migration(BaseMigration):
                             }
                         },
                     )
+
+                    profile.resource.filename = new_filename
+                    profile.resource.replicas = []
+
+                    # TODO: Remove
+                    # logger.info(
+                    #     "profile_replication_job_started",
+                    #     profile_id=profile.id,
+                    #     unstructured_message=(
+                    #         f"Starting background jobs to replicate profile {profile.id}"
+                    #     ),
+                    # )
+                    # await self.background_job_ops.create_replica_jobs(
+                    #     profile.oid, profile.resource, str(profile.id), "profile"
+                    # )
                 # pylint: disable=broad-exception-caught
                 except Exception:
                     logger.exception(

@@ -344,6 +344,49 @@ class BaseCrawlOps:
             {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
+    # TODO: Remove
+    # async def replicate_crawl_files(
+    #     self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
+    # ):
+    #     """Replicate crawl files to configured replica locations"""
+    #     repl_logger = logger.bind(crawl_id=crawl_id, oid=org.id, type=type_)
+
+    #     try:
+    #         crawl = await self.get_base_crawl(crawl_id, org, type_)
+    #     # pylint: disable=broad-exception-caught
+    #     except Exception:
+    #         repl_logger.warning(
+    #             "crawl_replicate_skipped_not_found",
+    #             unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
+    #         )
+    #         return
+
+    #     for crawl_file in crawl.files:
+    #         try:
+    #             await self.background_job_ops.create_replica_jobs(
+    #                 crawl.oid, crawl_file, crawl.id, type_
+    #             )
+    #         # pylint: disable=broad-exception-caught
+    #         except Exception as exc:
+    #             repl_logger.exception(
+    #                 "crawl_replicate_failed",
+    #                 unstructured_message=f"Replicate Exception {exc}",
+    #             )
+
+    # TODO: Remove
+    # async def add_crawl_file_replica(
+    #     self, crawl_id: str, filename: str, ref: StorageRef
+    # ) -> dict[str, object]:
+    #     """Add replica StorageRef to existing CrawlFile"""
+    #     return await self.crawls.find_one_and_update(
+    #         {"_id": crawl_id, "files.filename": filename},
+    #         {
+    #             "$addToSet": {
+    #                 "files.$.replicas": {"name": ref.name, "custom": ref.custom}
+    #             }
+    #         },
+    #     )
+
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """placeholder, implemented in crawls, base version does nothing"""
 

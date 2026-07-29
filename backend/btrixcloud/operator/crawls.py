@@ -2203,6 +2203,9 @@ class CrawlOperator(BaseOperator):
                 crawl.id, crawl.cid, crawl.oid
             )
 
+            # TODO: Remove
+            # await self.crawl_ops.replicate_crawl_files(crawl.id, crawl.org, "crawl")
+
             if stats and stats.profile_update and crawl.profileid:
                 await self.crawl_config_ops.profiles.update_profile_from_crawl_upload(
                     crawl.oid,
