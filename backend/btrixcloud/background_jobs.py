@@ -13,7 +13,6 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from .crawlmanager import CrawlManager
 from .models import (
-    CRAWL_TYPES,
     AnyJob,
     BackgroundJob,
     BaseFile,
