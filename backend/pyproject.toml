@@ -8,6 +8,7 @@ dependencies = [
     "aiofiles>=25.1.0",
     "aiostream>=0.7.1",
     "backoff>=2.2.1",
+    "cssselect>=1.4.0",
     "email-validator>=2.3.0",
     "fastapi==0.128.0",
     "gunicorn>=26.0.0",
