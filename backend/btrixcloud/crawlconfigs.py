@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 
 import structlog
 import aiohttp
+import cssselect
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from motor.motor_asyncio import (
@@ -442,8 +443,6 @@ class CrawlConfigOps:
 
         Ensure at least one link selector is set and that all the link slectors passed
         follow expected syntax: selector->attribute/property.
-
-        We don't yet check the validity of the CSS selector itself.
         """
         if not link_selectors:
             raise HTTPException(status_code=400, detail="invalid_link_selector")
@@ -454,6 +453,12 @@ class CrawlConfigOps:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
             if not parts[0] or not parts[1]:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
+            try:
+                cssselect.parse(parts[0])
+            except cssselect.parser.SelectorSyntaxError as exc:
+                raise HTTPException(
+                    status_code=400, detail="invalid_link_selector"
+                ) from exc
 
     def _validate_custom_behavior_url_syntax(self, url: str) -> tuple[bool, list[str]]:
         """Validate custom behaviors are valid URLs after removing custom git syntax"""

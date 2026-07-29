@@ -282,6 +282,39 @@ def test_update_config_invalid_link_selector(
     assert r.json()["detail"] == "invalid_link_selector"
 
 
+def test_update_config_link_selector_invalid_syntax(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "selectLinks": [
+                    "a[href]->href",
+                    "aria[3]->href",
+                ]
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "selectLinks": [
+                    "div[2]->href",
+                ]
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+
 def test_update_config_invalid_lang(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
