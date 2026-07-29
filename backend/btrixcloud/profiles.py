@@ -351,9 +351,10 @@ class ProfileOps:
                 {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
             )
 
-            await self.background_job_ops.create_replica_jobs(
-                org.id, profile_file, str(profileid), "profile"
-            )
+            # TODO: Remove
+            # await self.background_job_ops.create_replica_jobs(
+            #     org.id, profile_file, str(profileid), "profile"
+            # )
 
             await self.orgs.inc_org_bytes_stored(
                 org.id, file_size - prev_file_size, "profile"
@@ -454,9 +455,10 @@ class ProfileOps:
         profile_file.hash = hash_
 
         # update replica
-        await self.background_job_ops.create_replica_jobs(
-            org_id, profile_file, str(profileid), "profile"
-        )
+        # TODO: Remove
+        # await self.background_job_ops.create_replica_jobs(
+        #     org_id, profile_file, str(profileid), "profile"
+        # )
 
         # update size stats, if changed
         if size != prev_file_size:
