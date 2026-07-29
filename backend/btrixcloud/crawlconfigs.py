@@ -1696,7 +1696,7 @@ class CrawlConfigOps:
         """Return counts of running workflows, total and status, optionally by org"""
 
         try:
-            base_query: dict[str, UUID | dict[str, list[str]]] = {}
+            base_query: dict[str, UUID | str] = {}
             if org:
                 base_query["oid"] = org.id
 
