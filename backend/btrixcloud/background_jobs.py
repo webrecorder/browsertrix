@@ -14,7 +14,6 @@ from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 
 from .crawlmanager import CrawlManager
 from .models import (
-    CRAWL_TYPES,
     AnyJob,
     BackgroundJob,
     BaseFile,
