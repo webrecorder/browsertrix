@@ -27,7 +27,6 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
-    RUNNING_STATES,
     SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
     ConfigRevision,
@@ -1701,9 +1700,7 @@ class CrawlConfigOps:
             if org:
                 base_query["oid"] = org.id
 
-            total = await self.crawls.count_documents(
-                {**base_query, "state": {"$in": RUNNING_STATES}}
-            )
+            # Running states
             running = await self.crawls.count_documents(
                 {**base_query, "state": "running"}
             )
@@ -1719,6 +1716,11 @@ class CrawlConfigOps:
             rate_limited = await self.crawls.count_documents(
                 {**base_query, "state": "rate-limited"}
             )
+            total_running = (
+                running + pending_wait + generate_wacz + uploading_wacz + rate_limited
+            )
+
+            # Paused states
             paused = await self.crawls.count_documents(
                 {**base_query, "state": "paused"}
             )
@@ -1734,6 +1736,15 @@ class CrawlConfigOps:
             paused_rate_limit = await self.crawls.count_documents(
                 {**base_query, "state": "paused_rate_limit_time_reached"}
             )
+            total_paused = (
+                paused
+                + paused_storage
+                + paused_time
+                + paused_read_only
+                + paused_rate_limit
+            )
+
+            # Waiting states
             starting = await self.crawls.count_documents(
                 {**base_query, "state": "starting"}
             )
@@ -1746,9 +1757,17 @@ class CrawlConfigOps:
             waiting_dedupe = await self.crawls.count_documents(
                 {**base_query, "state": "waiting_dedupe_index"}
             )
+            total_waiting = (
+                starting + waiting_capacity + waiting_org_limit + waiting_dedupe
+            )
+
+            total = total_running + total_paused + total_waiting
 
             return CrawlConfigRunningCountsResponse(
                 totalRunningPausedWaiting=total,
+                totalRunning=total_running,
+                totalPaused=total_paused,
+                totalWaiting=total_waiting,
                 # Running states
                 running=running,
                 pendingWait=pending_wait,

@@ -187,6 +187,7 @@ def test_running_workflow_counts(
     assert r.status_code == 200
     data = r.json()
     assert data["totalRunningPausedWaiting"] >= 1
+    assert data["totalRunning"] >= 1
     assert (
         data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
     )
@@ -199,6 +200,7 @@ def test_running_workflow_counts(
     assert r.status_code == 200
     data = r.json()
     assert data["totalRunningPausedWaiting"] >= 1
+    assert data["totalRunning"] >= 1
     assert (
         data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
     )

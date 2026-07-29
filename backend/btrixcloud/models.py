@@ -714,6 +714,9 @@ class CrawlConfigRunningCountsResponse(BaseModel):
     """Response model for counts of running workflows (total and by status)"""
 
     totalRunningPausedWaiting: int = 0
+    totalRunning: int = 0
+    totalPaused: int = 0
+    totalWaiting: int = 0
 
     # Running states
     running: int = 0
