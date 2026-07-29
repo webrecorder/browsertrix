@@ -80,10 +80,9 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
-    async def run_replica_job(
+    async def run_delete_replica_job(
         self,
         oid: str,
-        job_type: str,
         replica_storage: StorageRef,
         replica_file_path: str,
         replica_endpoint: str,
@@ -94,6 +93,8 @@ class CrawlManager(K8sAPI):
         existing_job_id: str | None = None,
     ) -> tuple[str, str | None]:
         """run job to replicate file from primary storage to replica storage"""
+
+        job_type = BgJobType.DELETE_REPLICA.value
 
         if existing_job_id:
             job_id = existing_job_id
@@ -118,13 +119,13 @@ class CrawlManager(K8sAPI):
             "BgJobType": BgJobType,
         }
 
-        if job_type == BgJobType.DELETE_REPLICA.value and delay_days > 0:
+        if delay_days > 0:
             # If replica deletion delay is configured, schedule as cronjob
             return await self.create_replica_deletion_scheduled_job(
                 job_id, params, delay_days
             )
 
-        data = self.templates.env.get_template("replica_job.yaml").render(params)
+        data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 

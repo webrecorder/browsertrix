@@ -132,15 +132,12 @@ class BackgroundJobOps:
             )
             replica_file_path = bucket_suffix + file.filename
 
-            job_type = BgJobType.DELETE_REPLICA.value
-
             delay_days = int(os.environ.get("REPLICA_DELETION_DELAY_DAYS", 0))
             if force_start_immediately:
                 delay_days = 0
 
-            job_id, schedule = await self.crawl_manager.run_replica_job(
+            job_id, schedule = await self.crawl_manager.run_delete_replica_job(
                 oid=str(org.id),
-                job_type=job_type,
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
