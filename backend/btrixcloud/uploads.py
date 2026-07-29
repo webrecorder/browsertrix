@@ -213,7 +213,8 @@ class UploadOps(BaseCrawlOps):
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
-        await self.replicate_crawl_files(crawl_id, org, "upload")
+        # TODO: Remove
+        # await self.replicate_crawl_files(crawl_id, org, "upload")
 
         return {"id": crawl_id, "added": True, "storageQuotaReached": quota_reached}
 
