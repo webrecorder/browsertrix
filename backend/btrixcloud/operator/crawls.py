@@ -84,6 +84,30 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 MEM_LIMIT_PADDING = 1.2
 
 
+# ============================================================================
+# pylint: disable=too-few-public-methods
+class ExitCodes:
+    """All known crawler exit code values"""
+
+    SUCCESS = 0
+    GENERIC_ERROR = 1
+    OUT_OF_SPACE = 3
+    REDIS_UNAVAILABLE = 8
+    FAILED = 9
+    CRASHED = 10
+    SIG_INT = 11
+    FAILED_LIMIT_REACHED = 12
+    SIG_INT_FORCE = 13
+    SIZE_LIMIT_REACHED = 14
+    TIME_LIMIT_REACHED = 15
+    DISK_USE_LIMIT_REACHED = 16
+    FATAL_ERROR = 17
+    RATE_LIMITED = 18
+    PROXY_ERROR = 21
+    UPLOAD_FAILED = 22
+    OOM = 137
+
+
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
 # pylint: disable=invalid-name, too-many-lines, too-many-return-statements
 # pylint: disable=too-many-instance-attributes
@@ -1273,7 +1297,7 @@ class CrawlOperator(BaseOperator):
                         # - in 'terminated' state with non-zero exit code (will be brief)
                         all_crashed = all_crashed and bool(
                             pod_status.backoffWait
-                            or (terminated and pod_status.exitCode != 0)
+                            or (terminated and pod_status.exitCode != ExitCodes.SUCCESS)
                         )
 
                 if role == "crawler":
@@ -1322,9 +1346,9 @@ class CrawlOperator(BaseOperator):
             status.anyCrawlPodNewExit = True
             status.lastCrawlPodExitCode = exit_code
 
-        if exit_code == 0:
+        if exit_code == ExitCodes.SUCCESS:
             pod_status.reason = "done"
-        elif terminated.get("reason") == "OOMKilled" or exit_code == 137:
+        elif terminated.get("reason") == "OOMKilled" or exit_code == ExitCodes.OOM:
             pod_status.reason = "oom"
         else:
             pod_status.reason = "interrupt: " + str(exit_code)
@@ -1605,10 +1629,16 @@ class CrawlOperator(BaseOperator):
             # - 0 is success / intended shutdown
             # - 11 is default interrupt / intended restart
             # - 13 is force interrupt / intended restart
-            if not pod.isNewExit or pod.exitCode in (0, 11, 13):
+            if not pod.isNewExit or pod.exitCode in (
+                ExitCodes.SUCCESS,
+                ExitCodes.SIG_INT,
+                ExitCodes.SIG_INT_FORCE,
+            ):
                 continue
 
-            reason = self.get_crawler_exit_reason(pod.exitCode or 1)
+            reason = self.get_crawler_exit_reason(
+                pod.exitCode or ExitCodes.GENERIC_ERROR
+            )
 
             log = self.get_log_line(
                 f"Crawler Instance Exited: {reason}",
@@ -1633,24 +1663,24 @@ class CrawlOperator(BaseOperator):
     def get_crawler_exit_reason(self, exit_code: int) -> str:
         """Get reason for crawler exit based on status code"""
         exit_codes = {
-            0: "Success",
-            1: "Generic Error",
-            3: "Out of Space",
-            8: "Redis Unavailable",
-            9: "Failed",
-            10: "Browser Crashed",
-            11: "Signal Interrupted",
-            12: "Failed Pages Limit Reached",
-            13: "Signal Interrupted (Force)",
-            14: "Size Limit Reached",
-            15: "Time Limit Reached",
-            16: "Disk Utilization Limit Reached",
-            17: "Fatal Error",
-            18: "Rate Limited",
-            21: "Proxy Error",
-            22: "Upload Failed",
+            ExitCodes.SUCCESS: "Success",
+            ExitCodes.GENERIC_ERROR: "Generic Error",
+            ExitCodes.OUT_OF_SPACE: "Out of Space",
+            ExitCodes.REDIS_UNAVAILABLE: "Redis Unavailable",
+            ExitCodes.FAILED: "Failed",
+            ExitCodes.CRASHED: "Browser Crashed",
+            ExitCodes.SIG_INT: "Signal Interrupted",
+            ExitCodes.FAILED_LIMIT_REACHED: "Failed Pages Limit Reached",
+            ExitCodes.SIG_INT_FORCE: "Signal Interrupted (Force)",
+            ExitCodes.SIZE_LIMIT_REACHED: "Size Limit Reached",
+            ExitCodes.TIME_LIMIT_REACHED: "Time Limit Reached",
+            ExitCodes.DISK_USE_LIMIT_REACHED: "Disk Utilization Limit Reached",
+            ExitCodes.FATAL_ERROR: "Fatal Error",
+            ExitCodes.RATE_LIMITED: "Rate Limited",
+            ExitCodes.PROXY_ERROR: "Proxy Error",
+            ExitCodes.UPLOAD_FAILED: "Upload Failed",
             # From Kuberentes
-            137: "Out of Memory",
+            ExitCodes.OOM: "Out of Memory",
         }
         try:
             return exit_codes[exit_code]
@@ -1867,7 +1897,11 @@ class CrawlOperator(BaseOperator):
                     increase_storage = True
 
             # out of storage
-            if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
+            if (
+                pod_info
+                and pod_info.isNewExit
+                and pod_info.exitCode == ExitCodes.OUT_OF_SPACE
+            ):
                 pod_info.used.storage = pod_info.allocated.storage
                 increase_storage = True
 
@@ -1897,9 +1931,14 @@ class CrawlOperator(BaseOperator):
             status.stopReason = await self.is_crawl_stopping(crawl, status, stats)
             status.stopping = status.stopReason is not None
 
+        # if fatal error exit code, fail crawl right away
+        if status.allCrashed and status.lastCrawlPodExitCode == ExitCodes.FATAL_ERROR:
+            await self.fail_crawl(crawl, status, pods, stats, redis)
+            return status
+
         # if all crashed and last exit was rate-limit exit code (18),
         # set to rate limited state now and return
-        if status.allCrashed and status.lastCrawlPodExitCode == 18:
+        if status.allCrashed and status.lastCrawlPodExitCode == ExitCodes.RATE_LIMITED:
             if not status.rateLimitedAtTime:
                 status.rateLimitedAtTime = date_to_str(dt_now())
 
