@@ -190,7 +190,7 @@ cleanup_files_after_minutes: 1440
 
 # Cron schedule for periodically syncing replica storage
 # locations from primary storage
-replication_job_cron_schedule: ""
+replication_job_cron_schedule: "0 */2 * * *"
 
 # Emails Image
 # =========================================
