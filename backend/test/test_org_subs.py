@@ -93,6 +93,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -132,6 +133,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -250,6 +252,7 @@ def test_login_existing_user_for_invite():
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -282,6 +285,7 @@ def test_update_sub(admin_auth_headers):
         "status": "paused_payment_failed",
         "planId": "basic",
         "futureCancelDate": "2028-12-26T01:02:03Z",
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -298,6 +302,7 @@ def test_update_sub_2(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             # not updateable here, only by superadmin
             "readOnlyOnCancel": True,
             "quotas": {
@@ -482,6 +487,7 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
         "status": "active",
         "planId": "basic",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -507,11 +513,13 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -523,11 +531,13 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -539,6 +549,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -548,9 +559,11 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -565,6 +578,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": non_default_org_id,
             "status": "active",
             "planId": "basic",
+            "renewalDate": None,
         },
     ]
 
@@ -591,11 +605,13 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -607,6 +623,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -616,9 +633,11 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -652,11 +671,13 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -668,6 +689,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -677,9 +699,11 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -712,9 +736,11 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -747,11 +773,13 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -763,9 +791,11 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -1005,6 +1035,7 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert last_update["update"] == {
         "maxPagesPerCrawl": 100,
         "storageQuota": 1000000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 75,  # only this value updated from previous
         "giftedExecMinutes": 0,
         "maxConcurrentCrawls": 1,
