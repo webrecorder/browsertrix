@@ -747,6 +747,7 @@ class OrgOps(BaseOrgs):
                 },
             )
 
+    # pylint: disable=too-many-branches
     async def update_quotas(
         self,
         org: Organization,
@@ -2038,7 +2039,7 @@ def init_orgs_api(
             plans = PlansResponse.model_validate_json(plans_json)
             return plans
         except ValidationError as err:
-            logger.exception("invalid_plans", err)
+            logger.exception("invalid_plans")
             raise HTTPException(status_code=400, detail="invalid_plans") from err
 
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
