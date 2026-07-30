@@ -15,6 +15,7 @@ enum Field {
   ElapsedTime = "elapsedTime",
   ExecutionTime = "executionTime",
   BillableExecutionTime = "billableExecutionTime",
+  PlanExecutionTime = "planExecutionTime",
   RolloverExecutionTime = "rolloverExecutionTime",
   GiftedExecutionTime = "giftedExecutionTime",
 }
@@ -27,6 +28,9 @@ export class UsageHistoryTable extends BtrixElement {
   private readonly hasMonthlyTime = () =>
     this.org?.monthlyExecSeconds &&
     Object.keys(this.org.monthlyExecSeconds).length;
+
+  private readonly hasPlanTime = () =>
+    this.org?.planExecSeconds && Object.keys(this.org.planExecSeconds).length;
 
   private readonly hasExtraTime = () =>
     this.org?.extraExecSeconds && Object.keys(this.org.extraExecSeconds).length;
@@ -88,6 +92,15 @@ export class UsageHistoryTable extends BtrixElement {
         ),
       });
     }
+    if (this.hasPlanTime()) {
+      cols.push({
+        field: Field.PlanExecutionTime,
+        label: msg("Plan Execution Time"),
+        description: msg(
+          "Execution time used from the plan’s pool of execution minutes, which resets on renewal.",
+        ),
+      });
+    }
     if (this.hasExtraTime()) {
       cols.push({
         field: Field.RolloverExecutionTime,
@@ -123,6 +136,10 @@ export class UsageHistoryTable extends BtrixElement {
         monthlySecondsUsed = maxMonthlySeconds;
       }
 
+      // Plan minutes are a period-spanning pool refilled externally, so
+      // recorded usage can exceed the current quota
+      const planSecondsUsed = org.planExecSeconds?.[mY] || 0;
+
       let extraSecondsUsed = org.extraExecSeconds?.[mY] || 0;
       let maxExtraSeconds = 0;
       if (org.quotas.extraExecMinutes) {
@@ -155,6 +172,7 @@ export class UsageHistoryTable extends BtrixElement {
         [Field.ElapsedTime]: crawlTime || 0,
         [Field.ExecutionTime]: totalSecondsUsed,
         [Field.BillableExecutionTime]: monthlySecondsUsed,
+        [Field.PlanExecutionTime]: planSecondsUsed,
         [Field.RolloverExecutionTime]: extraSecondsUsed,
         [Field.GiftedExecutionTime]: giftedSecondsUsed,
       };

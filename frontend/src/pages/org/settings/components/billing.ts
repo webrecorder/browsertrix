@@ -215,8 +215,43 @@ export class OrgSettingsBilling extends BtrixElement {
                   },
                   () => html` <sl-skeleton></sl-skeleton> `,
                 )}
+                ${when(this.org?.subscription?.renewalDate, () => {
+                  const renewalDate = this.localize.date(
+                    this.org!.subscription!.renewalDate!,
+                    { dateStyle: "medium" },
+                    // {
+                    //   month: "long",
+                    //   day: "numeric",
+                    //   year: "numeric",
+                    // },
+                  );
+
+                  return html`
+                    <div
+                      class="mb-3 flex items-center gap-2 border-b pb-3 text-neutral-500"
+                    >
+                      <sl-icon
+                        name="arrow-repeat"
+                        class="size-4 flex-shrink-0"
+                      ></sl-icon>
+                      <div>
+                        <span class="font-medium text-neutral-700">
+                          ${msg(str`Your plan renews on ${renewalDate}`)}
+                        </span>
+                        ${when(
+                          this.org!.quotas.planExecMinutes > 0,
+                          () =>
+                            html`&mdash;
+                            ${msg("execution minutes reset to full")}`,
+                        )}
+                      </div>
+                    </div>
+                  `;
+                })}
                 <h5 class="mb-2 mt-4 text-xs leading-none text-neutral-500">
-                  ${msg("Monthly quota")}
+                  ${this.org && this.org.quotas.planExecMinutes > 0
+                    ? msg("Plan quota")
+                    : msg("Monthly quota")}
                 </h5>
                 ${when(
                   this.org,
@@ -460,6 +495,7 @@ export class OrgSettingsBilling extends BtrixElement {
   };
 
   private readonly renderMonthlyQuotas = (quotas: OrgQuotas) => {
+    const usesPlanPool = quotas.planExecMinutes > 0;
     const maxExecMinutesPerMonth = this.localize.number(
       quotas.maxExecMinutesPerMonth,
       {
@@ -468,6 +504,11 @@ export class OrgSettingsBilling extends BtrixElement {
         unitDisplay: "long",
       },
     );
+    const planExecMinutes = this.localize.number(quotas.planExecMinutes, {
+      style: "unit",
+      unit: "minute",
+      unitDisplay: "long",
+    });
     const maxPagesPerCrawl =
       quotas.maxPagesPerCrawl &&
       `${this.localize.number(quotas.maxPagesPerCrawl)} ${pluralOf("pages", quotas.maxPagesPerCrawl)}`;
@@ -481,9 +522,13 @@ export class OrgSettingsBilling extends BtrixElement {
     return html`
       <ul class="leading-relaxed text-neutral-700">
         <li>
-          ${hasExecutionMinuteQuota(this.org)
-            ? msg(str`${maxExecMinutesPerMonth} of execution time`)
-            : msg("Unlimited execution time")}
+          ${usesPlanPool
+            ? msg(
+                str`${planExecMinutes} of execution time, reset on each renewal`,
+              )
+            : hasExecutionMinuteQuota(this.org)
+              ? msg(str`${maxExecMinutesPerMonth} of execution time`)
+              : msg("Unlimited execution time")}
         </li>
         <li>
           ${quotas.storageQuota
