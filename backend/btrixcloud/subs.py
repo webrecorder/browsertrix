@@ -282,9 +282,9 @@ class SubOps:
         return {"updated": True}
 
     async def refill_subscription(self, refill: SubscriptionRefill) -> dict[str, bool]:
-        """Reset an organization's plan execution minutes pool on renewal.
+        """Refill an organization's plan execution minutes pool on renewal.
 
-        The pool is reset to the full amount (unused plan minutes do not roll
+        The pool is refilled to the full amount (unused plan minutes do not roll
         over); the subscription cadence is owned by the external subscription app.
         """
         org = await self.org_ops.find_org_by_subscription_id(refill.subId)
@@ -301,7 +301,7 @@ class SubOps:
                 {"$set": {"subscription.renewalDate": refill.renewalDate}},
             )
 
-        await self.org_ops.reset_plan_minutes(
+        await self.org_ops.refill_plan_minutes(
             org, refill.minutes, sub_event_id=event_id
         )
         return {"updated": True}
