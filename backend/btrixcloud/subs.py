@@ -40,6 +40,8 @@ from .models import (
     SubscriptionImportOut,
     SubscriptionPortalUrlRequest,
     SubscriptionPortalUrlResponse,
+    SubscriptionRefill,
+    SubscriptionRefillOut,
     SubscriptionTrialEndReminder,
     SubscriptionUpdate,
     SubscriptionUpdateOut,
@@ -81,9 +83,11 @@ class SubOps:
     async def create_new_subscription(
         self, create: SubscriptionCreate, user: User, request: Request
     ) -> dict[str, Any]:
-        """create org for new subscription"""
         subscription = Subscription(
-            subId=create.subId, status=create.status, planId=create.planId
+            subId=create.subId,
+            status=create.status,
+            planId=create.planId,
+            renewalDate=create.renewalDate,
         )
 
         new_org = await self.org_ops.create_org(
@@ -109,9 +113,11 @@ class SubOps:
     async def import_subscription(
         self, sub_import: SubscriptionImport
     ) -> dict[str, Any]:
-        """import subscription to existing org"""
         subscription = Subscription(
-            subId=sub_import.subId, status=sub_import.status, planId=sub_import.planId
+            subId=sub_import.subId,
+            status=sub_import.status,
+            planId=sub_import.planId,
+            renewalDate=sub_import.renewalDate,
         )
         await self.org_ops.add_subscription_to_org(subscription, sub_import.oid)
 
@@ -270,6 +276,31 @@ class SubOps:
         await self.org_ops.update_quotas(org, quotas, mode="add", sub_event_id=event_id)
         return {"updated": True}
 
+    async def refill_subscription(self, refill: SubscriptionRefill) -> dict[str, bool]:
+        """Reset an organization's plan execution minutes pool on renewal.
+
+        The pool is reset to the full amount (unused plan minutes do not roll
+        over); the subscription cadence is owned by the external subscription app.
+        """
+        org = await self.org_ops.find_org_by_subscription_id(refill.subId)
+        if not org:
+            raise HTTPException(
+                status_code=404, detail="org_for_subscription_not_found"
+            )
+
+        event_id = await self.add_sub_event("refill", refill, org.id)
+
+        if refill.renewalDate is not None:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id},
+                {"$set": {"subscription.renewalDate": refill.renewalDate}},
+            )
+
+        await self.org_ops.reset_plan_minutes(
+            org, refill.minutes, sub_event_id=event_id
+        )
+        return {"updated": True}
+
     async def add_sub_event(
         self,
         type_: SubscriptionEventType,
@@ -298,6 +329,8 @@ class SubOps:
             return SubscriptionCancelOut(**data)
         if data["type"] == "add-minutes":
             return SubscriptionAddMinutesOut(**data)
+        if data["type"] == "refill":
+            return SubscriptionRefillOut(**data)
 
         raise HTTPException(status_code=500, detail="unknown sub event")
 
@@ -579,6 +612,15 @@ def init_subs_api(
     )
     async def add_sub_minutes(add_min: SubscriptionAddMinutes):
         return await ops.add_sub_minutes(add_min)
+
+    @app.post(
+        "/subscriptions/refill",
+        tags=["subscriptions"],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
+        response_model=UpdatedResponse,
+    )
+    async def refill_subscription(refill: SubscriptionRefill):
+        return await ops.refill_subscription(refill)
 
     assert org_ops.router
 
