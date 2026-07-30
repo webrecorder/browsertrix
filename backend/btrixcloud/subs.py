@@ -75,14 +75,18 @@ class SubOps:
     org_ops: OrgOps
     user_manager: UserManager
 
-    def __init__(self, mdb, org_ops: OrgOps, user_manager: UserManager):
+    def __init__(
+        self, mdb: AsyncIOMotorDatabase, org_ops: OrgOps, user_manager: UserManager
+    ):
         self.subs = mdb["subscriptions"]
+        self.orgs = mdb["organizations"]
         self.org_ops = org_ops
         self.user_manager = user_manager
 
     async def create_new_subscription(
         self, create: SubscriptionCreate, user: User, request: Request
     ) -> dict[str, Any]:
+        """Create a new organization from a new subscription"""
         subscription = Subscription(
             subId=create.subId,
             status=create.status,
@@ -113,6 +117,7 @@ class SubOps:
     async def import_subscription(
         self, sub_import: SubscriptionImport
     ) -> dict[str, Any]:
+        """Import a subscription into an existing organization"""
         subscription = Subscription(
             subId=sub_import.subId,
             status=sub_import.status,
