@@ -866,7 +866,7 @@ class OrgOps(BaseOrgs):
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
 
-    async def reset_plan_minutes(
+    async def refill_plan_minutes(
         self, org: Organization, minutes: int, sub_event_id: str | None = None
     ) -> None:
         """Reset an organization's plan execution minutes pool to the full amount.
