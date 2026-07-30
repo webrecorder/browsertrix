@@ -102,6 +102,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "status": "active",
         "planId": "basic",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -326,6 +327,7 @@ def test_update_sub_2(admin_auth_headers):
         "status": "active",
         "planId": "basic2",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -611,7 +613,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "planExecMinutes": 0,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -677,7 +679,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
-                "planExecMinutes": 0,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
