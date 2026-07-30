@@ -13,6 +13,16 @@ export const executionMinuteColors = {
       border: "neutral-300",
     },
   },
+  plan: {
+    foreground: {
+      primary: "cyan-500",
+      border: "cyan-700",
+    },
+    background: {
+      primary: "neutral-100",
+      border: "neutral-300",
+    },
+  },
   gifted: {
     foreground: {
       primary: "blue-500",

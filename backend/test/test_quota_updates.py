@@ -164,6 +164,7 @@ async def test_update_quotas_add(org_ops: OrgOps):
         "maxExecMinutesPerMonth": 720,
         "maxConcurrentCrawls": 3,
         "maxPagesPerCrawl": 20000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 550,
         "giftedExecMinutes": 350,
     }
