@@ -92,6 +92,7 @@ class ExitCodes:
     SUCCESS = 0
     GENERIC_ERROR = 1
     OUT_OF_SPACE = 3
+    INVALID_CONFIG = 4
     REDIS_UNAVAILABLE = 8
     FAILED = 9
     CRASHED = 10
@@ -1666,6 +1667,7 @@ class CrawlOperator(BaseOperator):
             ExitCodes.SUCCESS: "Success",
             ExitCodes.GENERIC_ERROR: "Generic Error",
             ExitCodes.OUT_OF_SPACE: "Out of Space",
+            ExitCodes.INVALID_CONFIG: "Invalid Crawl Config Option",
             ExitCodes.REDIS_UNAVAILABLE: "Redis Unavailable",
             ExitCodes.FAILED: "Failed",
             ExitCodes.CRASHED: "Browser Crashed",
@@ -1932,7 +1934,10 @@ class CrawlOperator(BaseOperator):
             status.stopping = status.stopReason is not None
 
         # if fatal error exit code, fail crawl right away
-        if status.allCrashed and status.lastCrawlPodExitCode == ExitCodes.FATAL_ERROR:
+        if status.allCrashed and status.lastCrawlPodExitCode in (
+            ExitCodes.FATAL_ERROR,
+            ExitCodes.INVALID_CONFIG,
+        ):
             await self.fail_crawl(crawl, status, pods, stats, redis)
             return status
 
