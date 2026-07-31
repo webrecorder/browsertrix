@@ -59,7 +59,7 @@ async def main():
         coll_ops,
         _,
         _,
-        _,
+        bg_job_ops,
         _,
         user_manager,
         _,
@@ -97,8 +97,7 @@ async def main():
 
     if job_type == BgJobType.REPLICATE_FILES_CRON:
         try:
-            # Call method to launch actual rclone copy jobs - from storage_ops?
-            crawl_logger.info("replicate_files_cron_reached")
+            await bg_job_ops.create_copy_bucket_jobs()
             return 0
         # pylint: disable=broad-exception-caught
         except Exception:

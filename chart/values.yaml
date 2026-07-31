@@ -188,8 +188,8 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
-# Cron schedule for periodically syncing replica storage
-# locations from primary storage
+# Cron schedule for periodically syncing replica storage from primary
+# Defaults to every two hours
 replication_job_cron_schedule: "0 */2 * * *"
 
 # Emails Image

@@ -18,6 +18,7 @@ from .models import (
     BaseFile,
     BgJobType,
     CleanupSeedFilesJob,
+    CopyBucketJob,
     CreateReplicaJob,
     DeleteOrgJob,
     DeleteReplicaJob,
@@ -188,6 +189,95 @@ class BackgroundJobOps:
                 oid=org.id,
                 unstructured_message="warning: replica deletion job could not be "
                 f"started for {object_type} {file}: {exc}",
+            )
+            return ""
+
+    async def create_copy_bucket_jobs(self):
+        """Create background jobs to copy primary storage to each default replica location
+
+        Note that this replicates default storages only, and not any org-specific
+        custom storage, which is not yet fully supported by Browsertrix. When custom
+        storage support is added, we will need to spin up additional copy jobs.
+
+        Because rclone copy is only additive, these copy bucket jobs will ensure
+        that all files in primary storage also exist in the configured replica
+        locations without being able to delete any files from the replica location.
+        """
+        primary_storage_ref = self.storage_ops.get_default_primary()
+        primary_storage = self.storage_ops.get_default_s3_storage(primary_storage_ref)
+        primary_endpoint, primary_bucket_suffix = self.strip_bucket(
+            primary_storage.endpoint_url
+        )
+
+        for default_replica_ref in self.storage_ops.get_default_replicas():
+            await self.create_copy_bucket_job(
+                primary_storage_ref,
+                primary_endpoint,
+                primary_bucket_suffix,
+                default_replica_ref,
+            )
+
+    async def create_copy_bucket_job(
+        self,
+        primary_storage_ref: StorageRef,
+        primary_endpoint: str,
+        primary_bucket_suffix: str,
+        replica_ref: StorageRef,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """Create background job to copy contents of bucket to replica location"""
+        replica_logger = logger.bind(
+            primary_storage=primary_storage_ref, replica_storage=replica_ref
+        )
+
+        try:
+            replica_storage = self.storage_ops.get_default_s3_storage(replica_ref)
+            replica_endpoint, replica_bucket_suffix = self.strip_bucket(
+                replica_storage.endpoint_url
+            )
+
+            job_id = await self.crawl_manager.run_copy_bucket_job(
+                primary_storage=primary_storage_ref,
+                replica_storage=replica_ref,
+                primary_endpoint=primary_endpoint,
+                primary_bucket_suffix=primary_bucket_suffix,
+                replica_endpoint=replica_endpoint,
+                replica_bucket_suffix=replica_bucket_suffix,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                copy_bucket_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": copy_bucket_job.started,
+                    "finished": copy_bucket_job.finished,
+                }
+                if copy_bucket_job.previousAttempts:
+                    copy_bucket_job.previousAttempts.append(previous_attempt)
+                else:
+                    copy_bucket_job.previousAttempts = [previous_attempt]
+                copy_bucket_job.started = dt_now()
+                copy_bucket_job.finished = None
+                copy_bucket_job.success = None
+            else:
+                copy_bucket_job = CopyBucketJob(
+                    id=job_id,
+                    started=dt_now(),
+                    replica_storage=replica_ref,
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": copy_bucket_job.to_dict()}, upsert=True
+            )
+
+            replica_logger.info("copy_bucket_job_started", job_id=job_id)
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            replica_logger.warning(
+                "copy_bucket_job_start_failed",
+                exc_info=True,
+                existing_job_id=existing_job_id,
             )
             return ""
 
@@ -548,6 +638,7 @@ class BackgroundJobOps:
         | CleanupSeedFilesJob
         | UpdateCollStatsJob
         | ReplicateFilesCronJob
+        | CopyBucketJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -586,6 +677,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.REPLICATE_FILES_CRON:
             return ReplicateFilesCronJob.from_dict(data)
+
+        if data["type"] == BgJobType.COPY_BUCKET:
+            return CopyBucketJob.from_dict(data)
 
         return DeleteOrgJob.from_dict(data)
 
@@ -696,6 +790,26 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
+        if job.type == BgJobType.COPY_BUCKET:
+            job = cast(CopyBucketJob, job)
+
+            primary_storage_ref = self.storage_ops.get_default_primary()
+            primary_storage = self.storage_ops.get_default_s3_storage(
+                primary_storage_ref
+            )
+            primary_endpoint, primary_bucket_suffix = self.strip_bucket(
+                primary_storage.endpoint_url
+            )
+
+            await self.create_copy_bucket_job(
+                primary_storage_ref,
+                primary_endpoint,
+                primary_bucket_suffix,
+                job.replica_storage,
+                existing_job_id=job_id,
+            )
+            return {"success": True}
+
         return {"success": False}
 
     async def retry_org_background_job(
@@ -704,7 +818,15 @@ class BackgroundJobOps:
         """Retry background job specific to one org"""
         if job.type == BgJobType.CREATE_REPLICA:
             raise HTTPException(
-                status_code=400, detail="create_replica_job_retry_not_supported"
+                status_code=400, detail="create_replica_job_retry_no_longer_supported"
+            )
+
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
+            raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
+
+        if job.type in (BgJobType.COPY_BUCKET, BgJobType.OPTIMIZE_PAGES):
+            raise HTTPException(
+                status_code=400, detail="non_org_specific_job_retry_not_supported"
             )
 
         if job.type == BgJobType.DELETE_REPLICA:
@@ -755,9 +877,6 @@ class BackgroundJobOps:
                 existing_job_id=job.id,
             )
             return {"success": True}
-
-        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
-            raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}
 
