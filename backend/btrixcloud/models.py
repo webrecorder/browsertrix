@@ -863,7 +863,7 @@ class StorageRef(BaseModel):
             return self.name
         return "cs-" + self.name
 
-    def get_storage_secret_name(self, oid: str) -> str:
+    def get_storage_secret_name(self, oid: str = "") -> str:
         """get k8s secret name for this storage and oid"""
         if not self.custom:
             return "storage-" + self.name
@@ -3252,6 +3252,8 @@ class BgJobType(StrEnum):
     CREATE_REPLICA = "create-replica"
     # New replication job that spins up rclone copy jobs as needed
     REPLICATE_FILES_CRON = "replicate-files-cron"
+    # Per-bucket replication job
+    COPY_BUCKET = "copy-bucket"
 
 
 # ============================================================================
@@ -3336,6 +3338,14 @@ class ReplicateFilesCronJob(BackgroundJob):
 
 
 # ============================================================================
+class CopyBucketJob(BackgroundJob):
+    """Model for tracking job to copy primary storage bucket to replica storage"""
+
+    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
+    replica_storage: StorageRef
+
+
+# ============================================================================
 class UpdateCollStatsJob(BackgroundJob):
     """Model for tracking jobs to readd pages for an org or single crawl"""
 
@@ -3376,6 +3386,7 @@ AnyJob = RootModel[
     | PostProcessUploadJob
     | RetryStuckUploadsJob
     | ReplicateFilesCronJob
+    | CopyBucketJob
 ]
 
 

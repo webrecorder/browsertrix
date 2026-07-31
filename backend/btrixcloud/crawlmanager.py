@@ -81,6 +81,41 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
+    async def run_copy_bucket_job(
+        self,
+        primary_storage: StorageRef,
+        replica_storage: StorageRef,
+        primary_endpoint: str,
+        primary_bucket_suffix: str,
+        replica_endpoint: str,
+        replica_bucket_suffix: str,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """run job to replicate primary storage bucket to replica location"""
+        job_type = BgJobType.COPY_BUCKET.value
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"{job_type}-{secrets.token_hex(5)}"
+
+        params: dict[str, object] = {
+            "id": job_id,
+            "primary_secret_name": primary_storage.get_storage_secret_name(),
+            "primary_file_path": primary_bucket_suffix,
+            "primary_endpoint": primary_endpoint,
+            "replica_secret_name": replica_storage.get_storage_secret_name(),
+            "replica_file_path": replica_bucket_suffix,
+            "replica_endpoint": replica_endpoint,
+            "BgJobType": BgJobType,
+        }
+
+        data = self.templates.env.get_template("copy_bucket_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
     async def run_delete_replica_job(
         self,
         oid: str,
@@ -88,9 +123,6 @@ class CrawlManager(K8sAPI):
         replica_file_path: str,
         replica_endpoint: str,
         delay_days: int = 0,
-        primary_storage: StorageRef | None = None,
-        primary_file_path: str | None = None,
-        primary_endpoint: str | None = None,
         existing_job_id: str | None = None,
     ) -> tuple[str, str | None]:
         """run job to replicate file from primary storage to replica storage"""
@@ -110,13 +142,6 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
-            "primary_secret_name": (
-                primary_storage.get_storage_secret_name(oid)
-                if primary_storage
-                else None
-            ),
-            "primary_file_path": primary_file_path if primary_file_path else None,
-            "primary_endpoint": primary_endpoint if primary_endpoint else None,
             "BgJobType": BgJobType,
         }
 
@@ -438,22 +463,23 @@ class CrawlManager(K8sAPI):
         try:
             cron_job = await self.batch_api.read_namespaced_cron_job(
                 name=job_id,
-                namespace=self.namespace,
+                namespace=DEFAULT_NAMESPACE,
             )
             if cron_job:
                 replication_logger.info("replication_cron_job_exists")
 
                 if cron_job.spec.schedule != job_schedule:
+                    prev_schedule = cron_job.spec.schedule
                     cron_job.spec.schedule = job_schedule
 
                     await self.batch_api.patch_namespaced_cron_job(
                         name=cron_job.metadata.name,
-                        namespace=self.namespace,
+                        namespace=DEFAULT_NAMESPACE,
                         body=cron_job,
                     )
                     replication_logger.info(
                         "replication_cron_job_updated",
-                        prev_schedule=cron_job.spec.schedule,
+                        prev_schedule=prev_schedule,
                     )
                 return
         # pylint: disable=broad-exception-caught
@@ -475,7 +501,7 @@ class CrawlManager(K8sAPI):
             params
         )
 
-        await self.create_from_yaml(data)
+        await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
     async def create_crawl_job(
         self,
