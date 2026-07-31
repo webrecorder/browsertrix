@@ -2,15 +2,12 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ id }}"
-  finalizers:
-    - metacontroller.io/decoratorcontroller-background-job-operator
   labels:
     role: "background-job"
     job_type: {{ job_type }}
-    btrix.org: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 0
+  ttlSecondsAfterFinished: 300
   backoffLimit: 5
   template:
     spec:
@@ -27,6 +24,36 @@ spec:
       - name: rclone
         image: rclone/rclone:latest
         env:
+        - name: RCLONE_CONFIG_PRIMARY_TYPE
+          value: "s3"
+
+        - name: RCLONE_CONFIG_PRIMARY_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_ACCESS_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_SECRET_KEY
+
+        - name: RCLONE_CONFIG_PRIMARY_REGION
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_REGION
+
+        - name: RCLONE_CONFIG_PRIMARY_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: "{{ primary_secret_name }}"
+              key: STORE_S3_PROVIDER
+
+        - name: RCLONE_CONFIG_PRIMARY_ENDPOINT
+          value: "{{ primary_endpoint }}"
+
         - name: RCLONE_CONFIG_REPLICA_TYPE
           value: "s3"
 
@@ -57,7 +84,7 @@ spec:
         - name: RCLONE_CONFIG_REPLICA_ENDPOINT
           value: "{{ replica_endpoint }}"
 
-        command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
+        command: ["rclone", "-vv", "copy", "--checksum", "--error-on-no-transfer", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
 
         resources:
           limits:

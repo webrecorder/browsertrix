@@ -192,8 +192,8 @@ cleanup_files_after_minutes: 1440
 # without a running background job and retrying them
 stuck_uploads_cron_schedule: "0 * * * *"
 
-# Cron schedule for periodically syncing replica storage
-# locations from primary storage
+# Cron schedule for periodically syncing replica storage from primary
+# Defaults to every two hours
 replication_job_cron_schedule: "0 */2 * * *"
 
 # Emails Image
