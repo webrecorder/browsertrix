@@ -7,6 +7,7 @@ import re
 import time
 import zipfile
 from tempfile import TemporaryFile
+from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
 import structlog
@@ -1050,7 +1051,13 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
     assert r.json()["total"] == 2
 
 
-def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+def test_re_add_crawl_pages(
+    crawler_auth_headers,
+    default_org_id,
+    crawler_crawl_id,
+    admin_auth_headers,
+    non_default_org_id,
+):
     # Store page counts to compare against after re-adding
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
@@ -1108,6 +1115,23 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         headers=crawler_auth_headers,
     )
     assert r.status_code == 403
+
+    # Crawl ids that do not exist are rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{uuid4()}/pages/reAdd",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "crawl_not_found"
+
+    # Crawl ids belonging to another org are rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/all-crawls/"
+        f"{crawler_crawl_id}/pages/reAdd",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "crawl_not_found"
 
     # Check that crawl page counts were recalculated properly
     r = requests.get(
