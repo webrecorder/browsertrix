@@ -56,7 +56,7 @@ spec:
 
 {% if crawl_id %}
           - name: CRAWL_ID
-            value: {{ crawl_id }}
+            value: {{ crawl_id | tojson }}
 {% endif %}
 
 {% if collection_id %}
