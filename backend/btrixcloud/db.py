@@ -347,6 +347,15 @@ _LENIENT_CTX = contextvars.ContextVar[Literal[False] | dict[str, Any]](
 )
 
 
+def is_lenient_read() -> bool:
+    """Return True if currently validating data read from the database.
+
+    Validators that may reject legacy data should skip validation when this
+    returns True, so that old documents remain readable.
+    """
+    return bool(_LENIENT_CTX.get())
+
+
 def _lenient_str(v, handler, info):
     """WrapValidator: skip string validation when reading from DB."""
     ctx = _LENIENT_CTX.get()
