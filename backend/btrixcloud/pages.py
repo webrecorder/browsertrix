@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 import structlog
 import pymongo
 from fastapi import Depends, HTTPException, Request, Response
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .models import (
     DeletedResponse,
@@ -66,7 +67,13 @@ class PageOps:
     coll_ops: CollectionOps
 
     def __init__(
-        self, mdb, crawl_ops, org_ops, storage_ops, background_job_ops, coll_ops
+        self,
+        mdb: AsyncIOMotorDatabase,
+        crawl_ops,
+        org_ops,
+        storage_ops,
+        background_job_ops,
+        coll_ops,
     ):
         self.pages = mdb["pages"]
         self.crawls = mdb["crawls"]
@@ -955,7 +962,7 @@ class PageOps:
         if boundaries[-1] <= 1:
             boundaries.append(1.1)
 
-        aggregate = [
+        aggregate: list[dict[str, dict[str, Any]]] = [
             {
                 "$match": {
                     "crawl_id": crawl_id,
@@ -1254,6 +1261,12 @@ def init_pages_api(
         org: Organization = Depends(org_crawl_dep),
     ):
         """Re-add pages for crawl (may delete page QA data!)"""
+        crawl = await ops.crawls.find_one(
+            {"_id": crawl_id, "oid": org.id}, projection={"_id": 1}
+        )
+        if not crawl:
+            raise HTTPException(status_code=404, detail="crawl_not_found")
+
         job_id = await ops.background_job_ops.create_re_add_org_pages_job(
             org.id, crawl_id=crawl_id
         )

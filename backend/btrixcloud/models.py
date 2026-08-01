@@ -39,6 +39,8 @@ from slugify import slugify
 from typing_extensions import deprecated
 
 # from fastapi_users import models as fastapi_users_models
+from .crawl_validator import validate_crawl_filename_template
+from .cron_validator import validate_cron_schedule
 from .db import LENIENT_ON_READ, BaseMongoModel
 from .utils import is_bool
 
@@ -111,6 +113,23 @@ CollectionCaption = Annotated[str | None, Field(max_length=1000), LENIENT_ON_REA
 
 OrgName = Annotated[str, Field(min_length=1, max_length=50), LENIENT_ON_READ]
 OrgPublicDescription = Annotated[str | None, Field(max_length=400), LENIENT_ON_READ]
+
+# ============================================================================
+# Input validation for crawl configuration values (schedules, filename
+# templates) that are persisted and used when creating scheduled crawls
+# and crawl storage files.
+# ============================================================================
+
+Schedule = Annotated[
+    str | None,
+    BeforeValidator(validate_cron_schedule),
+    LENIENT_ON_READ,
+]
+CrawlFilenameTemplate = Annotated[
+    str | None,
+    BeforeValidator(validate_crawl_filename_template),
+    LENIENT_ON_READ,
+]
 
 
 # pylint: disable=too-few-public-methods
@@ -445,7 +464,7 @@ class RawCrawlConfig(BaseModel):
 class CrawlConfigIn(BaseModel):
     """CrawlConfig input model, submitted via API"""
 
-    schedule: str | None = ""
+    schedule: Schedule = ""
     runNow: bool = False
 
     config: RawCrawlConfig
@@ -473,7 +492,7 @@ class CrawlConfigIn(BaseModel):
     # Overrides scale if set
     browserWindows: BrowserWindowCount | None = None
 
-    crawlFilenameTemplate: str | None = None
+    crawlFilenameTemplate: CrawlFilenameTemplate = None
 
     shareable: bool = False
 
@@ -621,7 +640,7 @@ class UpdateCrawlConfig(BaseModel):
     updateRunning: bool = False
 
     # crawl data: revision tracked
-    schedule: str | None = None
+    schedule: Schedule = None
     profileid: UUID | EmptyStr | None = None
     crawlerChannel: str | None = None
     proxyId: str | None = None
@@ -629,7 +648,7 @@ class UpdateCrawlConfig(BaseModel):
     maxCrawlSize: int | None = None
     scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount | None = None
-    crawlFilenameTemplate: str | None = None
+    crawlFilenameTemplate: CrawlFilenameTemplate = None
     config: RawCrawlConfig | None = None
     shareable: bool | None = None
 

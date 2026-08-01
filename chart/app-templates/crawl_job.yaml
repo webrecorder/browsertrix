@@ -23,23 +23,23 @@ spec:
   browserWindows: {{ browser_windows }}
 
   profile_filename: "{{ profile_filename }}"
-  profileId: "{{ profileid }}"
-  storage_filename: "{{ storage_filename }}"
+  profileId: {{ profileid | tojson }}
+  storage_filename: {{ storage_filename | tojson }}
 
   maxCrawlSize: {{ max_crawl_size if not qa_source else 0 }}
   timeout: {{ timeout if not qa_source else 0 }}
   qaSourceCrawlId: "{{ qa_source }}"
 
   manual: {{ manual }}
-  crawlerChannel: "{{ crawler_channel }}"
+  crawlerChannel: {{ crawler_channel | tojson }}
   ttlSecondsAfterFinished: {{ 30 if not qa_source else 0 }}
   warcPrefix: "{{ warc_prefix }}"
 
   storageName: "{{ storage_name }}"
 
-  proxyId: "{{ proxy_id }}"
+  proxyId: {{ proxy_id | tojson }}
 
-  dedupeCollId: "{{ dedupe_coll_id }}"
+  dedupeCollId: {{ dedupe_coll_id | tojson }}
 
   pausedAt: "{{ pausedAt }}"
 
