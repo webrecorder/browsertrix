@@ -1064,6 +1064,9 @@ class CrawlOps(BaseCrawlOps):
         self, crawl_id: str, delete_list: DeleteQARunList, org: Organization
     ) -> dict[str, int]:
         """delete specified finished QA run"""
+        # ensure crawl belongs to the requesting org before any changes
+        await self.get_crawl(crawl_id, org)
+
         count = 0
         for qa_run_id in delete_list.qa_run_ids:
             await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)

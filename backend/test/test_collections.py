@@ -732,6 +732,45 @@ def test_collection_pages_wrong_org(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
 
 
+def test_collection_add_remove_wrong_org(
+    admin_auth_headers,
+    crawler_auth_headers,
+    default_org_id,
+    non_default_org_id,
+    crawler_crawl_id,
+):
+    # create a collection in the non-default org, then attempt to add/remove
+    # crawls to it through the default org's path
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "wrong-org-target"},
+    )
+    assert r.status_code == 200
+    foreign_coll_id = r.json()["id"]
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{foreign_coll_id}/add",
+        headers=crawler_auth_headers,
+        json={"crawlIds": [crawler_crawl_id]},
+    )
+    assert r.status_code == 404
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{foreign_coll_id}/remove",
+        headers=crawler_auth_headers,
+        json={"crawlIds": [crawler_crawl_id]},
+    )
+    assert r.status_code == 404
+
+    # cleanup
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{foreign_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+
 def test_collection_public_make_private(crawler_auth_headers, default_org_id):
     # make private again
     r = requests.patch(

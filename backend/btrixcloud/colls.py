@@ -264,7 +264,7 @@ class CollectionOps:
 
         modified = dt_now()
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
+            {"_id": coll_id, "oid": org.id},
             {"$set": {"modified": modified}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -298,7 +298,7 @@ class CollectionOps:
         """Update collection after crawls are removed or deleted outright"""
         modified = dt_now()
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
+            {"_id": coll_id, "oid": org.id},
             {"$set": {"modified": modified}},
             return_document=pymongo.ReturnDocument.AFTER,
         )

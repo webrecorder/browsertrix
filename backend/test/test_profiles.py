@@ -260,10 +260,30 @@ def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_i
     assert data["modified"] > original_modified
     assert data["modifiedBy"]
     assert data["modifiedByName"] == "new-crawler"
-
     assert data["created"] == original_created
     assert data["createdBy"]
     assert data["createdByName"] == "admin"
+
+
+def test_update_profile_metadata_wrong_org(
+    admin_auth_headers, default_org_id, non_default_org_id, profile_id
+):
+    # profile belongs to the default org; patching it through another org's
+    # path must not modify it
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+        json={"name": "should-not-stick"},
+    )
+    assert r.status_code == 404
+
+    # profile unchanged in the default org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == PROFILE_NAME_UPDATED
 
 
 def test_commit_browser_to_existing_profile(

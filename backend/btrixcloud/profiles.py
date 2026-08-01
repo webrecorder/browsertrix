@@ -377,7 +377,7 @@ class ProfileOps:
         return True
 
     async def update_profile_metadata(
-        self, profileid: UUID, update: ProfileUpdate, user: User
+        self, profileid: UUID, update: ProfileUpdate, user: User, org: Organization
     ) -> dict[str, bool]:
         """Update name and description metadata only on existing profile"""
         query = {
@@ -394,7 +394,7 @@ class ProfileOps:
             query["tags"] = update.tags
 
         if not await self.profiles.find_one_and_update(
-            {"_id": profileid}, {"$set": query}
+            {"_id": profileid, "oid": org.id}, {"$set": query}
         ):
             raise HTTPException(status_code=404, detail="profile_not_found")
 
@@ -818,7 +818,7 @@ def init_profiles_api(
         user: User = Depends(user_dep),
     ):
         if not browser_commit.browserid:
-            await ops.update_profile_metadata(profileid, browser_commit, user)
+            await ops.update_profile_metadata(profileid, browser_commit, user, org)
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)
