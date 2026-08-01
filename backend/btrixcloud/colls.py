@@ -332,7 +332,9 @@ class CollectionOps:
     async def get_collection_raw(
         self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
     ) -> dict[str, Any]:
-        """Get collection by id as dict from database"""
+        """Get collection by id as dict from database
+
+        If `public_or_unlisted_only`, only public or unlisted collections are returned"""
         query: dict[str, object] = {"_id": coll_id, "oid": oid}
         if public_or_unlisted_only:
             query["access"] = {"$in": ["public", "unlisted"]}
@@ -691,13 +693,11 @@ class CollectionOps:
         public_or_unlisted_only=False,
     ) -> list[str]:
         """Return list of crawl ids in collection, including only public collections"""
-        crawl_ids = []
-        # ensure collection is public or unlisted, else throw here
-        if public_or_unlisted_only:
-            await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
+        await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
 
+        crawl_ids = []
         async for crawl_raw in self.crawls.find(
-            {"collectionIds": coll_id}, projection=["_id"]
+            {"collectionIds": coll_id, "oid": oid}, projection=["_id"]
         ):
             crawl_id = crawl_raw.get("_id")
             if crawl_id:

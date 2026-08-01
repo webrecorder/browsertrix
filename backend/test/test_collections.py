@@ -716,6 +716,22 @@ def test_collection_wrong_org(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
 
 
+def test_collection_pages_wrong_org(admin_auth_headers, non_default_org_id):
+    # collection belongs to the default org; requesting its pages through
+    # another org's path must not return cross-org page data
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/pageUrlCounts",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+
 def test_collection_public_make_private(crawler_auth_headers, default_org_id):
     # make private again
     r = requests.patch(
