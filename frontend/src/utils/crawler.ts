@@ -15,6 +15,7 @@ import {
   FAILED_STATES,
   PAUSED_STATES,
   RUNNING_AND_WAITING_STATES,
+  RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
 } from "@/types/crawlState";
@@ -47,6 +48,10 @@ export function isCrawlReplay(
   item: ArchivedItem | CrawlReplay,
 ): item is CrawlReplay {
   return isCrawl(item) && "config" in item;
+}
+
+export function isRunning({ state }: Partial<Crawl>) {
+  return (RUNNING_STATES as readonly (typeof state)[]).includes(state);
 }
 
 export function isActive({ state }: Partial<Crawl | QARun>) {
@@ -110,7 +115,7 @@ export function renderName(
     return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
   if (item.name)
-    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
+    return html`<span class=${clsx("truncate", className)}>${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -121,8 +126,8 @@ export function renderName(
       </span>`;
     }
     return html`
-      <span class="inline-flex overflow-hidden whitespace-nowrap">
-        <div class=${clsx("min-w-0 truncate", className)}>
+      <span class="inline-flex max-w-full overflow-hidden whitespace-nowrap">
+        <div class=${clsx("min-w-0 truncate max-w-[30ch]", className)}>
           ${item.firstSeed}
         </div>
         ${nameSuffix}

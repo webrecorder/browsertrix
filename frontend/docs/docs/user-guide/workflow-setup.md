@@ -247,7 +247,7 @@ When enabled, the crawler will check for a [Robots Exclusion Protocol](https://w
 
 #### Custom Exclusion Rules
 
-Exclusion rules instruct the crawler to ignores pages with URLs that match a specified pattern. Patterns can be written as plain text or a regular expression per selected _Exclusion Type_:
+Exclusion rules instruct the crawler to ignore pages with URLs that match a specified pattern. Patterns can be written as plain text or a regular expression per selected _Exclusion Type_:
 
 ##### Matches Text
 

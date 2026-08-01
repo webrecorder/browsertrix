@@ -26,6 +26,7 @@ import type {
   SortChangeEventDetail,
   SortOptions,
 } from "@/features/archived-items/item-list-controls";
+import { dialogClassesForHeader, dialogLabel } from "@/layouts/dialogHeader";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -330,24 +331,18 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
-      class="part-[title]:overflow-hidden"
-      style="--width: calc(var(--btrix-screen-desktop) - 3.5rem); --body-spacing: 0;"
+      class="${dialogClassesForHeader} [--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)]"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
-      <div slot="label" class="flex items-center gap-3 divide-x">
-        <div class="whitespace-nowrap">${msg("Configure Items")}</div>
-        <div class="truncate px-3 text-sm leading-none text-neutral-500">
-          ${this.collectionName}
-        </div>
-      </div>
+      ${dialogLabel({
+        title: msg("Configure Items"),
+        subtitle: this.collectionName,
+      })}
       <div class="dialogContent flex flex-col">
         ${when(this.isReady, this.renderContent)}
       </div>
       <div slot="footer" class="flex items-center justify-end gap-3">
-        <sl-button class="mr-auto" size="small" @click=${() => this.close()}
-          >${msg("Cancel")}</sl-button
-        >
         ${this.renderSave()}
       </div>
     </btrix-dialog>`;
@@ -991,6 +986,15 @@ export class CollectionItemsDialog extends BtrixElement {
     };
 
     return html`
+      ${hasChange
+        ? html`<sl-button
+            class="mr-auto"
+            size="small"
+            @click=${() => this.close()}
+            >${msg("Cancel")}</sl-button
+          >`
+        : nothing}
+
       <div class="inline-flex items-center gap-1.5 text-warning">
         <span>${selectionMessage}</span>
         ${this.renderDependencyWarning()}
@@ -1020,7 +1024,7 @@ export class CollectionItemsDialog extends BtrixElement {
         </div>
 
         <sl-button
-          variant="primary"
+          variant=${hasChange ? "primary" : "default"}
           size="small"
           ?disabled=${this.isSubmitting}
           ?loading=${this.isSubmitting}

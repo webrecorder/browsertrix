@@ -125,12 +125,12 @@ export function pageHeader({
   return html`
     <header
       class=${clsx(
-        tw`mt-5 flex flex-row flex-wrap gap-3 pb-3`,
+        tw`mt-5 flex max-w-full flex-row flex-wrap gap-3 overflow-hidden pb-3`,
         border && tw`border-b`,
         classNames,
       )}
     >
-      <div class="flex min-w-72 flex-1 flex-col gap-2">
+      <div class="flex flex-1 flex-col gap-2 overflow-hidden lg:min-w-72">
         <div class="flex flex-wrap items-center gap-2.5">
           ${prefix}${pageTitle(title)}${suffix}
         </div>
