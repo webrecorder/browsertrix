@@ -2,9 +2,11 @@
 
 Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
 
-## Crawl Workflow Status
+## Crawl Status
 
 When a workflow run is initiated, the workflow status changes to <span class="status-violet-600">:bootstrap-hourglass-split: Waiting</span> or <span class="status-violet-600">:btrix-status-dot: Starting</span>, depending on whether the conditions for starting a crawl are in place (such as resource capacity.) The workflow status will change to <span class="status-green-600">:btrix-status-dot: Running</span> once the crawler loads the first crawl URL.
+
+A running crawl in the **Crawling** > **Crawl Runs** list and [workflow > **Crawls**](./crawl-workflows.md#crawl-run-history) list will display a progress indicator in the place of a finish date. The progress indicator is based on the ratio of crawled to found pages. The indicator should be used as a rough estimate for how far along the crawl is; the ratio may change over the course of the crawl as the crawler discovers more pages, or if [page exclusions change](#live-exclusion-editing).
 
 ## Watch Crawl
 

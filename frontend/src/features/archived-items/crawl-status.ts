@@ -73,8 +73,10 @@ export class CrawlStatus extends TailwindElement {
     icon: TemplateResult;
     label: string;
     cssColor: string;
+    cssDarkerColor?: string;
   } {
     let color = "var(--sl-color-neutral-400)";
+    let darkerColor: string | undefined = undefined;
     let icon = html`<sl-icon
       name="slash-circle"
       class="neutral"
@@ -138,7 +140,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "running":
-        color = "var(--success)";
+        color = "var(--sl-color-success-500)";
+        darkerColor = "var(--sl-color-success-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -150,7 +153,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "rate-limited":
-        color = "var(--warning)";
+        color = "var(--sl-color-warning-500)";
+        darkerColor = "var(--sl-color-warning-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -215,7 +219,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "pending-wait":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -227,7 +232,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "generate-wacz":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -239,7 +245,8 @@ export class CrawlStatus extends TailwindElement {
         break;
 
       case "uploading-wacz":
-        color = "var(--sl-color-violet-600)";
+        color = "var(--sl-color-violet-500)";
+        darkerColor = "var(--sl-color-violet-600)";
         icon = html`<sl-icon
           name="dot"
           library="app"
@@ -335,6 +342,7 @@ export class CrawlStatus extends TailwindElement {
       icon,
       label: `${label}${reason ? `: ${reason}` : ""}${substate ? ` (${substate})` : ""}`,
       cssColor: color,
+      cssDarkerColor: darkerColor,
     };
   }
 
