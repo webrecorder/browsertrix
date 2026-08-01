@@ -627,8 +627,8 @@ class PageOps:
         query: dict[str, object] = {
             "crawl_id": {"$in": crawl_ids},
         }
-        # if org:
-        #    query["oid"] = org.id
+        if org:
+            query["oid"] = org.id
 
         # Text Search
         is_text_search = False

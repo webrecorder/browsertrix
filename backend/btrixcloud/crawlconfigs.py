@@ -1165,9 +1165,16 @@ class CrawlConfigOps:
         return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(
-        self, cid: UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+        self,
+        cid: UUID,
+        oid: UUID,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         """return all config revisions for crawlconfig"""
+        # ensure config belongs to the requesting org, else 404
+        await self.get_crawl_config(cid, oid, active_only=False)
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
@@ -1988,14 +1995,16 @@ def init_crawl_config_api(
 
     @router.get(
         "/{cid}/revs",
-        dependencies=[Depends(org_viewer_dep)],
         response_model=PaginatedConfigRevisionResponse,
     )
     async def get_crawl_config_revisions(
-        cid: UUID, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
+        cid: UUID,
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         revisions, total = await ops.get_crawl_config_revs(
-            cid, page_size=pageSize, page=page
+            cid, org.id, page_size=pageSize, page=page
         )
         return paginated_format(revisions, total, page, pageSize)
 

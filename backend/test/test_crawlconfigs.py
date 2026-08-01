@@ -541,6 +541,16 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
 
 
+def test_verify_revs_history_wrong_org(admin_auth_headers, non_default_org_id):
+    # config belongs to the default org; requesting its revisions through
+    # another org's path must not leak the raw config history
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/crawlconfigs/{cid}/revs",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+
 def test_workflow_total_size_and_last_crawl_stats(
     crawler_auth_headers, default_org_id, admin_crawl_id, crawler_crawl_id
 ):
