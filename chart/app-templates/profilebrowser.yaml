@@ -77,7 +77,7 @@ spec:
         - --filename
         - /tmp/profile.tar.gz
         - --url
-        - {{ url }}
+        - {{ url | tojson }}
       {%- if profile_filename %}
         - --profile
         - "@{{ profile_filename }}"

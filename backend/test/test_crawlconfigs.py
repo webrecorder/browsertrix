@@ -282,6 +282,39 @@ def test_update_config_invalid_link_selector(
     assert r.json()["detail"] == "invalid_link_selector"
 
 
+def test_update_config_link_selector_invalid_syntax(
+    crawler_auth_headers, default_org_id, sample_crawl_data
+):
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "selectLinks": [
+                    "a[href]->href",
+                    "aria[3]->href",
+                ]
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/",
+        headers=crawler_auth_headers,
+        json={
+            "config": {
+                "selectLinks": [
+                    "div[2]->href",
+                ]
+            }
+        },
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "invalid_link_selector"
+
+
 def test_update_config_invalid_lang(
     crawler_auth_headers, default_org_id, sample_crawl_data
 ):
@@ -506,6 +539,16 @@ def test_verify_revs_history(crawler_auth_headers, default_org_id):
     assert len(items) == 5
     sorted_data = sorted(items, key=lambda revision: revision["rev"])
     assert sorted_data[0]["config"]["scopeType"] == "prefix"
+
+
+def test_verify_revs_history_wrong_org(admin_auth_headers, non_default_org_id):
+    # config belongs to the default org; requesting its revisions through
+    # another org's path must not leak the raw config history
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/crawlconfigs/{cid}/revs",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
 
 
 def test_workflow_total_size_and_last_crawl_stats(

@@ -58,20 +58,20 @@ spec:
 
           {% if job_type == "import" %}
             - --sourceUrl
-            - {{ import_source_url }}
+            - {{ import_source_url | tojson }}
 
           {% elif job_type == "purge" %}
             - --sourceUrl
-            - {{ import_source_url }}
+            - {{ import_source_url | tojson }}
             - --removing
 
           {% elif job_type == "commit" %}
             - --commitCrawlId
-            - {{ crawl_id }}
+            - {{ crawl_id | tojson }}
 
           {% elif job_type == "cancel" %}
             - --cancelCrawlId
-            - {{ crawl_id }}
+            - {{ crawl_id | tojson }}
 
           {% endif %}
 

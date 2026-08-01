@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 
 import structlog
 import aiohttp
+import cssselect
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from motor.motor_asyncio import (
@@ -442,8 +443,6 @@ class CrawlConfigOps:
 
         Ensure at least one link selector is set and that all the link slectors passed
         follow expected syntax: selector->attribute/property.
-
-        We don't yet check the validity of the CSS selector itself.
         """
         if not link_selectors:
             raise HTTPException(status_code=400, detail="invalid_link_selector")
@@ -454,6 +453,12 @@ class CrawlConfigOps:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
             if not parts[0] or not parts[1]:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
+            try:
+                cssselect.parse(parts[0])
+            except cssselect.parser.SelectorSyntaxError as exc:
+                raise HTTPException(
+                    status_code=400, detail="invalid_link_selector"
+                ) from exc
 
     def _validate_custom_behavior_url_syntax(self, url: str) -> tuple[bool, list[str]]:
         """Validate custom behaviors are valid URLs after removing custom git syntax"""
@@ -1160,9 +1165,16 @@ class CrawlConfigOps:
         return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(
-        self, cid: UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+        self,
+        cid: UUID,
+        oid: UUID,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         """return all config revisions for crawlconfig"""
+        # ensure config belongs to the requesting org, else 404
+        await self.get_crawl_config(cid, oid, active_only=False)
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
@@ -1983,14 +1995,16 @@ def init_crawl_config_api(
 
     @router.get(
         "/{cid}/revs",
-        dependencies=[Depends(org_viewer_dep)],
         response_model=PaginatedConfigRevisionResponse,
     )
     async def get_crawl_config_revisions(
-        cid: UUID, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
+        cid: UUID,
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         revisions, total = await ops.get_crawl_config_revs(
-            cid, page_size=pageSize, page=page
+            cid, org.id, page_size=pageSize, page=page
         )
         return paginated_format(revisions, total, page, pageSize)
 

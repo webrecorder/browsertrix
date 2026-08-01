@@ -52,6 +52,12 @@ export class CrawlQueue extends BtrixElement {
   @property({ type: Array })
   exclusions: string[] = [];
 
+  /**
+   * Crawl is starting
+   */
+  @property({ type: Boolean })
+  starting?: Boolean;
+
   @state()
   private exclusionsRx: RegExp[] = [];
 
@@ -171,7 +177,9 @@ export class CrawlQueue extends BtrixElement {
       }
 
       return html`
-        <p class="text-sm text-neutral-400">${msg("No pages queued.")}</p>
+        <p class="text-sm text-neutral-400">
+          ${this.starting ? msg("Crawl starting...") : msg("No pages queued.")}
+        </p>
       `;
     }
 
@@ -268,7 +276,7 @@ export class CrawlQueue extends BtrixElement {
       }
 
       this.notify.toast({
-        message: msg("Sorry, couldn't fetch crawl queue at this time."),
+        message: msg("Sorry, couldn't fetch page queue at this time."),
         variant: "danger",
         icon: "exclamation-octagon",
         id: "crawl-queue-status",
