@@ -1706,7 +1706,7 @@ class CrawlConfigOps:
             res = await self.crawls.aggregate(
                 [
                     {"$match": match_query},
-                    {"$group": {"_id": "$state", "count": {"$sum": 1}}},
+                    {"$group": {"_id": "$state", "count": {"$count": {}}}},
                 ]
             ).to_list()
 
