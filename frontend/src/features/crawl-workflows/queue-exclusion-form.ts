@@ -44,6 +44,9 @@ export class QueueExclusionForm extends LiteElement {
   @state()
   private selectValue: Exclusion["type"] = "text";
 
+  @state()
+  private inputValue = "";
+
   @property({ type: String })
   regex = "";
 
@@ -57,17 +60,11 @@ export class QueueExclusionForm extends LiteElement {
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
     if (changedProperties.get("regex") && this.regex === "") {
-      if (this.input) {
-        this.input.value = "";
-      }
+      this.inputValue = "";
+      this.checkInputValidity();
     }
 
-    if (
-      changedProperties.get("selectValue") ||
-      (changedProperties.has("regex") &&
-        changedProperties.get("regex") !== undefined)
-    ) {
-      this.fieldErrorMessage = "";
+    if (changedProperties.get("selectValue")) {
       this.checkInputValidity();
     }
   }
@@ -79,7 +76,9 @@ export class QueueExclusionForm extends LiteElement {
 
   render() {
     const invalidRegex =
-      !this.regex || this.isRegexInvalid || this.regex.length > MAX_LENGTH;
+      !this.inputValue ||
+      this.isRegexInvalid ||
+      this.inputValue.length > MAX_LENGTH;
     const minimum_number_of_characters = this.localize.number(MIN_LENGTH);
     const maximum_number_of_characters = this.localize.number(MAX_LENGTH);
 
@@ -115,6 +114,7 @@ export class QueueExclusionForm extends LiteElement {
                   ? "/skip-this-page"
                   : "example.com/skip.*"}
                 ?disabled=${this.isSubmitting}
+                value=${this.inputValue}
                 @keydown=${this.onKeyDown}
                 @sl-input=${this.onInput as UnderlyingFunction<
                   typeof this.onInput
@@ -181,7 +181,8 @@ export class QueueExclusionForm extends LiteElement {
   }
 
   private readonly onInput = debounce(200)(() => {
-    this.regex = this.input?.value || "";
+    this.inputValue = this.input?.value.trim() || "";
+    this.checkInputValidity();
     void this.dispatchChangeEvent();
   });
 
@@ -197,14 +198,16 @@ export class QueueExclusionForm extends LiteElement {
   };
 
   private checkInputValidity(): void {
+    this.fieldErrorMessage = "";
+
     let isValid = true;
 
-    if (!this.regex || this.regex.length < MIN_LENGTH) {
+    if (!this.inputValue || this.inputValue.length < MIN_LENGTH) {
       isValid = false;
     } else if (this.selectValue === "regex") {
       try {
         // Check if valid regex
-        new RegExp(this.regex);
+        new RegExp(this.inputValue);
       } catch (err) {
         this.fieldErrorMessage = (err as Error).message;
         isValid = false;
@@ -217,29 +220,31 @@ export class QueueExclusionForm extends LiteElement {
   private async dispatchChangeEvent() {
     await this.updateComplete;
     this.dispatchEvent(
-      new CustomEvent("btrix-change", {
+      new CustomEvent<ExclusionChangeEvent["detail"]>("btrix-change", {
         detail: {
           value:
-            this.selectValue === "text" ? regexEscape(this.regex) : this.regex,
+            this.selectValue === "text"
+              ? regexEscape(this.inputValue)
+              : this.inputValue,
           valid: !this.isRegexInvalid,
         },
-      }) as ExclusionChangeEvent,
+      }),
     );
   }
 
   private async handleAdd() {
     this.onInput.flush();
     await this.updateComplete;
-    if (!this.regex || this.isRegexInvalid) return;
+    if (!this.inputValue || this.isRegexInvalid) return;
 
-    let regex = this.regex;
+    let value = this.inputValue;
     if (this.selectValue === "text") {
-      regex = regexEscape(this.regex);
+      value = regexEscape(this.inputValue);
     }
 
     this.dispatchEvent(
       new CustomEvent<ExclusionAddEvent["detail"]>("btrix-add", {
-        detail: { regex },
+        detail: { regex: value },
       }),
     );
   }

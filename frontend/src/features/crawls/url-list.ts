@@ -11,7 +11,6 @@ import { TailwindElement } from "@/classes/TailwindElement";
 import type { FloatingPopover } from "@/components/ui/floating-popover";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { Seed } from "@/types/crawler";
-import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -168,7 +167,7 @@ export class UrlList extends TailwindElement {
     }
   `;
 
-  @property({ type: Array, hasChanged: isNotEqual })
+  @property({ type: Array })
   urls?: (string | Seed)[] = [];
 
   /**

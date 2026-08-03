@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import type {
   SlChangeEvent,
   SlInput,
@@ -12,6 +13,7 @@ import throttle from "lodash/fp/throttle";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { IntersectEvent } from "@/controllers/observable";
+import { isApiError } from "@/utils/api";
 import { tw } from "@/utils/tailwind";
 
 type Pages = string[];
@@ -62,40 +64,70 @@ export class CrawlQueue extends BtrixElement {
   private exclusionsRx: RegExp[] = [];
 
   @state()
-  private queue?: ResponseData;
-
-  @state()
-  private isLoading = false;
-
-  @state()
   private pageOffset = 0;
 
   @state()
   private pageSize = 50;
 
-  private timerId?: number;
+  private get isLoading() {
+    return this.queueTask.status === TaskStatus.PENDING;
+  }
+
+  private get queue() {
+    return this.queueTask.value;
+  }
+
+  private readonly queueTask = new Task(this, {
+    task: async ([crawlId, regex, pageSize, pageOffset], { signal }) => {
+      if (!crawlId) return;
+
+      window.clearTimeout(this.pollTask.value);
+
+      try {
+        return this.getQueue({ crawlId, regex, pageSize, pageOffset }, signal);
+      } catch (err) {
+        if (
+          isApiError(err) &&
+          (err.message === "invalid_regex" ||
+            err.message === "crawl_not_running")
+        ) {
+          // TODO Handle error
+          console.error(err);
+        }
+
+        this.notify.toast({
+          message: msg("Sorry, couldn't fetch page queue at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "crawl-queue-status",
+        });
+      }
+    },
+    args: () =>
+      [this.crawlId, this.regex, this.pageSize, this.pageOffset] as const,
+  });
+
+  private readonly pollTask = new Task(this, {
+    task: async ([queue]) => {
+      if (!queue) return;
+
+      window.clearTimeout(this.pollTask.value);
+
+      return window.setTimeout(() => {
+        void this.queueTask.run();
+      }, POLL_INTERVAL_SECONDS * 1000);
+    },
+    args: () => [this.queueTask.value] as const,
+  });
 
   disconnectedCallback() {
-    window.clearInterval(this.timerId);
+    window.clearTimeout(this.pollTask.value);
     super.disconnectedCallback();
   }
 
   protected updated(changedProperties: PropertyValues<this>): void {
     if (changedProperties.has("exclusions")) {
       this.exclusionsRx = this.exclusions.map((x) => new RegExp(x));
-    }
-  }
-
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (
-      changedProperties.has("crawlId") ||
-      changedProperties.has("pageSize") ||
-      changedProperties.has("regex") ||
-      (changedProperties.has("pageOffset") &&
-        // Prevents double-fetch when offset is programmatically changed according to queue total
-        !changedProperties.has("queue"))
-    ) {
-      void this.fetchOnUpdate();
     }
   }
 
@@ -250,40 +282,6 @@ export class CrawlQueue extends BtrixElement {
     this.pageSize = this.pageSize + 50;
   }
 
-  private async fetchOnUpdate() {
-    window.clearInterval(this.timerId);
-    await this.performUpdate;
-    this.isLoading = true;
-    await this.fetchQueue();
-    this.isLoading = false;
-  }
-
-  private async fetchQueue() {
-    try {
-      this.queue = await this.getQueue();
-      this.timerId = window.setTimeout(() => {
-        void this.fetchQueue();
-      }, POLL_INTERVAL_SECONDS * 1000);
-    } catch (e) {
-      const errorMessage = (e as Error).message;
-
-      if (
-        errorMessage === "invalid_regex" ||
-        errorMessage === "crawl_not_running"
-      ) {
-        console.debug(errorMessage);
-        return;
-      }
-
-      this.notify.toast({
-        message: msg("Sorry, couldn't fetch page queue at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "crawl-queue-status",
-      });
-    }
-  }
-
   private readonly isIncluded = (url: string) => {
     return this.queue?.matched.some((v) => v === url) || false;
   };
@@ -298,16 +296,29 @@ export class CrawlQueue extends BtrixElement {
     return false;
   };
 
-  private async getQueue(): Promise<ResponseData> {
-    const count = this.pageSize.toString();
-    const regex = this.regex;
+  private async getQueue(
+    {
+      crawlId,
+      regex,
+      pageSize,
+      pageOffset,
+    }: {
+      crawlId: string;
+      regex: CrawlQueue["regex"];
+      pageSize: CrawlQueue["pageSize"];
+      pageOffset: CrawlQueue["pageOffset"];
+    },
+    signal: AbortSignal,
+  ): Promise<ResponseData> {
+    const count = pageSize.toString();
     const params = new URLSearchParams({
-      offset: this.pageOffset.toString(),
+      offset: pageOffset.toString(),
       count,
       regex,
     });
     const data: ResponseData = await this.api.fetch(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/queue?${params.toString()}`,
+      `/orgs/${this.orgId}/crawls/${crawlId}/queue?${params.toString()}`,
+      { signal },
     );
 
     return data;
