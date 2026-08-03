@@ -192,8 +192,7 @@ export class CrawlQueue extends BtrixElement {
         )}
         .urls=${this.queue.results}
         offset=${this.pageOffset + 1}
-        .includeUrl=${(url: string) =>
-          this.queue?.matched.some((v) => v === url) || false}
+        .includeUrl=${this.isIncluded}
         .excludeUrl=${this.isExcluded}
         aria-live="polite"
         size="small"
@@ -284,6 +283,10 @@ export class CrawlQueue extends BtrixElement {
       });
     }
   }
+
+  private readonly isIncluded = (url: string) => {
+    return this.queue?.matched.some((v) => v === url) || false;
+  };
 
   private readonly isExcluded = (url: string) => {
     for (const rx of this.exclusionsRx) {
