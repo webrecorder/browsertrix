@@ -51,6 +51,10 @@ export class UrlList extends TailwindElement {
       overflow: hidden;
     }
 
+    btrix-table-cell {
+      align-items: flex-start;
+    }
+
     .bordered btrix-table-body {
       padding-top: 1px;
     }
@@ -59,7 +63,7 @@ export class UrlList extends TailwindElement {
       margin-top: -1px;
     }
 
-    .bordered btrix-table-cell:not(.url-order) {
+    .bordered btrix-table-cell {
       border-top: 1px solid transparent;
       border-bottom: 1px solid transparent;
     }
@@ -152,6 +156,15 @@ export class UrlList extends TailwindElement {
       font-family: var(--sl-font-mono);
       justify-content: end;
       padding-inline-end: var(--sl-spacing-2x-small);
+      padding-top: 1px;
+    }
+
+    .url-base {
+      margin-top: 1px;
+    }
+
+    .url-link::part(base) {
+      padding: var(--sl-spacing-2x-small);
     }
   `;
 
@@ -183,6 +196,18 @@ export class UrlList extends TailwindElement {
   animateChange = false;
 
   /**
+   * Scroll URLs instead of wrapping with `break-all`
+   */
+  @property({ type: Boolean, noAccessor: true })
+  noWrap = false;
+
+  /**
+   * Size of rows and text
+   */
+  @property({ type: String, noAccessor: true })
+  size: "small" | "medium" | "large" = "medium";
+
+  /**
    * Offset ordered list
    */
   @property({ type: Number })
@@ -212,7 +237,9 @@ export class UrlList extends TailwindElement {
 
     return html`<btrix-table
       class=${clsx(
-        tw`text-[0.8125rem]`,
+        this.size === "small"
+          ? tw`text-xs`
+          : this.size === "medium" && tw`text-[0.8125rem]`, // 13px
         this.ordered
           ? tw`grid-cols-[min-content_1fr_auto]`
           : tw`grid-cols-[1fr_auto]`,
@@ -263,7 +290,7 @@ export class UrlList extends TailwindElement {
                           ${msg("Copy URL")}`}
                   </div>
                   <btrix-overflow-scroll
-                    class="url-control cursor-pointer"
+                    class="url-control url-base cursor-pointer"
                     hideScrollbar
                     @mousedown=${this.onUrlMouseDown}
                     @mouseup=${this.onUrlMouseUp}
@@ -299,10 +326,13 @@ export class UrlList extends TailwindElement {
                         match && "url-match",
                         exclude && "url-exclude",
                       )}
-                      class="block w-max part-[base]:text-sky-800"
+                      class=${clsx(
+                        tw`part-[base]:text-sky-800`,
+                        this.noWrap ? tw`block w-max` : tw`break-all`,
+                      )}
                       language=${ifDefined(this.highlight ? "url" : undefined)}
                       .value=${url}
-                      noWrap
+                      ?noWrap=${this.noWrap}
                       tabindex="0"
                       @keydown=${(e: KeyboardEvent) =>
                         e.key === "Enter" &&
@@ -314,7 +344,7 @@ export class UrlList extends TailwindElement {
                 <div>
                   <sl-tooltip content=${msg("Open in New Tab")} hoist>
                     <sl-icon-button
-                      class="url-control part-[base]:p-1.5"
+                      class="url-control url-link"
                       name="arrow-up-right"
                       href="${url}"
                       target="_blank"

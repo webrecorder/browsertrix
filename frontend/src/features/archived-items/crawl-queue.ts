@@ -196,6 +196,7 @@ export class CrawlQueue extends BtrixElement {
           this.queue?.matched.some((v) => v === url) || false}
         .excludeUrl=${this.isExcluded}
         aria-live="polite"
+        size="small"
         ordered
         border
         highlight

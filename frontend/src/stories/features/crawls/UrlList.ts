@@ -12,9 +12,11 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     class=${ifDefined(props.classes)}
     .urls=${props.urls || []}
     offset=${ifDefined(props.offset)}
+    size=${ifDefined(props.size)}
     ?highlight=${props.highlight}
     ?border=${props.border}
     ?ordered=${props.ordered}
+    ?noWrap=${props.noWrap}
     .includeUrl=${props.includeUrl}
     .excludeUrl=${props.excludeUrl}
   ></btrix-url-list>`;
