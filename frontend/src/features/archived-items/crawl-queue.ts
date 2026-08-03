@@ -24,6 +24,7 @@ export type ResponseData = {
 };
 
 const POLL_INTERVAL_SECONDS = 5;
+const PAGE_SIZE = 50;
 
 /**
  * Show real-time crawl queue results
@@ -237,6 +238,8 @@ export class CrawlQueue extends BtrixElement {
       `;
     }
 
+    const number_of_pages = this.localize.number(PAGE_SIZE);
+
     return html`
       <btrix-url-list
         class=${clsx(
@@ -264,12 +267,8 @@ export class CrawlQueue extends BtrixElement {
             </div>`,
           () => html`
             <btrix-observable @btrix-intersect=${this.onLoadMoreIntersect}>
-              <div class="py-3">
-                <sl-icon-button
-                  name="three-dots"
-                  @click=${this.loadMore}
-                  label=${msg("Load more")}
-                ></sl-icon-button>
+              <div class="py-3 text-xs text-neutral-500">
+                ${msg(str`Loading ${number_of_pages} more...`)}
               </div>
             </btrix-observable>
           `,
@@ -300,7 +299,7 @@ export class CrawlQueue extends BtrixElement {
   }) as (e: CustomEvent) => void;
 
   private loadMore() {
-    this.pageSize = this.pageSize + 50;
+    this.pageSize = this.pageSize + PAGE_SIZE;
   }
 
   private readonly isIncluded = (url: string) => {
