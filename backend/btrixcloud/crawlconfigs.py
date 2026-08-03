@@ -1707,15 +1707,14 @@ class CrawlConfigOps:
                 [
                     {"$match": match_query},
                     {"$group": {"_id": "$state", "count": {"$sum": 1}}},
-                    {"$project": {"state": "$_id", "count": "$count", "_id": 0}},
-                    {"$sort": {"count": -1, "state": 1}},
+                    {"$project": {"_id": 1, "count": "$count"}},
                 ]
             ).to_list()
 
             state_counts: dict[str, int] = {}
 
             for state_dict in res:
-                state = state_dict["state"]
+                state = state_dict["_id"]
                 count = state_dict.get("count", 0)
                 if state not in ALL_CRAWL_STATES:
                     state_count_logger.error(
