@@ -27,6 +27,7 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
+    ALL_CRAWL_STATES,
     SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
     ConfigRevision,
@@ -1695,47 +1696,51 @@ class CrawlConfigOps:
     ) -> CrawlConfigRunningCountsResponse:
         """Return counts of running workflows, total and status, optionally by org"""
 
+        state_count_logger = logger.bind(oid=org.id if org else None)
+
         try:
-            base_query: dict[str, UUID | str] = {}
+            match_query: dict[str, UUID | str] = {}
             if org:
-                base_query["oid"] = org.id
+                match_query["oid"] = org.id
+
+            res = await self.crawls.aggregate(
+                [
+                    {"$match": match_query},
+                    {"$group": {"_id": "$state", "count": {"$sum": 1}}},
+                    {"$project": {"state": "$_id", "count": "$count", "_id": 0}},
+                    {"$sort": {"count": -1, "state": 1}},
+                ]
+            ).to_list()
+
+            state_counts: dict[str, int] = {}
+
+            for state_dict in res:
+                state = state_dict["state"]
+                count = state_dict.get("count", 0)
+                if state not in ALL_CRAWL_STATES:
+                    state_count_logger.error(
+                        "unexpected_crawl_state_found", state=state, count=count
+                    )
+                else:
+                    state_counts[state] = count
 
             # Running states
-            running = await self.crawls.count_documents(
-                {**base_query, "state": "running"}
-            )
-            pending_wait = await self.crawls.count_documents(
-                {**base_query, "state": "pending-wait"}
-            )
-            generate_wacz = await self.crawls.count_documents(
-                {**base_query, "state": "generate-wacz"}
-            )
-            uploading_wacz = await self.crawls.count_documents(
-                {**base_query, "state": "uploading-wacz"}
-            )
-            rate_limited = await self.crawls.count_documents(
-                {**base_query, "state": "rate-limited"}
-            )
+            running = state_counts.get("running", 0)
+            pending_wait = state_counts.get("pending-wait", 0)
+            generate_wacz = state_counts.get("generate-wacz", 0)
+            uploading_wacz = state_counts.get("uploading-wacz", 0)
+            rate_limited = state_counts.get("rate-limited", 0)
             total_running = (
                 running + pending_wait + generate_wacz + uploading_wacz + rate_limited
             )
 
             # Paused states
-            paused = await self.crawls.count_documents(
-                {**base_query, "state": "paused"}
-            )
-            paused_storage = await self.crawls.count_documents(
-                {**base_query, "state": "paused_storage_quota_reached"}
-            )
-            paused_time = await self.crawls.count_documents(
-                {**base_query, "state": "paused_time_quota_reached"}
-            )
-            paused_read_only = await self.crawls.count_documents(
-                {**base_query, "state": "paused_org_readonly"}
-            )
-            paused_rate_limit = await self.crawls.count_documents(
-                {**base_query, "state": "paused_rate_limit_time_reached"}
-            )
+            paused = state_counts.get("paused", 0)
+            paused_storage = state_counts.get("paused_storage_quota_reached", 0)
+            paused_time = state_counts.get("paused_time_quota_reached", 0)
+            paused_read_only = state_counts.get("paused_org_readonly", 0)
+            paused_rate_limit = state_counts.get("paused_rate_limit_time_reached", 0)
+
             total_paused = (
                 paused
                 + paused_storage
@@ -1745,18 +1750,10 @@ class CrawlConfigOps:
             )
 
             # Waiting states
-            starting = await self.crawls.count_documents(
-                {**base_query, "state": "starting"}
-            )
-            waiting_capacity = await self.crawls.count_documents(
-                {**base_query, "state": "waiting_capacity"}
-            )
-            waiting_org_limit = await self.crawls.count_documents(
-                {**base_query, "state": "waiting_org_limit"}
-            )
-            waiting_dedupe = await self.crawls.count_documents(
-                {**base_query, "state": "waiting_dedupe_index"}
-            )
+            starting = state_counts.get("starting", 0)
+            waiting_capacity = state_counts.get("waiting_capacity", 0)
+            waiting_org_limit = state_counts.get("waiting_org_limit", 0)
+            waiting_dedupe = state_counts.get("waiting_dedupe", 0)
             total_waiting = (
                 starting + waiting_capacity + waiting_org_limit + waiting_dedupe
             )
@@ -1787,9 +1784,8 @@ class CrawlConfigOps:
                 waitingDedupeIndex=waiting_dedupe,
             )
         except Exception:
-            logger.exception(
+            state_count_logger.exception(
                 "running_workflow_counts_calculation_failed",
-                oid=org.id if org else None,
             )
             # pylint: disable=raise-missing-from
             raise HTTPException(status_code=400, detail="calculation_failure")
