@@ -1707,7 +1707,6 @@ class CrawlConfigOps:
                 [
                     {"$match": match_query},
                     {"$group": {"_id": "$state", "count": {"$sum": 1}}},
-                    {"$project": {"_id": 1, "count": "$count"}},
                 ]
             ).to_list()
 
