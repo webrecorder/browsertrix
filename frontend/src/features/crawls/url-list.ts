@@ -51,6 +51,10 @@ export class UrlList extends TailwindElement {
       overflow: hidden;
     }
 
+    btrix-table-cell {
+      align-items: flex-start;
+    }
+
     .bordered btrix-table-body {
       padding-top: 1px;
     }
@@ -59,7 +63,7 @@ export class UrlList extends TailwindElement {
       margin-top: -1px;
     }
 
-    .bordered btrix-table-cell:not(.url-order) {
+    .bordered btrix-table-cell {
       border-top: 1px solid transparent;
       border-bottom: 1px solid transparent;
     }
@@ -152,6 +156,15 @@ export class UrlList extends TailwindElement {
       font-family: var(--sl-font-mono);
       justify-content: end;
       padding-inline-end: var(--sl-spacing-2x-small);
+      padding-top: 1px;
+    }
+
+    .url-base {
+      margin-top: 1px;
+    }
+
+    .url-link::part(base) {
+      padding: var(--sl-spacing-2x-small);
     }
   `;
 
@@ -277,7 +290,7 @@ export class UrlList extends TailwindElement {
                           ${msg("Copy URL")}`}
                   </div>
                   <btrix-overflow-scroll
-                    class="url-control cursor-pointer"
+                    class="url-control url-base cursor-pointer"
                     hideScrollbar
                     @mousedown=${this.onUrlMouseDown}
                     @mouseup=${this.onUrlMouseUp}
@@ -314,8 +327,8 @@ export class UrlList extends TailwindElement {
                         exclude && "url-exclude",
                       )}
                       class=${clsx(
-                        tw`block part-[base]:text-sky-800`,
-                        this.noWrap ? tw`w-max` : tw`break-all`,
+                        tw`part-[base]:text-sky-800`,
+                        this.noWrap ? tw`block w-max` : tw`break-all`,
                       )}
                       language=${ifDefined(this.highlight ? "url" : undefined)}
                       .value=${url}
@@ -331,7 +344,7 @@ export class UrlList extends TailwindElement {
                 <div>
                   <sl-tooltip content=${msg("Open in New Tab")} hoist>
                     <sl-icon-button
-                      class="url-control part-[base]:p-1.5"
+                      class="url-control url-link"
                       name="arrow-up-right"
                       href="${url}"
                       target="_blank"
