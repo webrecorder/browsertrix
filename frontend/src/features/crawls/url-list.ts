@@ -183,6 +183,12 @@ export class UrlList extends TailwindElement {
   animateChange = false;
 
   /**
+   * Scroll URLs instead of wrapping with `break-all`
+   */
+  @property({ type: Boolean, noAccessor: true })
+  noWrap = false;
+
+  /**
    * Offset ordered list
    */
   @property({ type: Number })
@@ -299,10 +305,13 @@ export class UrlList extends TailwindElement {
                         match && "url-match",
                         exclude && "url-exclude",
                       )}
-                      class="block w-max part-[base]:text-sky-800"
+                      class=${clsx(
+                        tw`block part-[base]:text-sky-800`,
+                        this.noWrap ? tw`w-max` : tw`break-all`,
+                      )}
                       language=${ifDefined(this.highlight ? "url" : undefined)}
                       .value=${url}
-                      noWrap
+                      ?noWrap=${this.noWrap}
                       tabindex="0"
                       @keydown=${(e: KeyboardEvent) =>
                         e.key === "Enter" &&

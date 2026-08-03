@@ -15,6 +15,7 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     ?highlight=${props.highlight}
     ?border=${props.border}
     ?ordered=${props.ordered}
+    ?noWrap=${props.noWrap}
     .includeUrl=${props.includeUrl}
     .excludeUrl=${props.excludeUrl}
   ></btrix-url-list>`;

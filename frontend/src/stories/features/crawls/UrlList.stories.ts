@@ -53,6 +53,13 @@ export const WithManyUrls: Story = {
   },
 };
 
+export const NoWrap: Story = {
+  args: {
+    ...WithManyUrls.args,
+    noWrap: true,
+  },
+};
+
 export const Highlighted: Story = {
   args: {
     ...WithManyUrls.args,
