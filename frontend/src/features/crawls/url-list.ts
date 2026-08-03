@@ -189,6 +189,12 @@ export class UrlList extends TailwindElement {
   noWrap = false;
 
   /**
+   * Size of rows and text
+   */
+  @property({ type: String, noAccessor: true })
+  size: "small" | "medium" | "large" = "medium";
+
+  /**
    * Offset ordered list
    */
   @property({ type: Number })
@@ -218,7 +224,9 @@ export class UrlList extends TailwindElement {
 
     return html`<btrix-table
       class=${clsx(
-        tw`text-[0.8125rem]`,
+        this.size === "small"
+          ? tw`text-xs`
+          : this.size === "medium" && tw`text-[0.8125rem]`, // 13px
         this.ordered
           ? tw`grid-cols-[min-content_1fr_auto]`
           : tw`grid-cols-[1fr_auto]`,

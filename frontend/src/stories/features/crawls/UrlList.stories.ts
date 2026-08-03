@@ -60,6 +60,20 @@ export const NoWrap: Story = {
   },
 };
 
+export const Small: Story = {
+  args: {
+    ...WithManyUrls.args,
+    size: "small",
+  },
+};
+
+export const Large: Story = {
+  args: {
+    ...WithManyUrls.args,
+    size: "large",
+  },
+};
+
 export const Highlighted: Story = {
   args: {
     ...WithManyUrls.args,
