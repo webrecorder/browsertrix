@@ -190,6 +190,8 @@ export class UrlList extends TailwindElement {
 
   /**
    * Animate changes to the list
+   *
+   * @NOTE May cause performance issues in Chrome, needs investigation
    */
   @property({ type: Boolean, noAccessor: true })
   animateChange = false;

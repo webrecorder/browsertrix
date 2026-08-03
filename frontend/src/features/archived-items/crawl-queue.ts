@@ -253,7 +253,6 @@ export class CrawlQueue extends BtrixElement {
         ordered
         border
         highlight
-        animateChange
       ></btrix-url-list>
 
       <footer class="text-center">
