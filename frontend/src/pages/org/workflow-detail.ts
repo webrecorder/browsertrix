@@ -1927,6 +1927,8 @@ export class WorkflowDetail extends BtrixElement {
       this.workflow &&
       isActivelyCrawling(this.workflow) &&
       !this.isCancelingRun;
+    const openExclusionsDialog =
+      this.editDialog.value === EditDialogValues.Exclusions;
 
     return html`
       <header class="flex items-center justify-between">
@@ -1954,6 +1956,7 @@ export class WorkflowDetail extends BtrixElement {
           <btrix-crawl-queue
             .crawlId=${this.lastCrawlId ?? undefined}
             ?starting=${this.workflow?.lastCrawlState === "starting"}
+            ?noPoll=${openExclusionsDialog}
           ></btrix-crawl-queue>
         `,
       )}
@@ -1967,7 +1970,7 @@ export class WorkflowDetail extends BtrixElement {
               stopping: this.workflow.lastCrawlStopping,
             })
           : false}
-        ?open=${this.editDialog.value === EditDialogValues.Exclusions}
+        ?open=${openExclusionsDialog}
         @sl-hide=${(e: CustomEvent) => {
           e.stopPropagation();
           this.closeEditDialog();

@@ -60,6 +60,12 @@ export class CrawlQueue extends BtrixElement {
   @property({ type: Boolean })
   starting?: Boolean;
 
+  /**
+   * Prevent polling
+   */
+  @property({ type: Boolean })
+  noPoll = false;
+
   @state()
   private exclusionsRx: RegExp[] = [];
 
@@ -81,7 +87,7 @@ export class CrawlQueue extends BtrixElement {
     task: async ([crawlId, regex, pageSize, pageOffset], { signal }) => {
       if (!crawlId) return;
 
-      window.clearTimeout(this.pollTask.value);
+      this.stopPoll();
 
       try {
         return this.getQueue({ crawlId, regex, pageSize, pageOffset }, signal);
@@ -108,20 +114,32 @@ export class CrawlQueue extends BtrixElement {
   });
 
   private readonly pollTask = new Task(this, {
-    task: async ([queue]) => {
+    task: async ([queue, noPoll]) => {
       if (!queue) return;
 
-      window.clearTimeout(this.pollTask.value);
+      this.stopPoll();
+
+      if (noPoll) {
+        console.debug("poll prevented");
+        return;
+      }
 
       return window.setTimeout(() => {
         void this.queueTask.run();
       }, POLL_INTERVAL_SECONDS * 1000);
     },
-    args: () => [this.queueTask.value] as const,
+    args: () => [this.queueTask.value, this.noPoll] as const,
   });
 
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.get("noPoll") && !this.noPoll) {
+      // Restart poll
+      void this.queueTask.run();
+    }
+  }
+
   disconnectedCallback() {
-    window.clearTimeout(this.pollTask.value);
+    this.stopPoll();
     super.disconnectedCallback();
   }
 
@@ -129,6 +147,10 @@ export class CrawlQueue extends BtrixElement {
     if (changedProperties.has("exclusions")) {
       this.exclusionsRx = this.exclusions.map((x) => new RegExp(x));
     }
+  }
+
+  private stopPoll() {
+    window.clearTimeout(this.pollTask.value);
   }
 
   render() {
