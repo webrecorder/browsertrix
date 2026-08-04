@@ -16,8 +16,14 @@ export class PollExample extends LitElement {
 
   readonly #task = new Task(this, {
     task: async () => {
-      this.count = this.count + 1;
-      return this.count;
+      const promise = new Promise((resolve) => {
+        window.setTimeout(resolve, 1000);
+      });
+
+      return promise.then(() => {
+        this.count = this.count + 1;
+        return this.count;
+      });
     },
     args: () => [] as const,
   });
@@ -35,16 +41,29 @@ export class PollExample extends LitElement {
   render() {
     return html`
       <div>
-        ${this.#task.render({
-          complete: (value) => html`
+        ${this.#poller.renderComplete(
+          (value) => html`
             Value: ${value}<br />
             Last updated: ${new Date()}
           `,
-        })}
+        )}
+        ${this.#poller.renderPending(() => html`<sl-spinner></sl-spinner>`)}
       </div>
 
-      <sl-button @click=${() => this.#poller.pause()}>Pause</sl-button>
-      <sl-button @click=${() => this.#poller.resume()}>Resume</sl-button>
+      <sl-button
+        @click=${() => {
+          this.#poller.pause();
+        }}
+      >
+        Pause
+      </sl-button>
+      <sl-button
+        @click=${() => {
+          this.#poller.resume();
+        }}
+      >
+        Resume
+      </sl-button>
     `;
   }
 }

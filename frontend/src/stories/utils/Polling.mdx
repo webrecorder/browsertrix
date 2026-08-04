@@ -18,7 +18,7 @@ Polling is used to check for fresh data from the server at a regular interval.
 Polling is paused when the browser tab is hidden and resumes when the tab is focused.
 
 Example usage of the poll controller utility:
-```ts
+```tsx
 export class PollExample extends LitElement {
   count = 0;
 
@@ -35,12 +35,15 @@ export class PollExample extends LitElement {
   });
 
   render() {
-    return this.#task.render({
-      complete: (value) => html`
-        Value: ${value}<br />
-        Last updated: ${new Date()}
-      `,
-    });
+    return html`
+      ${this.#poller.renderComplete(
+        (value) => html`
+          Value: ${value}<br />
+          Last updated: ${new Date()}
+        `,
+      )}
+      ${this.#poller.renderPending(() => html`<sl-spinner></sl-spinner>`)}
+    `;
   }
 }
 ```
