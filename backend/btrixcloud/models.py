@@ -897,8 +897,6 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
-    replicas: list[StorageRef] | None = []
-
 
 # ============================================================================
 class CrawlFile(BaseFile):
@@ -915,7 +913,6 @@ class CrawlFileOut(BaseModel):
     size: int
 
     crawlId: str | None = None
-    numReplicas: int = 0
     expireAt: str | None = None
     fromDependency: bool = False
 
