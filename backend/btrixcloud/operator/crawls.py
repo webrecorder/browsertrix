@@ -327,9 +327,10 @@ class CrawlOperator(BaseOperator):
         if (
             status.rateLimitedAtTime
             and status.state != "rate-limited"
-            and (is_paused or (status.state in RUNNING_STATES))
+            and (is_paused or status.state == "running")
         ):
             status.rateLimitedAtTime = ""
+            await self.crawl_ops.mark_rate_limited(crawl.id, crawl.oid, None)
 
         # setup scale
         status.scale = len(pods)
@@ -1009,6 +1010,22 @@ class CrawlOperator(BaseOperator):
             status.canceled = True
 
         return status.canceled
+
+    async def rate_limit_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
+        """mark crawl as rate limited"""
+        if not status.rateLimitedAtTime:
+            now = dt_now()
+            await self.crawl_ops.mark_rate_limited(crawl.id, crawl.oid, now)
+            status.rateLimitedAtTime = date_to_str(now)
+
+        await self.set_state(
+            "rate-limited",
+            status,
+            crawl,
+            allowed_from=RUNNING_AND_WAITING_STATES,
+        )
+        status.resync_after = self.fast_retry_secs
+        return status
 
     async def fail_crawl(
         self,
@@ -1944,17 +1961,7 @@ class CrawlOperator(BaseOperator):
         # if all crashed and last exit was rate-limit exit code (18),
         # set to rate limited state now and return
         if status.allCrashed and status.lastCrawlPodExitCode == ExitCodes.RATE_LIMITED:
-            if not status.rateLimitedAtTime:
-                status.rateLimitedAtTime = date_to_str(dt_now())
-
-            await self.set_state(
-                "rate-limited",
-                status,
-                crawl,
-                allowed_from=RUNNING_STATES,
-            )
-            status.resync_after = self.fast_retry_secs
-            return status
+            return await self.rate_limit_crawl(crawl, status)
 
         # mark crawl as pausing or stopping
         if status.stopping:
@@ -2066,18 +2073,19 @@ class CrawlOperator(BaseOperator):
 
         # check for other statuses, default to "running"
         else:
-            new_status: TYPE_RUNNING_STATES = "running"
+            new_status: TYPE_RUNNING_STATES = (
+                "running" if not stats.rate_limited else "rate-limited"
+            )
 
-            if stats.rate_limited:
-                new_status = "rate-limited"
-                if not status.rateLimitedAtTime:
-                    status.rateLimitedAtTime = date_to_str(dt_now())
             if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
                 new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
+
+            if new_status == "rate-limited":
+                return await self.rate_limit_crawl(crawl, status)
 
             await self.set_state(
                 new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES

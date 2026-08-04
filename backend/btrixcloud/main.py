@@ -131,6 +131,7 @@ class SettingsResponse(BaseModel):
     localesEnabled: list[str] | None
 
     pausedExpiryMinutes: int
+    rateLimitDurationMinutes: int
 
 
 # ============================================================================
@@ -171,6 +172,9 @@ def main() -> None:
             else None
         ),
         pausedExpiryMinutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", 10080)),
+        rateLimitDurationMinutes=int(
+            os.environ.get("RATE_LIMIT_DURATION_MINUTES", 720)
+        ),
     )
 
     invites = init_invites(mdb, email)
