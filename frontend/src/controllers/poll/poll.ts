@@ -11,9 +11,12 @@ import {
   type PollControllerOptions,
 } from "./types";
 
+import { initialVisibilityState } from "@/utils/visibility-state";
+
 const defaultOptions = {
   timeoutSeconds: 5,
   pauseWhenHidden: true,
+  stopPollOnError: true,
 } satisfies PollControllerOptions;
 
 /**
@@ -24,6 +27,11 @@ const defaultOptions = {
  * the latest polled value won't be rendered if the task is in progress during
  * the current poll. Use `PollController.renderComplete` instead to always
  * render the most recently polled value, even when the task is pending.
+ *
+ * The timer for the next poll starts when the task finishes, not at an exact
+ * interval.
+ *
+ * See "Polling" story in Storybook for a usage example.
  */
 export class PollController<T> implements ReactiveController {
   readonly #host: ReactiveControllerHost & LitElement;
@@ -31,7 +39,9 @@ export class PollController<T> implements ReactiveController {
   #options: PollControllerOptions;
 
   readonly #mainTask: PollControllerInitOptions<T>["task"];
-  readonly #pollTask: Task<readonly [T], number | undefined>;
+  readonly #pollTask: Task<[TaskStatus], number | undefined>;
+
+  #paused?: boolean;
 
   constructor(
     host: ReactiveControllerHost & LitElement,
@@ -48,21 +58,23 @@ export class PollController<T> implements ReactiveController {
     };
     this.#mainTask = task;
 
-    const pollTask = new Task(this.#host, {
-      task: async ([value]) => {
+    const pollTask = new Task(host, {
+      task: async ([status]) => {
         const timeoutSeconds = this.#options.timeoutSeconds;
+        if (!timeoutSeconds) return;
+        if (status < TaskStatus.COMPLETE) return;
 
-        if (!value || !timeoutSeconds) return;
+        window.clearTimeout(pollTask.value);
 
-        if (this.#pollTask.value) {
-          window.clearTimeout(pollTask.value);
+        if (this.#options.stopPollOnError && status === TaskStatus.ERROR) {
+          return;
         }
 
         return window.setTimeout(() => {
           void this.#mainTask.run();
         }, timeoutSeconds * 1000);
       },
-      args: () => [this.#mainTask.value],
+      args: () => [task.status],
     });
 
     this.#pollTask = pollTask;
@@ -71,7 +83,7 @@ export class PollController<T> implements ReactiveController {
   /**
    * Render most recent task value.
    */
-  renderComplete(renderer: (value: T) => unknown) {
+  public renderComplete(renderer: (value: T) => unknown) {
     return this.#mainTask.value !== undefined
       ? renderer(this.#mainTask.value)
       : undefined;
@@ -82,7 +94,7 @@ export class PollController<T> implements ReactiveController {
    * To differentiate between initial run and subsequent runs,
    * check if the `value` exists.
    */
-  renderPending(renderer: (value: T | undefined) => unknown) {
+  public renderPending(renderer: (value: T | undefined) => unknown) {
     if (
       this.#mainTask.status === TaskStatus.INITIAL ||
       this.#mainTask.status === TaskStatus.PENDING
@@ -94,7 +106,7 @@ export class PollController<T> implements ReactiveController {
   /**
    * Render error thrown by task.
    */
-  renderError(renderer: (err: unknown) => unknown) {
+  public renderError(renderer: (err: unknown) => unknown) {
     if (this.#mainTask.status === TaskStatus.ERROR) {
       return renderer(this.#mainTask.error);
     }
@@ -103,20 +115,24 @@ export class PollController<T> implements ReactiveController {
   /**
    * Stop the poll timer, allowing any active task to finish.
    */
-  pause(): void {
+  public pause(): void {
     window.clearTimeout(this.#pollTask.value);
+
+    this.#paused = true;
   }
 
   /**
    * Start the poll timer, which will run the task on the next tick.
    */
-  resume(): void {
+  public resume(): void {
     if (!this.#mainTask.value) {
       console.debug(
         "cannot resume when there is no task value. did you mean to `start()`?",
       );
     }
     void this.#pollTask.run();
+
+    this.#paused = false;
   }
 
   /**
@@ -133,15 +149,56 @@ export class PollController<T> implements ReactiveController {
    */
   async start() {
     await this.#mainTask.run();
+
+    this.#paused = false;
+
     return this.#mainTask.taskComplete;
   }
 
   hostConnected(): void {
     if (this.#options.pauseWhenHidden) {
-      document.addEventListener(
-        "visibilitychange",
-        this.handleVisibilityChange,
-      );
+      // If the page is open in a background tab or otherwise initially hidden,
+      // stop the task and start on the first visibility change.
+      if (initialVisibilityState.hidden) {
+        void this.stop();
+
+        document.addEventListener(
+          "visibilitychange",
+          async () => {
+            if (!document.hidden) {
+              await this.start();
+            }
+
+            document.addEventListener(
+              "visibilitychange",
+              this.handleVisibilityChange,
+            );
+          },
+          { once: true, capture: true },
+        );
+      } else {
+        document.addEventListener(
+          "visibilitychange",
+          () => {
+            if (document.hidden) {
+              if (document.hasFocus()) {
+                // TODO Check why visibilitychange fires on page reload in Firefox
+                console.debug("document is hidden but has focus");
+              } else {
+                this.pause();
+              }
+            }
+
+            window.setTimeout(() => {
+              document.addEventListener(
+                "visibilitychange",
+                this.handleVisibilityChange,
+              );
+            }, 0);
+          },
+          { once: true, capture: true },
+        );
+      }
     }
   }
 
