@@ -330,7 +330,7 @@ class CrawlOperator(BaseOperator):
             and (is_paused or status.state == "running")
         ):
             status.rateLimitedAtTime = ""
-            await self.crawl_ops.mark_rate_limited(crawl.id, crawl.oid, None)
+            await self.crawl_ops.set_rate_limited_at(crawl.id, crawl.oid, None)
 
         # setup scale
         status.scale = len(pods)
@@ -1013,17 +1013,20 @@ class CrawlOperator(BaseOperator):
 
     async def rate_limit_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
         """mark crawl as rate limited"""
-        if not status.rateLimitedAtTime:
-            now = dt_now()
-            await self.crawl_ops.mark_rate_limited(crawl.id, crawl.oid, now)
-            status.rateLimitedAtTime = date_to_str(now)
-
-        await self.set_state(
+        # ensure rate-limited state is actually set, return otherwise, just in case
+        if not await self.set_state(
             "rate-limited",
             status,
             crawl,
             allowed_from=RUNNING_AND_WAITING_STATES,
-        )
+        ):
+            return status
+
+        if not status.rateLimitedAtTime:
+            now = dt_now()
+            status.rateLimitedAtTime = date_to_str(now)
+            await self.crawl_ops.set_rate_limited_at(crawl.id, crawl.oid, now)
+
         status.resync_after = self.fast_retry_secs
         return status
 
