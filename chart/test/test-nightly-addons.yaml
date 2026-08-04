@@ -10,6 +10,9 @@ cleanup_job_cron_schedule: "* * * * *"
 # Clean up files > 1 minute old in testing
 cleanup_files_after_minutes: 1
 
+# Every 2 minutes, for use in testing file replication
+replication_job_cron_schedule: "*/2 * * * *"
+
 # max crawl queue size x concurrent crawls
 crawl_queue_limit_scale: 1
 
