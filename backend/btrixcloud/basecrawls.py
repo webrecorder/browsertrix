@@ -634,7 +634,6 @@ class BaseCrawlOps:
                                 hash=file["hash"],
                                 size=file["size"],
                                 crawlId=file["crawl_id"],
-                                numReplicas=len(file.get("replicas") or []),
                                 expireAt=date_to_str(
                                     presigned["signedAt"]
                                     + self.storage_ops.signed_duration_delta
@@ -676,7 +675,6 @@ class BaseCrawlOps:
                         hash=file["hash"],
                         size=file["size"],
                         crawlId=file["crawl_id"],
-                        numReplicas=len(file.get("replicas") or []),
                         expireAt=date_to_str(expire_at),
                     )
                 )
