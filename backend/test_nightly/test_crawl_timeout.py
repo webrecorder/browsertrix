@@ -2,6 +2,8 @@ import time
 
 import requests
 
+from btrixcloud.utils import dt_now
+
 from .conftest import API_PREFIX
 from .utils import verify_file_replicated
 
@@ -33,16 +35,20 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
 
 
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
-    time.sleep(20)
+    crawl_complete = dt_now()
 
-    # Verify replication job was successful
+    # Wait a few minutes so that replication jobs have time to run
+    time.sleep(300)
+
+    # Verify copy bucket job has run and succeeded since crawl completed
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=create-replica",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=copy-bucket",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "create-replica"
+    assert latest_job["type"] == "copy-bucket"
+    assert latest_job["started"] >= crawl_complete
     job_id = latest_job["id"]
 
     attempts = 0
@@ -62,22 +68,20 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
         assert job["success"]
         break
 
-    # Assert file was updated
+    # Verify crawlfiles are stored in replica location
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{timeout_crawl}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
+
+    oid = data["oid"]
+    assert oid
+
     files = data.get("resources")
     assert files
     for file_ in files:
-        assert file_["numReplicas"] == 1
-
-    # Verify replica is stored
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    verify_file_replicated(data["file_path"])
+        filename = file_["name"]
+        file_path = f"{oid}/{filename}"
+        verify_file_replicated(file_path)

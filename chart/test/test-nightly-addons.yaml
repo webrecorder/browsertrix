@@ -4,6 +4,9 @@ invite_expire_seconds: "10"
 
 max_pages_per_crawl: 300
 
+# Every 2 minutes, for use in testing file replication
+replication_job_cron_schedule: "*/2 * * * *"
+
 # max crawl queue size x concurrent crawls
 crawl_queue_limit_scale: 1
 
