@@ -213,8 +213,6 @@ export class ExclusionEditor extends BtrixElement {
 
     if (valid) {
       this.regex = value;
-    } else {
-      this.regex = "";
     }
   }
 
