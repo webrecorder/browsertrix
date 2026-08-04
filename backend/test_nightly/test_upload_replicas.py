@@ -4,6 +4,8 @@ import time
 import structlog
 import requests
 
+from btrixcloud.utils import dt_now
+
 from .conftest import API_PREFIX
 from .utils import (
     read_in_chunks,
@@ -32,16 +34,20 @@ def test_upload_stream(admin_auth_headers, default_org_id):
 
 
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
-    time.sleep(20)
+    upload_complete = dt_now()
 
-    # Verify replication job was successful
+    # Wait a few minutes so that replication jobs have time to run
+    time.sleep(300)
+
+    # Verify copy bucket job has run and succeeded since upload
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=create-replica",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=copy-bucket",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "create-replica"
+    assert latest_job["type"] == "copy-bucket"
+    assert latest_job["started"] >= upload_complete
     job_id = latest_job["id"]
 
     attempts = 0
@@ -61,30 +67,24 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         assert job["success"]
         break
 
-    # Verify file updated
+    # Verify upload file is stored
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
+
     files = data.get("resources")
     assert files
-    for file_ in files:
-        assert file_["numReplicas"] == 1
 
-    # Verify replica is stored
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    job = r.json()
-    logger.info(
-        "upload_file_path",
-        file_path=job["file_path"],
-        unstructured_message=f"{job['file_path']}",
-    )
-    verify_file_replicated(job["file_path"])
+    file_ = files[0]
+    filename = file_["name"]
+
+    global upload_file_path
+    upload_file_path = f"{default_org_id}/{filename}"
+
+    verify_file_replicated(upload_file_path)
 
 
 def test_delete_upload_and_replicas(admin_auth_headers, default_org_id):
@@ -144,4 +144,8 @@ def test_delete_upload_and_replicas(admin_auth_headers, default_org_id):
     )
     assert r.status_code == 200
     job = r.json()
-    verify_file_and_replica_deleted(job["file_path"])
+
+    job_file_path = job["file_path"]
+    assert job_file_path == upload_file_path
+
+    verify_file_and_replica_deleted(job_file_path)
