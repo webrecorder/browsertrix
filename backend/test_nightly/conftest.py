@@ -376,17 +376,6 @@ def deleted_crawl_id(admin_auth_headers, default_org_id):
             break
         time.sleep(5)
 
-    # Wait until replica background job completes
-    while True:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=create-replica&success=True",
-            headers=admin_auth_headers,
-        )
-        assert r.status_code == 200
-        if r.json()["total"] == 1:
-            break
-        time.sleep(5)
-
     # Delete crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
@@ -394,16 +383,5 @@ def deleted_crawl_id(admin_auth_headers, default_org_id):
         json={"crawl_ids": [crawl_id]},
     )
     assert r.status_code == 200
-
-    # Wait until delete replica background job completes
-    while True:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=delete-replica&success=True",
-            headers=admin_auth_headers,
-        )
-        assert r.status_code == 200
-        if r.json()["total"] == 1:
-            break
-        time.sleep(5)
 
     return crawl_id
