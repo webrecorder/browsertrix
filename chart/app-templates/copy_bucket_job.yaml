@@ -84,7 +84,7 @@ spec:
         - name: RCLONE_CONFIG_REPLICA_ENDPOINT
           value: "{{ replica_endpoint }}"
 
-        command: ["rclone", "-vv", "copy", "--checksum", "--error-on-no-transfer", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
+        command: ["rclone", "-vv", "copy", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
 
         resources:
           limits:
