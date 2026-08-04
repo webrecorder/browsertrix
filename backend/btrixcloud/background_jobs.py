@@ -106,7 +106,7 @@ class BackgroundJobOps:
         """Create a job to delete each replica for the given file"""
         ids = []
 
-        for replica_ref in file.replicas or []:
+        for replica_ref in self.storage_ops.get_org_replicas_storage_refs(org):
             job_id = await self.create_delete_replica_job(
                 org, file, object_id, object_type, replica_ref
             )
@@ -273,7 +273,7 @@ class BackgroundJobOps:
 
             return job_id
         # pylint: disable=broad-exception-caught
-        except Exception as exc:
+        except Exception:
             replica_logger.warning(
                 "copy_bucket_job_start_failed",
                 exc_info=True,

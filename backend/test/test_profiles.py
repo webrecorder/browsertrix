@@ -62,7 +62,6 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             assert "crawlconfigs" not in data
             assert data["inUse"] == True
@@ -118,7 +117,6 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             # First profile should be listed second by default because it was
             # modified less recently
@@ -145,7 +143,6 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             break
         except:

@@ -30,7 +30,6 @@ from .models import (
     ProfilePingResponse,
     ProfileSearchValuesResponse,
     ProfileUpdate,
-    StorageRef,
     SuccessResponse,
     SuccessResponseStorageQuota,
     TagsResponse,
@@ -647,15 +646,6 @@ class ProfileOps:
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
         return data or {}
-
-    async def add_profile_file_replica(
-        self, profileid: UUID, filename: str, ref: StorageRef
-    ) -> dict[str, object]:
-        """Add replica StorageRef to existing ProfileFile"""
-        return await self.profiles.find_one_and_update(
-            {"_id": profileid, "resource.filename": filename},
-            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
-        )
 
     async def calculate_org_profile_file_storage(self, oid: UUID) -> int:
         """Calculate and return total size of profile files in org"""
