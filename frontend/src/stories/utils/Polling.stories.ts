@@ -5,8 +5,14 @@ import { renderComponent, type RenderProps } from "./Polling";
 const meta = {
   title: "Utils/Polling",
   render: renderComponent,
-  argTypes: {},
-  args: {},
+  argTypes: {
+    timeoutSeconds: {
+      control: { type: "number" },
+    },
+  },
+  args: {
+    timeoutSeconds: 1,
+  },
 } satisfies Meta<RenderProps>;
 
 export default meta;

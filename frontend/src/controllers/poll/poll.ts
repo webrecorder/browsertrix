@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 const defaultOptions = {
-  timeoutSeconds: 1,
+  timeoutSeconds: 5,
   pauseInBackground: true,
 } satisfies PollControllerOptions;
 
@@ -93,21 +93,24 @@ export class PollController implements ReactiveController {
     }
   }
 
-  stop() {
-    console.debug("pause polling");
+  pause() {
     window.clearTimeout(this.#pollTask.value);
   }
 
-  start() {
-    console.debug("resume polling");
+  resume() {
     void this.#mainTask.run();
+  }
+
+  stop() {
+    this.#mainTask.abort();
+    window.clearTimeout(this.#pollTask.value);
   }
 
   private readonly handleVisibilityChange = () => {
     if (document.hidden) {
-      this.stop();
+      this.pause();
     } else {
-      this.start();
+      this.resume();
     }
   };
 }
