@@ -5,6 +5,7 @@ import { customElement } from "lit/decorators.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import PollController from "@/controllers/poll";
 import type { APIPaginatedList } from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 
@@ -20,30 +21,18 @@ export class ActiveCrawlsBadge extends BtrixElement {
     args: () => [] as const,
   });
 
-  private readonly pollTask = new Task(this, {
-    task: async () => {
-      window.clearTimeout(this.pollTask.value);
-
-      return window.setTimeout(() => {
-        void this.activeCrawlsTotalTask.run();
-      }, POLL_INTERVAL_SECONDS * 1000);
-    },
-    args: () => [this.activeCrawlsTotalTask.value] as const,
+  readonly #poller = new PollController(this, {
+    task: this.activeCrawlsTotalTask,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
-  disconnectedCallback(): void {
-    super.disconnectedCallback();
-
-    window.clearTimeout(this.pollTask.value);
-  }
-
   render() {
-    if (this.activeCrawlsTotalTask.value) {
-      const { total } = this.activeCrawlsTotalTask.value;
-      return html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
-        ${this.localize.number(total)}
-      </btrix-badge>`;
-    }
+    return this.#poller.renderComplete(
+      ({ total }) =>
+        html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
+          ${this.localize.number(total)}
+        </btrix-badge>`,
+    );
   }
 
   private async getActiveCrawlsTotal() {
