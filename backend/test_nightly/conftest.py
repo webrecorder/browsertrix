@@ -376,6 +376,9 @@ def deleted_crawl_id(admin_auth_headers, default_org_id):
             break
         time.sleep(5)
 
+    # Wait for it to replicate
+    time.sleep(300)
+
     # Delete crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
