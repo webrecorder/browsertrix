@@ -1,0 +1,56 @@
+import {
+  Controls,
+  Primary,
+  Stories,
+  Title,
+} from "@storybook/addon-docs/blocks";
+
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+
+import * as PollingStories from "./Polling.stories";
+
+<Meta of={PollingStories} />
+
+<Title />
+
+Polling is used to check for fresh data from the server at a regular interval.
+
+Polling is paused when the browser tab is hidden and resumes when the tab is focused.
+
+Example usage of the poll controller utility:
+```tsx
+export class PollExample extends LitElement {
+  count = 0;
+
+  readonly #poll = new PollTask(this, {
+    task: async () => {
+      const promise = new Promise((resolve) => {
+        window.setTimeout(resolve, 1000);
+      });
+
+      return promise.then(() => {
+        this.count = this.count + 1;
+        return this.count;
+      });
+    },
+    args: () => [] as const,
+    timeoutSeconds: 5
+  });
+
+  render() {
+    return html`
+      ${this.#poll.render(
+        (value) => html`
+          Value: ${value}<br />
+          Last updated: ${new Date()}
+        `,
+      )}
+      ${this.#poll.render({
+        pending: () => html`<sl-spinner></sl-spinner>`,
+      })}
+    `;
+  }
+}
+```
+
+<Stories />

@@ -6,11 +6,16 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage } from "@/components/ui/pagination";
+import PollTask from "@/controllers/poll";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { WorkflowTab } from "@/routes";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import type {
+  APIPaginatedList,
+  APIPaginationQuery,
+  APISortQuery,
+} from "@/types/api";
 import type { Crawl } from "@/types/crawler";
 import type { CrawlState } from "@/types/crawlState";
 import { activeCrawlStates, isActive } from "@/utils/crawler";
@@ -47,8 +52,9 @@ const sortableFields: Record<
     defaultDirection: "desc",
   },
 };
-const ABORT_REASON_THROTTLE = "throttled";
+
 const POLL_INTERVAL_SECONDS = 30;
+const INITIAL_PAGE_SIZE = 100;
 
 @customElement("btrix-crawls")
 @localized()
@@ -59,9 +65,6 @@ export class Crawls extends BtrixElement {
 
   @state()
   private crawl?: Crawl;
-
-  @state()
-  private crawls?: APIPaginatedList<Crawl>;
 
   @state()
   private slugLookup: Record<string, string> = {};
@@ -76,14 +79,45 @@ export class Crawls extends BtrixElement {
   };
 
   @state()
-  private filterBy: Partial<Record<keyof Crawl, unknown>> = {
-    state: activeCrawlStates,
+  private filterBy: Partial<Record<keyof Crawl, unknown>> & {
+    state?: readonly CrawlState[];
+  } = {
+    state: activeCrawlStates as readonly CrawlState[],
   };
 
-  private timerId?: number;
+  readonly #poll = new PollTask(this, {
+    task: async ([filterBy, orderBy], { signal }) => {
+      if (this.crawlId) {
+        console.debug("skipping, will redirect to crawls page");
+        return;
+      }
 
-  // Use to cancel requests
-  private getCrawlsController: AbortController | null = null;
+      try {
+        return this.getCrawls(
+          {
+            ...filterBy,
+            page:
+              parsePage(new URLSearchParams(location.search).get("page")) || 1,
+            pageSize: INITIAL_PAGE_SIZE,
+            sortBy: orderBy.field,
+            sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+          },
+          signal,
+        );
+      } catch (err) {
+        console.debug(err);
+
+        this.notify.toast({
+          message: msg("Sorry, couldn't retrieve crawls at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "fetch-crawls-status",
+        });
+      }
+    },
+    args: () => [this.filterBy, this.orderBy] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
 
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
@@ -91,13 +125,6 @@ export class Crawls extends BtrixElement {
     if (changedProperties.has("crawlId") && this.crawlId) {
       // Redirect to org crawl page
       void this.fetchWorkflowId();
-    } else {
-      if (
-        changedProperties.has("filterBy") ||
-        changedProperties.has("orderBy")
-      ) {
-        void this.fetchCrawls();
-      }
     }
     if (changedProperties.has("crawl") && this.crawl) {
       const slug = this.slugLookup[this.crawl.oid];
@@ -113,13 +140,6 @@ export class Crawls extends BtrixElement {
 
   firstUpdated() {
     void this.fetchSlugLookup();
-  }
-
-  disconnectedCallback(): void {
-    this.cancelInProgressGetCrawls();
-    super.disconnectedCallback();
-
-    window.clearTimeout(this.timerId);
   }
 
   render() {
@@ -150,14 +170,14 @@ export class Crawls extends BtrixElement {
         </header>
 
         ${when(
-          this.crawls,
-          () => {
-            const { items, page, total, pageSize } = this.crawls!;
+          this.#poll.value,
+          (value) => {
+            const { items, page, total, pageSize } = value;
             const hasCrawlItems = items.length;
             return html`
               <section>
                 ${hasCrawlItems
-                  ? this.renderCrawlList()
+                  ? this.renderCrawlList(items)
                   : this.renderEmptyState()}
               </section>
               ${when(
@@ -168,10 +188,10 @@ export class Crawls extends BtrixElement {
                       page=${page}
                       totalCount=${total}
                       size=${pageSize}
-                      @page-change=${async (e: PageChangeEvent) => {
-                        await this.fetchCrawls({
-                          page: e.detail.page,
-                        });
+                      @page-change=${async () => {
+                        // This can be run without parameters since the task checks for
+                        // page number in the URL.
+                        await this.#poll.run();
 
                         // Scroll to top of list
                         // TODO once deep-linking is implemented, scroll to top of pushstate
@@ -275,18 +295,18 @@ export class Crawls extends BtrixElement {
     return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
   };
 
-  private renderCrawlList() {
-    if (!this.crawls) return;
-
+  private renderCrawlList(items: Crawl[]) {
     return html`
       <btrix-crawl-list runningOnly>
-        ${this.crawls.items.map(this.renderCrawlItem)}
+        ${items.map(this.renderCrawlItem)}
       </btrix-crawl-list>
     `;
   }
 
   private renderEmptyState() {
-    if (this.crawls?.page && this.crawls.page > 1) {
+    const crawls = this.#poll.value;
+
+    if (crawls?.page && crawls.page > 1) {
       return html`
         <div class="border-b border-t py-5">
           <p class="text-center text-neutral-500">
@@ -340,70 +360,21 @@ export class Crawls extends BtrixElement {
     }
   }
 
-  /**
-   * Fetch crawls and update internal state
-   */
-  private async fetchCrawls(params?: APIPaginationQuery): Promise<void> {
-    this.cancelInProgressGetCrawls();
-    window.clearTimeout(this.timerId);
-
-    try {
-      this.crawls = await this.getCrawls(params);
-
-      // TODO Refactor to poll task
-      // https://github.com/webrecorder/browsertrix/issues/1716
-      this.timerId = window.setTimeout(() => {
-        void this.fetchCrawls();
-      }, POLL_INTERVAL_SECONDS * 1000);
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        console.debug("Fetch crawls aborted to throttle");
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn't retrieve crawls at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "fetch-crawls-throttled",
-        });
-      }
-    }
-  }
-
-  private cancelInProgressGetCrawls() {
-    if (this.getCrawlsController) {
-      this.getCrawlsController.abort(ABORT_REASON_THROTTLE);
-      this.getCrawlsController = null;
-    }
-  }
-
   private async getCrawls(
-    queryParams?: APIPaginationQuery & { state?: CrawlState[] },
+    queryParams: APIPaginationQuery &
+      APISortQuery & { state?: readonly CrawlState[] },
+    signal: AbortSignal,
   ) {
-    const query = queryString.stringify(
-      {
-        ...this.filterBy,
-        ...queryParams,
-        page:
-          queryParams?.page ||
-          this.crawls?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize: queryParams?.pageSize || this.crawls?.pageSize || 100,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
+    const query = queryString.stringify(queryParams, {
+      arrayFormat: "comma",
+    });
 
-    this.getCrawlsController = new AbortController();
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
       {
-        signal: this.getCrawlsController.signal,
+        signal,
       },
     );
-    this.getCrawlsController = null;
 
     return data;
   }
