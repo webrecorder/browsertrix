@@ -710,6 +710,36 @@ class TagsResponse(BaseModel):
 
 
 # ============================================================================
+class CrawlConfigRunningCountsResponse(BaseModel):
+    """Response model for counts of running workflows (total and by status)"""
+
+    totalRunningPausedWaiting: int = 0
+    totalRunning: int = 0
+    totalPaused: int = 0
+    totalWaiting: int = 0
+
+    # Running states
+    running: int = 0
+    pendingWait: int = 0
+    generateWACZ: int = 0
+    uploadingWACZ: int = 0
+    rateLimited: int = 0
+
+    # Paused states
+    paused: int = 0
+    pausedStorageQuotaReached: int = 0
+    pausedTimeQuotaReached: int = 0
+    pausedOrgReadOnly: int = 0
+    pausedRateLimitTimeReached: int = 0
+
+    # Waiting states
+    starting: int = 0
+    waitingCapacity: int = 0
+    waitingOrgLimit: int = 0
+    waitingDedupeIndex: int = 0
+
+
+# ============================================================================
 class CrawlConfigSearchValues(BaseModel):
     """Response model for adding crawlconfigs"""
 

@@ -27,6 +27,7 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
+    ALL_CRAWL_STATES,
     SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
     ConfigRevision,
@@ -35,6 +36,7 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlConfigIn,
     CrawlConfigOut,
+    CrawlConfigRunningCountsResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlerChannel,
@@ -1689,6 +1691,103 @@ class CrawlConfigOps:
 
         return {"success": True}
 
+    async def get_running_counts(
+        self, org: Organization | None = None
+    ) -> CrawlConfigRunningCountsResponse:
+        """Return counts of running workflows, total and status, optionally by org"""
+
+        state_count_logger = logger.bind(oid=org.id if org else None)
+
+        try:
+            match_query: dict[str, UUID | str] = {}
+            if org:
+                match_query["oid"] = org.id
+
+            res = await self.crawls.aggregate(
+                [
+                    {"$match": match_query},
+                    {"$group": {"_id": "$state", "count": {"$count": {}}}},
+                ]
+            ).to_list()
+
+            state_counts: dict[str, int] = {}
+
+            for state_dict in res:
+                state = state_dict["_id"]
+                count = state_dict.get("count", 0)
+                if state not in ALL_CRAWL_STATES:
+                    state_count_logger.error(
+                        "unexpected_crawl_state_found", state=state, count=count
+                    )
+                else:
+                    state_counts[state] = count
+
+            # Running states
+            running = state_counts.get("running", 0)
+            pending_wait = state_counts.get("pending-wait", 0)
+            generate_wacz = state_counts.get("generate-wacz", 0)
+            uploading_wacz = state_counts.get("uploading-wacz", 0)
+            rate_limited = state_counts.get("rate-limited", 0)
+            total_running = (
+                running + pending_wait + generate_wacz + uploading_wacz + rate_limited
+            )
+
+            # Paused states
+            paused = state_counts.get("paused", 0)
+            paused_storage = state_counts.get("paused_storage_quota_reached", 0)
+            paused_time = state_counts.get("paused_time_quota_reached", 0)
+            paused_read_only = state_counts.get("paused_org_readonly", 0)
+            paused_rate_limit = state_counts.get("paused_rate_limit_time_reached", 0)
+
+            total_paused = (
+                paused
+                + paused_storage
+                + paused_time
+                + paused_read_only
+                + paused_rate_limit
+            )
+
+            # Waiting states
+            starting = state_counts.get("starting", 0)
+            waiting_capacity = state_counts.get("waiting_capacity", 0)
+            waiting_org_limit = state_counts.get("waiting_org_limit", 0)
+            waiting_dedupe = state_counts.get("waiting_dedupe", 0)
+            total_waiting = (
+                starting + waiting_capacity + waiting_org_limit + waiting_dedupe
+            )
+
+            total = total_running + total_paused + total_waiting
+
+            return CrawlConfigRunningCountsResponse(
+                totalRunningPausedWaiting=total,
+                totalRunning=total_running,
+                totalPaused=total_paused,
+                totalWaiting=total_waiting,
+                # Running states
+                running=running,
+                pendingWait=pending_wait,
+                generateWACZ=generate_wacz,
+                uploadingWACZ=uploading_wacz,
+                rateLimited=rate_limited,
+                # Paused states
+                paused=paused,
+                pausedStorageQuotaReached=paused_storage,
+                pausedTimeQuotaReached=paused_time,
+                pausedOrgReadOnly=paused_read_only,
+                pausedRateLimitTimeReached=paused_rate_limit,
+                # Waiting states
+                starting=starting,
+                waitingCapacity=waiting_capacity,
+                waitingOrgLimit=waiting_org_limit,
+                waitingDedupeIndex=waiting_dedupe,
+            )
+        except Exception:
+            state_count_logger.exception(
+                "running_workflow_counts_calculation_failed",
+            )
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="calculation_failure")
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1944,6 +2043,24 @@ def init_crawl_config_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return ops.get_crawler_proxies()
+
+    @router.get("/running", response_model=CrawlConfigRunningCountsResponse)
+    async def get_org_crawl_config_running_counts(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_running_counts(org)
+
+    @app.get(
+        "/orgs/all/crawlconfigs/running",
+        response_model=CrawlConfigRunningCountsResponse,
+    )
+    async def get_all_crawl_config_running_counts(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_running_counts()
 
     @app.get(
         "/orgs/{oid}/crawlconfigs/{cid}/public/replay.json",
