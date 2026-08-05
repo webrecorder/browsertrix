@@ -58,11 +58,9 @@ export class PollController<T extends Task> implements ReactiveController {
   ) {
     host.addController(this);
 
-    const { ...opts } = options || {};
-
     this.#options = {
       ...defaultOptions,
-      ...opts,
+      ...options,
     };
     this.#mainTask = task;
 
