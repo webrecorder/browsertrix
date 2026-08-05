@@ -1,12 +1,10 @@
 import { localized } from "@lit/localize";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
-import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import PollTask from "@/controllers/poll";
-import type { APIPaginatedList } from "@/types/api";
-import type { Crawl } from "@/types/crawler";
+import { type RunningWorkflowCounts } from "@/types/workflow";
 
 const POLL_INTERVAL_SECONDS = 30;
 
@@ -22,21 +20,18 @@ export class ActiveCrawlsBadge extends BtrixElement {
   });
 
   render() {
-    return this.#poll.render(
-      ({ total }) =>
-        html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
-          ${this.localize.number(total)}
-        </btrix-badge>`,
+    return this.#poll.render(({ totalRunningPausedWaiting }) =>
+      totalRunningPausedWaiting
+        ? html`<btrix-badge variant="primary">
+            ${this.localize.number(totalRunningPausedWaiting)}
+          </btrix-badge>`
+        : nothing,
     );
   }
 
   private async getActiveCrawlsTotal(signal: AbortSignal) {
-    const query = queryString.stringify({
-      pageSize: 1,
-    });
-
-    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
-      `/orgs/all/crawls?${query}`,
+    const data = await this.api.fetch<RunningWorkflowCounts>(
+      `/orgs/all/crawlconfigs/running`,
       { signal, priority: "low" },
     );
 
