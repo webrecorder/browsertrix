@@ -1043,6 +1043,7 @@ class CrawlOut(BaseMongoModel):
     stopping: bool | None = False
     shouldPause: bool | None = False
     pausedAt: datetime | None = None
+    rateLimitedAt: datetime | None = None
     manual: bool = False
     cid_rev: int | None = None
     scale: Annotated[Scale | None, Field(deprecated=True)] = None
@@ -1214,6 +1215,9 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     stopping: bool | None = False
     shouldPause: bool | None = False
+    pausedAt: datetime | None = None
+
+    rateLimitedAt: datetime | None = None
 
     qaCrawlExecSeconds: int = 0
 

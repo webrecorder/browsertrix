@@ -912,6 +912,13 @@ class CrawlOps(BaseCrawlOps):
 
         raise HTTPException(status_code=404, detail="crawl_not_found")
 
+    async def set_rate_limited_at(self, crawl_id: str, oid: UUID, dt: datetime | None):
+        """mark crawl as rate limited or not rate limited by setting/unsetting rateLimitedAt"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl", "oid": oid},
+            {"$set": {"rateLimitedAt": dt}},
+        )
+
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
     ) -> dict[str, bool]:
