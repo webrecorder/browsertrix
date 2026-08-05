@@ -85,45 +85,39 @@ export class Crawls extends BtrixElement {
     state: activeCrawlStates as readonly CrawlState[],
   };
 
-  readonly #poll = new PollTask(
-    this,
-    {
-      task: async ([filterBy, orderBy], { signal }) => {
-        if (this.crawlId) {
-          console.debug("skipping, will redirect to crawls page");
-          return;
-        }
+  readonly #poll = new PollTask(this, {
+    task: async ([filterBy, orderBy], { signal }) => {
+      if (this.crawlId) {
+        console.debug("skipping, will redirect to crawls page");
+        return;
+      }
 
-        try {
-          return this.getCrawls(
-            {
-              ...filterBy,
-              page:
-                parsePage(new URLSearchParams(location.search).get("page")) ||
-                1,
-              pageSize: INITIAL_PAGE_SIZE,
-              sortBy: orderBy.field,
-              sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
-            },
-            signal,
-          );
-        } catch (err) {
-          console.debug(err);
+      try {
+        return this.getCrawls(
+          {
+            ...filterBy,
+            page:
+              parsePage(new URLSearchParams(location.search).get("page")) || 1,
+            pageSize: INITIAL_PAGE_SIZE,
+            sortBy: orderBy.field,
+            sortDirection: this.orderBy.direction === "desc" ? -1 : 1,
+          },
+          signal,
+        );
+      } catch (err) {
+        console.debug(err);
 
-          this.notify.toast({
-            message: msg("Sorry, couldn't retrieve crawls at this time."),
-            variant: "danger",
-            icon: "exclamation-octagon",
-            id: "fetch-crawls-status",
-          });
-        }
-      },
-      args: () => [this.filterBy, this.orderBy] as const,
+        this.notify.toast({
+          message: msg("Sorry, couldn't retrieve crawls at this time."),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "fetch-crawls-status",
+        });
+      }
     },
-    {
-      timeoutSeconds: POLL_INTERVAL_SECONDS,
-    },
-  );
+    args: () => [this.filterBy, this.orderBy] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
 
   protected willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,

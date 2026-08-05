@@ -13,18 +13,13 @@ const POLL_INTERVAL_SECONDS = 30;
 @customElement("btrix-active-crawls-badge")
 @localized()
 export class ActiveCrawlsBadge extends BtrixElement {
-  readonly #poll = new PollTask(
-    this,
-    {
-      task: async (_args, { signal }) => {
-        return await this.getActiveCrawlsTotal(signal);
-      },
-      args: () => [] as const,
+  readonly #poll = new PollTask(this, {
+    task: async (_args, { signal }) => {
+      return await this.getActiveCrawlsTotal(signal);
     },
-    {
-      timeoutSeconds: POLL_INTERVAL_SECONDS,
-    },
-  );
+    args: () => [] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
 
   render() {
     return this.#poll.render({

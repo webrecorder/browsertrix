@@ -45,9 +45,10 @@ export class PollTask<
 
   constructor(
     host: ReactiveControllerHost,
-    taskConfig: TaskConfig<T, R>,
-    options: PollTaskInitOptions,
+    config: TaskConfig<T, R> & PollTaskInitOptions,
   ) {
+    const { timeoutSeconds, pauseWhenHidden, stopPollOnError, ...taskConfig } =
+      config;
     super(host, {
       ...taskConfig,
       onComplete: (value) => {
@@ -56,6 +57,7 @@ export class PollTask<
       },
     });
 
+    const options = { timeoutSeconds, pauseWhenHidden, stopPollOnError };
     this.#options = {
       ...defaultOptions,
       ...options,
@@ -99,7 +101,12 @@ export class PollTask<
   }
 
   /**
-   * Extend status renderer to include option for always rendering the current value.
+   * Extend status renderer to include option for rendering the current value
+   * (similar to the `when()` directive) regardless of status.
+   *
+   * Note that the presence of the `whenValue` renderer will prevent any
+   * status-based renderers from executing if a poll value exists, so it should
+   * probably be used in a separate `poll.render()` call.
    */
   render<
     T extends StatusRenderer<R> & {
