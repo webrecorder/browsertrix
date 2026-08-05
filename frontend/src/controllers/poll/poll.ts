@@ -33,7 +33,6 @@ export class PollController<
   const R = unknown,
 > extends Task<T, R> {
   #options: PollControllerOptions;
-
   #previousValue?: R;
   #paused?: boolean;
 
@@ -135,9 +134,8 @@ export class PollController<
    * Stop the poll timer, allowing any active task to finish.
    */
   public pause(): void {
-    this.clearTimer();
-
     this.#paused = true;
+    this.clearTimer();
   }
 
   /**
@@ -149,9 +147,9 @@ export class PollController<
         "cannot resume when there is no task value. did you mean to `start()`?",
       );
     }
-    void this.#pollTask.run();
 
     this.#paused = false;
+    void this.#pollTask.run();
   }
 
   /**
@@ -168,7 +166,7 @@ export class PollController<
    */
   async start() {
     this.#paused = false;
-    await this.run();
+    void this.run();
     return this.taskComplete;
   }
 
