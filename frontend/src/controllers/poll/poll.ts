@@ -46,7 +46,7 @@ const defaultOptions = {
 export class PollController<T extends Task> implements ReactiveController {
   #options: PollControllerOptions;
 
-  readonly #mainTask: Task;
+  readonly #mainTask: T;
   readonly #pollTask: Task<[TaskStatus], number | undefined>;
 
   #paused?: boolean;
