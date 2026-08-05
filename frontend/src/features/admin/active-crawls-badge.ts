@@ -21,13 +21,13 @@ export class ActiveCrawlsBadge extends BtrixElement {
     args: () => [] as const,
   });
 
-  readonly #poller = new PollController(this, {
-    task: this.activeCrawlsTotalTask,
-    timeoutSeconds: POLL_INTERVAL_SECONDS,
-  });
+  readonly #poll: PollController<typeof this.activeCrawlsTotalTask> =
+    new PollController(this, this.activeCrawlsTotalTask, {
+      timeoutSeconds: POLL_INTERVAL_SECONDS,
+    });
 
   render() {
-    return this.#poller.renderComplete(
+    return this.#poll.renderComplete(
       ({ total }) =>
         html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
           ${this.localize.number(total)}

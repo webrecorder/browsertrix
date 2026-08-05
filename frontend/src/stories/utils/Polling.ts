@@ -14,7 +14,7 @@ export class PollExample extends LitElement {
 
   count = 0;
 
-  readonly #task = new Task(this, {
+  readonly task = new Task(this, {
     task: async () => {
       const promise = new Promise((resolve) => {
         window.setTimeout(resolve, 1000);
@@ -28,38 +28,39 @@ export class PollExample extends LitElement {
     args: () => [] as const,
   });
 
-  readonly #poller = new PollController(this, {
-    task: this.#task,
-  });
+  readonly #poll: PollController<typeof this.task> = new PollController(
+    this,
+    this.task,
+  );
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("timeoutSeconds")) {
-      this.#poller.setOptions({ timeoutSeconds: this.timeoutSeconds });
+      this.#poll.setOptions({ timeoutSeconds: this.timeoutSeconds });
     }
   }
 
   render() {
     return html`
       <div>
-        ${this.#poller.renderComplete(
+        ${this.#poll.renderComplete(
           (value) => html`
             Value: ${value}<br />
             Last updated: ${new Date()}
           `,
         )}
-        ${this.#poller.renderPending(() => html`<sl-spinner></sl-spinner>`)}
+        ${this.#poll.renderPending(() => html`<sl-spinner></sl-spinner>`)}
       </div>
 
       <sl-button
         @click=${() => {
-          this.#poller.pause();
+          this.#poll.pause();
         }}
       >
         Pause
       </sl-button>
       <sl-button
         @click=${() => {
-          this.#poller.resume();
+          this.#poll.resume();
         }}
       >
         Resume

@@ -1,4 +1,3 @@
-import type { Task } from "@lit/task";
 import { z } from "zod";
 
 export const pollControllerOptionsSchema = z.object({
@@ -7,7 +6,3 @@ export const pollControllerOptionsSchema = z.object({
   stopPollOnError: z.boolean().optional(),
 });
 export type PollControllerOptions = z.infer<typeof pollControllerOptionsSchema>;
-
-export type PollControllerInitOptions<T> = PollControllerOptions & {
-  task: Task<readonly unknown[], T>;
-};

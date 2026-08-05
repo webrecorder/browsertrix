@@ -30,19 +30,20 @@ export class PollExample extends LitElement {
     args: () => [] as const,
   });
 
-  readonly #poller = new PollController(this, {
-    task: this.#task,
-  });
+  readonly #poll: PollController<typeof this.#task> = new PollController(
+    this,
+    this.#task
+  );
 
   render() {
     return html`
-      ${this.#poller.renderComplete(
+      ${this.#poll.renderComplete(
         (value) => html`
           Value: ${value}<br />
           Last updated: ${new Date()}
         `,
       )}
-      ${this.#poller.renderPending(() => html`<sl-spinner></sl-spinner>`)}
+      ${this.#poll.renderPending(() => html`<sl-spinner></sl-spinner>`)}
     `;
   }
 }

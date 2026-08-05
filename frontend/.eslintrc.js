@@ -34,7 +34,8 @@ module.exports = {
     "@typescript-eslint/consistent-type-exports": "error",
     "@typescript-eslint/prefer-readonly": "warn",
     "@typescript-eslint/class-literal-property-style": ["warn", "getters"],
-    "@typescript-eslint/consistent-generic-constructors": "error",
+    /* allows specifying type arguments on the left-hand side to fix circularity issues, like when using `PollController`: */
+    // "@typescript-eslint/consistent-generic-constructors": "error",
     "@typescript-eslint/consistent-type-assertions": "error",
     "@typescript-eslint/no-confusing-non-null-assertion": "warn",
     "@typescript-eslint/no-inferrable-types": "warn",

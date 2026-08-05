@@ -7,11 +7,13 @@ import {
 
 import {
   pollControllerOptionsSchema,
-  type PollControllerInitOptions,
   type PollControllerOptions,
 } from "./types";
 
 import { initialVisibilityState } from "@/utils/visibility-state";
+
+type TaskValue<T = Task> =
+  T extends Task<readonly unknown[], infer R> ? R : never;
 
 const defaultOptions = {
   timeoutSeconds: 5,
@@ -23,34 +25,40 @@ const defaultOptions = {
  * Poll manager that handles starting, pausing, and resuming polls, as well as
  * rendering polled data.
  *
- * Because Lit's `Task.render()` will only render one task status at a time,
- * the latest polled value won't be rendered if the task is in progress during
- * the current poll. Use `PollController.renderComplete` instead to always
- * render the most recently polled value, even when the task is pending.
- *
  * The timer for the next poll starts when the task finishes, not at an exact
  * interval.
  *
+ * Because Lit's `Task.render()` will only render one task status at a time,
+ * the latest polled value won't be rendered if the task is in progress during
+ * the current poll. Use `renderComplete()` instead to always render the most
+ * recently polled value, even when the task is pending.
+ *
+ * @FIXME The poll controller's render methods create circularity issues when
+ * inferring the type of the poll controller instance. As a workaround, the
+ * instance can be explicitly typed (despite seeming redundant) as
+ * `PollController<typeof this.task>`:
+ * ```ts
+ * readonly poll: PollController<typeof this.task> = new PollController(this, this.task);
+ * ```
+ *
  * See "Polling" story in Storybook for a usage example.
  */
-export class PollController<T> implements ReactiveController {
-  readonly #host: ReactiveControllerHost & LitElement;
-
+export class PollController<T extends Task> implements ReactiveController {
   #options: PollControllerOptions;
 
-  readonly #mainTask: PollControllerInitOptions<T>["task"];
+  readonly #mainTask: Task;
   readonly #pollTask: Task<[TaskStatus], number | undefined>;
 
   #paused?: boolean;
 
   constructor(
     host: ReactiveControllerHost & LitElement,
-    options: PollControllerInitOptions<T>,
+    task: T,
+    options?: PollControllerOptions,
   ) {
-    this.#host = host;
     host.addController(this);
 
-    const { task, ...opts } = options;
+    const { ...opts } = options || {};
 
     this.#options = {
       ...defaultOptions,
@@ -83,9 +91,9 @@ export class PollController<T> implements ReactiveController {
   /**
    * Render most recent task value.
    */
-  public renderComplete(renderer: (value: T) => unknown) {
+  public renderComplete(renderer: (value: TaskValue<T>) => unknown) {
     return this.#mainTask.value !== undefined
-      ? renderer(this.#mainTask.value)
+      ? renderer(this.#mainTask.value as TaskValue<T>)
       : undefined;
   }
 
@@ -94,12 +102,12 @@ export class PollController<T> implements ReactiveController {
    * To differentiate between initial run and subsequent runs,
    * check if the `value` exists.
    */
-  public renderPending(renderer: (value: T | undefined) => unknown) {
+  public renderPending(renderer: (value: TaskValue<T>) => unknown) {
     if (
       this.#mainTask.status === TaskStatus.INITIAL ||
       this.#mainTask.status === TaskStatus.PENDING
     ) {
-      return renderer(this.#mainTask.value);
+      return renderer(this.#mainTask.value as TaskValue<T>);
     }
   }
 
