@@ -101,20 +101,23 @@ export class PollTask<
   }
 
   /**
-   * Extend status renderer to include option for rendering the current value
-   * (similar to the `when()` directive) regardless of status.
+   * Render the latest completed poll value if it exists.
    *
-   * Note that the presence of the `whenValue` renderer will prevent any
-   * status-based renderers from executing if a poll value exists, so it should
-   * probably be used in a separate `poll.render()` call.
+   * If a renderer per status is specified, the default Lit `Task` render
+   * method will be used instead.
    */
-  render<
-    T extends StatusRenderer<R> & {
-      whenValue?: (value: R) => unknown;
-    },
-  >(renderer: T) {
-    if (renderer.whenValue && this.value) {
-      return renderer.whenValue(this.value) as MaybeReturnType<T["complete"]>;
+  render<T extends StatusRenderer<R>>(
+    renderer: T | ((value: R) => unknown),
+  ):
+    | MaybeReturnType<T["initial"]>
+    | MaybeReturnType<T["pending"]>
+    | MaybeReturnType<T["complete"]>
+    | MaybeReturnType<T["error"]> {
+    if (typeof renderer === "function") {
+      const value = this.value ?? this.#previousValue;
+      return (value ? renderer(value) : undefined) as MaybeReturnType<
+        T["complete"]
+      >;
     }
 
     return super.render(renderer);
