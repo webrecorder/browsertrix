@@ -16,8 +16,8 @@ export class ActiveCrawlsBadge extends BtrixElement {
   readonly #poll = new PollController(
     this,
     {
-      task: async () => {
-        return await this.getActiveCrawlsTotal();
+      task: async (_args, { signal }) => {
+        return await this.getActiveCrawlsTotal(signal);
       },
       args: () => [] as const,
     },
@@ -35,13 +35,14 @@ export class ActiveCrawlsBadge extends BtrixElement {
     );
   }
 
-  private async getActiveCrawlsTotal() {
+  private async getActiveCrawlsTotal(signal: AbortSignal) {
     const query = queryString.stringify({
       pageSize: 1,
     });
 
     const data = await this.api.fetch<APIPaginatedList<Crawl>>(
       `/orgs/all/crawls?${query}`,
+      { signal, priority: "low" },
     );
 
     return data;
