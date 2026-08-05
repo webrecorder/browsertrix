@@ -2,6 +2,7 @@ import os
 import time
 
 import structlog
+import pytest
 import requests
 
 from btrixcloud.utils import dt_now
@@ -16,6 +17,8 @@ from .utils import (
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+upload_file_path = None
 
 
 def test_upload_stream(admin_auth_headers, default_org_id):
@@ -33,6 +36,7 @@ def test_upload_stream(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
 
 
+@pytest.mark.timeout(1800)
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
     upload_complete = dt_now()
 
@@ -87,6 +91,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     verify_file_replicated(upload_file_path)
 
 
+@pytest.mark.timeout(1800)
 def test_delete_upload_and_replicas(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
