@@ -22,7 +22,7 @@ Example usage of the poll controller utility:
 export class PollExample extends LitElement {
   count = 0;
 
-  readonly #poll = new PollController(this, {
+  readonly #poll = new PollTask(this, {
     task: async () => {
       const promise = new Promise((resolve) => {
         window.setTimeout(resolve, 1000);

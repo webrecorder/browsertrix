@@ -1,10 +1,10 @@
 import { html, LitElement, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import PollController from "@/controllers/poll";
-import type { PollControllerOptions } from "@/controllers/poll/types";
+import PollTask from "@/controllers/poll";
+import type { PollTaskOptions } from "@/controllers/poll/types";
 
-export type RenderProps = PollControllerOptions;
+export type RenderProps = PollTaskOptions;
 
 @customElement("btrix-storybook-poll-example")
 export class PollExample extends LitElement {
@@ -13,7 +13,7 @@ export class PollExample extends LitElement {
 
   count = 0;
 
-  readonly #poll = new PollController(
+  readonly #poll = new PollTask(
     this,
     {
       task: async () => {

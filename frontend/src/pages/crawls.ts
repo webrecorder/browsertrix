@@ -7,7 +7,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage } from "@/components/ui/pagination";
-import PollController from "@/controllers/poll";
+import PollTask from "@/controllers/poll";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { WorkflowTab } from "@/routes";
@@ -85,7 +85,7 @@ export class Crawls extends BtrixElement {
     state: activeCrawlStates as readonly CrawlState[],
   };
 
-  readonly #poll = new PollController(
+  readonly #poll = new PollTask(
     this,
     {
       task: async ([filterBy, orderBy], { signal }) => {

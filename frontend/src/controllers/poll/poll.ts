@@ -2,9 +2,9 @@ import { Task, TaskStatus, type TaskConfig } from "@lit/task";
 import { type ReactiveControllerHost } from "lit";
 
 import {
-  pollControllerOptionsSchema,
-  type PollControllerInitOptions,
-  type PollControllerOptions,
+  pollTaskOptionsSchema,
+  type PollTaskInitOptions,
+  type PollTaskOptions,
 } from "./types";
 
 import { initialVisibilityState } from "@/utils/visibility-state";
@@ -12,11 +12,11 @@ import { initialVisibilityState } from "@/utils/visibility-state";
 const defaultOptions = {
   pauseWhenHidden: true,
   stopPollOnError: true,
-} satisfies PollControllerOptions;
+} satisfies PollTaskOptions;
 
 /**
- * Poll manager that handles executing, pausing, and resuming polls, as well
- * as rendering polled data.
+ * Poll manager that extends Lit `Task` to handle executing, pausing, and
+ * resuming polls, as well as rendering polled data.
  *
  * The timer for the next poll starts when the task finishes, not at an exact
  * interval.
@@ -28,11 +28,11 @@ const defaultOptions = {
  *
  * See "Polling" story in Storybook for a usage example.
  */
-export class PollController<
+export class PollTask<
   const T extends readonly unknown[] = readonly unknown[],
   const R = unknown,
 > extends Task<T, R> {
-  #options: PollControllerOptions;
+  #options: PollTaskOptions;
   #previousValue?: R;
   #paused?: boolean;
 
@@ -41,7 +41,7 @@ export class PollController<
   constructor(
     host: ReactiveControllerHost,
     taskConfig: TaskConfig<T, R>,
-    options: PollControllerInitOptions,
+    options: PollTaskInitOptions,
   ) {
     super(host, {
       ...taskConfig,
@@ -228,8 +228,8 @@ export class PollController<
     }
   }
 
-  setOptions(opts: Partial<PollControllerOptions>) {
-    const { error } = pollControllerOptionsSchema.safeParse(opts);
+  setOptions(opts: Partial<PollTaskOptions>) {
+    const { error } = pollTaskOptionsSchema.safeParse(opts);
 
     if (error) {
       console.error(error);

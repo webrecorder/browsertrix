@@ -1,3 +1,3 @@
-import { PollController } from "./poll";
+import { PollTask } from "./poll";
 
-export default PollController;
+export default PollTask;
