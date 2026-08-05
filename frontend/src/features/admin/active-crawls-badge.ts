@@ -27,12 +27,12 @@ export class ActiveCrawlsBadge extends BtrixElement {
   );
 
   render() {
-    return this.#poll.renderComplete(
-      ({ total }) =>
+    return this.#poll.render({
+      whenValue: ({ total }) =>
         html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
           ${this.localize.number(total)}
         </btrix-badge>`,
-    );
+    });
   }
 
   private async getActiveCrawlsTotal(signal: AbortSignal) {

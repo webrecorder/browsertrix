@@ -1,4 +1,9 @@
-import { Task, TaskStatus, type TaskConfig } from "@lit/task";
+import {
+  Task,
+  TaskStatus,
+  type StatusRenderer,
+  type TaskConfig,
+} from "@lit/task";
 import { type ReactiveControllerHost } from "lit";
 
 import {
@@ -94,24 +99,18 @@ export class PollTask<
   }
 
   /**
-   * Render most recent task value.
+   * Extend status renderer to include option for always rendering the current value.
    */
-  public renderComplete(renderer: (value: R) => unknown) {
-    return this.value !== undefined ? renderer(this.value) : undefined;
-  }
-
-  /**
-   * Render when task is in progress or has never run.
-   * To differentiate between initial run and subsequent runs,
-   * check if the `value` exists.
-   */
-  public renderPending(renderer: (value: R | undefined) => unknown) {
-    if (
-      this.status === TaskStatus.INITIAL ||
-      this.status === TaskStatus.PENDING
-    ) {
-      return renderer(this.value);
+  render<
+    T extends StatusRenderer<R> & {
+      whenValue?: (value: R) => unknown;
+    },
+  >(renderer: T) {
+    if (renderer.whenValue && this.value) {
+      return renderer.whenValue(this.value) as MaybeReturnType<T["complete"]>;
     }
+
+    return super.render(renderer);
   }
 
   /**
@@ -119,15 +118,6 @@ export class PollTask<
    */
   public clearTimer(): void {
     window.clearTimeout(this.#pollTask.value);
-  }
-
-  /**
-   * Render error thrown by task.
-   */
-  public renderError(renderer: (err: unknown) => unknown) {
-    if (this.status === TaskStatus.ERROR) {
-      return renderer(this.error);
-    }
   }
 
   /**
@@ -249,3 +239,8 @@ export class PollTask<
     }
   };
 }
+
+// From @lit/task/src/task.ts
+type MaybeReturnType<F> = F extends (...args: never[]) => infer R
+  ? R
+  : undefined;

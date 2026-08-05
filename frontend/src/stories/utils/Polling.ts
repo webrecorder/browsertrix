@@ -42,13 +42,15 @@ export class PollExample extends LitElement {
   render() {
     return html`
       <div>
-        ${this.#poll.renderComplete(
-          (value) => html`
+        ${this.#poll.render({
+          whenValue: (value) => html`
             Value: ${value}<br />
             Last updated: ${new Date()}
           `,
-        )}
-        ${this.#poll.renderPending(() => html`<sl-spinner></sl-spinner>`)}
+        })}
+        ${this.#poll.render({
+          pending: () => html`<sl-spinner></sl-spinner>`,
+        })}
       </div>
 
       <sl-button
