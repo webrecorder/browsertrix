@@ -3,13 +3,13 @@ import { type ReactiveControllerHost } from "lit";
 
 import {
   pollControllerOptionsSchema,
+  type PollControllerInitOptions,
   type PollControllerOptions,
 } from "./types";
 
 import { initialVisibilityState } from "@/utils/visibility-state";
 
 const defaultOptions = {
-  timeoutSeconds: 30,
   pauseWhenHidden: true,
   stopPollOnError: true,
 } satisfies PollControllerOptions;
@@ -42,7 +42,7 @@ export class PollController<
   constructor(
     host: ReactiveControllerHost,
     taskConfig: TaskConfig<T, R>,
-    options?: PollControllerOptions,
+    options: PollControllerInitOptions,
   ) {
     super(host, {
       ...taskConfig,

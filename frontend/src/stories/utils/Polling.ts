@@ -13,19 +13,25 @@ export class PollExample extends LitElement {
 
   count = 0;
 
-  readonly #poll = new PollController(this, {
-    task: async () => {
-      const promise = new Promise((resolve) => {
-        window.setTimeout(resolve, 1000);
-      });
+  readonly #poll = new PollController(
+    this,
+    {
+      task: async () => {
+        const promise = new Promise((resolve) => {
+          window.setTimeout(resolve, 1000);
+        });
 
-      return promise.then(() => {
-        this.count = this.count + 1;
-        return this.count;
-      });
+        return promise.then(() => {
+          this.count = this.count + 1;
+          return this.count;
+        });
+      },
+      args: () => [] as const,
     },
-    args: () => [] as const,
-  });
+    {
+      timeoutSeconds: this.timeoutSeconds ?? 1,
+    },
+  );
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("timeoutSeconds")) {
