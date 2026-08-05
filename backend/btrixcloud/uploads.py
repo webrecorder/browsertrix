@@ -233,6 +233,7 @@ class UploadOps(BaseCrawlOps):
         )
 
         # Post-processing: sync for small files, background job for large files
+        # In the future we'll likely want to remove this once we've got direct upload support
         if file_size > MAX_SYNC_UPLOAD_SIZE:
             upload_logger.debug(
                 "upload_create",
