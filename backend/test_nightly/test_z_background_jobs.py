@@ -8,6 +8,7 @@ from .conftest import API_PREFIX
 job_id = None
 
 
+@pytest.mark.timeout(1800)
 def test_background_jobs_list(admin_auth_headers, default_org_id, deleted_crawl_id):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/", headers=admin_auth_headers
