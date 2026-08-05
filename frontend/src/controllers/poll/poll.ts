@@ -61,15 +61,15 @@ export class PollController<
       task: async ([status]) => {
         const timeoutSeconds = this.#options.timeoutSeconds;
         if (!timeoutSeconds) return;
+
+        if (status === TaskStatus.PENDING) {
+          this.clearTimer();
+        }
+
         if (status < TaskStatus.COMPLETE) return;
-
-        window.clearTimeout(this.#pollTask.value);
-
         if (this.#options.stopPollOnError && status === TaskStatus.ERROR) {
           return;
         }
-
-        this.#previousValue = this.value;
 
         return window.setTimeout(() => {
           if (this.#paused) return;
@@ -116,6 +116,13 @@ export class PollController<
   }
 
   /**
+   * Cancel the poll timer. It's up to the caller to restart the poll.
+   */
+  public clearTimer(): void {
+    window.clearTimeout(this.#pollTask.value);
+  }
+
+  /**
    * Render error thrown by task.
    */
   public renderError(renderer: (err: unknown) => unknown) {
@@ -128,7 +135,7 @@ export class PollController<
    * Stop the poll timer, allowing any active task to finish.
    */
   public pause(): void {
-    window.clearTimeout(this.#pollTask.value);
+    this.clearTimer();
 
     this.#paused = true;
   }
@@ -213,7 +220,7 @@ export class PollController<
   }
 
   hostDisconnected(): void {
-    window.clearTimeout(this.#pollTask.value);
+    this.clearTimer();
 
     if (this.#options.pauseWhenHidden) {
       document.removeEventListener(
