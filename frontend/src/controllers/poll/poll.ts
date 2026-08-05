@@ -9,7 +9,7 @@ import {
 import { initialVisibilityState } from "@/utils/visibility-state";
 
 const defaultOptions = {
-  timeoutSeconds: 5,
+  timeoutSeconds: 30,
   pauseWhenHidden: true,
   stopPollOnError: true,
 } satisfies PollControllerOptions;
@@ -34,16 +34,23 @@ export class PollController<
 > extends Task<T, R> {
   #options: PollControllerOptions;
 
-  readonly #pollTask: Task<[TaskStatus], number | undefined>;
-
+  #previousValue?: R;
   #paused?: boolean;
+
+  readonly #pollTask: Task<[TaskStatus], number | undefined>;
 
   constructor(
     host: ReactiveControllerHost,
-    task: TaskConfig<T, R>,
+    taskConfig: TaskConfig<T, R>,
     options?: PollControllerOptions,
   ) {
-    super(host, task);
+    super(host, {
+      ...taskConfig,
+      onComplete: (value) => {
+        this.#previousValue = value;
+        taskConfig.onComplete?.(value);
+      },
+    });
 
     this.#options = {
       ...defaultOptions,
@@ -62,12 +69,29 @@ export class PollController<
           return;
         }
 
+        this.#previousValue = this.value;
+
         return window.setTimeout(() => {
+          if (this.#paused) return;
           void this.run();
         }, timeoutSeconds * 1000);
       },
       args: () => [this.status],
     });
+  }
+
+  /**
+   * Value returned from previously completed task run.
+   */
+  public get previousValue() {
+    return this.#previousValue;
+  }
+
+  /**
+   * Whether polling is currently paused/stopped.
+   */
+  public get paused() {
+    return this.#paused;
   }
 
   /**
@@ -136,10 +160,8 @@ export class PollController<
    * Run current task and start poll timer.
    */
   async start() {
-    await this.run();
-
     this.#paused = false;
-
+    await this.run();
     return this.taskComplete;
   }
 

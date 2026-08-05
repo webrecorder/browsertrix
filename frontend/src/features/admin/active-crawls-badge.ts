@@ -1,5 +1,4 @@
 import { localized } from "@lit/localize";
-import { Task } from "@lit/task";
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 import queryString from "query-string";
@@ -14,13 +13,6 @@ const POLL_INTERVAL_SECONDS = 30;
 @customElement("btrix-active-crawls-badge")
 @localized()
 export class ActiveCrawlsBadge extends BtrixElement {
-  private readonly activeCrawlsTotalTask = new Task(this, {
-    task: async () => {
-      return await this.getActiveCrawlsTotal();
-    },
-    args: () => [] as const,
-  });
-
   readonly #poll = new PollController(
     this,
     {
