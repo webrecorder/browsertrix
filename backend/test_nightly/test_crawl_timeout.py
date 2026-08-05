@@ -1,5 +1,6 @@
 import time
 
+import pytest
 import requests
 
 from btrixcloud.utils import dt_now
@@ -34,6 +35,7 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
         attempts += 1
 
 
+@pytest.mark.timeout(1800)
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
     crawl_complete = dt_now()
 
