@@ -40,22 +40,31 @@ def test_upload_stream(admin_auth_headers, default_org_id):
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
     upload_complete = dt_now()
 
-    # Wait a few minutes so that replication jobs have time to run
-    time.sleep(300)
+    # Verify copy bucket job has run and succeeded since crawl completed
+    job_id = None
 
-    # Verify copy bucket job has run and succeeded since upload
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=copy-bucket",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "copy-bucket"
-    assert latest_job["started"] >= upload_complete
-    job_id = latest_job["id"]
-
+    # Give job up to 15 minutes to complete
     attempts = 0
-    while attempts < 5:
+    while attempts < 15:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=copy-bucket",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        jobs = r.json().get("items", [])
+        if jobs:
+            latest_job = jobs[0]
+            assert latest_job["type"] == "copy-bucket"
+            if latest_job["started"] >= upload_complete:
+                job_id = latest_job["id"]
+                break
+
+        attempts += 1
+        time.sleep(60)
+
+    # Give job up to 5 minutes to finish
+    attempts = 0
+    while attempts < 10:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
             headers=admin_auth_headers,
@@ -65,7 +74,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         finished = latest_job.get("finished")
         if not finished:
             attempts += 1
-            time.sleep(10)
+            time.sleep(30)
             continue
 
         assert job["success"]
