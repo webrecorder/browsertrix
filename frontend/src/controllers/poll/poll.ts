@@ -1,9 +1,5 @@
-import { Task, TaskStatus } from "@lit/task";
-import {
-  type LitElement,
-  type ReactiveController,
-  type ReactiveControllerHost,
-} from "lit";
+import { Task, TaskStatus, type TaskConfig } from "@lit/task";
+import { type ReactiveControllerHost } from "lit";
 
 import {
   pollControllerOptionsSchema,
@@ -12,9 +8,6 @@ import {
 
 import { initialVisibilityState } from "@/utils/visibility-state";
 
-type TaskValue<T = Task> =
-  T extends Task<readonly unknown[], infer R> ? R : never;
-
 const defaultOptions = {
   timeoutSeconds: 5,
   pauseWhenHidden: true,
@@ -22,8 +15,8 @@ const defaultOptions = {
 } satisfies PollControllerOptions;
 
 /**
- * Poll manager that handles starting, pausing, and resuming polls, as well as
- * rendering polled data.
+ * Poll manager that handles executing, pausing, and resuming polls, as well
+ * as rendering polled data.
  *
  * The timer for the next poll starts when the task finishes, not at an exact
  * interval.
@@ -33,66 +26,55 @@ const defaultOptions = {
  * the current poll. Use `renderComplete()` instead to always render the most
  * recently polled value, even when the task is pending.
  *
- * @FIXME The poll controller's render methods create circularity issues when
- * inferring the type of the poll controller instance. As a workaround, the
- * instance can be explicitly typed (despite seeming redundant) as
- * `PollController<typeof this.task>`:
- * ```ts
- * readonly poll: PollController<typeof this.task> = new PollController(this, this.task);
- * ```
- *
  * See "Polling" story in Storybook for a usage example.
  */
-export class PollController<T extends Task> implements ReactiveController {
+export class PollController<
+  const T extends readonly unknown[] = readonly unknown[],
+  const R = unknown,
+> extends Task<T, R> {
   #options: PollControllerOptions;
 
-  readonly #mainTask: T;
   readonly #pollTask: Task<[TaskStatus], number | undefined>;
 
   #paused?: boolean;
 
   constructor(
-    host: ReactiveControllerHost & LitElement,
-    task: T,
+    host: ReactiveControllerHost,
+    task: TaskConfig<T, R>,
     options?: PollControllerOptions,
   ) {
-    host.addController(this);
+    super(host, task);
 
     this.#options = {
       ...defaultOptions,
       ...options,
     };
-    this.#mainTask = task;
 
-    const pollTask = new Task(host, {
+    this.#pollTask = new Task(host, {
       task: async ([status]) => {
         const timeoutSeconds = this.#options.timeoutSeconds;
         if (!timeoutSeconds) return;
         if (status < TaskStatus.COMPLETE) return;
 
-        window.clearTimeout(pollTask.value);
+        window.clearTimeout(this.#pollTask.value);
 
         if (this.#options.stopPollOnError && status === TaskStatus.ERROR) {
           return;
         }
 
         return window.setTimeout(() => {
-          void this.#mainTask.run();
+          void this.run();
         }, timeoutSeconds * 1000);
       },
-      args: () => [task.status],
+      args: () => [this.status],
     });
-
-    this.#pollTask = pollTask;
   }
 
   /**
    * Render most recent task value.
    */
-  public renderComplete(renderer: (value: TaskValue<T>) => unknown) {
-    return this.#mainTask.value !== undefined
-      ? renderer(this.#mainTask.value as TaskValue<T>)
-      : undefined;
+  public renderComplete(renderer: (value: R) => unknown) {
+    return this.value !== undefined ? renderer(this.value) : undefined;
   }
 
   /**
@@ -100,12 +82,12 @@ export class PollController<T extends Task> implements ReactiveController {
    * To differentiate between initial run and subsequent runs,
    * check if the `value` exists.
    */
-  public renderPending(renderer: (value: TaskValue<T>) => unknown) {
+  public renderPending(renderer: (value: R | undefined) => unknown) {
     if (
-      this.#mainTask.status === TaskStatus.INITIAL ||
-      this.#mainTask.status === TaskStatus.PENDING
+      this.status === TaskStatus.INITIAL ||
+      this.status === TaskStatus.PENDING
     ) {
-      return renderer(this.#mainTask.value as TaskValue<T>);
+      return renderer(this.value);
     }
   }
 
@@ -113,8 +95,8 @@ export class PollController<T extends Task> implements ReactiveController {
    * Render error thrown by task.
    */
   public renderError(renderer: (err: unknown) => unknown) {
-    if (this.#mainTask.status === TaskStatus.ERROR) {
-      return renderer(this.#mainTask.error);
+    if (this.status === TaskStatus.ERROR) {
+      return renderer(this.error);
     }
   }
 
@@ -131,7 +113,7 @@ export class PollController<T extends Task> implements ReactiveController {
    * Start the poll timer, which will run the task on the next tick.
    */
   public resume(): void {
-    if (!this.#mainTask.value) {
+    if (!this.value) {
       console.debug(
         "cannot resume when there is no task value. did you mean to `start()`?",
       );
@@ -146,19 +128,19 @@ export class PollController<T extends Task> implements ReactiveController {
    */
   async stop() {
     this.pause();
-    this.#mainTask.abort();
-    return this.#mainTask.taskComplete;
+    this.abort();
+    return this.taskComplete;
   }
 
   /**
    * Run current task and start poll timer.
    */
   async start() {
-    await this.#mainTask.run();
+    await this.run();
 
     this.#paused = false;
 
-    return this.#mainTask.taskComplete;
+    return this.taskComplete;
   }
 
   hostConnected(): void {

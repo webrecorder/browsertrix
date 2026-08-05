@@ -1,4 +1,3 @@
-import { Task } from "@lit/task";
 import { html, LitElement, type PropertyValues } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
@@ -14,7 +13,7 @@ export class PollExample extends LitElement {
 
   count = 0;
 
-  readonly task = new Task(this, {
+  readonly #poll = new PollController(this, {
     task: async () => {
       const promise = new Promise((resolve) => {
         window.setTimeout(resolve, 1000);
@@ -27,11 +26,6 @@ export class PollExample extends LitElement {
     },
     args: () => [] as const,
   });
-
-  readonly #poll: PollController<typeof this.task> = new PollController(
-    this,
-    this.task,
-  );
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("timeoutSeconds")) {
