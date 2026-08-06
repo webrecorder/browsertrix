@@ -594,7 +594,7 @@ export class WorkflowsList extends BtrixElement {
           });
         }}
       >
-        ${msg("Running")}
+        ${msg("Active Crawl")}
       </btrix-filter-chip>
 
       <btrix-filter-chip

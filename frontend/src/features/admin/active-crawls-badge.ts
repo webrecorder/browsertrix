@@ -54,6 +54,8 @@ export class ActiveCrawlsBadge extends BtrixElement {
           this.dispatchEvent(
             new CustomEvent("btrix-update-active-crawls-count", {
               detail: data.totalRunningPausedWaiting,
+              bubbles: true,
+              composed: true,
             }),
           );
         }
