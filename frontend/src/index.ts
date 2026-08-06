@@ -20,6 +20,7 @@ import "./components";
 import "./features";
 import "./pages";
 
+import { activeCrawlsCountContext } from "./context/active-crawls-count";
 import { docsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
@@ -103,6 +104,9 @@ export class App extends BtrixElement {
 
   @state()
   private globalDialogContent: DialogContent = {};
+
+  @provide({ context: activeCrawlsCountContext })
+  private activeCrawlsCount?: number;
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
@@ -646,6 +650,7 @@ export class App extends BtrixElement {
         <btrix-active-crawls-badge
           slot="suffix"
           class="-mt-0.5"
+          @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}
         ></btrix-active-crawls-badge>`,
       iconName: "gear-wide-connected",
       href: urlForName("adminCrawls"),
@@ -953,6 +958,8 @@ export class App extends BtrixElement {
             html`<btrix-crawls
               class="w-full"
               crawlId=${this.viewState.params.crawlId}
+              @btrix-update-active-crawls-count=${this
+                .onUpdateActiveCrawlsCount}
             ></btrix-crawls>`,
         );
 
@@ -1019,6 +1026,10 @@ export class App extends BtrixElement {
       console.debug("user guide iframe not found");
     }
   }
+
+  private readonly onUpdateActiveCrawlsCount = (e: CustomEvent<number>) => {
+    this.activeCrawlsCount = e.detail;
+  };
 
   onSelectLocale(e: SlSelectEvent) {
     const locale = e.detail.item.value as TranslatedLocaleEnum;

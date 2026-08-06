@@ -56,6 +56,9 @@ const sortableFields: Record<
 const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 100;
 
+/**
+ * @fires btrix-update-active-crawls-count
+ */
 @customElement("btrix-crawls")
 @localized()
 @needLogin
@@ -93,7 +96,7 @@ export class Crawls extends BtrixElement {
       }
 
       try {
-        return this.getCrawls(
+        const data = await this.getCrawls(
           {
             ...filterBy,
             page:
@@ -104,6 +107,16 @@ export class Crawls extends BtrixElement {
           },
           signal,
         );
+
+        if (data.total !== this.#poll.previousValue?.total) {
+          this.dispatchEvent(
+            new CustomEvent("btrix-update-active-crawls-count", {
+              detail: data.total,
+            }),
+          );
+        }
+
+        return data;
       } catch (err) {
         console.debug(err);
 
