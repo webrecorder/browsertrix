@@ -93,6 +93,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -101,6 +102,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "status": "active",
         "planId": "basic",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -132,6 +134,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -250,6 +253,7 @@ def test_login_existing_user_for_invite():
         "maxConcurrentCrawls": 1,
         "storageQuota": 1000000,
         "maxExecMinutesPerMonth": 1000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
     }
@@ -282,6 +286,7 @@ def test_update_sub(admin_auth_headers):
         "status": "paused_payment_failed",
         "planId": "basic",
         "futureCancelDate": "2028-12-26T01:02:03Z",
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -298,6 +303,7 @@ def test_update_sub_2(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             # not updateable here, only by superadmin
             "readOnlyOnCancel": True,
             "quotas": {
@@ -321,6 +327,7 @@ def test_update_sub_2(admin_auth_headers):
         "status": "active",
         "planId": "basic2",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -456,6 +463,7 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
         "status": "active",
         "planId": "basic",
         "futureCancelDate": None,
+        "renewalDate": None,
         "readOnlyOnCancel": False,
     }
 
@@ -481,11 +489,13 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -497,11 +507,13 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -513,6 +525,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -522,9 +535,11 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -539,6 +554,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
             "oid": non_default_org_id,
             "status": "active",
             "planId": "basic",
+            "renewalDate": None,
         },
     ]
 
@@ -565,11 +581,13 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -581,6 +599,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -590,9 +609,11 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -626,11 +647,13 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -642,6 +665,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "paused_payment_failed",
             "planId": "basic",
             "futureCancelDate": "2028-12-26T01:02:03Z",
+            "renewalDate": None,
             "quotas": None,
         },
         {
@@ -651,9 +675,11 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -686,9 +712,11 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -721,11 +749,13 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic",
             "firstAdminInviteEmail": "test-user@example.com",
+            "renewalDate": None,
             "quotas": {
                 "maxConcurrentCrawls": 1,
                 "maxPagesPerCrawl": 100,
                 "storageQuota": 1000000,
                 "maxExecMinutesPerMonth": 1000,
+                "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
             },
@@ -737,9 +767,11 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
             "status": "active",
             "planId": "basic2",
             "futureCancelDate": None,
+            "renewalDate": None,
             "quotas": {
                 "maxPagesPerCrawl": 50,
                 "storageQuota": 500000,
+                "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
                 "maxConcurrentCrawls": None,
@@ -979,8 +1011,107 @@ def test_subscription_add_minutes(admin_auth_headers):
     assert last_update["update"] == {
         "maxPagesPerCrawl": 100,
         "storageQuota": 1000000,
+        "planExecMinutes": 0,
         "extraExecMinutes": 75,  # only this value updated from previous
         "giftedExecMinutes": 0,
         "maxConcurrentCrawls": 1,
         "maxExecMinutesPerMonth": 1000,
     }
+
+
+def test_create_sub_with_renewal_date(admin_auth_headers):
+    """Creating a subscription with renewalDate persists it on the org."""
+    renewal_date = "2027-06-01T00:00:00Z"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=admin_auth_headers,
+        json={
+            "subId": "refill-test-1",
+            "status": "active",
+            "planId": "basic",
+            "firstAdminInviteEmail": "refill-test@example.com",
+            "renewalDate": renewal_date,
+            "quotas": {
+                "maxPagesPerCrawl": 100,
+                "maxConcurrentCrawls": 1,
+                "storageQuota": 10000000,
+                "planExecMinutes": 300,
+            },
+        },
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    org_id = data["id"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{org_id}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+
+    assert org["subscription"]["renewalDate"] == renewal_date
+    assert org["quotas"]["planExecMinutes"] == 300
+    assert org["planExecSecondsAvailable"] == 18_000
+
+
+def test_refill_subscription_not_found(admin_auth_headers):
+    """Refill with a non-existent subscription ID returns 404."""
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/refill",
+        headers=admin_auth_headers,
+        json={
+            "subId": "nonexistent-sub-12345",
+            "minutes": 500,
+            "renewalDate": "2027-07-01T00:00:00Z",
+        },
+    )
+
+    assert r.status_code == 404
+    assert r.json()["detail"] == "org_for_subscription_not_found"
+
+
+def test_refill_plan_minutes(admin_auth_headers):
+    """Refill plan execution minutes on a renewal, verifying pool reset,
+    renewalDate update, quota update recording, and refill event logging."""
+    renewal_date = "2027-06-15T00:00:00Z"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/refill",
+        headers=admin_auth_headers,
+        json={
+            "subId": "123",
+            "minutes": 500,
+            "renewalDate": renewal_date,
+        },
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    # Verify org state after refill
+    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    org = r.json()
+
+    assert org["quotas"]["planExecMinutes"] == 500
+    assert org["planExecSecondsAvailable"] == 30000
+    assert org["subscription"]["renewalDate"] == renewal_date
+
+    # Quota update recorded with planExecMinutes
+    quota_updates = org["quotaUpdates"]
+    last_update = quota_updates[-1]
+    assert last_update["update"]["planExecMinutes"] == 500
+
+    # Refill event in subscription events log
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/events?subId=123&type=refill",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == 1
+    event = data["items"][0]
+    assert event["type"] == "refill"
+    assert event["subId"] == "123"
+    assert event["oid"] == new_subs_oid
+    assert event["minutes"] == 500
+    assert event["renewalDate"] == renewal_date

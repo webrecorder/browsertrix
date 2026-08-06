@@ -17,6 +17,7 @@ export const subscriptionSchema = z.object({
   planId: z.string(),
   readOnlyOnCancel: z.boolean(),
   futureCancelDate: apiDateSchema.nullable(),
+  renewalDate: apiDateSchema.nullable().optional(),
   subId: z.string(),
 });
 export type Subscription = z.infer<typeof subscriptionSchema>;
