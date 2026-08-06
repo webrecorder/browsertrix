@@ -19,6 +19,10 @@ import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -86,6 +90,9 @@ const omitNil = omitBy(isNil);
 @customElement("btrix-workflow-detail")
 @localized()
 export class WorkflowDetail extends BtrixElement {
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  activeCrawlsCount?: ActiveCrawlsCountContext;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -294,6 +301,13 @@ export class WorkflowDetail extends BtrixElement {
 
       await this.runNow(signal);
 
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: (this.activeCrawlsCount?.userOrg ?? 0) + 1,
+        }),
+      );
+
       await this.workflowTask.run();
 
       return this.workflow;
@@ -343,6 +357,13 @@ export class WorkflowDetail extends BtrixElement {
       this.stopPoll();
 
       await this.cancel(signal);
+
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
+        }),
+      );
 
       void this.crawlsTask.run();
       await this.workflowTask.run();

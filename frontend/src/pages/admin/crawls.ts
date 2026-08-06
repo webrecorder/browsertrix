@@ -7,6 +7,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage } from "@/components/ui/pagination";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import PollTask from "@/controllers/poll";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -110,9 +111,7 @@ export class Crawls extends BtrixElement {
 
         if (data.total !== this.#poll.previousValue?.total) {
           this.dispatchEvent(
-            new CustomEvent("btrix-update-active-crawls-count", {
-              detail: data.total,
-            }),
+            makeUpdateActiveCrawlsCountEvent({ allOrgs: data.total }),
           );
         }
 

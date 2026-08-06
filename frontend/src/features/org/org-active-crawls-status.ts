@@ -1,4 +1,6 @@
+import { ContextConsumer } from "@lit/context";
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import { html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -8,6 +10,8 @@ import { type ArrayValues } from "type-fest";
 import { CrawlStatus } from "../archived-items/crawl-status";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import activeCrawlsCountContext from "@/context/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import PollTask from "@/controllers/poll";
 import { pluralOfActiveCrawls } from "@/plurals/active-crawls";
 import { OrgTab, WorkflowTab } from "@/routes";
@@ -18,9 +22,6 @@ import {
 } from "@/types/crawlState";
 import { type RunningWorkflowCounts } from "@/types/workflow";
 import { activeCrawlStates } from "@/utils/crawler";
-
-const POLL_INTERVAL_SECONDS = 60;
-const RUNNING_POLL_INTERVAL_SECONDS = 30;
 
 type TotalsDetail = {
   key: keyof RunningWorkflowCounts;
@@ -36,6 +37,8 @@ const totalsByStatus = [
     label: msg("Waiting"),
   },
 ] satisfies TotalsDetail[];
+
+const POLL_INTERVAL_SECONDS = 60;
 
 @customElement("btrix-org-active-crawls-status")
 @localized()
@@ -53,13 +56,11 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
         if (data.totalWaiting || data.totalRunning) {
           // Poll more often
           this.#poll.setOptions({
-            timeoutSeconds: RUNNING_POLL_INTERVAL_SECONDS,
+            timeoutSeconds: POLL_INTERVAL_SECONDS / 2,
           });
         } else {
           this.#poll.setOptions({ timeoutSeconds: POLL_INTERVAL_SECONDS });
         }
-
-        this.#lastUpdated = new Date();
 
         return data;
       } catch (err) {
@@ -73,6 +74,71 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
     args: () => [this.orgId] as const,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
+
+  constructor() {
+    super();
+
+    // Run poll on context change
+    new ContextConsumer(this, {
+      context: activeCrawlsCountContext,
+      subscribe: true,
+      callback: (value) => {
+        if (
+          value?.userOrg === undefined ||
+          value.userOrg === this.#poll.value?.totalRunningPausedWaiting
+        ) {
+          return;
+        }
+
+        void this.#poll.run();
+      },
+    });
+
+    // Update context on poll value change
+    new Task(this, {
+      task: ([total]) => {
+        if (total === undefined) return;
+
+        this.#lastUpdated = new Date();
+
+        this.dispatchEvent(
+          makeUpdateActiveCrawlsCountEvent({
+            userOrg: total,
+          }),
+        );
+      },
+      args: () => [this.#poll.value?.totalRunningPausedWaiting] as const,
+    });
+
+    const refresh = () => {
+      if (this.#poll.paused) return;
+      void this.#poll.run();
+    };
+
+    this.addEventListener("focus", refresh);
+    this.addEventListener("mouseover", refresh);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.navigation.addEventListener("navigate", this.onNavigate);
+  }
+
+  disconnectedCallback(): void {
+    window.navigation.removeEventListener("navigate", this.onNavigate);
+    super.disconnectedCallback();
+  }
+
+  private readonly onNavigate = (e: NavigateEvent) => {
+    if (e.downloadRequest || e.formData || e.hashChange || !e.destination.url) {
+      return;
+    }
+
+    if (!this.#poll.paused && !this.#poll.value?.totalRunningPausedWaiting) {
+      // Check if there's active crawls
+      void this.#poll.run();
+    }
+  };
 
   render() {
     if (!(this.#poll.value || this.#poll.previousValue) && this.#poll.error) {
@@ -105,6 +171,7 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
           class="part-[base]:border-success-300 part-[base]:bg-gradient-to-br part-[base]:from-success-100 part-[base]:to-success-50 part-[label]:font-medium part-[label]:text-success-700 part-[prefix]:text-success-500 hover:part-[base]:border-success-200 hover:part-[label]:text-success-600"
           href=${href}
           @click=${this.navigate.link}
+          aria-live="polite"
         >
           <sl-icon slot="prefix" name="dot" library="app"></sl-icon>
           <span class="hidden md:inline"

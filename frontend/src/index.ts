@@ -14,7 +14,11 @@ import "./components";
 import "./features";
 import "./pages";
 
-import { activeCrawlsCountContext } from "./context/active-crawls-count";
+import {
+  activeCrawlsCountContext,
+  type ActiveCrawlsCountContext,
+} from "./context/active-crawls-count/active-crawls-count";
+import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
 import { docsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
@@ -95,7 +99,7 @@ export class App extends BtrixElement {
   private globalDialogContent: DialogContent = {};
 
   @provide({ context: activeCrawlsCountContext })
-  private activeCrawlsCount?: number;
+  private activeCrawlsCount?: ActiveCrawlsCountContext;
 
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
@@ -132,6 +136,20 @@ export class App extends BtrixElement {
     return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
   }
 
+  constructor() {
+    super();
+
+    this.addEventListener("btrix-navigate", this.onNavigateTo);
+    this.addEventListener("btrix-need-login", this.onNeedLogin);
+    this.addEventListener("btrix-logged-in", this.onLoggedIn);
+    this.addEventListener("btrix-log-out", this.onLogOut);
+    this.addEventListener("btrix-update-active-crawls-status", (e: Event) => {
+      e.stopPropagation();
+      console.log("update status");
+    });
+    this.attachUserGuideListeners();
+  }
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -149,11 +167,6 @@ export class App extends BtrixElement {
 
     super.connectedCallback();
 
-    this.addEventListener("btrix-navigate", this.onNavigateTo);
-    this.addEventListener("btrix-need-login", this.onNeedLogin);
-    this.addEventListener("btrix-logged-in", this.onLoggedIn);
-    this.addEventListener("btrix-log-out", this.onLogOut);
-    this.attachUserGuideListeners();
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -582,6 +595,7 @@ export class App extends BtrixElement {
           DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab}
+          @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}
         ></btrix-org>`;
       }
 
@@ -697,7 +711,9 @@ export class App extends BtrixElement {
     }
   }
 
-  private readonly onUpdateActiveCrawlsCount = (e: CustomEvent<number>) => {
+  private readonly onUpdateActiveCrawlsCount = (
+    e: BtrixUpdateActiveCrawlsCount,
+  ) => {
     e.stopPropagation();
 
     this.activeCrawlsCount = e.detail;
