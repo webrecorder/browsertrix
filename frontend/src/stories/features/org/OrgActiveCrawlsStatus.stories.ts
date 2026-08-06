@@ -51,7 +51,7 @@ const runningWorkflowCounts = {
   waitingDedupeIndex: 0,
 } satisfies RunningWorkflowCounts;
 
-export const WhenRunning: Story = {
+export const Active: Story = {
   args: {},
   parameters: {
     msw: {
@@ -77,31 +77,25 @@ export const WhenRunning: Story = {
   },
 };
 
-export const WhenWaiting: Story = {
+export const ServerError: Story = {
   args: {},
   parameters: {
     msw: {
       handlers: [
         http.get(/\/crawlconfigs\/running/, async () => {
           await delay(500);
-
-          const data = {
-            ...runningWorkflowCounts,
-            totalRunningPausedWaiting: 3,
-            totalWaiting: 1,
-            totalPaused: 2,
-            paused: 1,
-            pausedRateLimitTimeReached: 1,
-            starting: 1,
-          } satisfies RunningWorkflowCounts;
-          return HttpResponse.json<RunningWorkflowCounts>(data);
+          return HttpResponse.json(
+            { message: "Storybook error test" },
+            { status: 500 },
+          );
         }),
       ],
     },
   },
 };
 
-export const WhenPaused: Story = {
+let polls = 0;
+export const ServerErrorAfterRunning: Story = {
   args: {},
   parameters: {
     msw: {
@@ -111,12 +105,21 @@ export const WhenPaused: Story = {
 
           const data = {
             ...runningWorkflowCounts,
-            totalRunningPausedWaiting: 2,
+            totalRunningPausedWaiting: 5,
+            totalRunning: 2,
+            totalWaiting: 1,
             totalPaused: 2,
+            running: 2,
             paused: 1,
             pausedRateLimitTimeReached: 1,
+            starting: 1,
           } satisfies RunningWorkflowCounts;
-          return HttpResponse.json<RunningWorkflowCounts>(data);
+
+          if (polls < 1) {
+            polls = polls + 1;
+            return HttpResponse.json<RunningWorkflowCounts>(data);
+          }
+          return HttpResponse.error();
         }),
       ],
     },

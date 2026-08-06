@@ -1,5 +1,4 @@
 import { localized, msg } from "@lit/localize";
-import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement } from "lit/decorators.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -19,7 +18,6 @@ import {
 } from "@/types/crawlState";
 import { type RunningWorkflowCounts } from "@/types/workflow";
 import { activeCrawlStates } from "@/utils/crawler";
-import { tw } from "@/utils/tailwind";
 
 const POLL_INTERVAL_SECONDS = 60;
 const RUNNING_POLL_INTERVAL_SECONDS = 30;
@@ -42,6 +40,8 @@ const totalsByStatus = [
 @customElement("btrix-org-active-crawls-status")
 @localized()
 export class OrgActiveCrawlsStatus extends BtrixElement {
+  readonly #lastUpdated?: Date;
+
   readonly #poll = new PollTask(this, {
     task: async (_args, { signal }) => {
       try {
@@ -59,9 +59,15 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
           this.#poll.setOptions({ timeoutSeconds: POLL_INTERVAL_SECONDS });
         }
 
+        this.#lastUpdated = new Date();
+
         return data;
       } catch (err) {
         console.debug(err);
+
+        if (!signal.aborted) {
+          throw err;
+        }
       }
     },
     args: () => [this.orgId] as const,
@@ -69,6 +75,19 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
   });
 
   render() {
+    if (!(this.#poll.value || this.#poll.previousValue) && this.#poll.error) {
+      return html`<btrix-popover
+        content=${msg(
+          "Could not retrieve number of active crawls at this time.",
+        )}
+      >
+        <sl-icon
+          name="exclamation-diamond"
+          class="text-base text-neutral-500"
+        ></sl-icon>
+      </btrix-popover>`;
+    }
+
     const href = this.getLink(activeCrawlStates);
 
     return this.#poll.render((value) =>
@@ -78,9 +97,7 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
               <sl-button
                 slot="trigger"
                 size="small"
-                class=${clsx(
-                  tw`part-[base]:border-success-300 part-[base]:bg-gradient-to-br part-[base]:from-success-100 part-[base]:to-success-50 part-[label]:font-medium part-[label]:text-success-700 part-[prefix]:text-success-500 hover:part-[base]:border-success-200 hover:part-[label]:text-success-600`,
-                )}
+                class="part-[base]:border-success-300 part-[base]:bg-gradient-to-br part-[base]:from-success-100 part-[base]:to-success-50 part-[label]:font-medium part-[label]:text-success-700 part-[prefix]:text-success-500 hover:part-[base]:border-success-200 hover:part-[label]:text-success-600"
                 href=${href}
                 @click=${this.navigate.link}
               >
@@ -143,8 +160,19 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
       </btrix-menu-item-link>`;
     };
 
-    return html`<sl-menu class="divide-y">
+    return html`<sl-menu>
       ${totalsByStatus.map(row)}
+      ${this.#poll.render({
+        error: () =>
+          html`<sl-divider></sl-divider>
+            <sl-menu-label
+              class="part-[base]:px-3.5 part-[base]:text-xs part-[base]:font-normal"
+            >
+              ${this.#lastUpdated
+                ? `${msg("Last updated:")} ${this.localize.date(this.#lastUpdated, { timeStyle: "long" })}`
+                : msg("Counts may be out of date")}
+            </sl-menu-label> `,
+      })}
     </sl-menu>`;
   }
 }
