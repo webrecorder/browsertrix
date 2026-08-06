@@ -6,6 +6,7 @@ import { customElement, property } from "lit/decorators.js";
  *
  * @attr open
  * @attr placement
+ * @attr disabled
  * @attr distance
  * @attr hoist
  */

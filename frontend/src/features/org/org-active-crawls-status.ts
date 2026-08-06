@@ -40,7 +40,7 @@ const totalsByStatus = [
 @customElement("btrix-org-active-crawls-status")
 @localized()
 export class OrgActiveCrawlsStatus extends BtrixElement {
-  readonly #lastUpdated?: Date;
+  #lastUpdated?: Date;
 
   readonly #poll = new PollTask(this, {
     task: async (_args, { signal }) => {
@@ -88,47 +88,37 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
       </btrix-popover>`;
     }
 
-    const href = this.getLink(activeCrawlStates);
-
     return this.#poll.render((value) =>
-      value?.totalRunningPausedWaiting
-        ? html`
-            <btrix-popover-menu>
-              <sl-button
-                slot="trigger"
-                size="small"
-                class="part-[base]:border-success-300 part-[base]:bg-gradient-to-br part-[base]:from-success-100 part-[base]:to-success-50 part-[label]:font-medium part-[label]:text-success-700 part-[prefix]:text-success-500 hover:part-[base]:border-success-200 hover:part-[label]:text-success-600"
-                href=${href}
-                @click=${this.navigate.link}
-              >
-                <sl-icon slot="prefix" name="dot" library="app"></sl-icon>
-                <span class="hidden md:inline"
-                  >${pluralOfActiveCrawls(
-                    value.totalRunningPausedWaiting,
-                  )}</span
-                >
-                <span class="md:hidden"
-                  >${this.localize.number(value.totalRunningPausedWaiting, {
-                    notation: "compact",
-                  })}</span
-                >
-              </sl-button>
-              ${this.renderMenu(value)}
-            </btrix-popover-menu>
-          `
-        : nothing,
+      value?.totalRunningPausedWaiting ? this.renderPopover(value) : nothing,
     );
   }
 
-  private getLink(states: readonly ArrayValues<typeof activeCrawlStates>[]) {
-    const query = queryString.stringify({
-      // TODO Replace with grouped status
-      // https://github.com/webrecorder/browsertrix/issues/3540
-      status: states,
-    });
-    return `${
-      this.navigate.orgBasePath
-    }/${OrgTab.Workflows}/${WorkflowTab.Crawls}?${query}`;
+  private renderPopover(counts: RunningWorkflowCounts) {
+    const href = this.getLink(activeCrawlStates);
+    const showMenu = totalsByStatus.filter(({ key }) => counts[key]).length > 1;
+
+    return html`
+      <btrix-popover-menu ?disabled=${!showMenu}>
+        <sl-button
+          slot="trigger"
+          size="small"
+          class="part-[base]:border-success-300 part-[base]:bg-gradient-to-br part-[base]:from-success-100 part-[base]:to-success-50 part-[label]:font-medium part-[label]:text-success-700 part-[prefix]:text-success-500 hover:part-[base]:border-success-200 hover:part-[label]:text-success-600"
+          href=${href}
+          @click=${this.navigate.link}
+        >
+          <sl-icon slot="prefix" name="dot" library="app"></sl-icon>
+          <span class="hidden md:inline"
+            >${pluralOfActiveCrawls(counts.totalRunningPausedWaiting)}</span
+          >
+          <span class="md:hidden"
+            >${this.localize.number(counts.totalRunningPausedWaiting, {
+              notation: "compact",
+            })}</span
+          >
+        </sl-button>
+        ${showMenu ? this.renderMenu(counts) : nothing}
+      </btrix-popover-menu>
+    `;
   }
 
   private renderMenu(counts: RunningWorkflowCounts) {
@@ -174,5 +164,16 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
             </sl-menu-label> `,
       })}
     </sl-menu>`;
+  }
+
+  private getLink(states: readonly ArrayValues<typeof activeCrawlStates>[]) {
+    const query = queryString.stringify({
+      // TODO Replace with grouped status
+      // https://github.com/webrecorder/browsertrix/issues/3540
+      status: states,
+    });
+    return `${
+      this.navigate.orgBasePath
+    }/${OrgTab.Workflows}/${WorkflowTab.Crawls}?${query}`;
   }
 }

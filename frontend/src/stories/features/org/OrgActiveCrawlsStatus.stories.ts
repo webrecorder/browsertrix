@@ -61,6 +61,26 @@ export const Active: Story = {
 
           const data = {
             ...runningWorkflowCounts,
+            totalRunningPausedWaiting: 1,
+            totalRunning: 1,
+          } satisfies RunningWorkflowCounts;
+          return HttpResponse.json<RunningWorkflowCounts>(data);
+        }),
+      ],
+    },
+  },
+};
+
+export const ActiveCategories: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/crawlconfigs\/running/, async () => {
+          await delay(500);
+
+          const data = {
+            ...runningWorkflowCounts,
             totalRunningPausedWaiting: 5,
             totalRunning: 2,
             totalWaiting: 1,
