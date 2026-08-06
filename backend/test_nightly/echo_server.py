@@ -33,7 +33,7 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             self.end_headers()
 
-        post_bodies.append(json.loads(body.decode("utf-8").replace("'", '"')))
+        post_bodies.append(json.loads(body.decode("utf-8")))
 
 
 httpd = HTTPServer((BIND_HOST, PORT), EchoServerHTTPRequestHandler)
