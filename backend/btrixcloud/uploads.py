@@ -58,7 +58,9 @@ MAX_CONCURRENT_SPLITS = int(
 
 STUCK_UPLOAD_GRACE_PERIOD = timedelta(
     minutes=int(os.environ.get("STUCK_UPLOAD_GRACE_MINUTES", 10))
-)  # how long an upload must be in processing before it's considered stuck
+)
+# how long an upload must be in processing without a running background job before
+# it's considered stuck
 
 
 # ============================================================================
