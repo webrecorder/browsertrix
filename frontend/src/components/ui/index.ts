@@ -36,6 +36,7 @@ import("./overflow-dropdown");
 import("./overflow-scroll");
 import("./pagination");
 import("./popover");
+import("./popover-menu");
 import("./pw-strength-alert");
 import("./prose");
 import("./regex");
