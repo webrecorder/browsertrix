@@ -20,7 +20,6 @@ from .models import (
     SUCCESSFUL_AND_PAUSED_STATES,
     SUCCESSFUL_STATES,
     TYPE_CRAWL_TYPES,
-    UPLOAD_STATES,
     BaseCrawl,
     CrawlFile,
     CrawlFileOut,
