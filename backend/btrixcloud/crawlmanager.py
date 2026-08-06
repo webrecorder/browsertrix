@@ -349,6 +349,7 @@ class CrawlManager(K8sAPI):
             "cleanup-seed-files-cron",
             BgJobType.CLEANUP_SEED_FILES.value,
             job_schedule,
+            larger_resources=True,
         )
 
     async def ensure_retry_stuck_uploads_cron_job_exists(self):
@@ -367,7 +368,11 @@ class CrawlManager(K8sAPI):
         )
 
     async def _ensure_bg_cron_job_exists(
-        self, job_id: str, job_type: str, job_schedule: str
+        self,
+        job_id: str,
+        job_type: str,
+        job_schedule: str,
+        larger_resources: bool = False,
     ):
         """ensure cron background job with given schedule exists, creating or
         updating it if needed"""
@@ -380,7 +385,7 @@ class CrawlManager(K8sAPI):
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             "schedule": job_schedule,
-            "larger_resources": True,
+            "larger_resources": larger_resources,
         }
 
         data = self.templates.env.get_template("background_cron_job.yaml").render(
