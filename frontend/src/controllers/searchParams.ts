@@ -104,15 +104,22 @@ export class SearchParamsController implements ReactiveController {
   }
 
   hostConnected(): void {
-    window.addEventListener("popstate", this.onPopState);
+    window.navigation.addEventListener("navigate", this.onNavigate);
   }
 
   hostDisconnected(): void {
-    window.removeEventListener("popstate", this.onPopState);
+    window.navigation.removeEventListener("navigate", this.onNavigate);
   }
 
-  private readonly onPopState = (_e: PopStateEvent) => {
-    this.changeHandler?.(this.searchParams, this.prevParams);
-    this.prevParams = new URLSearchParams(this.searchParams);
+  private readonly onNavigate = (e: NavigateEvent) => {
+    if (e.downloadRequest || e.formData || e.hashChange || !e.destination.url) {
+      return;
+    }
+    // FIXME `as string` needed even with @types/dom-navigation?
+    const url = new URL(e.destination.url as string);
+    const searchParams = new URLSearchParams(url.search);
+
+    this.changeHandler?.(searchParams, this.prevParams);
+    this.prevParams = new URLSearchParams(searchParams);
   };
 }
