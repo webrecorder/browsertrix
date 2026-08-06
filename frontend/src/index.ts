@@ -8,6 +8,7 @@ import type {
   SlDrawer,
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -34,6 +35,7 @@ import AuthService, {
   type LoggedInEventDetail,
   type NeedLoginEventDetail,
 } from "./utils/AuthService";
+import { tw } from "./utils/tailwind";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
@@ -447,7 +449,7 @@ export class App extends BtrixElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 leading-none md:py-0 xl:pl-6"
+          class="box-border flex min-h-12 flex-wrap items-center gap-2 p-3 leading-none md:py-0 xl:pl-6"
         >
           <div class="order-1 flex flex-1 items-center">
             <a
@@ -469,32 +471,16 @@ export class App extends BtrixElement {
                 role="img"
                 title="Browsertrix logo"
               ></div>
+
+              ${isSuperAdmin
+                ? html`<btrix-badge size="large" variant="orange" outline>
+                    ${msg("Admin")}
+                  </btrix-badge>`
+                : nothing}
             </a>
             ${when(
               this.userInfo,
               () => html`
-                ${isSuperAdmin
-                  ? html`
-                      <div
-                        role="separator"
-                        class="mx-2.5 h-6 w-0 border-l"
-                      ></div>
-                      <a
-                        class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/${RouteNamespace.Superadmin}"
-                        @click=${(e: MouseEvent) => {
-                          this.clearSelectedOrg();
-                          this.navigate.link(e);
-                        }}
-                      >
-                        <sl-icon
-                          class="text-lg"
-                          name="house-gear-fill"
-                        ></sl-icon>
-                        ${msg("Admin")}</a
-                      >
-                    `
-                  : nothing}
                 ${this.renderOrgs()}
                 ${isSuperAdmin && this.org?.note
                   ? html`
@@ -540,13 +526,23 @@ export class App extends BtrixElement {
                     placement="bottom-end"
                     distance="4"
                   >
-                    <button slot="trigger">
+                    <div slot="trigger">
+                      ${this.renderNavButton({
+                        content: msg("Account"),
+                        iconName: "person-circle",
+                        href: urlForName("accountSettings"),
+                        className: tw`hidden md:block`,
+                        click: (e: MouseEvent) => {
+                          e.preventDefault();
+                        },
+                      })}
                       <sl-avatar
                         label=${msg("Open user menu")}
                         shape="rounded"
-                        class="[--size:1.75rem]"
+                        class="[--size:1.75rem] md:hidden"
+                        role="button"
                       ></sl-avatar>
-                    </button>
+                    </div>
                     <sl-menu class="w-60 min-w-min max-w-full">
                       <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
                       <sl-divider></sl-divider>
@@ -597,21 +593,71 @@ export class App extends BtrixElement {
 
           ${isSuperAdmin
             ? html`
-                <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">
-                  <a
-                    class="inline-flex items-center gap-2 font-medium text-neutral-500 hover:text-primary"
-                    href=${urlForName("adminCrawls")}
-                    @click=${this.navigate.link}
-                  >
-                    ${msg("Active Crawls")}
-                    <btrix-active-crawls-badge></btrix-active-crawls-badge>
-                  </a>
+                <div
+                  class="order-3 flex w-full auto-cols-max items-center gap-2 md:order-2 md:w-auto"
+                >
+                  ${this.renderSuperadminNav()}
                 </div>
               `
             : nothing}
         </nav>
       </div>
     `;
+  }
+
+  private renderNavButton({
+    content,
+    iconName,
+    href,
+    className,
+    click,
+  }: {
+    content: string | TemplateResult;
+    iconName: string;
+    href: string;
+    className?: string;
+    click?: (e: MouseEvent) => void;
+  }) {
+    const currentPage = this.viewState.pathname === href;
+
+    return html`<sl-button
+      variant="text"
+      size="small"
+      class=${clsx(
+        tw`part-[label]:font-medium part-[label]:text-neutral-700 part-[label]:hover:text-primary-600`,
+        className,
+        currentPage && tw`part-[base]:bg-primary-50`,
+      )}
+      href=${href}
+      @click=${(e: MouseEvent) => {
+        click?.(e);
+        this.navigate.link(e);
+      }}
+      aria-current=${ifDefined(currentPage ? "page" : undefined)}
+    >
+      <sl-icon slot="prefix" name=${iconName}></sl-icon>
+      ${content}
+    </sl-button>`;
+  }
+
+  private renderSuperadminNav() {
+    return html`${this.renderNavButton({
+      content: html`${msg("Active Crawls")}
+        <btrix-active-crawls-badge
+          slot="suffix"
+          class="-mt-0.5"
+        ></btrix-active-crawls-badge>`,
+      iconName: "gear-wide-connected",
+      href: urlForName("adminCrawls"),
+    })}
+    ${this.renderNavButton({
+      content: msg("Organizations"),
+      iconName: "building-fill-gear",
+      href: urlForName("admin"),
+      click: () => {
+        this.clearSelectedOrg();
+      },
+    })}`;
   }
 
   private renderOrgs() {
@@ -706,33 +752,14 @@ export class App extends BtrixElement {
 
   private renderMenuUserInfo() {
     if (!this.userInfo) return;
-    if (this.userInfo.isSuperAdmin) {
-      return html`
-        <div class="mb-2">
-          <btrix-tag>${msg("Admin")}</btrix-tag>
-        </div>
-        <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
-        <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.userInfo.email}
-        </div>
-      `;
-    }
-
-    const orgs = this.userInfo.orgs;
-    if (orgs.length === 1) {
-      return html`
-        <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
-        <div class="text-neutral-500">${this.userInfo.name}</div>
-        <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.userInfo.email}
-        </div>
-      `;
-    }
 
     return html`
-      <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
-      <div class="whitespace-nowrap text-xs text-neutral-500">
+      <div class="mb-1.5 text-xs text-neutral-500">${msg("Logged in as")}</div>
+      <div class="whitespace-nowrap font-medium text-neutral-700">
         ${this.userInfo.email}
+        ${this.userInfo.isSuperAdmin
+          ? html`<btrix-badge>${msg("Admin")}</btrix-badge>`
+          : nothing}
       </div>
     `;
   }
