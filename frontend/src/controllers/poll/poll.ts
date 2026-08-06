@@ -57,10 +57,11 @@ export class PollTask<
       },
     });
 
-    const options = { timeoutSeconds, pauseWhenHidden, stopPollOnError };
     this.#options = {
       ...defaultOptions,
-      ...options,
+      pauseWhenHidden: pauseWhenHidden ?? defaultOptions.pauseWhenHidden,
+      stopPollOnError: stopPollOnError ?? defaultOptions.stopPollOnError,
+      timeoutSeconds,
     };
 
     this.#pollTask = new Task(host, {
