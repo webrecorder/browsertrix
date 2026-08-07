@@ -160,6 +160,18 @@ jobs:
       - name: Wait for all pods to be ready
         run: kubectl wait --for=condition=ready pod --all --timeout=240s
 
+      - name: Start Background Job Log Follower
+        run: |
+          # Stream background-job pod logs to a file as they're produced. The
+          # bg jobs use ttlSecondsAfterFinished: 0, so their pods are deleted
+          # almost immediately on completion and can't be logged after the
+          # fact. Tailing with --follow in the background captures them live.
+          touch bg-jobs.log
+          kubectl logs -l role=background-job --all-containers=true \
+            --prefix=true --follow --tail=-1 --max-log-requests=64 \
+            >> bg-jobs.log 2>&1 &
+          echo "follower_pid=$!" >> "$GITHUB_ENV"
+
       - name: Run Tests
         timeout-minutes: 30
         run: cd backend && uv run pytest -vv ./test/test_*.py
@@ -175,6 +187,15 @@ jobs:
       - name: Print Emails Logs
         if: ${{ always() }}
         run: kubectl logs svc/browsertrix-cloud-emails -c emails
+
+      - name: Print Background Job Logs
+        if: ${{ always() }}
+        run: |
+          # Stop the live follower started before the tests, then dump the
+          # captured background-job logs.
+          kill "${follower_pid}" 2>/dev/null || true
+          echo "===== background job logs (captured live) ====="
+          cat bg-jobs.log || echo "(no background job logs captured)"
 
       - name: Print K8S Events
         if: ${{ always() }}
