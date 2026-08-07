@@ -326,13 +326,26 @@ def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
 def test_uploads_collection_updated(
     admin_auth_headers, default_org_id, uploads_collection_id, upload_id
 ):
-    # Verify that collection is updated when WACZ is added on upload
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/collections/{uploads_collection_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
+    # Verify that collection is updated when WACZ is added on upload.
+    # Collection stats are recalculated by a separate background job after the
+    # upload finishes processing, so poll until the update has landed.
+    count = 0
+    while count < MAX_ATTEMPTS:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/collections/{uploads_collection_id}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+
+        if data.get("pageCount", 0) > 0:
+            break
+
+        if count + 1 == MAX_ATTEMPTS:
+            assert False, "Max attempts reached waiting for collection stats update"
+
+        time.sleep(10)
+        count += 1
 
     assert data["crawlCount"] > 0
     assert data["pageCount"] > 0

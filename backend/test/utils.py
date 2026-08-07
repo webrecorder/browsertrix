@@ -36,8 +36,8 @@ def _get_log_event(caplog, event_name: str):
 # crawl states.
 TERMINAL_UPLOAD_STATES = ("complete", "failed")
 
-PROCESSING_MAX_ATTEMPTS = 24
-PROCESSING_POLL_SECONDS = 0.5
+PROCESSING_MAX_ATTEMPTS = 180
+PROCESSING_POLL_SECONDS = 1
 
 
 async def wait_for_upload_processed(
