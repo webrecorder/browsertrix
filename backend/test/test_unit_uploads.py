@@ -1,7 +1,8 @@
 """Unit tests for UploadOps.retry_stuck_uploads"""
 
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -161,3 +162,76 @@ async def test_query_scopes_to_stuck_processing_uploads(upload_ops):
     cutoff = query["started"]["$lt"]
     # dt_now() truncates to whole seconds, so allow a second of slack
     assert before - timedelta(seconds=1) <= cutoff <= after
+
+
+def setup_split(upload_ops: UploadOps, find_result: dict | None):
+    """Configure mocks for a _split_multiwacz run with one child.
+
+    find_result: value returned by crawls.find_one_and_update (None = split
+    not applied, i.e. crawl deleted or already split).
+    """
+
+    org = SimpleNamespace(
+        id=uuid4(),
+        storage=MagicMock(),
+        quotas=SimpleNamespace(storageQuota=0),
+        bytesStored=0,
+    )
+
+    original = SimpleNamespace(filename="uploads/x/original.wacz", size=100)
+    child = SimpleNamespace(filename="child.wacz", file_size=60, size=60)
+
+    upload_ops.storage_ops.do_upload_multipart = AsyncMock(return_value=True)
+    upload_ops.storage_ops.delete_file_object = AsyncMock(return_value=True)
+    upload_ops.presigned_urls.delete_one = AsyncMock()
+    upload_ops.background_job_ops.create_delete_replica_jobs = AsyncMock(
+        return_value={"added": True, "ids": []}
+    )
+    upload_ops.crawls.find_one_and_update = AsyncMock(return_value=find_result)
+    upload_ops.orgs.inc_org_bytes_stored = AsyncMock()
+
+    crawl_file = SimpleNamespace(
+        filename="uploads/x/child-abc.wacz",
+        size=60,
+        hash="abc123",
+        model_dump=lambda: {"filename": "uploads/x/child-abc.wacz", "size": 60},
+    )
+    return org, original, child, crawl_file
+
+
+async def run_split(upload_ops: UploadOps, find_result: dict | None):
+    """Run _split_multiwacz with storage/zip/fileprep mocked out"""
+
+    org, original, child, crawl_file = setup_split(upload_ops, find_result)
+
+    with (
+        patch("btrixcloud.uploads.FilePreparer") as fp,
+        patch("btrixcloud.uploads.RemoteZip"),
+    ):
+        fp.return_value.upload_name = "uploads/x/child-abc.wacz"
+        fp.return_value.get_crawl_file.return_value = crawl_file
+        fp.return_value.add_chunk = lambda b: None
+        await upload_ops._split_multiwacz(
+            "x", org, "http://example/orig.wacz", [child], original
+        )
+    return original
+
+
+@pytest.mark.asyncio
+async def test_split_query_requires_original_present(upload_ops: UploadOps):
+    """The split update only matches if the original file is still in files,
+    so a stale retry does not re-apply the split or its size diff"""
+    original = await run_split(upload_ops, find_result={"_id": "x"})
+
+    query = upload_ops.crawls.find_one_and_update.call_args[0][0]
+    assert query["files.filename"] == original.filename
+    assert query["_id"] == "x"
+
+
+@pytest.mark.asyncio
+async def test_split_stale_retry_does_not_inc_org_bytes(upload_ops: UploadOps):
+    """When the split is not applied (find_one_and_update returns None because
+    the original is already gone), org bytes stored must NOT be incremented"""
+    await run_split(upload_ops, find_result=None)
+
+    upload_ops.orgs.inc_org_bytes_stored.assert_not_awaited()
