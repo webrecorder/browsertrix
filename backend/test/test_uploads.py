@@ -15,6 +15,30 @@ curr_dir = os.path.dirname(os.path.realpath(__file__))
 MAX_ATTEMPTS = 24
 
 
+def wait_for_upload_processed(auth_headers, org_id, upload_id):
+    """Poll until an upload's post-processing background job finishes.
+
+    Upload post-processing runs in a background job, so an upload is left in
+    "processing-upload" until the job completes. Pages and collection stats are
+    only populated during post-processing, so tests must wait for the upload to
+    leave "processing-upload" before asserting on them.
+    """
+    for _ in range(MAX_ATTEMPTS):
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{org_id}/uploads/{upload_id}",
+            headers=auth_headers,
+        )
+        assert r.status_code == 200
+        state = r.json().get("state")
+        if state in ("complete", "failed"):
+            return state
+        time.sleep(2)
+    raise AssertionError(
+        f"Upload {upload_id} still in 'processing-upload' after "
+        f"{MAX_ATTEMPTS * 2}s (state={state})"
+    )
+
+
 @pytest.fixture(scope="module")
 def upload_id(admin_auth_headers, default_org_id, uploads_collection_id):
     with open(os.path.join(curr_dir, "data", "example.wacz"), "rb") as fh:
@@ -29,6 +53,9 @@ def upload_id(admin_auth_headers, default_org_id, uploads_collection_id):
 
     upload_id = r.json()["id"]
     assert upload_id
+
+    wait_for_upload_processed(admin_auth_headers, default_org_id, upload_id)
+
     return upload_id
 
 
@@ -56,6 +83,9 @@ def upload_id_2(admin_auth_headers, default_org_id, uploads_collection_id):
 
     upload_id_2 = r.json()["id"]
     assert upload_id_2
+
+    wait_for_upload_processed(admin_auth_headers, default_org_id, upload_id_2)
+
     return upload_id_2
 
 
@@ -70,6 +100,12 @@ def replaced_upload_id(
 
     assert actual_id
     assert actual_id != upload_id
+
+    # The replacement is a new upload created via the stream endpoint, so it
+    # also goes through post-processing in a background job and processing needs
+    # to complete
+    wait_for_upload_processed(admin_auth_headers, default_org_id, actual_id)
+
     return actual_id
 
 
@@ -92,9 +128,7 @@ def multi_wacz_upload_id(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
     assert upload_id
 
-    # Post-processing is synchronous (called with await), so no sleep needed.
-    # But give a brief moment for page counts to settle.
-    time.sleep(2)
+    wait_for_upload_processed(admin_auth_headers, default_org_id, upload_id)
 
     return upload_id
 
@@ -260,9 +294,6 @@ def test_get_upload_replay_json_admin(
 
 
 def test_get_upload_pages(admin_auth_headers, default_org_id, upload_id):
-    # Give time for pages to finish being uploaded
-    time.sleep(10)
-
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/uploads/{upload_id}/pages",
         headers=admin_auth_headers,
@@ -1439,9 +1470,7 @@ def test_multi_wacz_upload_in_collection(
     assert r.json()["added"]
     coll_upload_id = r.json()["id"]
 
-    # Post-processing is synchronous for small files, but give a brief moment
-    # for pages and collection stats to settle
-    time.sleep(2)
+    wait_for_upload_processed(admin_auth_headers, default_org_id, coll_upload_id)
 
     # Wait for the background job to update collection stats
     count = 0
@@ -1533,9 +1562,7 @@ def formdata_multi_wacz_upload_id(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
     assert upload_id
 
-    # Post-processing is synchronous for small files, but give a brief moment
-    # for page counts to settle.
-    time.sleep(2)
+    wait_for_upload_processed(admin_auth_headers, default_org_id, upload_id)
     return upload_id
 
 
