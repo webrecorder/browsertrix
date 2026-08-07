@@ -5,8 +5,11 @@ import asyncio
 
 import requests
 
-from .conftest import API_PREFIX
-
+# Mirror of conftest HOST_PREFIX / API_PREFIX. Defined here (rather than
+# imported from conftest) because conftest imports this module, so importing
+# conftest back would be circular. Keep in sync with test/conftest.py.
+HOST_PREFIX = "http://127.0.0.1:30870"
+API_PREFIX = HOST_PREFIX + "/api"
 
 def read_in_chunks(fh, blocksize=1024):
     """Lazy function (generator) to read a file piece by piece.
