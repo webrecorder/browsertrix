@@ -167,7 +167,8 @@ jobs:
           # almost immediately on completion and can't be logged after the
           # fact. Tailing with --follow in the background captures them live.
           touch bg-jobs.log
-          kubectl logs -l role=background-job --all-containers=true \
+          kubectl logs -l role=background-job --all-namespaces \
+            --all-containers=true \
             --prefix=true --follow --tail=-1 --max-log-requests=64 \
             >> bg-jobs.log 2>&1 &
           echo "follower_pid=$!" >> "$GITHUB_ENV"
