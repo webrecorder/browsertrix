@@ -36,13 +36,9 @@ from .models import (
 )
 from .pagination import DEFAULT_PAGE_SIZE, paginated_format
 from .storages import CHUNK_SIZE
-from .utils import dt_now, run_async_task, to_async_iterable
+from .utils import dt_now, to_async_iterable
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
-
-MAX_SYNC_UPLOAD_SIZE = int(
-    os.environ.get("UPLOAD_BG_THRESHOLD_BYTES", 50 * 1024 * 1024)
-)
 
 MAX_UPLOAD_RETRIES = 3
 
@@ -234,50 +230,42 @@ class UploadOps(BaseCrawlOps):
             {"_id": crawl_id}, {"$set": uploaded.to_dict()}, upsert=True
         )
 
-        # Post-processing: sync for small files, background job for large files
-        # In the future we'll likely want to remove this once we've got direct upload support
-        if file_size > MAX_SYNC_UPLOAD_SIZE:
-            upload_logger.debug(
-                "upload_create",
-                state="large_file_dispatching_bg_job",
-                file_size=file_size,
-                max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
+        upload_logger.debug(
+            "upload_create", state="dispatching_bg_job", file_size=file_size
+        )
+
+        max_attempts = 3
+        attempt = 0
+        job_id = None
+
+        while attempt < max_attempts:
+            job_id = await self.background_job_ops.create_postprocess_upload_job(
+                org.id, crawl_id
             )
+            if job_id:
+                break
 
-            max_attempts = 3
-            attempt = 0
-            job_id = None
-
-            while attempt < max_attempts:
-                job_id = await self.background_job_ops.create_postprocess_upload_job(
-                    org.id, crawl_id
-                )
-                if job_id:
-                    break
-
-                upload_logger.warning(
-                    "upload_create",
-                    state="large_file_dispatching_bg_job_failed",
-                    attempt=attempt + 1,
-                    max_attempts=max_attempts,
-                )
-                attempt += 1
-
-            if not job_id:
-                upload_logger.warning(
-                    "upload_create",
-                    state="large_file_dispatching_bg_job_failed",
-                    detail="running post_process_upload synchronously instead",
-                )
-                await self.post_process_upload(crawl_id, org)
-        else:
-            upload_logger.debug(
+            upload_logger.warning(
                 "upload_create",
-                state="small_file_dispatching_sync_job",
-                file_size=file_size,
-                max_sync_upload_size=MAX_SYNC_UPLOAD_SIZE,
+                state="dispatching_bg_job_failed",
+                attempt=attempt + 1,
+                max_attempts=max_attempts,
             )
-            await self.post_process_upload(crawl_id, org)
+            attempt += 1
+
+        if not job_id:
+            # Fail visibly rather than processing inline: the file is in storage
+            # and the crawl record exists, so processing can be retried once the
+            # dispatch issue is resolved.
+            upload_logger.error(
+                "upload_create",
+                state="dispatching_bg_job_failed",
+                detail="marking upload as failed after 3 dispatch attempts",
+            )
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id}, {"$set": {"state": "failed"}}
+            )
+            raise HTTPException(status_code=500, detail="upload_processing_unavailable")
 
         await self.orgs.inc_org_bytes_stored(org.id, file_size, "upload")
         quota_reached = self.orgs.storage_quota_reached(org)
@@ -291,14 +279,13 @@ class UploadOps(BaseCrawlOps):
         self,
         crawl_id: str,
         org: Organization,
-        # In a bg job, await the webhook instead of running it in a separate async task
-        await_webhook: bool = False,
     ):
         """
         Perform upload post-processing: counts pages, updates collections,
         replicates files, sends an upload complete webhook.
 
-        If called from a background job, set `await_webhook` to `True`.
+        Runs in a background job, so the webhook is awaited rather than run in
+        a separate async task (the job pod exits when this returns).
         """
         pp_logger = logger.bind(crawl_id=crawl_id)
         pp_logger.debug("post_process_upload", state="processing_upload_started")
@@ -402,16 +389,9 @@ class UploadOps(BaseCrawlOps):
                 "post_process_upload", state="finished_processing_dispatching_webhook"
             )
 
-            if await_webhook:
-                await self.event_webhook_ops.create_upload_finished_notification(
-                    crawl_id, org.id
-                )
-            else:
-                run_async_task(
-                    self.event_webhook_ops.create_upload_finished_notification(
-                        crawl_id, org.id
-                    )
-                )
+            await self.event_webhook_ops.create_upload_finished_notification(
+                crawl_id, org.id
+            )
 
             pp_logger.debug("post_process_upload", state="complete")
         except Exception:
@@ -426,9 +406,8 @@ class UploadOps(BaseCrawlOps):
         background job and dispatch new background jobs to process them.
 
         Uploads can get stuck if post-processing is interrupted before the
-        crawl state is updated - e.g. if the background job pod or the
-        backend itself (for small uploads processed synchronously) is
-        killed. Post-processing is idempotent, so it's safe to re-dispatch.
+        crawl state is updated - e.g. if the background job pod is killed.
+        Post-processing is idempotent, so it's safe to re-dispatch.
 
         Raises if dispatching fails for any stuck upload, so the cron job
         is marked as failed rather than silently doing nothing.
