@@ -610,11 +610,17 @@ class UploadOps(BaseCrawlOps):
             # Atomically replace the original single multi-WACZ with child WACZs
             # in the DB, and update file count/size fields. This is a single
             # atomic operation, so it's safe for concurrent splits, since each
-            # $filter targets a different filename.
+            # $filter targets a different filename. The query requires the
+            # original file to still be present so that a re-run after the
+            # split already succeeded does not re-apply it (or its size diff).
             size_diff = sum(f.size for f in new_upload_files) - original_file.size
             child_file_dicts = [f.model_dump() for f in new_upload_files]
             result = await self.crawls.find_one_and_update(
-                {"_id": crawl_id, "deleted": {"$ne": True}},
+                {
+                    "_id": crawl_id,
+                    "deleted": {"$ne": True},
+                    "files.filename": original_file.filename,
+                },
                 [
                     # Stage 1: replace the original file with child WACZ files.
                     {
@@ -657,7 +663,15 @@ class UploadOps(BaseCrawlOps):
             )
 
             if result is None:
-                cwf_logger.warning("crawl_not_found_or_deleted")
+                # Either the crawl was deleted, or the split was already
+                # applied by a previous attempt (original file no longer in
+                # files). Either way, remove this attempt's child objects and
+                # do NOT touch org bytes stored - a stale retry must not
+                # re-apply the size diff.
+                cwf_logger.warning(
+                    "multi_wacz_split_not_applied",
+                    original_filename=original_file.filename,
+                )
                 for crawl_file in new_upload_files:
                     await self.storage_ops.delete_file_object(org, crawl_file)
                 return
@@ -665,6 +679,10 @@ class UploadOps(BaseCrawlOps):
             # Adjust org bytes stored for the size difference
             if size_diff != 0:
                 await self.orgs.inc_org_bytes_stored(org.id, size_diff, "upload")
+                cwf_logger.debug(
+                    "multi_wacz_org_bytes_adjusted",
+                    size_diff=size_diff,
+                )
 
             cwf_logger.debug(
                 "multi_wacz_split_complete",

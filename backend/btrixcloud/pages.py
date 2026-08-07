@@ -164,6 +164,8 @@ class PageOps:
                     )
 
             await self.set_archived_item_page_counts(crawl_id)
+            # Recompute file/error counts from db directly
+            await self.update_crawl_file_and_error_counts(crawl_id)
 
             wacz_logger.info(
                 "crawl_pages_added",
@@ -235,8 +237,13 @@ class PageOps:
                     raise
 
         if not result.inserted_ids:
-            # pylint: disable=broad-exception-raised
-            raise Exception("No pages inserted")
+            # All pages already present, can happen when re-running
+            logger.debug(
+                "page_batch_all_duplicates",
+                crawl_id=crawl_id,
+                batch_size=len(pages),
+            )
+            return
 
         await self.update_crawl_file_and_error_counts(crawl_id, pages)
 
@@ -288,23 +295,42 @@ class PageOps:
     async def update_crawl_file_and_error_counts(
         self, crawl_id: str, pages: list[Page] | None = None
     ):
-        """Update crawl filePageCount and errorPageCount for pages."""
-        file_count = 0
-        error_count = 0
+        """Update crawl filePageCount and errorPageCount.
 
-        if pages is not None:
-            for page in pages:
-                if page.isFile:
-                    file_count += 1
-                if page.isError:
-                    error_count += 1
-        else:
-            # If page list not supplied, count all pages in crawl
+        When called with a page list, increments the counts (used for incremental
+        adds during a crawl). Without a page list, recomputes the exact counts
+        from the pages collection and `$set`s them, which is safe to
+        call after a re-add that may have partially completed before.
+        """
+        if pages is None:
+            # Recompute exact counts
+            file_count = 0
+            error_count = 0
             async for page_raw in self.pages.find({"crawl_id": crawl_id}):
                 if page_raw.get("isFile"):
                     file_count += 1
                 if page_raw.get("isError"):
                     error_count += 1
+
+            logger.debug(
+                "crawl_page_counts_recomputed",
+                crawl_id=crawl_id,
+                file_page_count=file_count,
+                error_page_count=error_count,
+            )
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id},
+                {"$set": {"filePageCount": file_count, "errorPageCount": error_count}},
+            )
+            return
+
+        file_count = 0
+        error_count = 0
+        for page in pages:
+            if page.isFile:
+                file_count += 1
+            if page.isError:
+                error_count += 1
 
         if file_count == 0 and error_count == 0:
             return
