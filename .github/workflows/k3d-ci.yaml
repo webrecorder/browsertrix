@@ -167,10 +167,13 @@ jobs:
           # almost immediately on completion and can't be logged after the
           # fact. Tailing with --follow in the background captures them live.
           touch bg-jobs.log
-          kubectl logs -l role=background-job -n default \
-            --all-containers=true \
-            --prefix=true --follow --tail=-1 --max-log-requests=64 \
-            >> bg-jobs.log 2>&1 &
+          (while true; do
+            kubectl logs -l role=background-job -n default \
+              --all-containers=true \
+              --prefix=true --follow --tail=-1 --max-log-requests=64 \
+              >> bg-jobs.log 2>/dev/null
+            sleep 2
+          done) &
           echo "follower_pid=$!" >> "$GITHUB_ENV"
 
       - name: Run Tests
