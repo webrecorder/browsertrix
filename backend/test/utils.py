@@ -11,6 +11,7 @@ import requests
 HOST_PREFIX = "http://127.0.0.1:30870"
 API_PREFIX = HOST_PREFIX + "/api"
 
+
 def read_in_chunks(fh, blocksize=1024):
     """Lazy function (generator) to read a file piece by piece.
     Default chunk size: 1k."""

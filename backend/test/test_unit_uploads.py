@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
 
+from btrixcloud.models import DeleteCrawlList
 from btrixcloud.uploads import STUCK_UPLOAD_GRACE_PERIOD, UploadOps
 
 
@@ -164,6 +166,131 @@ async def test_query_scopes_to_stuck_processing_uploads(upload_ops):
     assert before - timedelta(seconds=1) <= cutoff <= after
 
 
+def make_crawl(userid):
+    """Fake crawl with the fields that delete_crawls reads"""
+    return SimpleNamespace(
+        id="upload-abc",
+        type="upload",
+        userid=userid,
+        files=[],
+        cid=None,
+        state="complete",
+        collectionIds=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_delete_crawls_unauthorized_does_not_mark_deleted(upload_ops: UploadOps):
+    """A 403 delete attempt must not set the deleted marker, which would
+    otherwise abort upload post-processing, which relies on the current files"""
+    org = SimpleNamespace(id=uuid4(), is_owner=lambda u: False)
+    upload_ops.get_base_crawl = AsyncMock(return_value=make_crawl(userid=uuid4()))
+    upload_ops.crawls.find_one_and_update = AsyncMock()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await upload_ops.delete_crawls(
+            org,
+            DeleteCrawlList(crawl_ids=["upload-abc"]),
+            "upload",
+            user=MagicMock(id=uuid4()),
+        )
+
+    assert exc_info.value.status_code == 403
+    upload_ops.crawls.find_one_and_update.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_delete_crawls_owner_marks_deleted(upload_ops: UploadOps):
+    """Delete sets the deleted marker before files are removed"""
+    org = SimpleNamespace(id=uuid4(), is_owner=lambda u: True)
+    upload_ops.get_base_crawl = AsyncMock(return_value=make_crawl(userid=uuid4()))
+    upload_ops.crawls.find_one_and_update = AsyncMock()
+    upload_ops.crawls.delete_many = AsyncMock(
+        return_value=SimpleNamespace(deleted_count=1)
+    )
+    upload_ops.page_ops = SimpleNamespace(delete_crawl_pages=AsyncMock())
+    upload_ops.crawl_log_ops.delete_crawl_logs = AsyncMock()
+    upload_ops._delete_crawl_files = AsyncMock(return_value=(0, []))
+    upload_ops.orgs.inc_org_bytes_stored = AsyncMock()
+    upload_ops.orgs.set_last_crawl_finished = AsyncMock()
+    upload_ops.orgs.storage_quota_reached = MagicMock(return_value=False)
+    upload_ops.event_webhook_ops.create_upload_deleted_notification = AsyncMock()
+
+    await upload_ops.delete_crawls(
+        org, DeleteCrawlList(crawl_ids=["upload-abc"]), "upload"
+    )
+
+    upload_ops.crawls.find_one_and_update.assert_awaited_once_with(
+        {"_id": "upload-abc", "oid": org.id, "type": "upload"},
+        {"$set": {"deleted": True}},
+    )
+
+
+@pytest.mark.asyncio
+async def test_upload_stream_rejects_replace_while_processing(upload_ops: UploadOps):
+    """Replacing an upload whose post-processing job is still running would
+    delete its files out from under the job, so it should fail"""
+    org = SimpleNamespace(id=uuid4(), storage=MagicMock())
+    upload_ops.get_upload = AsyncMock(
+        return_value=SimpleNamespace(state="processing-upload")
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await upload_ops.upload_stream(
+            AsyncMock(),
+            "test.wacz",
+            None,
+            None,
+            None,
+            None,
+            org,
+            MagicMock(),
+            "upload-abc",
+        )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "upload_still_processing"
+
+
+@pytest.mark.asyncio
+async def test_upload_stream_allows_replace_when_finished(upload_ops: UploadOps):
+    """A fully processed upload can be replaced, reusing its id"""
+    org = SimpleNamespace(id=uuid4(), storage=MagicMock())
+    upload_ops.get_upload = AsyncMock(
+        return_value=SimpleNamespace(
+            id="upload-abc", state="complete", files=[], storage=MagicMock()
+        )
+    )
+    upload_ops.storage_ops.do_upload_multipart = AsyncMock(return_value=True)
+    upload_ops.page_ops = SimpleNamespace(delete_crawl_pages=AsyncMock())
+    upload_ops._create_upload = AsyncMock(
+        return_value={"id": "upload-abc", "added": True}
+    )
+
+    with patch("btrixcloud.uploads.FilePreparer") as fp:
+        fp.return_value.upload_name = "uploads/x/test-abc.wacz"
+        fp.return_value.get_crawl_file.return_value = SimpleNamespace(
+            filename="uploads/x/test-abc.wacz", hash="abc", size=10
+        )
+
+        result = await upload_ops.upload_stream(
+            AsyncMock(),
+            "test.wacz",
+            None,
+            None,
+            None,
+            None,
+            org,
+            MagicMock(),
+            "upload-abc",
+        )
+
+    assert result["id"] == "upload-abc"
+    upload_ops._create_upload.assert_awaited_once()
+    # the id is reused for the replacement upload
+    assert upload_ops._create_upload.call_args[0][5] == "upload-abc"
+
+
 def setup_split(upload_ops: UploadOps, find_result: dict | None):
     """Configure mocks for a _split_multiwacz run with one child.
 
@@ -183,6 +310,9 @@ def setup_split(upload_ops: UploadOps, find_result: dict | None):
 
     upload_ops.storage_ops.do_upload_multipart = AsyncMock(return_value=True)
     upload_ops.storage_ops.delete_file_object = AsyncMock(return_value=True)
+    upload_ops.storage_ops.get_presigned_url = AsyncMock(
+        return_value=("http://presigned.example/upload", None)
+    )
     upload_ops.presigned_urls.delete_one = AsyncMock()
     upload_ops.background_job_ops.create_delete_replica_jobs = AsyncMock(
         return_value={"added": True, "ids": []}
@@ -235,3 +365,27 @@ async def test_split_stale_retry_does_not_inc_org_bytes(upload_ops: UploadOps):
     await run_split(upload_ops, find_result=None)
 
     upload_ops.orgs.inc_org_bytes_stored.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_split_refreshes_presigned_url_before_child_upload(
+    upload_ops: UploadOps,
+):
+    """The parent's presigned URL is re-signed before each child download so
+    a split that outlasts the URL lifetime can still complete"""
+    org, original, child, crawl_file = setup_split(upload_ops, find_result={"_id": "x"})
+
+    with (
+        patch("btrixcloud.uploads.FilePreparer") as fp,
+        patch("btrixcloud.uploads.RemoteZip"),
+    ):
+        fp.return_value.upload_name = "uploads/x/child-abc.wacz"
+        fp.return_value.get_crawl_file.return_value = crawl_file
+        fp.return_value.add_chunk = lambda b: None
+        await upload_ops._split_multiwacz(
+            "x", org, "http://example/orig.wacz", [child], original
+        )
+
+    upload_ops.storage_ops.get_presigned_url.assert_awaited_once_with(
+        org, original, force_update=True
+    )
