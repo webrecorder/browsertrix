@@ -15,6 +15,7 @@ from fastapi import Depends, HTTPException, Request, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .models import (
+    CrawlFile,
     DeletedResponse,
     EmptyResponse,
     Organization,
@@ -109,17 +110,26 @@ class PageOps:
     async def add_crawl_pages_to_db_from_wacz(
         self, crawl_id: str, batch_size=100, num_retries=5
     ):
-        """Add pages to database from WACZ files"""
-        pages_buffer: list[Page] = []
-        crawl = await self.crawl_ops.get_crawl_out(crawl_id)
+        """Add pages to database from WACZ files.
 
-        wacz_logger = logger.bind(crawl_id=crawl_id, oid=crawl.oid)
+        Note: crawl is fetched by id only, so callers must have already
+        validated the crawl's org against the caller's org.
+        """
+        pages_buffer: list[Page] = []
+        crawl = await self.crawl_ops.get_crawl_raw(crawl_id)
+
+        wacz_logger = logger.bind(crawl_id=crawl_id, oid=crawl["oid"])
+
+        org = await self.org_ops.get_org_by_id(crawl["oid"])
+        crawl_resources = await self.crawl_ops.resolve_signed_urls(
+            [CrawlFile(**file) for file in crawl.get("files", [])], org, crawl_id
+        )
 
         try:
             stream = await self.storage_ops.sync_stream_wacz_pages(
-                crawl.resources or [], num_retries
+                crawl_resources, num_retries
             )
-            new_uuid = crawl.type == "upload"
+            new_uuid = crawl.get("type") == "upload"
             seed_count = 0
             non_seed_count = 0
             for page_dict in stream:
@@ -148,7 +158,9 @@ class PageOps:
                     pages_buffer = []
 
                 pages_buffer.append(
-                    self._get_page_from_dict(page_dict, crawl_id, crawl.oid, new_uuid)
+                    self._get_page_from_dict(
+                        page_dict, crawl_id, crawl["oid"], new_uuid
+                    )
                 )
 
             # Add any remaining pages in buffer to db
