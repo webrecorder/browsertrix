@@ -763,6 +763,7 @@ class PageOps:
                 ]
             )
 
+            print("list pages total", aggregate, flush=True)
             cursor = self.pages.aggregate(aggregate)
             results = await cursor.to_list(length=1)
             result = results[0]
@@ -778,6 +779,7 @@ class PageOps:
                 aggregate.extend([{"$skip": skip}])
 
             aggregate.extend([{"$limit": page_size}])
+            print("list pages", aggregate, flush=True)
             cursor = self.pages.aggregate(aggregate)
             items = await cursor.to_list(page_size)
             total = 0
