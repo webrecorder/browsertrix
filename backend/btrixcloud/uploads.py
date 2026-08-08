@@ -97,6 +97,13 @@ class UploadOps(BaseCrawlOps):
                 # not found
                 replaceId = None
 
+            if prev_upload and prev_upload.state == "processing-upload":
+                # Don't delete the files that are being used by an existing
+                # processing job if attempting to replace an upload
+                # In the future this could maybe cancel the upload processing, but
+                # since this is API-only it seems not worth doing at the moment.
+                raise HTTPException(status_code=400, detail="upload_still_processing")
+
         id_ = "upload-" + str(uuid.uuid4()) if not replaceId else replaceId
 
         upload_logger = logger.bind(crawl_id=id_)
