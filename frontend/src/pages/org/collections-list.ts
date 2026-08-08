@@ -20,10 +20,10 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
-import type { CollectionSavedEvent } from "@/features/collections/collection-create-dialog";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
+import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { RouteNamespace } from "@/routes";
 import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { metadata } from "@/strings/collections/metadata";
@@ -725,8 +725,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               <sl-menu-item
                 @click=${() => void this.manageCollection(col, "edit")}
               >
-                <sl-icon name="gear" slot="prefix"></sl-icon>
-                ${msg("Edit Collection Settings")}
+                <sl-icon name="box-arrow-up" slot="prefix"></sl-icon>
+                ${msg("Share Collection")}
               </sl-menu-item>
             `,
           )}

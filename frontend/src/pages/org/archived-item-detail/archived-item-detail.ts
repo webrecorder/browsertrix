@@ -727,8 +727,8 @@ export class ArchivedItemDetail extends BtrixElement {
                 )}
                 ${renderNavItem({
                   section: "replay",
-                  iconLibrary: "app",
-                  icon: "replaywebpage",
+                  iconLibrary: "default",
+                  icon: "collection-play",
                 })}
                 ${renderNavItem({
                   section: "files",
