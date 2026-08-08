@@ -19,10 +19,6 @@ spec:
   parallelism: {{ scale }}
   {% endif %}
   template:
-    metadata:
-      labels:
-        role: "background-job"
-        job_type: {{ job_type }}
     spec:
       restartPolicy: Never
       priorityClassName: bg-job
