@@ -404,10 +404,6 @@ class BaseCrawlOps:
         all_file_failures: list[str] = []
 
         for crawl_id in delete_list.crawl_ids:
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id, "oid": org.id, "type": type_},
-                {"$set": {"deleted": True}},
-            )
             crawl = await self.get_base_crawl(crawl_id, org)
             if crawl.type != type_:
                 continue
@@ -417,6 +413,13 @@ class BaseCrawlOps:
             # - Org owners can delete any crawls in org
             if user and (crawl.userid != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
+
+            # Mark as deleted before removing files so in-flight background
+            # processing (e.g. upload post-processing) aborts
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "oid": org.id, "type": type_},
+                {"$set": {"deleted": True}},
+            )
 
             if type_ == "crawl" and not crawl.finished:
                 try:
