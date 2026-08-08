@@ -7,7 +7,7 @@ from zipfile import ZIP_STORED, ZipFile
 import requests
 
 from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
-from .utils import read_in_chunks
+from .utils import read_in_chunks, wait_for_upload_processed_sync
 
 COLLECTION_NAME = "Test collection"
 COLLECTION_SLUG = "test-collection"
@@ -825,6 +825,10 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
 
     global upload_id
     upload_id = r.json()["id"]
+
+    # Upload post-processing runs in a background job - wait for it to complete
+    # so the collection stats and downloads below include the upload's pages
+    wait_for_upload_processed_sync(crawler_auth_headers, default_org_id, upload_id)
 
     # Add upload
     r = requests.post(

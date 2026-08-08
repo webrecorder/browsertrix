@@ -71,8 +71,10 @@ export class ArchivedItemListItem extends BtrixElement {
     const rowName = renderName(this.item);
     const isUpload = this.item.type === "upload";
     const crawlStatus = isUpload
-      ? CrawlStatus.getContent({ state: "complete" })
+      ? CrawlStatus.getContent({ state: this.item.state })
       : CrawlStatus.getContent(this.item as Crawl);
+    const isProcessingUpload =
+      isUpload && this.item.state === "processing-upload";
     const pageCount = isUpload
       ? this.item.pageCount
         ? +this.item.pageCount
@@ -249,24 +251,28 @@ export class ArchivedItemListItem extends BtrixElement {
           </sl-tooltip>
         </btrix-table-cell>
         <btrix-table-cell class="tabular-nums">
-          <sl-tooltip
-            hoist
-            @click=${this.onTooltipClick}
-            content="${isUpload
-              ? this.localize.number(pageCount)
-              : msg(
-                  str`${this.localize.number(
-                    pageCount,
-                  )} crawled, ${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
-                )} ${pluralOfPageCount}"
-          >
-            <div class="min-w-4">
-              ${this.localize.number(pageCount, {
-                notation: "compact",
-              })}
-              ${pluralOfPageCount}
-            </div>
-          </sl-tooltip>
+          ${isProcessingUpload
+            ? html`<sl-spinner
+                style="font-size: 0.875rem; --track-width: 1.5px;"
+              ></sl-spinner>`
+            : html`<sl-tooltip
+                hoist
+                @click=${this.onTooltipClick}
+                content="${isUpload
+                  ? this.localize.number(pageCount)
+                  : msg(
+                      str`${this.localize.number(
+                        pageCount,
+                      )} crawled, ${this.localize.number(this.item.stats?.found ? +this.item.stats.found : 0)} found`,
+                    )} ${pluralOfPageCount}"
+              >
+                <div class="min-w-4">
+                  ${this.localize.number(pageCount, {
+                    notation: "compact",
+                  })}
+                  ${pluralOfPageCount}
+                </div>
+              </sl-tooltip>`}
         </btrix-table-cell>
         <btrix-table-cell>
           ${isUpload

@@ -52,5 +52,5 @@ def test_api_settings():
         "supportEmail": "",
         "localesEnabled": None,
         "pausedExpiryMinutes": 10080,
-        "rateLimitDurationMinutes": 720
+        "rateLimitDurationMinutes": 720,
     }

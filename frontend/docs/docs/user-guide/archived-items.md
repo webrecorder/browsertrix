@@ -8,7 +8,15 @@ WACZ files can be given metadata and uploaded to Browsertrix by pressing the _Up
 
 ## Status
 
-The status of an archived item depends on its type. Uploads will always have the status <span class="status-green-600">:bootstrap-upload: Uploaded</span>, while crawls can have one of the following statuses:
+The status of an archived item depends on its type. Uploads can have one of the following statuses:
+
+| Status | Description |
+| ---- | ---- |
+| <span class="status-violet-600"><span class="animate-pulse">:btrix-status-dot:</span> Processing Upload</span> | The uploaded WACZ file is being processed and its pages indexed. |
+| <span class="status-green-600">:bootstrap-upload: Uploaded</span> | Processing has completed and the archived item is ready to replay. |
+| <span class="status-red-600">:bootstrap-x-octagon-fill: Failed</span> | Processing encountered an error and the upload could not be completed. |
+
+Crawls can have one of the following statuses:
 
 | Status | Description |
 | ---- | ---- |

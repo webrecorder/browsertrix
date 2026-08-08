@@ -10,6 +10,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
+from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 
 from .crawlmanager import CrawlManager
 from .models import (
@@ -25,8 +26,10 @@ from .models import (
     OptimizePagesJob,
     Organization,
     PaginatedBackgroundJobResponse,
+    PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    RetryStuckUploadsJob,
     StorageRef,
     SuccessResponse,
     SuccessResponseId,
@@ -568,9 +571,72 @@ class BackgroundJobOps:
             )
             return None
 
-    async def ensure_cron_cleanup_jobs_exist(self):
-        """Ensure background job to clean up unused seed files weekly exists"""
+    async def create_postprocess_upload_job(
+        self,
+        oid: UUID,
+        crawl_id: str,
+        existing_job_id: str | None = None,
+    ):
+        """Create job to post-process uploaded crawl"""
+
+        pp_logger = logger.bind(
+            crawl_id=crawl_id, oid=oid, existing_job_id=existing_job_id
+        )
+        try:
+            job_id = await self.crawl_manager.run_postprocess_upload_job(
+                oid=str(oid),
+                crawl_id=crawl_id,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                postprocess_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": postprocess_job.started,
+                    "finished": postprocess_job.finished,
+                }
+                if postprocess_job.previousAttempts:
+                    postprocess_job.previousAttempts.append(previous_attempt)
+                else:
+                    postprocess_job.previousAttempts = [previous_attempt]
+                postprocess_job.started = dt_now()
+                postprocess_job.finished = None
+                postprocess_job.success = None
+            else:
+                postprocess_job = PostProcessUploadJob(
+                    id=job_id,
+                    oid=oid,
+                    crawl_id=crawl_id,
+                    started=dt_now(),
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": postprocess_job.to_dict()}, upsert=True
+            )
+
+            return job_id
+        except FailToCreateError as exc:
+            # If the job already exists (e.g. it was dispatched concurrently
+            # by the stuck-upload cron job), the existing job will do the
+            # work, so treat this as success. The winning creator owns the
+            # database record, so there's nothing to update here.
+            if any(e.status == 409 for e in exc.api_exceptions):
+                pp_logger.warning("postprocess_upload_job_already_exists")
+                return existing_job_id or f"postprocess-upload-{crawl_id}"
+            pp_logger.exception(
+                "postprocess_upload_job_failed",
+            )
+            return None
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            pp_logger.exception(
+                "postprocess_upload_job_failed",
+            )
+            return None
+
+    async def ensure_cron_jobs_exist(self):
+        """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
+        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
 
     async def job_finished(
         self,
@@ -584,21 +650,28 @@ class BackgroundJobOps:
         """Update job as finished, including
         job-specific task handling"""
 
-        # For seed file cleanup jobs, no database record will exist for each
+        # For periodic cron jobs, no database record will exist for each
         # run before this point, so create it here
-        if job_type == BgJobType.CLEANUP_SEED_FILES:
+        if job_type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.RETRY_STUCK_UPLOADS):
             if not started:
                 started = finished
-            cleanup_job = CleanupSeedFilesJob(
-                id=f"seed-files-{secrets.token_hex(5)}",
-                type=BgJobType.CLEANUP_SEED_FILES,
-                started=started,
-                finished=finished,
-                success=success,
-            )
-            await self.jobs.insert_one(cleanup_job.to_dict())
+            if job_type == BgJobType.CLEANUP_SEED_FILES:
+                cron_job: BackgroundJob = CleanupSeedFilesJob(
+                    id=f"seed-files-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            else:
+                cron_job = RetryStuckUploadsJob(
+                    id=f"stuck-uploads-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            await self.jobs.insert_one(cron_job.to_dict())
             if not success:
-                await self._send_bg_job_failure_email(cleanup_job, finished)
+                await self._send_bg_job_failure_email(cron_job, finished)
             return
 
         # If org has been successfully deleted in job, delete k8s resources
@@ -663,6 +736,8 @@ class BackgroundJobOps:
         | OptimizePagesJob
         | CleanupSeedFilesJob
         | UpdateCollStatsJob
+        | PostProcessUploadJob
+        | RetryStuckUploadsJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -699,7 +774,17 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.UPDATE_COLL_STATS:
             return UpdateCollStatsJob.from_dict(data)
 
-        return DeleteOrgJob.from_dict(data)
+        if data["type"] == BgJobType.POSTPROCESS_UPLOAD:
+            return PostProcessUploadJob.from_dict(data)
+
+        if data["type"] == BgJobType.RETRY_STUCK_UPLOADS:
+            return RetryStuckUploadsJob.from_dict(data)
+
+        if data["type"] == BgJobType.DELETE_ORG:
+            return DeleteOrgJob.from_dict(data)
+
+        logger.error("unhandled_background_job_type", type=data["type"], data=data)
+        raise ValueError(f"Unhandled background job type: {data['type']}")
 
     async def list_background_jobs(
         self,
@@ -879,6 +964,15 @@ class BackgroundJobOps:
             await self.create_update_collection_stats_job(
                 org.id,
                 job.collection_id,
+                existing_job_id=job.id,
+            )
+            return {"success": True}
+
+        if job.type == BgJobType.POSTPROCESS_UPLOAD:
+            job = cast(PostProcessUploadJob, job)
+            await self.create_postprocess_upload_job(
+                job.oid,
+                job.crawl_id,
                 existing_job_id=job.id,
             )
             return {"success": True}
