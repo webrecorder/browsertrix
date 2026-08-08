@@ -1382,7 +1382,7 @@ export class CollectionDetail extends BtrixElement {
         replayBase="/replay/"
         noSandbox="true"
         noCache="true"
-        hideCollectionMetadata
+        hideMetadataSidebar
         @rwp-page-loading=${(e: RwpPageLoadingEvent) => {
           if (
             !e.detail.loading &&
