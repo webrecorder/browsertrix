@@ -417,7 +417,6 @@ class CollectionOps:
 
             initial_pages, _ = await self.page_ops.list_pages(
                 crawl_ids=crawl_ids,
-                page_size=25,
             )
 
             public = "public/" if public_or_unlisted_only else ""
