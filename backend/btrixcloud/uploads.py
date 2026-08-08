@@ -313,7 +313,11 @@ class UploadOps(BaseCrawlOps):
                     state="multi_wacz_check",
                     file_count=len(upload.files),
                 )
-                resources = await self.resolve_signed_urls(upload.files, org, crawl_id)
+                # force_update so retries don't reuse a cached
+                # presigned url that might have expired
+                resources = await self.resolve_signed_urls(
+                    upload.files, org, crawl_id, force_update=True
+                )
 
                 # bulk_presigned_files doesn't preserve input order, so
                 # match resources back to files by name. FilePreparer adds
@@ -544,13 +548,25 @@ class UploadOps(BaseCrawlOps):
                         f"{crawl_id} exceeds max size",
                     )
 
+                # refresh the presigned url before each child download, since the
+                # url lifetime (PRESIGN_DURATION_MINUTES) could be shorter than
+                # the total split time for a large multi-WACZ file
+                presigned_url, _ = await self.storage_ops.get_presigned_url(
+                    org, original_file, force_update=True
+                )
+                child_wacz_url = self.storage_ops.resolve_internal_access_path(
+                    presigned_url
+                )
+
                 # it's worth retrying these uploads because they may be run in a background
                 # job, we can't count on being able to give the user immediate feedback
                 for attempt in range(1, MAX_UPLOAD_RETRIES + 1):
                     file_prep = FilePreparer(prefix, child_wacz.filename)
 
                     def sync_wacz_stream_iter(
-                        child_wacz=child_wacz, file_prep=file_prep
+                        child_wacz=child_wacz,
+                        file_prep=file_prep,
+                        wacz_url=child_wacz_url,
                     ):
                         with RemoteZip(wacz_url) as remote_zip:
                             with remote_zip.open(child_wacz.filename) as stream:
