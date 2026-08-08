@@ -415,12 +415,16 @@ class CollectionOps:
                 pages_optimized,
             ) = await self.get_collection_crawl_resources(coll_id, org)
 
+            print("Got Resources", flush=True)
+
             initial_pages, _ = await self.page_ops.list_pages(
                 crawl_ids=crawl_ids,
                 page_size=25,
             )
 
             public = "public/" if public_or_unlisted_only else ""
+
+            print("Got Pages", flush=True)
 
             origin = get_origin(headers)
 
@@ -445,6 +449,8 @@ class CollectionOps:
             result["thumbnail"] = await image_file.get_file_out(
                 org, self.storage_ops, headers
             )
+
+        print("Get Thumb", flush=True)
 
         if updates_count:
             result["runningUpdatesCount"] = await self.get_running_updates_count(
