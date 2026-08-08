@@ -22,6 +22,10 @@ spec:
 
     spec:
       template:
+        metadata:
+          labels:
+            role: "background-job"
+            job_type: {{ job_type }}
         spec:
           restartPolicy: Never
           priorityClassName: bg-job
