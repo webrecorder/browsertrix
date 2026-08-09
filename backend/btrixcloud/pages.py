@@ -87,6 +87,14 @@ class PageOps:
     async def init_index(self):
         """init index for pages db collection"""
         await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+
+        await self.pages.create_index(
+            [
+                ("depth", pymongo.ASCENDING),
+                ("crawl_id", pymongo.ASCENDING),
+            ]
+        )
+
         await self.pages.create_index(
             [
                 ("crawl_id", pymongo.HASHED),
@@ -654,6 +662,8 @@ class PageOps:
 
         if isinstance(depth, int):
             query["depth"] = depth
+        else:
+            query["depth"] = {"$gt": 0}
 
         # QA Settings
         if reviewed:
@@ -746,7 +756,8 @@ class PageOps:
                 aggregate.extend([{"$sort": {"url": 1}}])
         else:
             # default sort: seeds first, then by timestamp
-            aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
+            # aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
+            aggregate.extend([{"$sort": {"depth": 1}}])
 
         if include_total:
             aggregate.extend(
