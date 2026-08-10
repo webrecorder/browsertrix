@@ -225,7 +225,7 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
             color: detail.cssColor,
           })}
         ></sl-icon>
-        <div class="min-w-[10ch]">${label}</div>
+        <div class="min-w-[10ch]">${msg("All")} ${label}</div>
         <span slot="suffix"> ${this.localize.number(value)} </span>
       </btrix-menu-item-link>`;
     };
