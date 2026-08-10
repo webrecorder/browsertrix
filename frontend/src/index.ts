@@ -399,16 +399,13 @@ export class App extends BtrixElement {
           class="size-full text-xs transition-opacity duration-slow"
           src="${url}"
         ></iframe>
-        <sl-button
-          size="small"
-          slot="footer"
-          variant="text"
+        <sl-icon-button
+          slot="header-actions"
+          name="box-arrow-up-right"
           href="${url}"
           target="_blank"
-        >
-          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
-          ${msg("Open in new window")}</sl-button
-        >
+          label=${msg("Open in New Tab")}
+        ></sl-icon-button>
       </sl-drawer>
     `;
   }

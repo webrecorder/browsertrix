@@ -46,7 +46,11 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
   #lastUpdated?: Date;
 
   readonly #poll = new PollTask(this, {
-    task: async (_args, { signal }) => {
+    task: async ([orgId], { signal }) => {
+      if (!orgId) {
+        return null;
+      }
+
       try {
         const data = await this.api.fetch<RunningWorkflowCounts>(
           `/orgs/${this.orgId}/crawlconfigs/running`,
@@ -125,8 +129,8 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
   }
 
   disconnectedCallback(): void {
-    window.navigation.removeEventListener("navigate", this.onNavigate);
     super.disconnectedCallback();
+    window.navigation.removeEventListener("navigate", this.onNavigate);
   }
 
   private readonly onNavigate = (e: NavigateEvent) => {
@@ -161,10 +165,9 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
 
   private renderPopover(counts: RunningWorkflowCounts) {
     const href = this.getLink(activeCrawlStates);
-    const showMenu = totalsByStatus.filter(({ key }) => counts[key]).length > 1;
 
     return html`
-      <btrix-popover-menu ?disabled=${!showMenu}>
+      <btrix-popover-menu>
         <sl-button
           slot="trigger"
           size="small"
@@ -172,10 +175,16 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
           href=${href}
           @click=${this.navigate.link}
           aria-live="polite"
+          pill
         >
           <sl-icon slot="prefix" name="dot" library="app"></sl-icon>
           <span class="hidden md:inline"
-            >${pluralOfActiveCrawls(counts.totalRunningPausedWaiting)}</span
+            >${this.userInfo?.isSuperAdmin
+              ? html`${this.localize.number(counts.totalRunningPausedWaiting, {
+                  notation: "compact",
+                })}
+                ${msg("Active in Org")}`
+              : pluralOfActiveCrawls(counts.totalRunningPausedWaiting)}</span
           >
           <span class="md:hidden"
             >${this.localize.number(counts.totalRunningPausedWaiting, {
@@ -183,7 +192,7 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
             })}</span
           >
         </sl-button>
-        ${showMenu ? this.renderMenu(counts) : nothing}
+        ${this.renderMenu(counts)}
       </btrix-popover-menu>
     `;
   }
@@ -210,10 +219,7 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
           })}
         ></sl-icon>
         <div class="min-w-[10ch]">${label}</div>
-        <span slot="suffix" class="flex items-center gap-2">
-          <span>${this.localize.number(value)}</span>
-          <sl-icon name="arrow-right-short" class="text-neutral-500"></sl-icon>
-        </span>
+        <span slot="suffix"> ${this.localize.number(value)} </span>
       </btrix-menu-item-link>`;
     };
 

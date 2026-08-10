@@ -41,8 +41,12 @@ export class ActiveCrawlsBadge extends BtrixElement {
       // Use most updated totals from crawls page poll instead
       if (this.isCrawlsPageVisible) {
         this.#poll.pause();
-      } else if (this.#poll.paused) {
-        void this.#poll.start();
+      } else {
+        if (this.#poll.paused) {
+          void this.#poll.start();
+        } else {
+          void this.#poll.run();
+        }
       }
     }
   }
@@ -52,9 +56,7 @@ export class ActiveCrawlsBadge extends BtrixElement {
       if (!isSuperAdmin) return;
 
       try {
-        const data = await this.getActiveCrawlsTotal(signal);
-
-        return data;
+        return this.getActiveCrawlsTotal(signal);
       } catch (err) {
         console.debug(err);
       }
