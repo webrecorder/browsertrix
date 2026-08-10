@@ -191,7 +191,7 @@ cleanup_files_after_minutes: 1440
 # Cron schedule for checking for uploads stuck in processing
 # without a running background job and retrying them
 # Defaults to every 15 minutes
-stuck_uploads_cron_schedule: "*/15 * * * *"
+stuck_uploads_cron_schedule: "0 * * * *"
 
 # Emails Image
 # =========================================
