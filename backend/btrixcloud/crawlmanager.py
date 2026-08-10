@@ -355,7 +355,6 @@ class CrawlManager(K8sAPI):
     async def ensure_retry_stuck_uploads_cron_job_exists(self):
         """ensure cron background job to retry stuck uploads exists"""
 
-        # Default schedule is every 15 minutes
         default_schedule = "0 * * * *"
         job_schedule = os.environ.get(
             "RETRY_STUCK_UPLOADS_CRON_SCHEDULE", default_schedule
