@@ -84,6 +84,7 @@ nav:
       - Account Settings:
           - user-guide/user-settings.md
       - user-guide/contribute.md
+      - user-guide/tags.md
   - Self-Hosting:
       - Overview: deploy/index.md
       - deploy/local.md
@@ -154,6 +155,9 @@ copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 plugins:
   - search
+  - tags:
+      tags_allowed:
+        - Social Media
   - redirects:
       redirect_maps:
         "user-guide/collections.md": "user-guide/collection.md"
