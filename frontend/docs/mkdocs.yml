@@ -14,8 +14,11 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
     - navigation.tracking
     - navigation.footer
+    - navigation.prune
     - content.code.copy
     - content.action.edit
     - content.tooltips

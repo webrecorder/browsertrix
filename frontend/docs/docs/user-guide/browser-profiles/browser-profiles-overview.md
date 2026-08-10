@@ -1,3 +1,10 @@
+---
+hide:
+  - tags
+tags:
+  - Social Media
+---
+
 # Intro to Browser Profiles
 
 Browser profiles are saved instances of a web browsing session that can be used to configure a website before it is crawled.

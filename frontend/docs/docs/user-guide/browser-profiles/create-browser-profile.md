@@ -1,10 +1,3 @@
----
-hide:
-  - tags
-tags:
-  - Social Media
----
-
 # Create a New Browser Profile
 
 To create a new browser profile, press _New Browser Profile_ on the **Browser Profiles** page.
