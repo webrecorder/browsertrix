@@ -44,6 +44,7 @@ const POLL_INTERVAL_SECONDS = 60;
 @localized()
 export class OrgActiveCrawlsStatus extends BtrixElement {
   #lastUpdated?: Date;
+  #urlAtLastPoll?: string;
 
   readonly #poll = new PollTask(this, {
     task: async ([orgId], { signal }) => {
@@ -65,6 +66,9 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
         } else {
           this.#poll.setOptions({ timeoutSeconds: POLL_INTERVAL_SECONDS });
         }
+
+        this.#urlAtLastPoll = window.location.href;
+        this.#lastUpdated = new Date();
 
         return data;
       } catch (err) {
@@ -103,8 +107,6 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
       task: ([total]) => {
         if (total === undefined) return;
 
-        this.#lastUpdated = new Date();
-
         this.dispatchEvent(
           makeUpdateActiveCrawlsCountEvent({
             userOrg: total,
@@ -138,7 +140,12 @@ export class OrgActiveCrawlsStatus extends BtrixElement {
       return;
     }
 
-    if (!this.#poll.paused && !this.#poll.value?.totalRunningPausedWaiting) {
+    if (this.#poll.paused) return;
+
+    if (
+      e.destination.url.startsWith(this.navigate.orgBasePath) &&
+      this.#urlAtLastPoll !== e.destination.url
+    ) {
       // Check if there's active crawls
       void this.#poll.run();
     }

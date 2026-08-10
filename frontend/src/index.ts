@@ -143,10 +143,6 @@ export class App extends BtrixElement {
     this.addEventListener("btrix-need-login", this.onNeedLogin);
     this.addEventListener("btrix-logged-in", this.onLoggedIn);
     this.addEventListener("btrix-log-out", this.onLogOut);
-    this.addEventListener("btrix-update-active-crawls-status", (e: Event) => {
-      e.stopPropagation();
-      console.log("update status");
-    });
     this.attachUserGuideListeners();
   }
 
@@ -386,7 +382,7 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[header-actions]:px-1 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
         ?open=${this.appState.userGuideOpen}
         contained
         @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
@@ -713,7 +709,10 @@ export class App extends BtrixElement {
   ) => {
     e.stopPropagation();
 
-    this.activeCrawlsCount = e.detail;
+    this.activeCrawlsCount = {
+      ...this.activeCrawlsCount,
+      ...e.detail,
+    };
   };
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {

@@ -10,8 +10,8 @@ declare global {
 
 export const makeUpdateActiveCrawlsCountEvent = (
   detail: BtrixUpdateActiveCrawlsCount["detail"],
-) =>
-  new CustomEvent<BtrixUpdateActiveCrawlsCount["detail"]>(
+) => {
+  return new CustomEvent<BtrixUpdateActiveCrawlsCount["detail"]>(
     "btrix-update-active-crawls-count",
     {
       detail,
@@ -19,3 +19,4 @@ export const makeUpdateActiveCrawlsCountEvent = (
       bubbles: true,
     },
   );
+};

@@ -38,15 +38,21 @@ export class ActiveCrawlsBadge extends BtrixElement {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("viewState") && this.viewState) {
-      // Use most updated totals from crawls page poll instead
-      if (this.isCrawlsPageVisible) {
-        this.#poll.pause();
+      if (this.userInfo?.isSuperAdmin) {
+        this.updatePollForPage();
+      }
+    }
+  }
+
+  private updatePollForPage() {
+    // Use most updated totals from crawls page poll instead
+    if (this.isCrawlsPageVisible) {
+      this.#poll.pause();
+    } else {
+      if (this.#poll.paused) {
+        void this.#poll.start();
       } else {
-        if (this.#poll.paused) {
-          void this.#poll.start();
-        } else {
-          void this.#poll.run();
-        }
+        void this.#poll.run();
       }
     }
   }
@@ -61,7 +67,12 @@ export class ActiveCrawlsBadge extends BtrixElement {
         console.debug(err);
       }
     },
-    args: () => [this.userInfo?.isSuperAdmin, this.orgId] as const,
+    args: () =>
+      [
+        this.userInfo?.isSuperAdmin,
+        this.orgId,
+        this.activeCrawlsCount?.userOrg,
+      ] as const,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
