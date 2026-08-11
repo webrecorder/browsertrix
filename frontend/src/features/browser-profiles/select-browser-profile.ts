@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type {
@@ -12,9 +13,19 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import type { NewBrowserProfileDialog } from "./new-browser-profile-dialog";
 import { originsWithRemainder } from "./templates/origins-with-remainder";
+import { type ProfileUpdatedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import { none } from "@/layouts/empty";
 import { pageHeading } from "@/layouts/page";
 import { CrawlerChannelImage, type Profile } from "@/pages/org/types";
@@ -25,6 +36,7 @@ import type {
   APISortQuery,
 } from "@/types/api";
 import { SortDirection } from "@/types/utils";
+import { getDefaultProxyId } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -35,6 +47,7 @@ type SelectBrowserProfileChangeDetail = {
 
 // TODO Paginate results
 const INITIAL_PAGE_SIZE = 1000;
+const NEW_PROFILE_KEY = "_new";
 
 export type SelectBrowserProfileChangeEvent =
   CustomEvent<SelectBrowserProfileChangeDetail>;
@@ -54,6 +67,12 @@ export type SelectBrowserProfileChangeEvent =
 @customElement("btrix-select-browser-profile")
 @localized()
 export class SelectBrowserProfile extends BtrixElement {
+  @consume({ context: orgProxiesContext, subscribe: true })
+  private readonly proxies?: OrgProxiesContext;
+
+  @consume({ context: orgCrawlerChannelsContext, subscribe: true })
+  private readonly crawlerChannels?: OrgCrawlerChannelsContext;
+
   @property({ type: String })
   size?: SlSelect["size"];
 
@@ -78,6 +97,9 @@ export class SelectBrowserProfile extends BtrixElement {
   @query("sl-drawer")
   private readonly drawer?: SlDrawer | null;
 
+  @query("btrix-new-browser-profile-dialog")
+  private readonly newBrowserProfileDialog?: NewBrowserProfileDialog | null;
+
   public get value() {
     return this.select?.value as string;
   }
@@ -97,8 +119,8 @@ export class SelectBrowserProfile extends BtrixElement {
   });
 
   private readonly selectedProfileTask = new Task(this, {
-    task: async ([profileId, profiles], { signal }) => {
-      if (!profileId || !profiles || signal.aborted) return;
+    task: async ([profileId, profiles]) => {
+      if (!profileId || !profiles) return;
 
       this.selectedProfile = this.findProfileById(profileId);
     },
@@ -131,9 +153,6 @@ export class SelectBrowserProfile extends BtrixElement {
       >
         ${loading ? html`<sl-spinner slot="prefix"></sl-spinner>` : nothing}
         ${this.renderProfileOptions()}
-        ${browserProfiles && !browserProfiles.total
-          ? this.renderNoProfiles()
-          : ""}
         <div slot="help-text" class="flex justify-between">
           ${selectedProfile
             ? html`
@@ -169,6 +188,31 @@ export class SelectBrowserProfile extends BtrixElement {
       ${browserProfiles || selectedProfile
         ? this.renderSelectedProfileInfo()
         : ""}
+      ${this.org && this.proxies && this.crawlerChannels
+        ? html`<btrix-new-browser-profile-dialog
+            .proxyServers=${this.proxies.servers}
+            .crawlerChannels=${this.crawlerChannels}
+            defaultProxyId=${ifDefined(
+              getDefaultProxyId(this.org, this.proxies),
+            )}
+            defaultCrawlerChannel=${ifDefined(
+              this.org.crawlingDefaults?.crawlerChannel || undefined,
+            )}
+            @btrix-updated=${async (e: ProfileUpdatedEvent) => {
+              e.stopPropagation();
+              const { id } = e.detail;
+
+              if (id) {
+                void this.profilesTask.run();
+                await this.profilesTask.taskComplete;
+                this.profileId = id;
+              } else {
+                console.debug("no id for updated profile", e.detail);
+              }
+            }}
+          >
+          </btrix-new-browser-profile-dialog>`
+        : nothing}
     `;
   }
 
@@ -238,7 +282,9 @@ export class SelectBrowserProfile extends BtrixElement {
     }
 
     return html`
-      <sl-option value="">${msg("No custom profile")}</sl-option>
+      ${profiles.length
+        ? html`<sl-option value="">${msg("No custom profile")}</sl-option>`
+        : nothing}
       ${suggestions.length
         ? html`
             <sl-divider></sl-divider>
@@ -257,6 +303,11 @@ export class SelectBrowserProfile extends BtrixElement {
             ${rest.map(option)}
           `
         : nothing}
+      ${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
+      <sl-option value=${NEW_PROFILE_KEY}>
+        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+        ${msg("New Browser Profile")}
+      </sl-option>
     `;
   }
 
@@ -300,7 +351,7 @@ export class SelectBrowserProfile extends BtrixElement {
     };
 
     return html` <sl-drawer
-      class="[--body-spacing:var(--sl-spacing-medium)] [--footer-spacing:var(--sl-spacing-x-small)_var(--sl-spacing-medium)] [--header-spacing:var(--sl-spacing-medium)]  part-[header]:[border-bottom:1px_solid_var(--sl-panel-border-color)]"
+      class="[--body-spacing:var(--sl-spacing-medium)] [--footer-spacing:var(--sl-spacing-x-small)_var(--sl-spacing-medium)] [--header-spacing:var(--sl-spacing-medium)] part-[header]:[border-bottom:1px_solid_var(--sl-panel-border-color)]"
       @sl-show=${() => {
         // Hide any other open panels
         AppStateService.updateUserGuideOpen(false);
@@ -365,41 +416,24 @@ export class SelectBrowserProfile extends BtrixElement {
     </btrix-desc-list>`;
   };
 
-  private renderNoProfiles() {
-    return html`
-      <div class="mx-2 text-sm text-neutral-500">
-        <span class="inline-block align-middle"
-          >${msg("This org doesn't have any custom profiles yet.")}</span
-        >
-        <a
-          href=${`${this.navigate.orgBasePath}/browser-profiles?new=browser-profile`}
-          class="font-medium text-primary hover:text-primary-500"
-          target="_blank"
-          @click=${(e: Event) => {
-            const select = (e.target as HTMLElement).closest<SlSelect>(
-              "sl-select",
-            );
-            if (select) {
-              select.blur();
-              // TODO what is this? why isn't it documented in Shoelace?
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (select as any).dropdown?.hide();
-            }
-          }}
-          ><span class="inline-block align-middle"
-            >${msg("Create profile")}</span
-          >
-          <sl-icon
-            class="inline-block align-middle"
-            name="box-arrow-up-right"
-          ></sl-icon
-        ></a>
-      </div>
-    `;
-  }
-
   private async onChange(e: SlChangeEvent) {
-    const profileId = (e.target as SlSelect | null)?.value as string;
+    const el = e.currentTarget as SlSelect;
+    const profileId = el.value as string;
+
+    if (profileId === NEW_PROFILE_KEY) {
+      e.preventDefault();
+
+      // Revert value
+      el.value = this.profileId || "";
+
+      if (this.newBrowserProfileDialog) {
+        this.newBrowserProfileDialog.show();
+      } else {
+        console.debug("no <btrix-new-browser-profile-dialog>");
+      }
+      return;
+    }
+
     this.selectedProfile = this.findProfileById(profileId);
 
     await this.updateComplete;

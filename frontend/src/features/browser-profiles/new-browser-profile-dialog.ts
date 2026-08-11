@@ -21,6 +21,9 @@ import {
   type Proxy,
 } from "@/types/crawler";
 
+/**
+ * @fires btrix-updated
+ */
 @customElement("btrix-new-browser-profile-dialog")
 @localized()
 export class NewBrowserProfileDialog extends BtrixElement {
@@ -77,6 +80,14 @@ export class NewBrowserProfileDialog extends BtrixElement {
           this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
+  }
+
+  show() {
+    void this.dialog?.show();
+  }
+
+  hide() {
+    void this.dialog?.hide();
   }
 
   render() {
@@ -197,8 +208,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
               proxyId: this.proxyId ?? undefined,
             }}
             ?open=${this.browserOpen}
-            @btrix-updated=${() => {}}
-            @sl-after-hide=${() => {}}
+            @sl-hide=${() => void this.dialog?.hide()}
           >
           </btrix-profile-browser-dialog>`,
       )}

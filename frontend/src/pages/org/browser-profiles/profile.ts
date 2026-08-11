@@ -775,6 +775,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   }
 
   private readonly onUpdated = async (e: ProfileUpdatedEvent) => {
+    e.stopPropagation();
     this.updatedProfileParams = e.detail;
     void this.profileTask.run();
   };

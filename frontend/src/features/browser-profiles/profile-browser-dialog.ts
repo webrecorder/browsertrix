@@ -110,14 +110,16 @@ export class ProfileBrowserDialog extends BtrixElement {
     task: async ([browserId, config], { signal }) => {
       if (!browserId || !config) return;
 
+      const name =
+        config.name ||
+        this.profile?.name ||
+        new URL(config.url).origin.slice(0, 50);
+
       try {
         const data = await this.saveProfile(
           {
             browserId,
-            name:
-              config.name ||
-              this.profile?.name ||
-              new URL(config.url).origin.slice(0, 50),
+            name,
           },
           signal,
         );
@@ -125,7 +127,11 @@ export class ProfileBrowserDialog extends BtrixElement {
         this.#savedBrowserId = browserId;
 
         this.dispatchEvent(
-          new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated"),
+          new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated", {
+            detail: { id: data.id, name },
+            composed: true,
+            bubbles: true,
+          }),
         );
 
         return data;
@@ -372,9 +378,19 @@ export class ProfileBrowserDialog extends BtrixElement {
 
       if (this.saveProfileTask.value?.id) {
         void dialog?.hide();
-        this.navigate.to(
-          `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
-        );
+
+        const url = new URL(window.location.href);
+
+        // Don't navigate away if creating a browser profile from a workflow
+        if (
+          !url.pathname.startsWith(
+            `${this.navigate.orgBasePath}/${OrgTab.Workflows}/`,
+          )
+        ) {
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
+          );
+        }
       } else {
         await dialog?.hide();
       }
