@@ -1,5 +1,7 @@
 # Presentation & Sharing
 
+To present a collection to viewers outside of your organization, you can enable a shareable link.
+
 ## Share a Collection
 
 A collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover.
@@ -27,7 +29,9 @@ Once you've opened the share settings dialog from one of these three locations, 
 2. Optional: Viewers can download the collection by default. To disable downloads, toggle _Show download button_ off.
 3. Save.
 
-## Customize a Collection
+The collection will now have a _Link to Share_ that can be given to anyone, even those without a Browsertrix account.
+
+## Edit a Collection
 
 You can customize how your collection appears to the public by making edits from the collection management page. This is same page from which you configure archived items and deduplication settings.
 

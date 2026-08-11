@@ -4,13 +4,13 @@ With a public collections gallery, you can create a dedicated page that showcase
 
 ## Enable Public Collections Gallery
 
-To active the public collections gallery:
+To activate the public collections gallery:
 
-1. Navigate to org **Settings**.
+1. Navigate to org **Settings** (only available to org admins).
 2. Toggle _Enable public collections gallery_ on.
 3. Save.
 
-You can share the link to your public collections gallery by copying the lin in org **Settings**, or by clicking on the copy button next to the _Visit public collections gallery_ link in the org dashboard.
+You can share the link to your public collections gallery by copying the link in org **Settings**, or by clicking on the copy button next to the _Visit public collections gallery_ link in the org dashboard.
 
 ### Customizing the Gallery
 
@@ -62,6 +62,6 @@ Link to your org's (or your personal) website so viewers can visit from your Pub
 
 ## Disable Public Collections Gallery
 
-To disable the shareable link to the public collections gallery, toggle _Enable public collections gallery_ off from org **Settings**.
+To disable the shareable link to the public collections gallery, toggle _Enable public collections gallery_ off from [org settings](org-settings.md).
 
 The gallery will still be available for logged-in org members to preview, but the page will no longer be visible to the public. Public collections will be treated the same as _Unlisted_ when the public gallery is turned off.
