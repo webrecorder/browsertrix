@@ -48,6 +48,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: Boolean })
+  navigateOnSave = false;
+
   @state()
   browserOpen = false;
 
@@ -215,6 +218,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
               proxyId: this.proxyId ?? undefined,
             }}
             ?open=${this.browserOpen}
+            ?navigateOnSave=${this.navigateOnSave}
             @sl-hide=${() => void this.dialog?.hide()}
           >
           </btrix-profile-browser-dialog>`,

@@ -187,6 +187,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         .config=${config}
         ?open=${this.openDialog === "browser" || duplicating}
         ?duplicating=${duplicating}
+        ?navigateOnSave=${duplicating}
         @btrix-updated=${duplicating ? undefined : this.onUpdated}
         @sl-after-hide=${this.closeBrowser}
       >
