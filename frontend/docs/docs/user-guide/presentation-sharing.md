@@ -21,7 +21,7 @@ To access share settings from the collection management page, open the _Actions_
 
 ### Share Settings Dialog
 
-Once you've opened the share settings dialog from one of the three locations:
+Once you've opened the share settings dialog from one of these three locations, you can make the collection shareable with the following steps:
 
 1. Change the visibility to _Unlisted_ or _Public_.
 2. Optional: Viewers can download the collection by default. To disable downloads, toggle _Show download button_ off.
@@ -29,7 +29,7 @@ Once you've opened the share settings dialog from one of the three locations:
 
 ## Customize a Collection
 
-You can customize how your collection appears to the public by making edits from the collection management page, the same page from which you configure archived items and deduplication settings.
+You can customize how your collection appears to the public by making edits from the collection management page. This is same page from which you configure archived items and deduplication settings.
 
 Every aspect of the collection with a :bootstrap-pencil: icon next to it, like collection name, is editable in-place.
 
@@ -67,3 +67,7 @@ To update the initial view, select _Set Homepage_ and choose an option:
 - **Page List** — A list of all crawl URLs.
 
 If the _Current Page_ option is chosen, the collection thumbnail will automatically be updated to a screenshot of that page.
+
+## Un-share a Collection
+
+To disable the shareable link to a collection, follow the steps in [Share a Collection](#share-a-collection) but choose _Private_ for _Visibility_. Visitors to the link will no longer be able to browse, download, or view the collection.

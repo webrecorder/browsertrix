@@ -7,14 +7,10 @@ With a public collections gallery, you can create a dedicated page that showcase
 To active the public collections gallery:
 
 1. Navigate to org **Settings**.
-2. Toggle **Enable public collections gallery** on.
+2. Toggle _Enable public collections gallery_ on.
 3. Save.
 
-You can share the link to your public collections gallery by copying the lin in org **Settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
-
-If you choose to hide the gallery later, you can go back to the setting and set the toggle to off at any time.
-The gallery will still be available for logged-in org members to preview, but the public page will be hidden.
-Public collections will be treated the same as _Unlisted_ when the public gallery is turned off.
+You can share the link to your public collections gallery by copying the lin in org **Settings**, or by clicking on the copy button next to the _Visit public collections gallery_ link in the org dashboard.
 
 ### Customizing the Gallery
 
@@ -52,7 +48,7 @@ You'll take similar steps from [Add Collections](./public-collections-gallery.md
 
 ### Customize Collections
 
-The [Presentation and Sharing](./presentation-sharing.md) page provides further details for options on how to present and share Collections in your Public Collections Gallery. Your Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account.
+The [Presentation & Sharing](./presentation-sharing.md) guide provides further details for options on how to present and share Collections in your Public Collections Gallery. Your Public Collection Gallery page will automatically have the title of your org. You can customize this page by including a **Description** and your org's **Website** by adding them from your org's **Settings** of your account.
 
 ### Description
 
@@ -64,10 +60,8 @@ The **Description** supports basic text formatting like headings, bold and itali
 
 Link to your org's (or your personal) website so viewers can visit from your Public Collections Gallery page.
 
-how your Collection appears to the public by clicking the edit button :bootstrap-pencil: in each collection to:
+## Disable Public Collections Gallery
 
-- **Name** it and add a **description** — include emojis if that’s your style 😉
+To disable the shareable link to the public collections gallery, toggle _Enable public collections gallery_ off from org **Settings**.
 
-- Select a **thumbnail** to represent it: Choose between a page screenshot and a placeholder
-
-- Choose the **initial view** for your collection.
+The gallery will still be available for logged-in org members to preview, but the page will no longer be visible to the public. Public collections will be treated the same as _Unlisted_ when the public gallery is turned off.

@@ -16,11 +16,9 @@ The summary is a short description that summarizes this collection. If the colle
 
 In most cases, you will want to keep the default _Private_ visibility setting until items are added to your collection. If you do change this setting, the empty collection will be [shareable](#collection-access) upon creation.
 
-## Customize the Collection
+## Configure the Collection
 
 ### Add Archived Items
-
-Collections are the primary way of organizing and combining archived items into groups for presentation.
 
 Choose _Configure Items_ from the collection's actions menu to select crawled and uploaded items to add to a collection.
 
@@ -64,10 +62,14 @@ Collections can be set to one of the one following access modes:
 - **Unlisted** — Collection can be shared with others, given the link to the collection.
 - **Public** — Collection can be shared with others and is listed in the [public collections gallery](org-settings.md#public-collections-gallery).
 
-The [Presentation and Sharing](./presentation-sharing.md) guide provides further details for options on how to present and share collections.
+The [Presentation & Sharing](./presentation-sharing.md) guide provides further details for options on how to present and share collections.
 
 ## Deduplicate Content
 
 Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored. When deduplication is enabled, the crawler will reference a collection’s existing items when checking for new content and URLs. Content that is identical, even when found at a different URL, will be deduplicated by writing "revisit" records rather than the full resource in the resulting crawl WACZ files. This results in a smaller, space-saving collection and smaller archived items.
 
 The [Deduplication](./deduplication.md) page goes into further detail on how deduplication works in Browsertrix, some of the tradeoffs and considerations for replay and download to keep in mind, and how to create and manage the deduplication index for a collection.
+
+## Remove a Collection
+
+To permanently remove a collection from your org, choose _Delete Collection_ from the collection _Actions_ menu. Deleting a collection will not delete any archived items.
