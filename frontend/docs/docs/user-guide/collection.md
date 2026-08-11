@@ -36,7 +36,7 @@ If the collection is shareable, the description will be made public in **About T
 
 ### Add a Thumbnail
 
-The collection thumbnail represents the content of the collection by using a page screenshot. To choose a page screenshot, select the :bootstrap-pencil: button attached to the collection thumbnail to view compatible page screenshots.
+The collection thumbnail represents the content of the collection by using a page screenshot. To choose a page screenshot, select the :bootstrap-pencil: button on top of the collection thumbnail to view compatible page screenshots.
 
 ## Browse Collection
 
@@ -45,10 +45,10 @@ The **Browse Collection** section of a collection allows you to view a combined 
 !!! tip "Tip: Patching a crawl with interactive archiving"
     If the crawler has not captured every resource or interaction on a webpage, our [ArchiveWeb.page browser extension](https://webrecorder.net/archivewebpage) can be used to interactively capture missing content using your web browser and upload it directly to your org.
 
-To update the initial view of the **Browse Collection** tab, select _Set Homepage_ and choose an option:
+To update the initial view of **Browse Collection**, select _Set Homepage_ and choose an option:
 
-- **Current Page** — The page that is open in the replay view.
-- **Page List** — A list of all primary pages.
+- **Current Page** — The page that is currently open in your replay view.
+- **Page List** — A list of all crawl URLs.
 
 If the _Current Page_ option is chosen, the collection thumbnail will automatically be updated to a screenshot of that page.
 

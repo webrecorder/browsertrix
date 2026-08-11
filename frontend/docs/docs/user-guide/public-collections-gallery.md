@@ -6,9 +6,9 @@ With a public collections gallery, you can create a dedicated page that showcase
 
 To active the public collections gallery:
 
-1. Navigate to org **Settings**
-2. Toggle **Enable public collections gallery** on
-3. Save
+1. Navigate to org **Settings**.
+2. Toggle **Enable public collections gallery** on.
+3. Save.
 
 You can share the link to your public collections gallery by copying the lin in org **Settings**, or by clicking on the copy button next to "**Visit public collections gallery**" from your dashboard.
 
