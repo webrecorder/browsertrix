@@ -42,9 +42,14 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
+type SelectedProfile = Partial<Profile> & Pick<Profile, "id" | "name">;
 type SelectBrowserProfileChangeDetail = {
-  value: Profile | undefined;
+  value: SelectedProfile | undefined;
 };
+
+const isFullProfile = (
+  profile: SelectedProfile | Profile,
+): profile is Profile => "modified" in profile || "created" in profile;
 
 // TODO Paginate results
 const INITIAL_PAGE_SIZE = 1000;
@@ -90,7 +95,7 @@ export class SelectBrowserProfile extends BtrixElement {
   suggestOrigins?: string[];
 
   @state()
-  selectedProfile?: Profile;
+  selectedProfile?: SelectedProfile;
 
   @property({ type: Boolean })
   allowNew = false;
@@ -123,17 +128,34 @@ export class SelectBrowserProfile extends BtrixElement {
   });
 
   private readonly selectedProfileTask = new Task(this, {
-    task: async ([profileId, profiles]) => {
+    task: async ([profileId, profiles], { signal }) => {
       if (!profileId || !profiles) return;
 
-      this.selectedProfile = this.findProfileById(profileId);
+      let profile = this.findProfileById(profileId);
+
+      if (!profile) {
+        try {
+          profile = await this.getProfile(profileId, signal);
+        } catch (err) {
+          console.debug(err);
+        }
+      }
+
+      this.selectedProfile = profile;
+
+      return profile;
     },
     args: () => [this.profileId, this.profilesTask.value] as const,
   });
 
   private findProfileById(profileId?: string) {
     if (!profileId) return;
-    return this.profilesTask.value?.items.find(({ id }) => id === profileId);
+    return (
+      this.profilesTask.value?.items.find(({ id }) => id === profileId) || {
+        id: profileId,
+        name: profileId,
+      }
+    );
   }
 
   render() {
@@ -156,7 +178,7 @@ export class SelectBrowserProfile extends BtrixElement {
         ${loading ? html`<sl-spinner slot="prefix"></sl-spinner>` : nothing}
         ${this.renderProfileOptions()}
         <div slot="help-text" class="flex justify-between">
-          ${selectedProfile
+          ${selectedProfile && isFullProfile(selectedProfile)
             ? html`
                 <button
                   class="text-blue-500 transition-colors duration-fast hover:text-blue-600"
@@ -195,12 +217,22 @@ export class SelectBrowserProfile extends BtrixElement {
             )}
             @btrix-updated=${async (e: ProfileUpdatedEvent) => {
               e.stopPropagation();
-              const { id } = e.detail;
+              const { id, name } = e.detail;
 
               if (id) {
                 void this.profilesTask.run();
                 await this.profilesTask.taskComplete;
-                this.profileId = id;
+
+                this.dispatchEvent(
+                  new CustomEvent<SelectBrowserProfileChangeDetail>(
+                    "on-change",
+                    {
+                      detail: {
+                        value: { id, name: name ?? id },
+                      },
+                    },
+                  ),
+                );
               } else {
                 console.debug("no id for updated profile", e.detail);
               }
@@ -380,7 +412,9 @@ export class SelectBrowserProfile extends BtrixElement {
         <span class="leading-4">${this.selectedProfile?.name}</span>
       </span>
 
-      ${when(this.selectedProfile, profileContent)}
+      ${this.selectedProfile && isFullProfile(this.selectedProfile)
+        ? profileContent(this.selectedProfile)
+        : nothing}
     </sl-drawer>`;
   }
 
@@ -482,6 +516,15 @@ export class SelectBrowserProfile extends BtrixElement {
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
+      { signal },
+    );
+
+    return data;
+  }
+
+  private async getProfile(id: string, signal: AbortSignal) {
+    const data = await this.api.fetch<Profile>(
+      `/orgs/${this.orgId}/profiles/${id}`,
       { signal },
     );
 
