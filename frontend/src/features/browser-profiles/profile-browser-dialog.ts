@@ -50,6 +50,9 @@ export class ProfileBrowserDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: Boolean })
+  navigateOnSave = false;
+
   @state()
   private browserStatus = BrowserStatus.Initial;
 
@@ -379,14 +382,7 @@ export class ProfileBrowserDialog extends BtrixElement {
       if (this.saveProfileTask.value?.id) {
         void dialog?.hide();
 
-        const url = new URL(window.location.href);
-
-        // Don't navigate away if creating a browser profile from a workflow
-        if (
-          !url.pathname.startsWith(
-            `${this.navigate.orgBasePath}/${OrgTab.Workflows}/`,
-          )
-        ) {
+        if (this.navigateOnSave) {
           this.navigate.to(
             `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
           );
