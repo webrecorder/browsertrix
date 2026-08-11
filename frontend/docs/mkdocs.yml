@@ -19,6 +19,7 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tooltips
+    - content.tabs.link
     - search.suggest
   palette:
     scheme: webrecorder
@@ -126,6 +127,8 @@ markdown_extensions:
       options:
         custom_icons:
           - docs/overrides/.icons
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - pymdownx.inlinehilite
   - pymdownx.details
@@ -135,6 +138,7 @@ markdown_extensions:
   - pymdownx.keys
   - def_list
   - attr_list
+  - md_in_html
 
 extra:
   generator: false
