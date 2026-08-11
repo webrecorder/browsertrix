@@ -31,6 +31,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   defaultUrl?: string;
 
   @property({ type: String })
+  defaultName?: string;
+
+  @property({ type: String })
   defaultProxyId?: string;
 
   @property({ type: String })
@@ -155,7 +158,11 @@ export class NewBrowserProfileDialog extends BtrixElement {
             label=${msg("Profile Name")}
             name="profile-name"
             placeholder=${msg("example.com")}
-            value=${ifDefined(this.defaultUrl)}
+            value=${ifDefined(
+              this.defaultName ??
+                (this.defaultUrl &&
+                  new URL(this.defaultUrl).hostname.slice(0, 50)),
+            )}
             help-text=${msg(
               "Defaults to the primary site's domain name if omitted.",
             )}

@@ -190,8 +190,10 @@ export class SelectBrowserProfile extends BtrixElement {
         : ""}
       ${this.org && this.proxies && this.crawlerChannels
         ? html`<btrix-new-browser-profile-dialog
-            .defaultUrl=${this.suggestOrigins?.[0] &&
-            `https://${this.suggestOrigins[0]}`}
+            defaultUrl=${ifDefined(
+              this.suggestOrigins?.[0] && `https://${this.suggestOrigins[0]}`,
+            )}
+            defaultName=""
             .proxyServers=${this.proxies.servers}
             .crawlerChannels=${this.crawlerChannels}
             defaultProxyId=${ifDefined(
