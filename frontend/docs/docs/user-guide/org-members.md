@@ -8,11 +8,14 @@ Sent invites can be invalidated by pressing the trash button in the relevant _Pe
 
 ## Permission Levels
 
-`Viewer`
+### Viewer
+
 : Users with the viewer role have read-only access to all material within the organization. They cannot create or edit archived items, crawl workflows, browser profiles, or collections. They also do not have access to any crawl analysis or review tools.
 
-`Crawler`
+### Crawler
+
 : Users with the crawler role can create crawl workflows and collections, but they cannot delete existing archived items that they were not responsible for creating.
 
-`Admin`
+### Admin
+
 : Users with the administrator role have full access to the organization, including its settings page.
