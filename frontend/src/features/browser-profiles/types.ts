@@ -1,7 +1,7 @@
 import type { Profile } from "@/types/crawler";
 
 export type ProfileUpdatedEvent = CustomEvent<
-  Partial<Pick<Profile, "name" | "description">>
+  Partial<Pick<Profile, "id" | "name" | "description">>
 >;
 
 export type CreateBrowserOptions = {
