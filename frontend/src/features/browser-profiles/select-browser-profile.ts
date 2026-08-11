@@ -30,6 +30,7 @@ import { none } from "@/layouts/empty";
 import { pageHeading } from "@/layouts/page";
 import { CrawlerChannelImage, type Profile } from "@/pages/org/types";
 import { OrgTab } from "@/routes";
+import { stringFor } from "@/strings/ui";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -91,6 +92,9 @@ export class SelectBrowserProfile extends BtrixElement {
   @state()
   selectedProfile?: Profile;
 
+  @property({ type: Boolean })
+  allowNew = false;
+
   @query("sl-select")
   private readonly select?: SlSelect | null;
 
@@ -141,9 +145,7 @@ export class SelectBrowserProfile extends BtrixElement {
       <sl-select
         label=${msg("Browser Profile")}
         value=${this.profileId || selectedProfile?.id || ""}
-        placeholder=${browserProfiles
-          ? msg("No custom profile")
-          : msg("Loading")}
+        placeholder=${browserProfiles ? stringFor.none : msg("Loading")}
         size=${ifDefined(this.size)}
         hoist
         clearable
@@ -170,18 +172,7 @@ export class SelectBrowserProfile extends BtrixElement {
                   )}
                 </span>
               `
-            : browserProfiles
-              ? html`
-                  <btrix-link
-                    class="ml-auto"
-                    href="${this.navigate
-                      .orgBasePath}/${OrgTab.BrowserProfiles}"
-                    target="_blank"
-                  >
-                    ${msg("View Browser Profiles")}
-                  </btrix-link>
-                `
-              : nothing}
+            : nothing}
         </div>
       </sl-select>
 
@@ -287,7 +278,7 @@ export class SelectBrowserProfile extends BtrixElement {
 
     return html`
       ${profiles.length
-        ? html`<sl-option value="">${msg("No custom profile")}</sl-option>`
+        ? html`<sl-option value="">${stringFor.none}</sl-option>`
         : nothing}
       ${suggestions.length
         ? html`
@@ -307,11 +298,31 @@ export class SelectBrowserProfile extends BtrixElement {
             ${rest.map(option)}
           `
         : nothing}
-      ${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
-      <sl-option value=${NEW_PROFILE_KEY}>
-        <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-        ${msg("New Browser Profile")}
-      </sl-option>
+      ${when(
+        !this.allowNew && !profiles.length,
+        () =>
+          html`<sl-menu-label
+            class="part-[base]:flex part-[base]:items-center part-[base]:justify-between"
+          >
+            <span>${msg("No browser profiles found.")}</span>
+            <btrix-link
+              class="ml-auto"
+              href="${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}"
+              target="_blank"
+            >
+              ${msg("Manage Profiles")}
+            </btrix-link>
+          </sl-menu-label>`,
+      )}
+      ${when(
+        this.allowNew,
+        () =>
+          html`${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
+            <sl-option value=${NEW_PROFILE_KEY}>
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("New Browser Profile")}
+            </sl-option>`,
+      )}
     `;
   }
 

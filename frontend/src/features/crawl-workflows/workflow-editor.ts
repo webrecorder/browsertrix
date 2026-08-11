@@ -2242,6 +2242,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   : this.formState.saveStorage,
             });
           }}
+          allowNew
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(html`
