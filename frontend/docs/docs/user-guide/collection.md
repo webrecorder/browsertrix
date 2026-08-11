@@ -1,6 +1,6 @@
 # Intro to Collections
 
-A collection is a specific, user-directed grouping of either crawls or uploaded WACZ files, both [archived items](./archived-items.md). You can create a collection, add content to your collection, include a description to your collection, download your collection, and share your collection whichever way you need to others in your community.
+Collections provide a way to dynamically combine and group multiple individual crawls and uploads into a contextual, unified archive replay experience.
 
 ## Create a Collection
 
@@ -30,7 +30,7 @@ A crawl workflow can also be set to [automatically add crawled items to a collec
 
 Whereas the collection summary can help describe the collection at a glance, the long-form description lets you add details that can help contextualize the collection and its contents.
 
-To write a description, select _Add Description_ from the **About** tab or choose _Edit Description_ from the _Actions_ menu. Description scan be written in plain text or [GitHub-style Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+To write a description, select _Add Description_ from the **About** tab or choose _Edit Description_ from the _Actions_ menu. The description supports basic text formatting like headings, bold and italicized text, lists, and links.
 
 If the collection is shareable, the description will be made public in **About This Collection**.
 
@@ -60,7 +60,7 @@ Downloading a collection will export every archived item in it as a single WACZ 
 
 Collections can be set to one of the one following access modes:
 
-- **Private** — Collection is only accessible to logged-in users in the same organization.
+- **Private** — Collection is only accessible to logged-in members in the same organization.
 - **Unlisted** — Collection can be shared with others, given the link to the collection.
 - **Public** — Collection can be shared with others and is listed in the [public collections gallery](org-settings.md#public-collections-gallery).
 
