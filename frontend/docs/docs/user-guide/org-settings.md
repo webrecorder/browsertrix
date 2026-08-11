@@ -23,7 +23,7 @@ Enable a homepage for your public collections to easily share all public collect
 
 `Paid Feature`{ .badge-green }
 
-View and manage your org's current payment plan and associated quotas. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
+View, manage, and upgrade your org's current subscription plan. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
 ## Crawling Defaults
 

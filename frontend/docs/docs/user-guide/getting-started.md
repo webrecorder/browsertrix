@@ -1,6 +1,6 @@
 # Your First Crawl
 
-Let’s crawl your first webpage! Start by opening up a webpage that you’d like to crawl and note the URL for later.
+Let’s crawl your first webpage! This guide will walk you through the basic steps for setting up a webpage crawl.
 
 ## Accessing your dashboard
 
@@ -36,7 +36,7 @@ You will create a [crawl workflow](crawl-workflows.md){ data-preview } to set up
 
         To crawl every webpage on _your-site_.com, _your-site_.org, or another site, choose **Pages on Same Domain**.
 
-1. [Enter the URL](workflow-setup.md#crawl-start-url-urls-to-crawl){ data-preview } of the webpage that you noted earlier.
+1. [Enter the URL](workflow-setup.md#crawl-start-url-urls-to-crawl){ data-preview } of the webpage that you want to archive.
 1. Depending on what you’d like to crawl, fill out additional settings:
 
     === "One page"

@@ -110,6 +110,7 @@
   text-decoration: underline;
 }
 
+.cards a,
 .headerlink {
   text-decoration: none !important;
 }
