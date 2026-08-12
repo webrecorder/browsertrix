@@ -63,6 +63,9 @@
   --md-accent-fg-color: var(--color-cyan-500);
   --md-typeset-a-color: var(--color-cyan-600);
   --md-code-bg-color: #f9fafb;
+  --md-footer-bg-color: var(--md-default-bg-color);
+  --md-footer-fg-color: var(--md-default-color);
+  --md-footer-bg-color--dark: var(--sl-color-neutral-800);
 }
 
 /* Nav changes */
@@ -87,6 +90,12 @@
 
 .md-header__button {
   margin-right: 0 !important;
+}
+
+/* Footer changes */
+
+.md-footer {
+  border-top: 1px solid var(--sl-color-neutral-200);
 }
 
 /* Custom menu item hover */

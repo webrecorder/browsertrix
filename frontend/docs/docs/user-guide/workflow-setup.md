@@ -349,9 +349,9 @@ Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to b
 !!! Tip "Best Practices: Use login profiles dedicated to crawling"
     We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Crawling with a browser profile that uses your personal account may expose you to risks such as compromised private tokens and unwanted sharing of user preferences. Although accounts dedicated to crawling are not necessary to benefit from browser profiles, they can address these potential issues and more. [Continue reading about dedicated accounts](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving)
 
-### Fail Crawl if Not Logged In
+#### Fail Crawl if Not Logged In
 
-When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
+This setting is made available if a browser profile is selected. When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser profile is not logged in.
 
 For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
@@ -485,7 +485,7 @@ Additionally, the following macros are supported:
 | Value | Description |
 | - | - |
 | `@yearly` | Run once a year at midnight of 1 January |
-| `@monthly` |  Run once a month at midnight of the first day of the month |
+| `@monthly` | Run once a month at midnight of the first day of the month |
 | `@weekly` | Run once a week at midnight on Sunday |
 | `@daily` | Run once a day at midnight |
 | `@hourly` | Run once an hour at the beginning of the hour |
