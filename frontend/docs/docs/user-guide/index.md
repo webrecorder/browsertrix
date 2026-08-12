@@ -9,17 +9,18 @@ The user guide documents features, terminology, and settings in the Browsertrix 
 ## Quick links
 
 <!-- markdownlint-disable MD033 -->
-<div class="card card-primary" markdown>
-**New to Browsertrix?** Sign up for a free trial to follow along.
+<div class="card card-primary card--button-right grid" markdown>
 
-[Start free trial](https://webrecorder.net/browsertrix/pricing/){ .md-button .md-button--primary target="_blank" }
-[Learn more](trial.md){ .md-button }
+**New to Browsertrix?**<br/>Sign up for a free trial to follow along.
+
+[Start free trial](https://webrecorder.net/browsertrix/pricing/){ .md-button .md-button--primary .md-button--right target="_blank" }
+  
 </div>
 
 <!-- markdownlint-disable MD033 -->
 <div class="grid cards" markdown>
 
-- __Getting Started__
+- **Getting Started**
 
     Start here if you’re new to Browsertrix or web archiving.
 
@@ -33,7 +34,7 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       - [Watch video tutorials :octicons-link-external-16:](https://www.youtube.com/@webrecorder){ target="_blank" }
       
 
-- __Crawl Settings__
+- **Crawl Settings**
 
     Customize crawls to achieve your archiving goals.
 
@@ -46,7 +47,7 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       - [Organize crawls into collections](collection.md)
       - [Review, rate, and comment on crawled content](quality-assurance.md)
 
-- __Org Settings__
+- **Org Settings**
 
     Manage your workspace and archived items.
 
@@ -59,7 +60,7 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       - [Create a public archive](public-collections-gallery.md)
       - [Enable org deduplication](deduplication.md#enable-deduplication-across-your-entire-organization)
 
-- __Account Settings__
+- **Account Settings**
 
     Manage your personal profile and preferences.
 

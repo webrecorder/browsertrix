@@ -316,6 +316,7 @@ h5 {
 }
 
 /* Cards */
+
 .card,
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.25rem;
@@ -336,6 +337,10 @@ h5 {
   border-color: var(--color-lime-100);
   border-radius: 0.75rem;
   color: var(--color-lime-800);
+}
+
+.card--button-right.grid {
+  grid-template-columns: 1fr auto;
 }
 
 /* Buttons */
