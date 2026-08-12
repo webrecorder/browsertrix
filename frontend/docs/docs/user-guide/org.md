@@ -4,7 +4,7 @@ A Browsertrix org, or organization, is your workspace for web archiving. If youâ
 
 ## Subscription, Billing, and Quotas
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green }
 
 Each Browsertrix subscription includes one org, which is created for you when you register your account. You can customize the orgâ€™s [name and URL](org-settings.md#name-url-and-other-basic-information).
 

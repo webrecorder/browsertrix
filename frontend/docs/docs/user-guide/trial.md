@@ -1,7 +1,7 @@
 
 # Your Free Trial
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green }
 
 Browsertrix offers a free trial period to help you determine which plan is right for you. The full Browsertrix suite of features is available during your trial; use this period to run test crawls and hone in on the crawl workflows that work with your archiving goals.
 

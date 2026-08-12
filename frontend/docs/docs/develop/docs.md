@@ -164,14 +164,14 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 
 Renders to: `#!python range()`
 
-### Paid features
+### Subscriber features
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green }
 
 Some features of Browsertrix only pertain to those paying for the software on a hosted plan. Denote these with the following:
 
 ```markdown
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green }
 ```
 
 ### Admonitions

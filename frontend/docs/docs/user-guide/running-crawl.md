@@ -50,7 +50,7 @@ If too many error pages are encountered, the crawler adapts by slowing down and 
 Unfortunately, there is not much Browsertrix can do to prevent being rate limited altogether. Adding a [browser profile](browser-profiles/browser-profiles-overview.md) or configuring a [proxy server](workflow-setup.md#crawler-proxy-server) may help reduce rate limits for certain sites, while other sites may need to provide explicit permission to be crawled, thus requiring the list of IP ranges used by Browsertrix.
 
 ???+ "Allow-listing Browsertrix on your website"
-    `Paid Feature`{ .badge-green }
+    `Subscription Feature`{ .badge-green }
     If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](mailto:support@webrecorder.org) for assistance.
 
 ### Rate Limited Workflow Status
