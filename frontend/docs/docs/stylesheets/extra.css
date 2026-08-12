@@ -315,11 +315,69 @@ h5 {
   }
 }
 
-/* .btrix-button is used to indicate a button in the application */
+/* Cards */
+.card,
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.25rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  padding: 0.8rem;
+}
+
+.card > p:first-child {
+  margin-top: 0;
+}
+
+.card > p:last-child {
+  margin-bottom: 0;
+}
+
+.card-primary {
+  background-color: var(--color-lime-50);
+  border-color: var(--color-lime-100);
+  border-radius: 0.75rem;
+  color: var(--color-lime-800);
+}
+
+/* Buttons */
+
+.md-typeset .md-button {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  padding: 0.625em 1.5em;
+}
+
+.md-typeset .md-button + .md-button {
+  margin-inline-start: 0.25rem;
+}
+
+.md-typeset .md-button:not(.md-button--primary) {
+  border-color: var(--color-lime-200);
+}
+
+.md-typeset .md-button:not(.md-button--primary):hover,
+.md-typeset .md-button:not(.md-button--primary):active,
+.md-typeset .md-button:not(.md-button--primary):focus {
+  background-color: var(--color-lime-50);
+  border-color: var(--color-lime-400);
+  color: var(--color-brand-green);
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--color-lime-400);
+  border-color: var(--color-lime-500);
+}
+
+.md-typeset .md-button--primary:hover,
+.md-typeset .md-button--primary:focus,
+.md-typeset .md-button--primary:active {
+  background-color: var(--color-lime-500);
+  border-color: var(--color-lime-600);
+}
+
+/* .btrix-button is used to indicate a button in the application and is not interactive */
 
 .md-button.btrix-button {
   vertical-align: baseline;
-  border-width: 1px;
   border-radius: 0.25rem;
   line-height: 1;
   padding: 0.25rem 0.5rem;

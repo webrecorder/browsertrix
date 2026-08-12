@@ -8,9 +8,9 @@ To start a crawl, you’ll need to log in using a Browsertrix account with acces
 
 You likely have access already if:
 
-- [x] You signed up for a [Browsertrix subscription](./signup.md)
-- [x] You [joined an existing org](./join.md) and were given [“crawler” permissions](./org-members.md#crawler){ data-preview }
-- [x] You are the admin of a self-hosted instance
+- [x] You signed up for a Browsertrix subscription.
+- [x] You joined an existing org and were given “crawler” permissions.
+- [x] You are the admin of a self-hosted instance.
 
 Check if you have access by logging in. If you see a [+ Create New...](#accessing-your-dashboard){ .md-button .md-button--primary .btrix-button } button in the dashboard, you’re able to start a site crawl. If you don’t see this button and think that you should, contact your org administrator to update your permissions.
 
@@ -108,4 +108,4 @@ After running your first crawl, you may want to:
 - Explore all available [crawl workflow setup](workflow-setup.md){ data-preview } options.
 - Review the crawled content for [quality assurance](quality-assurance.md){ data-preview }.
 - Import [previously archived content](archived-items.md#uploading-web-archives){ data-preview }.
-- [Invite collaborators](org-members.md){ data-preview } to crawl with you.
+- Start a [collection](collection.md){ data-preview } of crawled content.

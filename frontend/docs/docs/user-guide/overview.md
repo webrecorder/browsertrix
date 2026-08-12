@@ -1,8 +1,10 @@
-# View Usage Stats and Quotas
+# Org Dashboard
 
 Your **Dashboard** delivers key statistics about the org's resource usage. You can also create crawl workflows, upload archived items, create collections, and create browser profiles through the _Create New ..._ shortcut.
 
-## Storage
+## Usage Stats and Quotas
+
+### Storage
 
 The storage panel displays the total size and count of archived items and browser profiles.
 
@@ -11,11 +13,11 @@ For organizations with a set storage quota, the storage panel displays a visual 
 ??? Info "Miscellaneous storage"
     You may see an additional _Miscellaneous_ size depending on your crawl workflow and collection configuration. _Miscellaneous_ is the total size of all supplementary files in use by your organization, such as [workflow URL list files](./workflow-setup.md#list-of-pages) and [custom collection thumbnails](./presentation-sharing.md#thumbnail).
 
-## Crawling
+### Crawling
 
 The crawling panel lists the number of currently running and waiting crawls, as well as the total number of pages captured.
 
-### Execution Time
+#### Execution Time
 
 `Paid Feature`{.badge-green}
 
@@ -24,6 +26,10 @@ For organizations with a set execution minute limit, the crawling panel displays
 ??? Question "How is execution time calculated?"
     Execution time is the total runtime of a crawl scaled by the [_Browser Windows_](workflow-setup.md/#browser-windows) value during a crawl. Like elapsed time, this is tracked while the crawl runs. Changing the amount of _Browser Windows_ while a crawl is running may change the amount of execution time used in a given time period.
 
-## Collections
+### Collections
 
 The collections panel displays the number of total collections and collections marked as sharable.
+
+## Public Collections
+
+If any of org collections are [public](public-collections-gallery.md), their thumbnails will be displayed in the **Public Collections** section of the dashboard.

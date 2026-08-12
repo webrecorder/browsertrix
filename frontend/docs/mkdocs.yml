@@ -48,9 +48,10 @@ theme:
 nav:
   - Overview: index.md
   - User Guide:
-      - user-guide/index.md
+      - Introduction: user-guide/index.md
       - Getting Started:
           - user-guide/signup.md
+          - user-guide/trial.md
           - user-guide/getting-started.md
       - Orgs:
           - user-guide/org.md
@@ -84,6 +85,7 @@ nav:
           - user-guide/org-members.md
       - Account Settings:
           - user-guide/user-settings.md
+          - user-guide/change-password.md
       - user-guide/contribute.md
   - Self-Hosting:
       - Overview: deploy/index.md

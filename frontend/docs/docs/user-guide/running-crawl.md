@@ -51,7 +51,7 @@ Unfortunately, there is not much Browsertrix can do to prevent being rate limite
 
 ???+ "Allow-listing Browsertrix on your website"
     `Paid Feature`{ .badge-green }
-    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](support@webrecorder.org) for assistance.
+    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](mailto:support@webrecorder.org) for assistance.
 
 ### Rate Limited Workflow Status
 

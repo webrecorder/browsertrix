@@ -1,5 +1,7 @@
 # Register For an Account
 
+To sign up for Browsertrix, [choose a subscription plan](https://webrecorder.net/browsertrix/pricing/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
+
 !!! tip "Already have an account?"
 
     Skip ahead to [running your first crawl](./getting-started.md).
@@ -8,9 +10,7 @@
 
     This guide only applies to hosted Browsertrix accounts. If you’re self-hosting Browsertrix, [enable open registration](../deploy/customization.md#enable-open-registration) to allow others to sign up for an account on your instance.
 
-To sign up for Browsertrix, [choose a subscription plan](https://webrecorder.net/browsertrix/pricing/). We offer a variety of plans for individuals, teams, and organizations of all sizes.
-
-## Register Your Org
+## Customize Your Org
 
 After you finish setting up your subscription, you’ll receive an email from Webrecorder with a link to set up your org (organization).
 
@@ -29,7 +29,7 @@ Once you’ve completed this step, you’re in!
 <!-- markdownlint-disable MD033 -->
 <div class="grid cards" markdown>
 
-- :material-clock-fast:{ .lg .middle } __Quick Start Guide__
+- :material-clock-fast:{ .lg .middle } **Quick Start Guide**
 
     ---
 
@@ -37,7 +37,7 @@ Once you’ve completed this step, you’re in!
 
     [:octicons-arrow-right-24: Read Guide](getting-started.md)
 
-- :fontawesome-solid-dashboard:{ .lg .middle } __Explore Your Dashboard__
+- :fontawesome-solid-dashboard:{ .lg .middle } **Explore Your Dashboard**
 
     ---
 
@@ -45,7 +45,7 @@ Once you’ve completed this step, you’re in!
 
     [:octicons-arrow-right-24: Learn More](overview.md)
 
-- :fontawesome-solid-users:{ .lg .middle } __Invite Team Members__
+- :fontawesome-solid-users:{ .lg .middle } **Invite Team Members**
 
     ---
 
@@ -53,7 +53,7 @@ Once you’ve completed this step, you’re in!
 
     [:octicons-arrow-right-24: Learn More](org-members.md)
 
-- :material-message-question-outline:{ .lg .middle } __Questions or issues?__
+- :material-message-question-outline:{ .lg .middle } **Questions or issues?**
 
     ---
 
