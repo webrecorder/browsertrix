@@ -102,11 +102,10 @@ export class AppBar extends BtrixElement {
                   <btrix-popover-menu>
                     ${this.renderNavButton({
                       slot: "trigger",
-                      content: html`<span class="sr-only lg:not-sr-only"
-                        >${msg("Account")}</span
-                      >`,
+                      content: msg("Account"),
                       iconName: "person-circle",
                       href: urlForName("accountSettings"),
+                      mobileIconOnly: true,
                     })}
                     <sl-menu class="w-60 min-w-min max-w-full">
                       ${this.renderMenuUserInfo()}
@@ -186,13 +185,15 @@ export class AppBar extends BtrixElement {
     href,
     slot,
     className,
+    mobileIconOnly,
     click,
   }: {
     content: string | TemplateResult;
     iconName?: string;
     href?: string;
-    className?: string;
     slot?: string;
+    className?: string;
+    mobileIconOnly?: boolean;
     click?: (e: MouseEvent) => void;
   }) {
     const currentPage = this.viewState?.pathname === href;
@@ -205,7 +206,10 @@ export class AppBar extends BtrixElement {
         (href ?? click) && tw`hover:part-[base]:bg-primary-50`,
         currentPage &&
           tw`part-[base]:bg-primary-50 part-[base]:ring-1 part-[base]:ring-primary-100`,
-        !iconName && tw`part-[label]:[padding-inline-start:0]`,
+        iconName
+          ? [mobileIconOnly && tw`part-[label]:px-1 md:part-[label]:px-3`]
+          : tw`part-[label]:[padding-inline-start:0]`,
+
         className,
       )}
       slot=${ifDefined(slot)}
@@ -220,7 +224,9 @@ export class AppBar extends BtrixElement {
       ${iconName
         ? html`<sl-icon slot="prefix" name=${iconName}></sl-icon>`
         : nothing}
-      ${content}
+      ${mobileIconOnly
+        ? html`<span class="sr-only md:not-sr-only">${content}</span>`
+        : content}
     </sl-button>`;
   }
 
@@ -261,10 +267,9 @@ export class AppBar extends BtrixElement {
     return html`<btrix-popover-menu>
       ${this.renderNavButton({
         slot: "trigger",
-        content: html`<span class="sr-only lg:not-sr-only"
-          >${msg("User Guide")}</span
-        >`,
+        content: msg("User Guide"),
         iconName: "book",
+        mobileIconOnly: true,
         click: showUserGuide,
       })}
       <sl-menu @sl-select=${showUserGuide}>
