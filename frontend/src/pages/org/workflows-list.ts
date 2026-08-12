@@ -904,23 +904,24 @@ export class WorkflowsList extends BtrixElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
-        {
-          method: "POST",
-        },
-      );
+      try {
+        await this.api.fetch<{ success: boolean }>(
+          `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
+          {
+            method: "POST",
+          },
+        );
 
-      // Make best guess until next tick
-      this.dispatchEvent(
-        makeUpdateActiveCrawlsCountEvent({
-          userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
-        }),
-      );
-
-      if (data.success) {
+        // Make best guess until next tick
+        this.dispatchEvent(
+          makeUpdateActiveCrawlsCountEvent({
+            userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
+          }),
+        );
         void this.workflowsTask.run();
-      } else {
+      } catch (err) {
+        console.debug(err);
+
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
           variant: "danger",
