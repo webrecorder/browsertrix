@@ -94,6 +94,17 @@ export class ProfileBrowserDialog extends BtrixElement {
         this.browserStatus = BrowserStatus.Initial;
         this.#savedBrowserId = undefined;
         this.browserIdTask.abort();
+
+        if (this.saveProfileTask.status === TaskStatus.PENDING) {
+          this.saveProfileTask.abort();
+
+          this.notify.toast({
+            message: msg("Profile was not saved."),
+            variant: "warning",
+            icon: "exclamation-circle",
+            id: "browser-profile-save-status",
+          });
+        }
       }
     }
   }
@@ -386,17 +397,17 @@ export class ProfileBrowserDialog extends BtrixElement {
           this.navigate.to(
             `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
           );
+        } else {
+          await dialog?.hide();
         }
-      } else {
-        await dialog?.hide();
-      }
 
-      this.notify.toast({
-        message: msg("Successfully saved browser profile."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "browser-profile-save-status",
-      });
+        this.notify.toast({
+          message: msg("Successfully saved browser profile."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "browser-profile-save-status",
+        });
+      }
     } catch (err) {
       if (typeof err === "string") {
         this.notify.toast({
