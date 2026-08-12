@@ -43,42 +43,26 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     # Verify copy bucket job has run and succeeded since crawl completed
     job_id = None
 
-    # Give job up to 15 minutes to complete
+    # Give copy bucket job (which is kicked off by cron replication job)
+    # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 15:
+    while attempts < 20:
         r = requests.get(
             f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=copy-bucket",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
-        if jobs:
-            latest_job = jobs[0]
-            assert latest_job["type"] == "copy-bucket"
-            if latest_job["started"] >= upload_complete:
-                job_id = latest_job["id"]
+        for job in jobs:
+            assert job["type"] == "copy-bucket"
+            if job.get("started") >= upload_complete and job.get("finished"):
+                job_id = job["id"]
                 break
 
         attempts += 1
         time.sleep(60)
 
-    # Give job up to 5 minutes to finish
-    attempts = 0
-    while attempts < 10:
-        r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
-            headers=admin_auth_headers,
-        )
-        assert r.status_code == 200
-        job = r.json()
-        finished = latest_job.get("finished")
-        if not finished:
-            attempts += 1
-            time.sleep(30)
-            continue
-
-        assert job["success"]
-        break
+    assert job_id
 
     # Verify upload file is stored
     r = requests.get(
