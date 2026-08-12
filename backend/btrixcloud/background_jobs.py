@@ -29,8 +29,8 @@ from .models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
-    RetryStuckUploadsJob,
     ReplicateFilesCronJob,
+    RetryStuckUploadsJob,
     StorageRef,
     SuccessResponse,
     SuccessResponseId,
@@ -619,7 +619,7 @@ class BackgroundJobOps:
         if job_type in (
             BgJobType.CLEANUP_SEED_FILES,
             BgJobType.RETRY_STUCK_UPLOADS,
-            BgJobType.REPLICATE_FILES_CRON
+            BgJobType.REPLICATE_FILES_CRON,
         ):
             if not started:
                 started = finished
