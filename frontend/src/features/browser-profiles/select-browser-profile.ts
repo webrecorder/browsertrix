@@ -88,6 +88,12 @@ export class SelectBrowserProfile extends BtrixElement {
   @property({ type: String })
   profileName?: string;
 
+  @property({ type: String })
+  defaultProxyId?: string;
+
+  @property({ type: String })
+  defaultCrawlerChannel?: string;
+
   /**
    * List of origins to match to prioritize profile options
    */
@@ -210,10 +216,12 @@ export class SelectBrowserProfile extends BtrixElement {
             .proxyServers=${this.proxies.servers}
             .crawlerChannels=${this.crawlerChannels}
             defaultProxyId=${ifDefined(
-              getDefaultProxyId(this.org, this.proxies),
+              this.defaultProxyId ?? getDefaultProxyId(this.org, this.proxies),
             )}
             defaultCrawlerChannel=${ifDefined(
-              this.org.crawlingDefaults?.crawlerChannel || undefined,
+              this.defaultCrawlerChannel ||
+                this.org.crawlingDefaults?.crawlerChannel ||
+                undefined,
             )}
             @btrix-updated=${async (e: ProfileUpdatedEvent) => {
               e.stopPropagation();

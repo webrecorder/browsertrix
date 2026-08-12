@@ -2221,6 +2221,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
           .profileName=${this.formState.browserProfile?.name}
+          defaultProxyId=${ifDefined(this.formState.proxyId ?? undefined)}
+          defaultCrawlerChannel=${ifDefined(this.formState.crawlerChannel)}
           .suggestOrigins=${guard(
             [this.formState.primarySeedUrl, this.formState.urlList],
             priorityOrigins,
@@ -2291,14 +2293,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 )}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
-                .profileProxyId=${profileProxyId}
+                .profileProxyId=${this.formState.browserProfile?.proxyId}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
               >
                 ${when(
-                  profileProxyId,
+                  this.formState.browserProfile?.proxyId,
                   () => html`
                     <span
                       slot="suffix"

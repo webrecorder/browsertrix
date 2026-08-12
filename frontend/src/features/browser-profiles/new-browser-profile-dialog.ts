@@ -1,5 +1,4 @@
 import { localized, msg } from "@lit/localize";
-import { type SlInput } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
@@ -15,6 +14,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
+import type { UrlInput } from "@/components/ui/url-input";
 import {
   CrawlerChannelImage,
   type CrawlerChannel,
@@ -66,6 +66,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @state()
   private proxyId: string | null = null;
 
+  @query("btrix-url-input")
+  private readonly urlInput?: UrlInput;
+
   @query("btrix-dialog")
   private readonly dialog?: Dialog;
 
@@ -107,14 +110,13 @@ export class NewBrowserProfileDialog extends BtrixElement {
         .label=${msg("New Browser Profile")}
         .open=${this.open}
         @sl-initial-focus=${async (e: CustomEvent) => {
-          const nameInput = (await this.form).querySelector<SlInput>(
-            "btrix-url-input",
-          );
-          if (nameInput) {
+          if (this.urlInput) {
             e.preventDefault();
-            nameInput.focus();
+            this.urlInput.focus();
           }
         }}
+        @sl-hide=${() => (this.open = false)}
+        @sl-after-hide=${async () => (await this.form).reset()}
       >
         <form
           id="browserProfileForm"
@@ -219,11 +221,11 @@ export class NewBrowserProfileDialog extends BtrixElement {
             }}
             ?open=${this.browserOpen}
             ?navigateOnSave=${this.navigateOnSave}
-            @sl-hide=${(e: Event) => {
+            @sl-hide=${async (e: Event) => {
               e.stopPropagation();
               this.browserOpen = false;
               this.open = false;
-              void this.dialog?.hide();
+              this.hide();
             }}
           >
           </btrix-profile-browser-dialog>`,
@@ -231,12 +233,13 @@ export class NewBrowserProfileDialog extends BtrixElement {
     `;
   }
 
-  private async hideDialog() {
-    void (await this.form).closest<Dialog>("btrix-dialog")?.hide();
-  }
-
   private onReset() {
-    void this.hideDialog();
+    this.urlInput?.setAttribute("value", this.defaultUrl ?? "");
+    this.urlInput?.setCustomValidity("");
+
+    if (this.dialog?.open) {
+      this.hide();
+    }
   }
 
   private async onSubmit(event: SubmitEvent) {
