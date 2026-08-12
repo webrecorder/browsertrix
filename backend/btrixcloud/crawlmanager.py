@@ -392,23 +392,37 @@ class CrawlManager(K8sAPI):
             job_schedule,
         )
 
-    async def ensure_file_replication_cron_job_exists(self):
+    async def ensure_file_replication_cron_job_exists(
+        self, replicas_configured: bool = False
+    ):
         """ensure cron background job to replica default storages exists"""
 
         # Default schedule is every 2 hours
         default_schedule = "0 */2 * * *"
         job_schedule = os.environ.get("REPLICATION_JOB_CRON_SCHEDULE", default_schedule)
 
-        # TODO: Only create background job if default replica storage locations
-        # are configured.
-        # If replica locations were configured and then removed, do we want to
-        # do any cleanup around that as well?
+        job_id = "replicate-files-cron"
 
-        await self._ensure_bg_cron_job_exists(
-            "replicate-files-cron",
-            BgJobType.REPLICATE_FILES_CRON.value,
-            job_schedule,
-        )
+        if replicas_configured:
+            return await self._ensure_bg_cron_job_exists(
+                job_id,
+                BgJobType.REPLICATE_FILES_CRON.value,
+                job_schedule,
+            )
+
+        # If no replica locations are configured, make sure no replication cron
+        # job exists, as one could have been previously configured.
+        try:
+            await self.batch_api.delete_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+            logger.info(
+                "bg_cron_job_deleting", job_id=job_id, replicas_configured=False
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
 
     async def _ensure_bg_cron_job_exists(
         self,
