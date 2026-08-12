@@ -600,7 +600,11 @@ class BackgroundJobOps:
         """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
         await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
-        await self.crawl_manager.ensure_file_replication_cron_job_exists()
+
+        replicas_configured = True if self.storage_ops.get_default_replicas() else False
+        await self.crawl_manager.ensure_file_replication_cron_job_exists(
+            replicas_configured
+        )
 
     async def job_finished(
         self,
