@@ -33,9 +33,9 @@ Once you’ve completed this step, you’re in!
 
     ---
 
-    Get started with a webpage crawl in just a few minutes.
+    Get started with your first webpage crawl in just a few minutes.
 
-    [:octicons-arrow-right-24: Your First Crawl](getting-started.md)
+    [:octicons-arrow-right-24: Read Guide](getting-started.md)
 
 - :fontawesome-solid-dashboard:{ .lg .middle } __Explore Your Dashboard__
 
