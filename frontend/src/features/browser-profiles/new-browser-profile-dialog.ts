@@ -219,7 +219,12 @@ export class NewBrowserProfileDialog extends BtrixElement {
             }}
             ?open=${this.browserOpen}
             ?navigateOnSave=${this.navigateOnSave}
-            @sl-hide=${() => void this.dialog?.hide()}
+            @sl-hide=${(e: Event) => {
+              e.stopPropagation();
+              this.browserOpen = false;
+              this.open = false;
+              void this.dialog?.hide();
+            }}
           >
           </btrix-profile-browser-dialog>`,
       )}
