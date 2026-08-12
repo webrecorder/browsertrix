@@ -1,3 +1,10 @@
+---
+hide:
+  - tags
+tags:
+  - Social Media
+---
+
 # Your First Crawl
 
 Let’s set up your first website crawl! This guide will walk you through the basic steps for setting up a crawl.

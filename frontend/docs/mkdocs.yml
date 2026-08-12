@@ -89,8 +89,8 @@ nav:
       - Account Settings:
           - user-guide/user-settings.md
           - user-guide/change-password.md
+      - user-guide/resources.md
       - user-guide/contribute.md
-      - user-guide/tags.md
   - Self-Hosting:
       - Overview: deploy/index.md
       - deploy/local.md

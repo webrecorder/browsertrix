@@ -173,6 +173,17 @@ h5 {
     "ss08" on;
 }
 
+/* Add more spacing when previous/next buttons are hidden */
+.md-footer:has(nav[hidden]) {
+  margin-top: 3rem;
+}
+
+/* Bit of a hack, but there doesn't appear to be a way to hide the "previous" link in the user guide intro  */
+.md-footer__link--prev[href="https://docs.browsertrix.com/"],
+.md-footer__link--prev[href="http://localhost:8000/"] {
+  display: none;
+}
+
 /* Custom badge classes, applies custom overrides to inline-code blocks */
 
 .badge-blue {

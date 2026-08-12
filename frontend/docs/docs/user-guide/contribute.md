@@ -1,3 +1,8 @@
+---
+hide:
+  - footer
+---
+
 # Contribute
 
 We hope our user guide is a useful tool for you. Like Browsertrix itself, our user guide is open source. We greatly appreciate any feedback and open source contributions to our docs [on GitHub](https://github.com/webrecorder/browsertrix).
