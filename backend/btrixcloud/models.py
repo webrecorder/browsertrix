@@ -1390,19 +1390,25 @@ class UserFile(BaseFile):
     created: datetime
 
     async def get_absolute_presigned_url(
-        self, org, storage_ops, headers: dict | None
+        self, org, storage_ops, headers: dict | None, force_update: bool = False
     ) -> str:
         """Get presigned URL as absolute URL"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
+        presigned_url, _ = await storage_ops.get_presigned_url(org, self, force_update)
         return storage_ops.resolve_relative_access_path(presigned_url, headers) or ""
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
     ) -> UserFileOut:
         """Get UserFileOut with new presigned url"""
         return UserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=await self.get_absolute_presigned_url(
+                org, storage_ops, headers, force_update_presigned
+            ),
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1492,12 +1498,18 @@ class SeedFile(UserFile, BaseMongoModel):
     seedCount: int | None = None
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
     ) -> SeedFileOut:
         """Get SeedFileOut with new presigned url"""
         return SeedFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=await self.get_absolute_presigned_url(
+                org, storage_ops, headers, force_update_presigned
+            ),
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
