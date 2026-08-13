@@ -508,6 +508,12 @@ class StorageOps:
     ) -> tuple[str, datetime]:
         """generate pre-signed url for crawl file"""
 
+        logger.debug(
+            "generating_presigned_url",
+            filename=crawlfile.filename,
+            force_update=force_update,
+        )
+
         res = None
         if not force_update:
             res = await self.presigned_urls.find_one({"_id": crawlfile.filename})

@@ -110,10 +110,13 @@ class FileUploadOps:
         org: Organization | None = None,
         type_: str | None = None,
         headers: dict | None = None,
+        force_update_presigned: bool = False,
     ) -> SeedFileOut:
         """Get file output model by UUID"""
         user_file = await self.get_seed_file(file_id, org, type_)
-        return await user_file.get_file_out(org, self.storage_ops, headers)
+        return await user_file.get_file_out(
+            org, self.storage_ops, headers, force_update_presigned
+        )
 
     async def list_seed_files(
         self,
