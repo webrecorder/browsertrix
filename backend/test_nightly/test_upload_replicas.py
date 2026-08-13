@@ -4,9 +4,10 @@ import time
 import structlog
 import requests
 
+from test.utils import read_in_chunks
+
 from .conftest import API_PREFIX
 from .utils import (
-    read_in_chunks,
     verify_file_and_replica_deleted,
     verify_file_replicated,
 )

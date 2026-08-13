@@ -20,16 +20,6 @@ def get_crawl_status(org_id, crawl_id, headers):
     return data["state"]
 
 
-def read_in_chunks(fh, blocksize=1024):
-    """Lazy function (generator) to read a file piece by piece.
-    Default chunk size: 1k."""
-    while True:
-        data = fh.read(blocksize)
-        if not data:
-            break
-        yield data
-
-
 def download_file_and_return_hash(bucket_name: str, file_path: str) -> str:
     endpoint_url = "http://127.0.0.1:30090/"
     client = boto3.client(
