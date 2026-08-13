@@ -5,8 +5,9 @@ import structlog
 import pytest
 import requests
 
+from test.utils import read_in_chunks
+
 from .conftest import API_PREFIX
-from .utils import read_in_chunks
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 

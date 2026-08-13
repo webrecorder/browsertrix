@@ -7,8 +7,9 @@ import structlog
 import pytest
 import requests
 
+from test.utils import read_in_chunks, wait_for_upload_processed_sync
+
 from .conftest import API_PREFIX
-from .utils import read_in_chunks
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -399,6 +400,10 @@ def test_webhooks_sent(
     data = r.json()
     assert data["added"]
     webhooks_upload_id = data["id"]
+
+    wait_for_upload_processed_sync(
+        admin_auth_headers, default_org_id, webhooks_upload_id
+    )
 
     # Remove upload from collection
     r = requests.post(
