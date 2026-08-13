@@ -599,7 +599,9 @@ class BackgroundJobOps:
     async def ensure_cron_jobs_exist(self):
         """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
-        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
+        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists(
+            bool(os.environ.get("DISABLE_STUCK_UPLOADS_CRON", False))
+        )
         await self.crawl_manager.ensure_file_replication_cron_job_exists(
             bool(self.storage_ops.get_default_replicas())
         )

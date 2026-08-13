@@ -7,6 +7,9 @@ max_pages_per_crawl: 300
 # Every 2 minutes, for use in testing file replication
 replication_job_cron_schedule: "*/2 * * * *"
 
+# Disable retry uploads cron job to ease resource usage on CI workers
+disable_stuck_uploads_cron: true
+
 # max crawl queue size x concurrent crawls
 crawl_queue_limit_scale: 1
 

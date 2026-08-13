@@ -378,7 +378,9 @@ class CrawlManager(K8sAPI):
             larger_resources=True,
         )
 
-    async def ensure_retry_stuck_uploads_cron_job_exists(self):
+    async def ensure_retry_stuck_uploads_cron_job_exists(
+        self, disable_job: bool = False
+    ):
         """ensure cron background job to retry stuck uploads exists"""
 
         default_schedule = "0 * * * *"
@@ -386,11 +388,19 @@ class CrawlManager(K8sAPI):
             "RETRY_STUCK_UPLOADS_CRON_SCHEDULE", default_schedule
         )
 
-        await self._ensure_bg_cron_job_exists(
-            "retry-stuck-uploads-cron",
-            BgJobType.RETRY_STUCK_UPLOADS.value,
-            job_schedule,
-        )
+        job_id = "retry-stuck-uploads-cron"
+
+        if not disable_job:
+            return await self._ensure_bg_cron_job_exists(
+                job_id,
+                BgJobType.RETRY_STUCK_UPLOADS.value,
+                job_schedule,
+            )
+
+        # If no replica locations are configured, make sure no replication cron
+        # job exists, as one could have been previously configured.
+        logger.info("bg_cron_job_deleting", job_id=job_id, disable_job=True)
+        await self._delete_cron_job_if_exists(job_id)
 
     async def ensure_file_replication_cron_job_exists(
         self, replicas_configured: bool = False
@@ -412,17 +422,8 @@ class CrawlManager(K8sAPI):
 
         # If no replica locations are configured, make sure no replication cron
         # job exists, as one could have been previously configured.
-        try:
-            await self.batch_api.delete_namespaced_cron_job(
-                name=job_id,
-                namespace=DEFAULT_NAMESPACE,
-            )
-            logger.info(
-                "bg_cron_job_deleting", job_id=job_id, replicas_configured=False
-            )
-        except ApiException as exc:
-            if exc.status != 404:
-                raise
+        logger.info("bg_cron_job_deleting", job_id=job_id, replicas_configured=False)
+        await self._delete_cron_job_if_exists(job_id)
 
     async def _ensure_bg_cron_job_exists(
         self,
@@ -470,6 +471,17 @@ class CrawlManager(K8sAPI):
 
         cron_logger.info("bg_cron_job_creating")
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
+
+    async def _delete_cron_job_if_exists(self, job_id: str):
+        """Delete cron job by id if it exists"""
+        try:
+            await self.batch_api.delete_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
 
     async def create_crawl_job(
         self,
