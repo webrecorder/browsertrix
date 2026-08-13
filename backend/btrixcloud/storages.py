@@ -510,7 +510,7 @@ class StorageOps:
 
         logger.debug(
             "generating_presigned_url",
-            filename=crawlfile.filename,
+            target_filename=crawlfile.filename,
             force_update=force_update,
         )
 
