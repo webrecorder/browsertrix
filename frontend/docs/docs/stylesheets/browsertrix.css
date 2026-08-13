@@ -1,0 +1,112 @@
+/* 
+ * Styles that are applied when embedded in the Browsertrix web app.
+ * See embed.js
+ */
+
+/* Prevent layout shifting when navigating short guides */
+.btrix-app-embed {
+  scrollbar-gutter: stable;
+}
+
+/* Hide elements unless embedded in Browsertrix */
+.btrix-embed-visible {
+  display: none !important;
+}
+
+/* Reveal elements */
+.btrix-app-embed .btrix-embed-visible:not(.grid) {
+  display: block !important;
+}
+.btrix-app-embed .btrix-embed-visible.grid {
+  display: grid !important;
+}
+
+/* Hide "Browsertrix Docs" title. This isn't perfect since it'll animate into view briefly when a section title is active */
+.btrix-app-embed .md-header__title:not(.md-header__title--active) .md-ellipsis {
+  visibility: hidden;
+}
+
+/* Hide navigation back to main docs */
+.btrix-app-embed .md-nav[data-md-level="1"] .md-nav__title[for="__nav_2"] {
+  display: none !important;
+}
+
+/* Hide edit buttons */
+.btrix-app-embed .md-icon[title="Edit this page"] {
+  display: none;
+}
+
+/* Hide social links and attribution */
+.btrix-app-embed .md-footer-meta {
+  display: none !important;
+}
+
+/* Decrease spacing at top of main content */
+.btrix-app-embed .md-main__inner {
+  margin-top: 0.5rem;
+}
+
+/* Decrease text size without decreasing element size and overall spacing */
+.btrix-app-embed .md-typeset {
+  font-size: 0.7rem;
+}
+
+/* Decrease size of headings */
+.btrix-app-embed .md-typeset h1 {
+  font-size: 1rem;
+}
+.btrix-app-embed .md-typeset h2 {
+  font-size: 0.8rem;
+}
+
+/* Decrease size of footer previous/next links */
+.btrix-app-embed .md-footer__title {
+  font-size: 0.8rem;
+}
+
+/* Match size of header to size of org navigation bar */
+.btrix-app-embed .md-header__inner {
+  padding: 0;
+}
+.btrix-app-embed .md-header__title {
+  height: calc(2.25rem + 1px);
+  padding-left: 0.5rem;
+}
+.btrix-app-embed .md-header__button {
+  margin: 0;
+}
+.btrix-app-embed .md-nav--primary .md-nav__link {
+  padding: 0.55rem 0.8rem;
+}
+
+/* Remove background color from search help text */
+.btrix-app-embed .md-search-result__meta {
+  background-color: transparent;
+}
+
+/* Remove rounded border from search input and use bottom border instead */
+.btrix-app-embed .md-search__input,
+.btrix-app-embed .md-search__input:hover {
+  border-radius: 0;
+  border: 0;
+  border-bottom: var(--btrix-border);
+}
+
+/* Decrease size of input */
+.btrix-app-embed .md-search__input {
+  height: calc(2.4rem - 1px);
+  font-size: 0.8rem;
+}
+
+/* Remove box shadow from search input container */
+.btrix-app-embed
+  [data-md-toggle="search"]:checked
+  ~ .md-header
+  .md-search__form {
+  box-shadow: none;
+}
+
+/* Hide elements like CTAs */
+.btrix-app-embed .btrix-embed-hidden {
+  display: none !important;
+}

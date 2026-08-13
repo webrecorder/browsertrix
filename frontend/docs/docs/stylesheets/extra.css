@@ -66,11 +66,61 @@
   --md-footer-bg-color: var(--md-default-bg-color);
   --md-footer-fg-color: var(--md-default-color);
   --md-footer-bg-color--dark: var(--sl-color-neutral-800);
+
+  --btrix-border: 1px solid var(--sl-color-neutral-200);
+}
+
+/* Header */
+
+.md-header {
+  background-color: white;
+  border-bottom: var(--btrix-border);
+  box-shadow: none;
+  color: var(--sl-color-neutral-700);
+}
+
+.md-header .md-tabs {
+  background-color: transparent;
+  border-top: 1px solid var(--sl-color-neutral-100);
+  color: var(--color-lime-600);
+}
+
+.md-search__form,
+.md-search__icon {
+  background-color: transparent !important;
+}
+
+.md-search__icon {
+  color: var(--color-lime-400) !important;
+}
+
+.md-search__input {
+  background-color: white;
+  border: 1px solid var(--color-lime-100);
+  border-radius: 0.5rem;
+}
+
+.md-search__input:hover {
+  border-color: var(--color-lime-200);
+}
+
+.md-search__input::placeholder {
+  color: var(--color-lime-400);
+}
+
+.md-search__output {
+  padding-top: 0.25rem;
+  box-shadow: none !important;
+}
+
+.md-search__scrollwrap {
+  border-radius: 0.5rem;
 }
 
 /* Nav changes */
 
 .md-header__title,
+.md-nav__list > .md-nav__item > [for="__nav_2"],
 .md-nav__title {
   font-family: var(--md-display-font);
   text-transform: uppercase;
@@ -92,10 +142,14 @@
   margin-right: 0 !important;
 }
 
+.md-nav__list .md-nav__link {
+  min-height: calc(1.5em - 1px);
+}
+
 /* Footer changes */
 
 .md-footer {
-  border-top: 1px solid var(--sl-color-neutral-200);
+  border-top: var(--btrix-border);
 }
 
 /* Custom menu item hover */
@@ -103,12 +157,13 @@
 .md-tabs__link {
   font-family: var(--md-code-font);
   font-weight: 400;
-  opacity: 0.9;
+  opacity: 1;
   transition:
     0.4s cubic-bezier(0.1, 0.7, 0.1, 1),
     opacity 0.25s;
 }
 
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link:hover {
   font-weight: 600;
 }
@@ -339,9 +394,14 @@ h5 {
 
 .card,
 .md-typeset .grid.cards > ul > li {
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--md-default-fg-color--lightest);
   padding: 0.8rem;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border: var(--btrix-border);
+  box-shadow: none;
 }
 
 .card > p:first-child {
@@ -359,8 +419,16 @@ h5 {
   color: var(--color-lime-800);
 }
 
+.card-info {
+  background-color: var(--color-blue-50);
+  border-color: var(--color-blue-100);
+  border-radius: 0.75rem;
+  color: var(--color-blue-800);
+}
+
 .card--button-right.grid {
   grid-template-columns: 1fr auto;
+  gap: 0.5rem;
 }
 
 /* Buttons */
@@ -397,6 +465,18 @@ h5 {
 .md-typeset .md-button--primary:active {
   background-color: var(--color-lime-500);
   border-color: var(--color-lime-600);
+}
+
+.md-typeset .card-info .md-button--primary {
+  background-color: var(--color-blue-400);
+  border-color: var(--color-blue-500);
+}
+
+.md-typeset .card-info .md-button--primary:hover,
+.md-typeset .card-info .md-button--primary:focus,
+.md-typeset .card-info .md-button--primary:active {
+  background-color: var(--color-blue-500);
+  border-color: var(--color-blue-600);
 }
 
 /* .btrix-button is used to indicate a button in the application and is not interactive */

@@ -41,7 +41,7 @@ Crawl analysis can be run multiple times, though results should only differ if t
 
 Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button. For more on reviewing crawls and how to interpret analysis data, see: [Crawl Review](review.md).
 
-`Subscription Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
 Like running a crawl workflow, running crawl analysis also uses execution time. Crawls and crawl analysis share the same concurrent crawling limit, but crawl analysis runs will be paused in favor of new crawls if the concurrent crawling limit is reached.
 

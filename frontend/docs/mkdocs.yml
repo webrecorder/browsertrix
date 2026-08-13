@@ -4,6 +4,7 @@ repo_name: Browsertrix
 edit_uri: edit/main/frontend/docs/docs/
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/browsertrix.css
 extra_javascript:
   - js/insertversion.js
   - js/embed.js
@@ -26,7 +27,7 @@ theme:
     - search.suggest
   palette:
     scheme: webrecorder
-  logo: assets/brand/browsertrix-icon-white.svg
+  logo: assets/brand/browsertrix-icon-color.png
   favicon: assets/brand/favicon.svg
 
   icon:
@@ -54,7 +55,6 @@ nav:
       - Introduction: user-guide/index.md
       - Getting Started:
           - user-guide/signup.md
-          - user-guide/trial.md
           - user-guide/getting-started.md
       - Orgs:
           - user-guide/org.md

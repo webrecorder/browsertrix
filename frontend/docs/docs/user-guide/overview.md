@@ -19,7 +19,7 @@ The crawling panel lists the number of currently running and waiting crawls, as 
 
 #### Execution Time
 
-`Subscription Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
 For organizations with a set execution minute limit, the crawling panel displays a graph of how much execution time has been used and how much is currently remaining. Monthly execution time limits reset on the first of each month at 12:00 AM GMT.
 

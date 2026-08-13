@@ -372,7 +372,7 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[header-actions]:px-1 part-[header]:[border-bottom:var(--btrix-border)] part-[panel]:[border-left:var(--btrix-border)]"
         ?open=${this.appState.userGuideOpen}
         contained
         @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
@@ -385,16 +385,13 @@ export class App extends BtrixElement {
           class="size-full text-xs transition-opacity duration-slow"
           src="${url}"
         ></iframe>
-        <sl-button
-          size="small"
-          slot="footer"
-          variant="text"
+        <sl-icon-button
+          slot="header-actions"
+          name="box-arrow-up-right"
           href="${url}"
           target="_blank"
-        >
-          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
-          ${msg("Open in new window")}</sl-button
-        >
+          title=${msg("Open in New Tab")}
+        ></sl-icon-button>
       </sl-drawer>
     `;
   }

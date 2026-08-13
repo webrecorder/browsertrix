@@ -21,7 +21,7 @@ Enable a homepage for your public collections to easily share all public collect
 
 ## Billing
 
-`Subscription Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
 View and manage your org's current subscription plan and payment information from the **Billing & Usage** section of your org settings.
 
