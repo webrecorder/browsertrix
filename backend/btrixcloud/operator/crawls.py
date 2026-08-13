@@ -229,7 +229,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
-            seed_file_url=spec.get("seedFileUrl", ""),
+            seed_file_id=spec.get("seedFileId", ""),
         )
 
         # if finalizing, crawl is being deleted
@@ -470,6 +470,8 @@ class CrawlOperator(BaseOperator):
         config_update_needed = (
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
+        # Always update if seed file to generate new presigned URL
+        config_update_needed = config_update_needed or bool(crawl.seed_file_id)
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
         children.extend(
@@ -591,8 +593,11 @@ class CrawlOperator(BaseOperator):
             raw_config["behaviors"], crawler_image
         )
 
-        if crawl.seed_file_url:
-            raw_config["seedFile"] = crawl.seed_file_url
+        if crawl.seed_file_id:
+            seed_file_out = await self.file_ops.get_seed_file_out(
+                UUID(crawl.seed_file_id), crawl.org, force_update_presigned=True
+            )
+            raw_config["seedFile"] = seed_file_out.path
         raw_config.pop("seedFileId", None)
 
         params["config"] = json.dumps(raw_config)
