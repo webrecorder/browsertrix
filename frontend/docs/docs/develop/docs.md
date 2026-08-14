@@ -164,7 +164,7 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 
 Renders to: `#!python range()`
 
-### Subscriber features
+### Subscription Feature
 
 `Subscription Feature`{ .badge-green .btrix-embed-hidden }
 

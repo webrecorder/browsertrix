@@ -13,6 +13,11 @@
   display: none !important;
 }
 
+/* Hide elements like CTAs */
+.btrix-app-embed .btrix-embed-hidden {
+  display: none !important;
+}
+
 /* Reveal elements */
 .btrix-app-embed .btrix-embed-visible:not(.grid) {
   display: block !important;
@@ -42,8 +47,8 @@
 }
 
 /* Decrease spacing at top of main content */
-.btrix-app-embed .md-main__inner {
-  margin-top: 0.5rem;
+.btrix-app-embed .md-content__inner {
+  margin-top: 0;
 }
 
 /* Decrease text size without decreasing element size and overall spacing */
@@ -89,7 +94,7 @@
 .btrix-app-embed .md-search__input:hover {
   border-radius: 0;
   border: 0;
-  border-bottom: var(--btrix-border);
+  border-bottom: 1px solid var(--wr-border);
 }
 
 /* Decrease size of input */
@@ -106,7 +111,27 @@
   box-shadow: none;
 }
 
-/* Hide elements like CTAs */
-.btrix-app-embed .btrix-embed-hidden {
-  display: none !important;
+/* General header styling */
+.btrix-app-embed .md-header__title--active {
+  font-family: var(--md-text-font);
+}
+
+/* General main nav styling */
+.btrix-app-embed .md-nav--primary .md-nav__title {
+  background-color: var(--md-default-bg-color);
+}
+.btrix-app-embed .md-nav--primary .md-nav__item:not(:first-child) {
+  border-color: var(--wr-border);
+}
+.btrix-app-embed .md-nav--primary .md-nav__link {
+  border-radius: 0;
+  padding-inline-start: 1.2rem;
+}
+.btrix-app-embed .md-nav--primary .md-nav__title ~ .md-nav__list {
+  box-shadow: none;
+}
+
+/* FIXME Hide tooltip for palette because its position doesn't sync after embed is shown */
+.btrix-app-embed .md-icon[for^="__palette_"] + .md-tooltip {
+  visibility: hidden !important;
 }
