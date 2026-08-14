@@ -460,6 +460,20 @@ h5 {
   max-width: 56em;
 }
 
+@media screen and (min-width: 76.25em) {
+  .md-sidebar[hidden] + .md-sidebar[hidden] + .md-content .md-content__inner {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media screen and (min-width: 94em) {
+  .md-sidebar[hidden] + .md-sidebar[hidden] + .md-content .md-content__inner {
+    margin-left: 13.3rem;
+    margin-right: 13.3rem;
+  }
+}
+
 .md-typeset .admonition,
 .md-typeset details,
 .md-typeset .card,
