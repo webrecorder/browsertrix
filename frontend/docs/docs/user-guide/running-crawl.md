@@ -1,6 +1,12 @@
 # Running Crawls
 
-Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
+Monitor and interact with crawl runs in real-time: watch pages being crawled, update queued URLs on the fly to exclude unwanted pages, pause a crawl for inspection, and more.
+
+## Introduction { .invisible }
+
+---
+
+The **Crawling** > **Crawl Runs** page lists all active crawls. Individual crawl runs can be viewed and modified from the crawl workflow **Latest Crawl** tab.
 
 ## Crawl Status
 

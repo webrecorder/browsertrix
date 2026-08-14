@@ -9,6 +9,8 @@ tags:
 
 Browser profiles are saved instances of a web browsing session that can be used to configure a website before it is crawled.
 
+---
+
 ## Common Use Cases
 
 ### Social Media Sign In

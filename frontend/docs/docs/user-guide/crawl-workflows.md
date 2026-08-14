@@ -1,8 +1,13 @@
 # Intro to Crawl Workflows
 
-A crawl workflow enables you to specify how and what the crawler should capture on a website.
+Schedule, run, and manage crawls with intuitive and granular configuration options
+{ .hero-paragraph }
 
-A finished crawl results in an [archived item](./archived-items.md) that can be downloaded and shared in collections.
+## Introduction { .invisible }
+
+---
+
+A crawl workflow enables you to provide exact specifications as to how and what the crawler should capture on a website. A finished crawl results in an [archived item](./archived-items.md){ data-preview } that can be downloaded and shared in collections.
 
 You can create, view, search for, and run crawl workflows from the **Crawling** page.
 

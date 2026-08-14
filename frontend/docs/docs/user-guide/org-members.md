@@ -1,6 +1,14 @@
 # Manage Org Members
 
-View and manage all current members who have access to the organization, as well as any invited members who have not yet accepted an invitation to join the organization. In the _Active Members_ table, you can change the permission level of all users in the organization, including other admins. An organization must have at least one admin. Admins can also remove members by pressing the trash button.
+View and manage all current members who have access to the organization, as well as any invited members who have not yet accepted an invitation to join the organization.
+
+## Introduction { .invisible }
+
+---
+
+To update org membership, go to **Settings** > **Members**.
+
+In the _Active Members_ table, you can change the permission level of all users in the organization, including other admins. An organization must have at least one admin. Admins can also remove members by pressing the trash button.
 
 You can add new members to the organization by pressing the _Invite New Member_ button. Enter the email address associated with the user, select the appropriate role, and press _Invite_ to send a link to join the organization via email.
 

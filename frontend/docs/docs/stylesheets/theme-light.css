@@ -46,6 +46,8 @@
 
   --wr-border: var(--sl-color-neutral-200);
 
+  --wr-task-list-indicator-bg-color: var(--color-lime-400);
+
   --wr-callout-blue-fg-color: var(--color-cyan-700);
   --wr-callout-blue-bg-color: var(--color-cyan-200);
   --wr-callout-green-fg-color: var(--color-lime-700);

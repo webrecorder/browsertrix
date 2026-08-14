@@ -57,7 +57,7 @@ Browsertrix offers a free trial period to help you determine which plan is right
 
 The trial period is a good time to assess how much storage space and how many crawl minutes are used to create your web archives. Use the [dashboard usage statistics](overview.md){ data-preview } to track disk space and execution time.
 
-If you find yourself close to your quotas, try optimizing storage space with [deduplication](deduplication.md#overview){ data-preview } or set [crawl limits](workflow-setup.md#crawl-limits){ data-preview }. You can [upgrade at any time](org-settings.md#upgrade-downgrade-or-cancel-plan){ data-preview } to a subscription plan with more disk space and minutes.
+If you find yourself close to your quotas, try optimizing storage space with [deduplication](deduplication.md){ data-preview } or set [crawl limits](workflow-setup.md#crawl-limits){ data-preview }. You can [upgrade at any time](org-settings.md#upgrade-downgrade-or-cancel-plan){ data-preview } to a subscription plan with more disk space and minutes.
 
 All Browsertrix subscriptions include unlimited seats. You can invite collaborators during the trial period to work on archiving goals together.
 

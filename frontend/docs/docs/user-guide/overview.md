@@ -1,6 +1,13 @@
 # Org Dashboard
 
-Your **Dashboard** delivers key statistics about the org's resource usage. You can also create crawl workflows, upload archived items, create collections, and create browser profiles through the _Create New ..._ shortcut.
+Get an overall picture of how your org archives
+{ .hero-paragraph }
+
+## Introduction { .invisible }
+
+---
+
+The dashboard is the first page that you see when you log in. It gives you access to essential stats and a _Create New ..._ shortcut to quickly add a crawl workflow, collection, browser profile, or uploaded item.
 
 ## Usage Stats and Quotas
 

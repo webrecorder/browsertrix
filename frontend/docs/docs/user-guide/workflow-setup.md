@@ -1,10 +1,12 @@
 # Crawl Workflow Settings
 
-One of the key features of Browsertrix is the ability to refine crawler settings to the exact specifications of your crawl and website.
+Browsertrix provides flexible, extensive configuration options that can be combined to set up crawls to your exact specifications.
 
-Changes to a setting will only apply to subsequent crawls.
+## Introduction { .invisible }
 
-Crawl settings are shown in the crawl workflow detail **Settings** tab and in the archived item **Crawl Settings** tab.
+---
+
+This guide documents each workflow configuration setting in detail.
 
 ## Scope
 

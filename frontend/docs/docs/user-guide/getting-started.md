@@ -7,7 +7,12 @@ tags:
 
 # Your First Crawl
 
-Let’s set up your first website crawl! This guide will walk you through the basic steps for setting up a crawl.
+Set up your first website or social media page crawl in just a few minutes
+{ .hero-paragraph }
+
+---
+
+This guide will walk you through the basic steps for starting a website crawl.
 
 ## Accessing your dashboard
 
@@ -21,13 +26,11 @@ You likely have access already if:
 
 Check if you have access by logging in. If you see a [+ Create New...](#accessing-your-dashboard){ .md-button .md-button--primary .btrix-button } button in the dashboard, you’re able to start a site crawl. If you don’t see this button and think that you should, contact your org administrator to update your permissions.
 
-## Choose website to archive
+## Choose what to archive
 
 Open the webpage that you would like to archive in a new browser tab. Copy the URL; we will use this URL to start the crawl.
 
-### Customize this guide
-
-Choose one of the following options to tailor this guide to your archiving goal:
+Choose one of the following options to tailor this guide to what you’d like to archive:
 
 === "One page"
 

@@ -1,10 +1,12 @@
 # Configure Sites
 
+## How it Works
+
 Websites are configured through a temporary browser that is embedded directly in the Browsertrix interface. Every website that is visited using the embedded browser is added to the list of _Saved Sites_. When the embedded browser session ends, personalized data from the sites are collected into a profile. This profile of preconfigured sites can then be saved and used by multiple [crawl workflows](../crawl-workflows.md).
 
 The embedded browser is used during the process of [creating a new browser profile](./create-browser-profile.md) and when [editing an existing profile](./edit-browser-profile.md).
 
-## Use Cases
+## Guides for Common Use Cases
 
 ### Website Sign In
 

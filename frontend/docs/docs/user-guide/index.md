@@ -1,10 +1,12 @@
 
-# Browsertrix User Guide
+# Introduction
 
 <!-- markdownlint-disable MD033 -->
 
-[Browsertrix](https://webrecorder.net/browsertrix/) is an intuitive, automated web archiving platform designed to allow you to archive, replay, and share websites exactly as they were at a certain point in time.
-{ .btrix-embed-hidden }
+[Browsertrix](https://webrecorder.net/browsertrix/) is an intuitive, automated web archiving platform designed to allow you to archive, replay, and share interactive websites.
+{ .btrix-embed-hidden .hero-paragraph }
+
+<hr class="btrix-embed-hidden" />
 
 ## How to use this guide
 

@@ -473,9 +473,27 @@ h5 {
   box-shadow: none;
 }
 
+.md-tooltip2__inner hr,
+.md-tooltip2__inner .admonition {
+  display: none;
+}
+
 .hero-paragraph {
   font-size: 1.125em;
   color: var(--md-default-fg-color--light);
+}
+
+/* Might be a better way to style complex lists, but wrapping them seems to break things like tabs */
+.numbered-list-heading + ol {
+  list-style: none;
+  counter-reset: num;
+  margin-inline-start: 1.25em !important;
+}
+
+.numbered-list-heading + ol li {
+  counter-increment: num;
+  position: relative;
+  margin-bottom: 1em;
 }
 
 /* Cards */
@@ -589,7 +607,21 @@ h5 {
 }
 
 .md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
-  background-color: var(--color-lime-400);
+  background-color: var(--wr-task-list-indicator-bg-color);
+}
+
+/* Utilities */
+
+.invisible {
+  visibility: collapse;
+  height: 0;
+  width: 0;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.invisible + hr {
+  margin-top: 0.5rem;
 }
 
 .animate-pulse {

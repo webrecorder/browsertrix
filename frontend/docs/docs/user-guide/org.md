@@ -1,6 +1,13 @@
 # Introduction to Orgs
 
-A Browsertrix org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.
+Your collaborative workspace for web archiving
+{ .hero-paragraph }
+
+## Introduction { .invisible }
+
+---
+
+A Browsertrix org, or organization, is your primary workspace for creating and publishing web archives. If you’re archiving collaboratively, an org workspace can be shared between team members.
 
 ## Subscription, Billing, and Quotas
 
