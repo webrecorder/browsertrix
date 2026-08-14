@@ -290,3 +290,6 @@ class CrawlStatus(BaseModel):
 
     # last state
     last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
+
+    # if we need to generate new seed file presigned url (e.g. on restart or resume)
+    updateSeedFilePresigned: bool = False
