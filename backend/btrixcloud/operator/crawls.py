@@ -181,7 +181,7 @@ class CrawlOperator(BaseOperator):
 
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
-        status.updateSeedFilePresigned = False
+        status.update_seed_file_presigned = False
 
         spec: dict[str, str] = data.parent.get(
             "spec", {}
@@ -464,7 +464,7 @@ class CrawlOperator(BaseOperator):
             # pylint: disable=invalid-name
             status.restartTime = spec.get("restartTime")
             status.resync_after = self.fast_retry_secs
-            status.updateSeedFilePresigned = True
+            status.update_seed_file_presigned = True
             params["force_restart"] = True
         else:
             params["force_restart"] = False
@@ -474,7 +474,7 @@ class CrawlOperator(BaseOperator):
         )
         # Always update if seed file to generate new presigned URL
         config_update_needed = config_update_needed or (
-            bool(crawl.seed_file_id) and status.updateSeedFilePresigned
+            bool(crawl.seed_file_id) and status.update_seed_file_presigned
         )
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
@@ -1957,7 +1957,7 @@ class CrawlOperator(BaseOperator):
             status.stopping = False
             # Make sure we generate new presigned URL for seed file when loading
             # crawl configmap, as old one may have expired
-            status.updateSeedFilePresigned = True
+            status.update_seed_file_presigned = True
             # should have already been removed, just in case
             await redis.delete(f"{crawl.id}:paused")
 
