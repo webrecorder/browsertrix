@@ -464,7 +464,6 @@ class CrawlOperator(BaseOperator):
             # pylint: disable=invalid-name
             status.restartTime = spec.get("restartTime")
             status.resync_after = self.fast_retry_secs
-            status.update_seed_file_presigned = True
             params["force_restart"] = True
         else:
             params["force_restart"] = False
@@ -1167,6 +1166,7 @@ class CrawlOperator(BaseOperator):
             # skip if no newly exited pods
             if status.anyCrawlPodNewExit:
                 await self.log_crashes(crawl.id, status.podStatus, redis)
+                status.update_seed_file_presigned = True
 
             if not crawler_running or not redis:
                 # if either crawler is not running or redis is inaccessible
