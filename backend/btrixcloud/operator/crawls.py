@@ -181,6 +181,7 @@ class CrawlOperator(BaseOperator):
 
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
+        status.updateSeedFilePresigned = False
 
         spec: dict[str, str] = data.parent.get(
             "spec", {}
@@ -461,9 +462,9 @@ class CrawlOperator(BaseOperator):
 
         if spec.get("restartTime") != status.restartTime:
             # pylint: disable=invalid-name
-            # TODO: Is this our other hook for when we want to regen seed file presigned URL?
             status.restartTime = spec.get("restartTime")
             status.resync_after = self.fast_retry_secs
+            status.updateSeedFilePresigned = True
             params["force_restart"] = True
         else:
             params["force_restart"] = False
@@ -472,9 +473,9 @@ class CrawlOperator(BaseOperator):
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
         # Always update if seed file to generate new presigned URL
-        # TODO: This isn't quite right, only want to do it if we're restarting
-        # Or maybe if a certain amount of time has elapsed?
-        config_update_needed = config_update_needed or bool(crawl.seed_file_id)
+        config_update_needed = config_update_needed or (
+            bool(crawl.seed_file_id) and status.updateSeedFilePresigned
+        )
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
         children.extend(
@@ -1952,11 +1953,11 @@ class CrawlOperator(BaseOperator):
 
         # check if no longer paused, clear paused stopping state
         if status.stopReason in PAUSED_STATES and not crawl.paused_at:
-            # TODO: Set status field for this iteration so that we know to re-gen
-            # configmap and presigned URL?
-            # Or is there somewhere better, where we can catch all restarts as well?
             status.stopReason = None
             status.stopping = False
+            # Make sure we generate new presigned URL for seed file when loading
+            # crawl configmap, as old one may have expired
+            status.updateSeedFilePresigned = True
             # should have already been removed, just in case
             await redis.delete(f"{crawl.id}:paused")
 
