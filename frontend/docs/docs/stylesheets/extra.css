@@ -53,22 +53,31 @@
   --wr-blue-primary: var(--color-brand-blue);
   --wr-green-primary: var(--color-brand-green);
   --wr-orange-primary: var(--color-orange-500);
+
+  --wr-cta-bg-color: var(--color-lime-400);
+  --wr-cta-border-color: var(--color-lime-500);
 }
 
 /* Header */
 
 .md-header {
   background-color: var(--md-default-bg-color);
-  border-bottom: 1px solid var(--wr-border);
+  border-bottom: 1px solid var(--wr-border-color);
   box-shadow: none;
   color: var(--md-default-fg-color--light);
 }
 
 .md-header .md-tabs {
   background-color: transparent;
-  border-top: 1px solid var(--wr-border);
+  border-top: 1px solid var(--wr-border-color);
   color: var(--md-primary-fg-color--dark);
 }
+
+.md-header__source {
+  max-width: 10rem;
+}
+
+/* Search */
 
 .md-search__form,
 .md-search__icon {
@@ -76,22 +85,25 @@
 }
 
 .md-search__icon {
-  color: var(--color-lime-400) !important;
+  color: var(--md-default-fg-color--lighter) !important;
 }
 
 .md-search__input {
-  background-color: var(--md-default-bg-color);
-  border: 1px solid var(--md-primary-bg-color--light);
+  background-color: var(--md-default-bg-color--lightest);
+  border: 1px solid var(--wr-border-color);
   border-radius: 0.5rem;
   font-size: 0.7rem;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .md-search__input:hover {
-  border-color: var(--color-lime-200);
+  border-color: var(--md-primary-bg-color--light);
 }
 
 .md-search__input::placeholder {
-  color: var(--color-lime-400);
+  color: var(--md-default-fg-color--lighter);
 }
 
 .md-search__output {
@@ -162,7 +174,7 @@
   top: 0.25em;
   left: 0;
   bottom: 0.825em;
-  border-inline-start: 1px solid var(--wr-border);
+  border-inline-start: 1px solid var(--wr-border-color);
 }
 
 .md-icon[for^="__palette_"] svg {
@@ -193,7 +205,7 @@
 /* Footer changes */
 
 .md-footer {
-  border-top: 1px solid var(--wr-border);
+  border-top: 1px solid var(--wr-border-color);
 }
 
 /* Custom menu item hover */
@@ -215,7 +227,7 @@
 
 /* Custom body typography rules */
 
-.md-typeset a:not(.md-button):not([href^="#__tabbed"]) {
+.md-typeset a:not([class*="-button"]):not([href^="#__tabbed"]) {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -515,7 +527,7 @@ h5 {
 .md-typeset .card,
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.5rem;
-  border-color: var(--wr-border);
+  border-color: var(--wr-border-color);
   padding: 0.8rem;
 }
 
@@ -576,8 +588,8 @@ h5 {
 }
 
 .md-typeset .md-button--primary {
-  background-color: var(--color-lime-400);
-  border-color: var(--color-lime-500);
+  background-color: var(--wr-cta-bg-color);
+  border-color: var(--wr-cta-border-color);
 }
 
 .md-typeset .md-button--primary:hover,
@@ -597,6 +609,46 @@ h5 {
 .md-typeset .card-info .md-button--primary:active {
   background-color: var(--color-blue-500);
   border-color: var(--color-blue-600);
+}
+
+.wr-buttons {
+  margin-inline-end: 0.5rem;
+}
+
+.wr-button {
+  display: inline-block;
+  background-color: var(--md-default-bg-color);
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: var(--md-primary-fg-color--dark);
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.md-typeset .wr-button {
+  color: var(--md-primary-fg-color--dark);
+}
+
+.md-header .wr-button {
+  font-size: 0.7rem;
+}
+
+.sign-in-button {
+  border-color: var(--md-primary-bg-color--light);
+}
+
+.sign-in-button:hover,
+.sign-in-button:active {
+  border-color: var(--wr-cta-border-color);
+}
+
+.sign-up-button:hover,
+.sign-up-button:active {
+  color: var(--md-default-fg-color--light);
 }
 
 /* .btrix-button is used to indicate a button in the application and is not interactive */

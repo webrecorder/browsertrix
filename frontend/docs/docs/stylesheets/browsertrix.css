@@ -94,7 +94,7 @@
 .btrix-app-embed .md-search__input:hover {
   border-radius: 0;
   border: 0;
-  border-bottom: 1px solid var(--wr-border);
+  border-bottom: 1px solid var(--wr-border-color);
 }
 
 /* Decrease size of input */
@@ -121,7 +121,7 @@
   background-color: var(--md-default-bg-color);
 }
 .btrix-app-embed .md-nav--primary .md-nav__item:not(:first-child) {
-  border-color: var(--wr-border);
+  border-color: var(--wr-border-color);
 }
 .btrix-app-embed .md-nav--primary .md-nav__link {
   border-radius: 0;

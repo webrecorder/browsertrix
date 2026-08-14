@@ -44,7 +44,9 @@
   --wr-primary-fg-color--darker: var(--color-lime-800);
   --wr-primary-bg-color--lighter: var(--color-lime-50);
 
-  --wr-border: var(--sl-color-neutral-200);
+  --wr-accent-border-color: var(--color-cyan-200);
+
+  --wr-border-color: var(--sl-color-neutral-200);
 
   --wr-task-list-indicator-bg-color: var(--color-lime-400);
 
@@ -57,7 +59,7 @@
 }
 
 [data-md-color-scheme="webrecorder-light"] .md-typeset hr {
-  border-bottom: 1px solid var(--wr-border);
+  border-bottom: 1px solid var(--wr-border-color);
 }
 
 [data-md-color-scheme="webrecorder-light"] .md-typeset code {

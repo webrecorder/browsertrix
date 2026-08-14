@@ -13,10 +13,10 @@
   --md-default-fg-color--light: var(--sl-color-neutral-100);
   --md-default-fg-color--lighter: var(--sl-color-neutral-400);
   --md-default-fg-color--lightest: var(--sl-color-neutral-600);
-  --md-default-bg-color: var(--sl-color-neutral-1000);
-  --md-default-bg-color--light: var(--sl-color-neutral-950);
-  --md-default-bg-color--lighter: var(--color-stone-900);
-  --md-default-bg-color--lightest: var(--color-stone-800);
+  --md-default-bg-color: var(--color-stone-900);
+  --md-default-bg-color--light: var(--color-stone-700);
+  --md-default-bg-color--lighter: var(--color-stone-800);
+  --md-default-bg-color--lightest: var(--sl-color-neutral-900);
 
   --md-code-fg-color: var(--sl-color-teal-200);
   --md-code-bg-color: var(--md-default-bg-color--light);
@@ -49,7 +49,9 @@
   --wr-primary-fg-color--darker: var(--color-lime-50);
   --wr-primary-bg-color--lighter: var(--sl-color-neutral-900);
 
-  --wr-border: var(--color-stone-800);
+  --wr-accent-border-color: var(--color-cyan-700);
+
+  --wr-border-color: var(--color-stone-800);
 
   --wr-task-list-indicator-bg-color: var(--color-lime-600);
 
@@ -62,7 +64,7 @@
 }
 
 [data-md-color-scheme="webrecorder-dark"] .md-typeset hr {
-  border-bottom: 1px solid var(--wr-border);
+  border-bottom: 1px solid var(--wr-border-color);
 }
 
 [data-md-color-scheme="webrecorder-dark"]
