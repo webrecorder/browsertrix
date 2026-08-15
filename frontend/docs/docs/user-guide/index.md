@@ -26,7 +26,7 @@ The user guide documents features, terminology, and settings in the Browsertrix 
 
 - **Getting Started**
 
-    Start here if you’re new to Browsertrix or web archiving.
+    Start here if you’re new to Browsertrix.
 
     ---
 

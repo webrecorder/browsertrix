@@ -19,6 +19,8 @@ Org name and URLs are unique to each Browsertrix instance (for example, on `app.
 
 Enable a homepage for your public collections to easily share all public collections in your org. Once enabled, anyone on the internet with a link to your org's public collections gallery will be able to browse public collections and view general information like the org name, description, and website.
 
+See [Public Collections Gallery](public-collections-gallery.md) guide for more information.
+
 ## Billing
 
 `Subscription Feature`{ .badge-green .btrix-embed-hidden }

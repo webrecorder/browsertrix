@@ -7,6 +7,8 @@ tags:
 
 # Your First Crawl
 
+<!-- markdownlint-disable MD033 -->
+
 Set up your first website or social media page crawl in just a few minutes
 { .hero-paragraph }
 
@@ -32,13 +34,11 @@ Open the webpage that you would like to archive in a new browser tab. Copy the U
 
 Choose one of the following options to tailor this guide to what you’d like to archive:
 
-=== "One page"
+=== "One page<div data-tab-description="Archive a single page on a site"></div>"
 
-    Completing the following steps will archive a single page on a website.
+    <!--  -->
 
-=== "Social media page"
-
-    Completing the following steps will archive a social media post or profile.
+=== "Social media page<div data-tab-description="Archive a social media post or profile"></div>"
 
     #### Before You Start
 
@@ -49,9 +49,7 @@ Choose one of the following options to tailor this guide to what you’d like to
     ??? Question "Can I use my existing social media account?"
         Although there is nothing preventing you from doing so, using your personal account to archive social media pages may [put your personal login information at risk](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving){ data-preview }. We always recommend creating a new account dedicated to archiving to reduce the risk of accidentally archiving your private data.
 
-=== "Entire website"
-
-    Completing the following steps will archive every page on _your-site_.com, _your-site_.org, or another domain.
+=== "Entire website<div data-tab-description="Archive every page on a webs"></div>"
 
 ## Starting the crawl
 
@@ -73,7 +71,7 @@ You will create a [crawl workflow](crawl-workflows.md){ data-preview } to set up
 
     === "Entire website"
 
-        Choose **Pages on Same Domain**.
+        Choose **Pages on Same Domain**. This will find and archive every page that shares the same domain (e.g. _your-site_.com).
 
 1. Enter the URL of the webpage that you copied earlier.
 1. Configure optional settings:

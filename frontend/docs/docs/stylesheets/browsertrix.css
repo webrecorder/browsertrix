@@ -59,6 +59,8 @@
 /* Decrease size of headings */
 .btrix-app-embed .md-typeset h1 {
   font-size: 1rem;
+  font-family: var(--md-text-font);
+  font-variation-settings: "OPSZ" 35;
 }
 .btrix-app-embed .md-typeset h2 {
   font-size: 0.8rem;

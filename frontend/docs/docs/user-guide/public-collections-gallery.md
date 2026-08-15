@@ -2,6 +2,8 @@
 
 With a public collections gallery, you can create a dedicated page that showcases all public collections in one place, allowing you to personalize, curate, and share your web archives with the world.
 
+[Live Demo :octicons-arrow-up-right-16:](https://app.browsertrix.com/explore/webrecorder){ .md-button target="_blank" }
+
 ---
 
 ## Enable Public Collections Gallery

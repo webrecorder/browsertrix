@@ -9,7 +9,7 @@ Links to additional resources to help you get the most out of Browsertrix
 
 Visit the Webrecorder resources portal for general information, terminology, and presentations regarding web archiving.
 
-[Explore Resources :octicons-link-external-16:](https://webrecorder.net/resources/){ .md-button .md-button--primary target="_blank" }
+[Explore Resources :octicons-arrow-up-right-16:](https://webrecorder.net/resources/){ .md-button .md-button--primary target="_blank" }
 
 ---
 
@@ -17,7 +17,7 @@ Visit the Webrecorder resources portal for general information, terminology, and
 
 For the latest on new and upgraded Browsertrix features, check out our product blog.
 
-[Explore Articles :octicons-link-external-16:](https://webrecorder.net/blog/product/){ .md-button target="_blank" }
+[Explore Articles :octicons-arrow-up-right-16:](https://webrecorder.net/blog/product/){ .md-button target="_blank" }
 
 ---
 
@@ -25,7 +25,7 @@ For the latest on new and upgraded Browsertrix features, check out our product b
 
 Tap into community knowledge and support from other Browsertrix users and archivists.
 
-[Explore Forum :octicons-link-external-16:](https://forum.webrecorder.net/){ .md-button target="_blank" }
+[Explore Forum :octicons-arrow-up-right-16:](https://forum.webrecorder.net/){ .md-button target="_blank" }
 
 ---
 

@@ -1,6 +1,6 @@
 # Intro to Collections
 
-Collections provide a way to dynamically combine and group multiple individual crawls and uploads into a contextual, unified archive replay experience.
+Dynamically combine and group multiple crawls and uploads into a contextual, unified archive replay experience.
 
 ## Introduction { .invisible }
 

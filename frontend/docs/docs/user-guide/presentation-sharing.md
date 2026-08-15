@@ -2,6 +2,8 @@
 
 To present a collection to viewers outside of your organization, you can enable a shareable link.
 
+[Live Demo :octicons-arrow-up-right-16:](https://app.browsertrix.com/explore/webrecorder/collections/webrecorder-websites){ .md-button target="_blank" }
+
 ---
 
 ## Share a Collection

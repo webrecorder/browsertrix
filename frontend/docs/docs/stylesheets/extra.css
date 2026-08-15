@@ -149,6 +149,7 @@
   border-radius: 0.3rem;
   padding: 0.3rem 0.6rem;
   margin-top: 0.2rem;
+  font-weight: 500;
 }
 
 .md-nav--primary .md-nav__link:not([for]):not(.md-nav__link--active):hover {
@@ -229,6 +230,7 @@
 
 .md-typeset a:not([class*="-button"]):not([href^="#__tabbed"]) {
   text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
@@ -267,7 +269,11 @@ h5 {
 }
 
 .md-typeset h1 {
-  font-size: 1.75em;
+  font-size: 1.875em;
+  font-family: var(--md-display-font);
+  font-variation-settings:
+    "wdth" 105,
+    "wght" 650;
 }
 
 .md-typeset h2 {
@@ -509,6 +515,31 @@ h5 {
   color: var(--md-default-fg-color--light);
 }
 
+/* Lists */
+
+.icon-list ul {
+  list-style: none;
+}
+
+.icon-list ul .twemoji {
+  margin-inline-end: 0.3em;
+  color: var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .icon-list ul li {
+  margin-bottom: 0.65em;
+}
+
+[dir="ltr"] .md-typeset .icon-list ul,
+[dir="ltr"] .md-typeset .icon-list li {
+  margin-left: 0;
+}
+
+[dir="rtl"] .md-typeset .icon-list ul,
+[dir="rtl"] .md-typeset .icon-list li {
+  margin-right: 0;
+}
+
 /* Might be a better way to style complex lists, but wrapping them seems to break things like tabs */
 .numbered-list-heading + ol {
   list-style: none;
@@ -528,12 +559,34 @@ h5 {
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.5rem;
   border-color: var(--wr-border-color);
-  padding: 0.8rem;
+  padding: 1em;
+  box-shadow: none !important;
+  text-wrap: pretty;
 }
 
-.md-typeset .grid.cards > ul > li:hover {
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid.cards > ul > li:active {
   border: 1px solid var(--md-primary-bg-color--light);
-  box-shadow: none;
+}
+
+.md-typeset .card hr,
+.md-typeset .grid.cards > ul > li hr {
+  margin-top: 0.75em;
+}
+
+.card > p:first-child:has(.twemoji),
+.cards li > p:first-child:has(.twemoji),
+.card a:has(.twemoji),
+.cards li a:has(.twemoji) {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.card > p:first-child .twemoji,
+.grid.cards > ul > li > p:first-child .twemoji {
+  --md-icon-size: 1.4em;
+  color: var(--wr-task-list-indicator-bg-color);
 }
 
 .card > p:first-child {
@@ -544,22 +597,23 @@ h5 {
   margin-bottom: 0;
 }
 
-.card-primary {
+.md-typeset .card-primary {
   background-color: var(--wr-primary-bg-color--lighter);
   border-color: var(--md-primary-bg-color--light);
   border-radius: 0.75rem;
   color: var(--wr-primary-fg-color--darker);
 }
 
-.card-info {
-  background-color: var(--color-blue-50);
-  border-color: var(--color-blue-100);
+.md-typeset .card-info {
+  background-color: var(--wr-info-bg-color);
+  border-color: var(--wr-info-border-color);
   border-radius: 0.75rem;
-  color: var(--color-blue-800);
+  color: var(--wr-info-fg-color);
 }
 
 .card--button-right.grid {
   grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -590,6 +644,7 @@ h5 {
 .md-typeset .md-button--primary {
   background-color: var(--wr-cta-bg-color);
   border-color: var(--wr-cta-border-color);
+  color: white;
 }
 
 .md-typeset .md-button--primary:hover,
@@ -597,6 +652,7 @@ h5 {
 .md-typeset .md-button--primary:active {
   background-color: var(--color-lime-500);
   border-color: var(--color-lime-600);
+  color: white;
 }
 
 .md-typeset .card-info .md-button--primary {
@@ -674,6 +730,104 @@ h5 {
 
 .md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
   background-color: var(--wr-task-list-indicator-bg-color);
+}
+
+/* Tabs */
+
+.md-typeset .tabbed-set {
+  margin-top: 0;
+}
+
+.md-typeset .tabbed-labels {
+  box-shadow: 0 -1px var(--wr-border-color) inset;
+}
+
+.md-typeset .tabbed-labels > label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.md-typeset .tabbed-labels--linked > label:not(:first-child) {
+  margin-inline-start: 0.75em;
+}
+
+.md-typeset .tabbed-labels--linked > label:not(:last-child) {
+  margin-inline-end: 0.75em;
+}
+
+.md-typeset .tabbed-labels--linked > label > a {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+
+/* Indicator line */
+.js .md-typeset .tabbed-labels:before {
+  background: var(--wr-task-list-indicator-bg-color);
+}
+
+/* Custom descriptive buttons that control tabs */
+
+.md-typeset .tabbed-set:has([data-tab-description]) label {
+  flex: 1 1 0%;
+  font-size: inherit;
+  border: 1px solid var(--wr-border-color);
+  border-radius: 0.5rem;
+  padding: 0 0.8em;
+  text-align: center;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.md-typeset .tabbed-set:has([data-tab-description]) label:hover {
+  border-color: var(--wr-task-list-indicator-bg-color);
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  .tabbed-labels--linked
+  > label:not(:first-child) {
+  margin-inline-start: 0.5em;
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  .tabbed-labels--linked
+  > label:not(:last-child) {
+  margin-inline-end: 0.5em;
+}
+
+.js .md-typeset .tabbed-set:has([data-tab-description]) .tabbed-labels:before {
+  display: none;
+}
+
+.md-typeset .tabbed-set:has([data-tab-description]) .tabbed-labels {
+  box-shadow: none;
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(1):checked
+  ~ .tabbed-labels
+  > :nth-child(1),
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(2):checked
+  ~ .tabbed-labels
+  > :nth-child(2),
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(3):checked
+  ~ .tabbed-labels
+  > :nth-child(3) {
+  background-color: var(--wr-primary-bg-color--lighter);
+  border-color: var(--wr-task-list-indicator-bg-color);
+}
+
+.md-typeset .tabbed-set label [data-tab-description]:after {
+  content: attr(data-tab-description);
+  font-size: 0.65rem;
+  font-weight: normal;
 }
 
 /* Utilities */

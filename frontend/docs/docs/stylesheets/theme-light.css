@@ -46,6 +46,10 @@
 
   --wr-accent-border-color: var(--color-cyan-200);
 
+  --wr-info-fg-color: var(--color-blue-800);
+  --wr-info-bg-color: var(--color-blue-50);
+  --wr-info-border-color: var(--color-blue-100);
+
   --wr-border-color: var(--sl-color-neutral-200);
 
   --wr-task-list-indicator-bg-color: var(--color-lime-400);
@@ -64,4 +68,10 @@
 
 [data-md-color-scheme="webrecorder-light"] .md-typeset code {
   border-color: var(--color-earth-100);
+}
+
+[data-md-color-scheme="webrecorder-light"]
+  .md-typeset
+  a:not([class*="-button"]):not([href^="#__tabbed"]) {
+  text-decoration-color: var(--sl-color-neutral-300);
 }

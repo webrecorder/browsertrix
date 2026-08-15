@@ -46,12 +46,16 @@
   --md-footer-bg-color--dark: var(--sl-color-neutral-950);
 
   /* Custom Webrecorder variables */
-  --wr-primary-fg-color--darker: var(--color-lime-50);
+  --wr-primary-fg-color--darker: var(--color-lime-100);
   --wr-primary-bg-color--lighter: var(--sl-color-neutral-900);
 
   --wr-accent-border-color: var(--color-cyan-700);
 
-  --wr-border-color: var(--color-stone-800);
+  --wr-info-fg-color: var(--color-blue-100);
+  --wr-info-bg-color: var(--sl-color-neutral-900);
+  --wr-info-border-color: var(--color-blue-700);
+
+  --wr-border-color: var(--color-stone-700);
 
   --wr-task-list-indicator-bg-color: var(--color-lime-600);
 
@@ -69,17 +73,23 @@
 
 [data-md-color-scheme="webrecorder-dark"]
   .md-typeset
-  a:not(.md-button):not([href^="#__tabbed"]) {
+  a:not([class*="-button"]):not([href^="#__tabbed"]) {
   text-decoration-color: var(--color-stone-500);
 }
 
 [data-md-color-scheme="webrecorder-dark"]
   .md-typeset
-  a:not(.md-button):not([href^="#__tabbed"]):hover {
+  a:not([class*="-button"]):not([href^="#__tabbed"]):hover {
   color: var(--md-typeset-color);
   text-decoration-color: var(--color-stone-300);
 }
 
 [data-md-color-scheme="webrecorder-dark"] .md-typeset code {
   border-color: var(--color-stone-800);
+}
+
+[data-md-color-scheme="webrecorder-dark"]
+  .md-typeset
+  .md-button:not(.md-button--primary) {
+  color: var(--color-lime-200);
 }
