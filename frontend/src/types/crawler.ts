@@ -226,6 +226,7 @@ export type Crawl = ArchivedItemBase &
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
+    rateLimitedAt: string | null;
     resources?: (StorageFile & {
       numReplicas: number;
       fromDependency: boolean;

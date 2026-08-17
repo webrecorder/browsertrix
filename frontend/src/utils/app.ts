@@ -15,6 +15,8 @@ export type AppSettings = {
   salesEmail: string;
   supportEmail: string;
   localesEnabled?: readonly string[];
+  pausedExpiryMinutes?: number;
+  rateLimitDurationMinutes?: number;
 };
 
 export async function getAppSettings(): Promise<AppSettings> {
