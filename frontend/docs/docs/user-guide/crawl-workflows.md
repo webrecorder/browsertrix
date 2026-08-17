@@ -1,8 +1,13 @@
 # Intro to Crawl Workflows
 
-Crawl workflows are the bread and butter of automated browser-based crawling. A crawl workflow enables you to specify how and what the crawler should capture on a website.
+Schedule, run, and manage crawls with intuitive and granular configuration options
+{ .hero-paragraph }
 
-A finished crawl results in an [archived item](./archived-items.md) that can be downloaded and shared. To easily identify and find archived items within your org, you can automatically name and tag archived items through custom workflow metadata.
+## Introduction { .invisible }
+
+---
+
+A crawl workflow enables you to provide exact specifications as to how and what the crawler should capture on a website. A finished crawl results in an [archived item](./archived-items.md){ data-preview } that can be downloaded and shared in collections.
 
 You can create, view, search for, and run crawl workflows from the **Crawling** page.
 
@@ -16,17 +21,19 @@ The first step in creating a new crawl workflow is to choose what you'd like to 
 
 #### Page Crawl
 
-Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages beyond one link out.
+: Choose one of these crawl scopes if you know the URL of every page you'd like to crawl and don't need to include any additional pages, or if you're crawling a single social media profile or post.
 
-A Page Crawl workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
+: A _Page Crawl_ workflow is simpler to configure, since you don't need to worry about configuring the workflow to exclude parts of the website that you may not want to archive.
 
 #### Site Crawl
 
-Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
+: Choose one of these crawl scopes to have the the crawler automatically find pages based on a domain name, start page URL, or directory on a website.
 
-Site Crawl workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
+: _Site Crawl_ workflows are great for advanced use cases where you don't need (or want) to know every single URL of the website that you're archiving.
 
-After deciding what type of crawl you'd like to run, you can begin to set up your workflow. A detailed breakdown of available settings can be found in the [workflow settings guide](workflow-setup.md).
+After deciding what type of crawl you'd like to run, you can begin to set up your workflow. If this is your first crawl, our [quick start guide](getting-started.md) can help you determine which crawl scope best fits your crawl.
+
+A detailed breakdown of available settings can be found in the [workflow settings guide](workflow-setup.md).
 
 ## Run Crawl
 
@@ -35,6 +42,10 @@ Run a crawl workflow by clicking _Run Crawl_ in the actions menu of the workflow
 While crawling, the **Latest Crawl** section streams the current state of the browser windows as they visit pages. You can [modify the crawl live](./running-crawl.md) by adding URL exclusions or changing the number of crawling instances.
 
 Re-running a crawl workflow can be useful to capture a website as it changes over time, or to run with an updated [crawl scope](workflow-setup.md#crawl-scope).
+
+## Workflow Metadata
+
+To easily identify and find archived items within your org, you can automatically name and tag archived items through custom [workflow metadata](workflow-setup.md#metadata).
 
 ## Workflow Status
 
@@ -56,10 +67,10 @@ Statuses may be displayed with a reason that details how the current status came
 | <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span> | The workflow run has been paused automatically due to being [rate limited](running-crawl.md#rate-limit-detection) for too long. |
 | <span class="status-neutral-500">:bootstrap-pause-circle: Paused: _Reason_</span> | The workflow run has been paused automatically due to an enforced limit, as specified in the reason. |
 | <span class="status-violet-600">:bootstrap-play-circle: Resuming</span> | The workflow run is starting back up after being paused. |
-| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | The crawler has been instructed to stop and is finishing crawl of the current page.|
-| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The crawler is waiting for the current page to finish downloading to finalize the crawl.|
-| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Crawled pages are being packaged into WACZ files.|
-| <span class="status-violet-600">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage.|
+| <span class="status-violet-600">:btrix-status-dot: Stopping</span> | The crawler has been instructed to stop and is finishing crawl of the current page. |
+| <span class="status-violet-600">:btrix-status-dot: Finishing Downloads</span> | The crawler is waiting for the current page to finish downloading to finalize the crawl. |
+| <span class="status-violet-600">:btrix-status-dot: Generating WACZ</span> | Crawled pages are being packaged into WACZ files. |
+| <span class="status-violet-600">:btrix-status-dot: Uploading WACZ</span> | WACZ files have been created and are being transferred to storage. |
 | <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span> | All pages within the workflow's scope and limits have been crawled and saved as WACZ, resulting in an [archived item](archived-items.md). |
 | <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span> | The workflow run was stopped by a user and allowed to finish gracefully, resulting in an archived item. |
 | <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Paused Too Long</span> | The workflow run was stopped automatically because it was not resumed within the given time limit. |

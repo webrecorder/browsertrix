@@ -1,6 +1,12 @@
 # Running Crawls
 
-Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
+Monitor and interact with crawl runs in real-time: watch pages being crawled, update queued URLs on the fly to exclude unwanted pages, pause a crawl for inspection, and more.
+
+## Introduction { .invisible }
+
+---
+
+The **Crawling** > **Crawl Runs** page lists all active crawls. Individual crawl runs can be viewed and modified from the crawl workflow **Latest Crawl** tab.
 
 ## Crawl Status
 
@@ -50,8 +56,8 @@ If too many error pages are encountered, the crawler adapts by slowing down and 
 Unfortunately, there is not much Browsertrix can do to prevent being rate limited altogether. Adding a [browser profile](browser-profiles/browser-profiles-overview.md) or configuring a [proxy server](workflow-setup.md#crawler-proxy-server) may help reduce rate limits for certain sites, while other sites may need to provide explicit permission to be crawled, thus requiring the list of IP ranges used by Browsertrix.
 
 ???+ "Allow-listing Browsertrix on your website"
-    `Paid Feature`{ .badge-green }
-    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](support@webrecorder.org) for assistance.
+    `Subscription Feature`{ .badge-green .btrix-embed-hidden }
+    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support :material-email-outline:](mailto:support@webrecorder.org) for assistance.
 
 ### Rate Limited Workflow Status
 
