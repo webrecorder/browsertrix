@@ -30,6 +30,9 @@
   --md-code-hl-constant-color: var(--sl-color-violet-700);
   --md-code-hl-keyword-color: var(--sl-color-blue-700);
   --md-code-hl-string-color: var(--sl-color-teal-700);
+  --md-code-hl-comment-color: var(--md-default-fg-color--lightest);
+  --md-code-hl-operator-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-name-color: var(--md-default-fg-color);
 
   --md-typeset-table-color: var(--md-default-bg-color--light);
   --md-typeset-table-color--light: var(--md-default-bg-color--lightest);
