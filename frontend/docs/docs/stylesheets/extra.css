@@ -53,21 +53,72 @@
   --wr-blue-primary: var(--color-brand-blue);
   --wr-green-primary: var(--color-brand-green);
   --wr-orange-primary: var(--color-orange-500);
+
+  --wr-cta-bg-color: var(--color-lime-400);
+  --wr-cta-border-color: var(--color-lime-500);
 }
 
-[data-md-color-scheme="webrecorder"] {
-  --md-primary-fg-color: var(--color-brand-green);
-  --md-primary-fg-color--light: var(--color-cyan-500);
-  --md-primary-fg-color--dark: var(--color-cyan-600);
-  --md-typeset-color: black;
-  --md-accent-fg-color: var(--color-cyan-500);
-  --md-typeset-a-color: var(--color-cyan-600);
-  --md-code-bg-color: #f9fafb;
+/* Header */
+
+.md-header {
+  background-color: var(--md-default-bg-color);
+  border-bottom: 1px solid var(--wr-border-color);
+  box-shadow: none;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-header .md-tabs {
+  background-color: transparent;
+  border-top: 1px solid var(--wr-border-color);
+  color: var(--md-primary-fg-color--dark);
+}
+
+.md-header__source {
+  max-width: 10rem;
+}
+
+/* Search */
+
+.md-search__form,
+.md-search__icon {
+  background-color: transparent !important;
+}
+
+.md-search__icon {
+  color: var(--md-default-fg-color--lighter) !important;
+}
+
+.md-search__input {
+  background-color: var(--md-default-bg-color--lightest);
+  border: 1px solid var(--wr-border-color);
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.md-search__input:hover {
+  border-color: var(--md-primary-bg-color--light);
+}
+
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color--lighter);
+}
+
+.md-search__output {
+  padding-top: 0.25rem;
+  box-shadow: none !important;
+}
+
+.md-search__scrollwrap {
+  border-radius: 0.5rem;
 }
 
 /* Nav changes */
 
 .md-header__title,
+.md-nav__list > .md-nav__item > [for="__nav_2"],
 .md-nav__title {
   font-family: var(--md-display-font);
   text-transform: uppercase;
@@ -89,27 +140,101 @@
   margin-right: 0 !important;
 }
 
+.md-nav--lifted .md-nav__item--active > .md-nav__link,
+.md-nav__title {
+  box-shadow: none !important;
+}
+
+.md-nav--primary .md-nav__link {
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+.md-nav--primary .md-nav__link:not([for]):not(.md-nav__link--active):hover {
+  background-color: var(--md-default-bg-color--lightest);
+}
+
+.md-nav--primary .md-nav__link--active {
+  background-color: var(--md-accent-bg-color--light);
+  color: var(--md-accent-fg-color);
+}
+
+.md-nav--secondary {
+  margin-top: 0.3rem;
+}
+
+.md-nav--secondary .md-nav__list .md-nav__list {
+  position: relative;
+}
+
+.md-nav--secondary .md-nav__list .md-nav__list:before {
+  content: "";
+  position: absolute;
+  top: 0.25em;
+  left: 0;
+  bottom: 0.825em;
+  border-inline-start: 1px solid var(--wr-border-color);
+}
+
+.md-icon[for^="__palette_"] svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+/* Scrollbar changes */
+
+.md-sidebar__scrollwrap {
+  scrollbar-color: var(--md-default-bg-color--lighter) #0000;
+  transition: scrollbar-color 0.15s;
+}
+
+.md-sidebar__scrollwrap:focus-within,
+.md-sidebar__scrollwrap:hover {
+  scrollbar-color: var(--md-default-fg-color--lightest) #0000;
+}
+.md-sidebar__scrollwrap:focus-within::-webkit-scrollbar-thumb,
+.md-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb {
+  background-color: var(--md-default-bg-color--lighter);
+}
+.md-sidebar__scrollwrap:focus-within::-webkit-scrollbar-thumb:hover,
+.md-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb:hover {
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+/* Footer changes */
+
+.md-footer {
+  border-top: 1px solid var(--wr-border-color);
+}
+
 /* Custom menu item hover */
 
 .md-tabs__link {
   font-family: var(--md-code-font);
   font-weight: 400;
-  opacity: 0.9;
+  opacity: 1;
+  margin-top: 0.75rem;
   transition:
     0.4s cubic-bezier(0.1, 0.7, 0.1, 1),
     opacity 0.25s;
 }
 
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link:hover {
   font-weight: 600;
 }
 
 /* Custom body typography rules */
 
-.md-typeset a {
+.md-typeset a:not([class*="-button"]):not([href^="#__tabbed"]) {
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
+.cards a,
 .headerlink {
   text-decoration: none !important;
 }
@@ -132,7 +257,7 @@ h2,
 h3,
 h4,
 h5 {
-  color: black;
+  color: var(--md-typeset-color);
 }
 
 .md-typeset h1,
@@ -141,6 +266,18 @@ h5 {
 .md-typeset h4 {
   font-weight: 600;
   font-variation-settings: "OPSZ" 35;
+}
+
+.md-typeset h1 {
+  font-size: 1.875em;
+  font-family: var(--md-display-font);
+  font-variation-settings:
+    "wdth" 105,
+    "wght" 650;
+}
+
+.md-typeset h2 {
+  font-size: 1.25em;
 }
 
 .md-typeset h3 {
@@ -161,6 +298,17 @@ h5 {
     "ss04" off,
     "ss07" on,
     "ss08" on;
+}
+
+/* Add more spacing when previous/next buttons are hidden */
+.md-footer:has(nav[hidden]) {
+  margin-top: 3rem;
+}
+
+/* Bit of a hack, but there doesn't appear to be a way to hide the "previous" link in the user guide intro  */
+.md-footer__link--prev[href="https://docs.browsertrix.com/"],
+.md-footer__link--prev[href="http://localhost:8000/"] {
+  display: none;
 }
 
 /* Custom badge classes, applies custom overrides to inline-code blocks */
@@ -193,7 +341,7 @@ h5 {
 
 [class^="callout-"],
 [class*=" callout-"] {
-  background-color: white !important;
+  background-color: var(--md-default-bg-color) !important;
   border-radius: 0.2rem !important;
   font-family: var(--md-text-font);
   font-size: 0.64rem !important;
@@ -202,18 +350,18 @@ h5 {
 }
 
 .callout-blue {
-  border-color: var(--color-cyan-200) !important;
-  color: var(--color-cyan-700) !important;
+  border-color: var(--wr-callout-blue-bg-color) !important;
+  color: var(--wr-callout-blue-fg-color) !important;
 }
 
 .callout-green {
-  border-color: var(--color-lime-200) !important;
-  color: var(--color-lime-700) !important;
+  border-color: var(--wr-callout-green-bg-color) !important;
+  color: var(--wr-callout-green-fg-color) !important;
 }
 
 .callout-orange {
-  border-color: var(--color-orange-200) !important;
-  color: var(--color-orange-700) !important;
+  border-color: var(--wr-callout-orange-bg-color) !important;
+  color: var(--wr-callout-orange-fg-color) !important;
 }
 
 /* Status Styling */
@@ -312,6 +460,388 @@ h5 {
   & svg {
     color: var(--sl-color-violet-600);
   }
+}
+
+/* Blocks */
+
+.md-grid {
+  /* Increase max width from 61rem */
+  max-width: 75rem;
+}
+
+.md-main__inner {
+  margin-top: 0;
+}
+
+.md-content__inner {
+  margin-top: 1.5rem;
+  max-width: 56em;
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-sidebar[hidden] + .md-sidebar[hidden] + .md-content .md-content__inner {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media screen and (min-width: 94em) {
+  .md-sidebar[hidden] + .md-sidebar[hidden] + .md-content .md-content__inner {
+    margin-left: 13.3rem;
+    margin-right: 13.3rem;
+  }
+}
+
+.md-typeset .admonition,
+.md-typeset details,
+.md-typeset .card,
+.md-typeset .grid.cards > ul > li {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 0.5rem;
+}
+
+.md-typeset .admonition {
+  box-shadow: none;
+}
+
+.md-tooltip2__inner hr,
+.md-tooltip2__inner .admonition {
+  display: none;
+}
+
+.hero-paragraph {
+  font-size: 1.125em;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Lists */
+
+.icon-list ul {
+  list-style: none;
+}
+
+.icon-list ul .twemoji {
+  margin-inline-end: 0.3em;
+  color: var(--md-default-fg-color--lighter);
+}
+
+.md-typeset .icon-list ul li {
+  margin-bottom: 0.65em;
+}
+
+[dir="ltr"] .md-typeset .icon-list ul,
+[dir="ltr"] .md-typeset .icon-list li {
+  margin-left: 0;
+}
+
+[dir="rtl"] .md-typeset .icon-list ul,
+[dir="rtl"] .md-typeset .icon-list li {
+  margin-right: 0;
+}
+
+/* Might be a better way to style complex lists, but wrapping them seems to break things like tabs */
+.numbered-list-heading + ol {
+  list-style: none;
+  counter-reset: num;
+  margin-inline-start: 1.25em !important;
+}
+
+.numbered-list-heading + ol li {
+  counter-increment: num;
+  position: relative;
+  margin-bottom: 1em;
+}
+
+/* Cards */
+
+.md-typeset .card,
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+  border-color: var(--wr-border-color);
+  padding: 1em;
+  box-shadow: none !important;
+  text-wrap: pretty;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid.cards > ul > li:active {
+  border: 1px solid var(--md-primary-bg-color--light);
+}
+
+.md-typeset .card hr,
+.md-typeset .grid.cards > ul > li hr {
+  margin-top: 0.75em;
+}
+
+.card > p:first-child:has(.twemoji),
+.cards li > p:first-child:has(.twemoji),
+.card a:has(.twemoji),
+.cards li a:has(.twemoji) {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.card > p:first-child .twemoji,
+.grid.cards > ul > li > p:first-child .twemoji {
+  --md-icon-size: 1.4em;
+  color: var(--wr-task-list-indicator-bg-color);
+}
+
+.card > p:first-child {
+  margin-top: 0;
+}
+
+.card > p:last-child {
+  margin-bottom: 0;
+}
+
+.md-typeset .card-primary {
+  background-color: var(--wr-primary-bg-color--lighter);
+  border-color: var(--md-primary-bg-color--light);
+  border-radius: 0.75rem;
+  color: var(--wr-primary-fg-color--darker);
+}
+
+.md-typeset .card-info {
+  background-color: var(--wr-info-bg-color);
+  border-color: var(--wr-info-border-color);
+  border-radius: 0.75rem;
+  color: var(--wr-info-fg-color);
+}
+
+.card--button-right.grid {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+
+.md-typeset .md-button {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  padding: 0.625em 1.5em;
+}
+
+.md-typeset .md-button + .md-button {
+  margin-inline-start: 0.25rem;
+}
+
+.md-typeset .md-button:not(.md-button--primary) {
+  border-color: var(--color-lime-200);
+}
+
+.md-typeset .md-button:not(.md-button--primary):hover,
+.md-typeset .md-button:not(.md-button--primary):active,
+.md-typeset .md-button:not(.md-button--primary):focus {
+  background-color: var(--color-lime-50);
+  border-color: var(--color-lime-400);
+  color: var(--color-brand-green);
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--wr-cta-bg-color);
+  border-color: var(--wr-cta-border-color);
+  color: white;
+}
+
+.md-typeset .md-button--primary:hover,
+.md-typeset .md-button--primary:focus,
+.md-typeset .md-button--primary:active {
+  background-color: var(--color-lime-500);
+  border-color: var(--color-lime-600);
+  color: white;
+}
+
+.md-typeset .card-info .md-button--primary {
+  background-color: var(--color-blue-400);
+  border-color: var(--color-blue-500);
+}
+
+.md-typeset .card-info .md-button--primary:hover,
+.md-typeset .card-info .md-button--primary:focus,
+.md-typeset .card-info .md-button--primary:active {
+  background-color: var(--color-blue-500);
+  border-color: var(--color-blue-600);
+}
+
+.wr-buttons {
+  margin-inline-end: 0.5rem;
+}
+
+.wr-button {
+  display: inline-block;
+  background-color: var(--md-default-bg-color);
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: var(--md-primary-fg-color--dark);
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.md-typeset .wr-button {
+  color: var(--md-primary-fg-color--dark);
+}
+
+.md-header .wr-button {
+  font-size: 0.7rem;
+}
+
+.sign-in-button {
+  border-color: var(--md-primary-bg-color--light);
+}
+
+.sign-in-button:hover,
+.sign-in-button:active {
+  border-color: var(--wr-cta-border-color);
+}
+
+.sign-up-button:hover,
+.sign-up-button:active {
+  color: var(--md-default-fg-color--light);
+}
+
+/* .btrix-button is used to indicate a button in the application and is not interactive */
+
+.md-button.btrix-button {
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  pointer-events: none;
+}
+
+.md-button--primary.btrix-button {
+  background-color: var(--color-cyan-400);
+  border-color: var(--color-cyan-600);
+}
+
+.md-button--success.btrix-button {
+  background-color: var(--sl-color-success-600);
+  border-color: var(--sl-color-success-700);
+  color: white;
+}
+
+.md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
+  background-color: var(--wr-task-list-indicator-bg-color);
+}
+
+/* Tabs */
+
+.md-typeset .tabbed-set {
+  margin-top: 0;
+}
+
+.md-typeset .tabbed-labels {
+  box-shadow: 0 -1px var(--wr-border-color) inset;
+}
+
+.md-typeset .tabbed-labels > label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.md-typeset .tabbed-labels--linked > label:not(:first-child) {
+  margin-inline-start: 0.75em;
+}
+
+.md-typeset .tabbed-labels--linked > label:not(:last-child) {
+  margin-inline-end: 0.75em;
+}
+
+.md-typeset .tabbed-labels--linked > label > a {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+
+/* Indicator line */
+.js .md-typeset .tabbed-labels:before {
+  background: var(--wr-task-list-indicator-bg-color);
+}
+
+/* Custom descriptive buttons that control tabs */
+
+.md-typeset .tabbed-set:has([data-tab-description]) label {
+  flex: 1 1 0%;
+  font-size: inherit;
+  border: 1px solid var(--wr-border-color);
+  border-radius: 0.5rem;
+  padding: 0 0.8em;
+  text-align: center;
+  transition-property: border-color, background-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.md-typeset .tabbed-set:has([data-tab-description]) label:hover {
+  border-color: var(--wr-task-list-indicator-bg-color);
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  .tabbed-labels--linked
+  > label:not(:first-child) {
+  margin-inline-start: 0.5em;
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  .tabbed-labels--linked
+  > label:not(:last-child) {
+  margin-inline-end: 0.5em;
+}
+
+.js .md-typeset .tabbed-set:has([data-tab-description]) .tabbed-labels:before {
+  display: none;
+}
+
+.md-typeset .tabbed-set:has([data-tab-description]) .tabbed-labels {
+  box-shadow: none;
+}
+
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(1):checked
+  ~ .tabbed-labels
+  > :nth-child(1),
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(2):checked
+  ~ .tabbed-labels
+  > :nth-child(2),
+.md-typeset
+  .tabbed-set:has([data-tab-description])
+  > input:nth-child(3):checked
+  ~ .tabbed-labels
+  > :nth-child(3) {
+  background-color: var(--wr-primary-bg-color--lighter);
+  border-color: var(--wr-task-list-indicator-bg-color);
+}
+
+.md-typeset .tabbed-set label [data-tab-description]:after {
+  content: attr(data-tab-description);
+  font-size: 0.65rem;
+  font-weight: normal;
+}
+
+/* Utilities */
+
+.invisible {
+  visibility: collapse;
+  height: 0;
+  width: 0;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.invisible + hr {
+  margin-top: 0.5rem;
 }
 
 .animate-pulse {
