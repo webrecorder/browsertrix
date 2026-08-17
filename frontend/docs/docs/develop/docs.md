@@ -164,14 +164,14 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 
 Renders to: `#!python range()`
 
-### Paid features
+### Subscription Feature
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
 Some features of Browsertrix only pertain to those paying for the software on a hosted plan. Denote these with the following:
 
 ```markdown
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 ```
 
 ### Admonitions
@@ -200,3 +200,39 @@ There are a lot of different options provided by Material for MkDocs — So many
 
 !!! Danger "Danger: Must have a title stating the warning"
     Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
+
+### Hide in Browsertrix Embed
+
+The user guide is embedded in the Browsertrix web application. You may want to hide certain elements in the embed. To do so, add the `btrix-embed-hidden` class.
+
+```markdown
+<!-- Hide heading -->
+## Special Heading { .btrix-embed-hidden }
+
+<!-- Hide paragraph -->
+This paragraph will be hidden in Browsertrix.
+{ .btrix-embed-hidden }
+
+<!-- Hide list item -->
+- I'm visible
+- I'm visible
+- I'm hidden!
+{ .btrix-embed-hidden }
+- I'm visible
+
+<!-- Hide inline HTML -->
+<hr class="btrix-embed-hidden" />
+```
+
+### Show in Browsertrix Embed
+
+The `btrix-embed-visible` class will show elements only in the Browsertrix embed:
+
+```markdown
+<!-- Show heading -->
+## Special Heading { .btrix-embed-visible }
+
+<!-- Show paragraph -->
+This paragraph will be visible only in Browsertrix.
+{ .btrix-embed-visible }
+```
