@@ -3,6 +3,8 @@ repo_url: https://github.com/webrecorder/browsertrix-cloud/
 repo_name: Browsertrix
 edit_uri: edit/main/frontend/docs/docs/
 extra_css:
+  - stylesheets/theme-light.css
+  - stylesheets/theme-dark.css
   - stylesheets/extra.css
 extra_javascript:
   - js/insertversion.js
@@ -25,8 +27,17 @@ theme:
     - content.tabs.link
     - search.suggest
   palette:
-    scheme: webrecorder
-  logo: assets/brand/browsertrix-icon-white.svg
+    - media: "(prefers-color-scheme: light)"
+      scheme: webrecorder-light
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: webrecorder-dark
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  logo: assets/brand/browsertrix-icon-color.png
   favicon: assets/brand/favicon.svg
 
   icon:

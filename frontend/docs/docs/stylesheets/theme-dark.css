@@ -1,0 +1,95 @@
+[data-md-color-scheme="webrecorder-dark"] {
+  --md-primary-fg-color: var(--color-brand-green);
+  --md-primary-fg-color--light: var(--color-lime-50);
+  --md-primary-fg-color--dark: var(--color-lime-100);
+  /* --md-primary-bg-color: var(--sl-color-neutral-0); */
+  --md-primary-bg-color--light: var(--color-lime-700);
+
+  --md-accent-fg-color: var(--color-cyan-100);
+  --md-accent-bg-color: var(--color-cyan-900);
+  --md-accent-bg-color--light: var(--color-cyan-800);
+
+  --md-default-fg-color: var(--sl-color-neutral-0);
+  --md-default-fg-color--light: var(--sl-color-neutral-100);
+  --md-default-fg-color--lighter: var(--sl-color-neutral-400);
+  --md-default-fg-color--lightest: var(--sl-color-neutral-600);
+  --md-default-bg-color: var(--color-stone-900);
+  --md-default-bg-color--light: var(--color-stone-700);
+  --md-default-bg-color--lighter: var(--color-stone-800);
+  --md-default-bg-color--lightest: var(--sl-color-neutral-900);
+
+  --md-code-fg-color: var(--sl-color-teal-200);
+  --md-code-bg-color: var(--md-default-bg-color--light);
+  --md-code-bg-color--light: var(--md-default-bg-color--lighter);
+  --md-code-bg-color--lighter: var(--md-default-bg-color--lightest);
+
+  --md-code-hl-number-color: var(--sl-color-rose-300);
+  --md-code-hl-special-color: var(--sl-color-fuchsia-300);
+  --md-code-hl-function-color: var(--sl-color-pink-300);
+  --md-code-hl-constant-color: var(--sl-color-violet-300);
+  --md-code-hl-keyword-color: var(--sl-color-blue-300);
+  --md-code-hl-string-color: var(--sl-color-teal-300);
+
+  --md-typeset-color: var(--md-default-fg-color);
+  --md-typeset-a-color: var(--md-primary-fg-color--light);
+
+  --md-typeset-table-color: var(--md-default-bg-color--lightest);
+  --md-typeset-table-color--light: var(--md-default-bg-color--lighter);
+
+  --md-admonition-fg-color: var(--md-default-fg-color);
+  --md-admonition-bg-color: var(--md-default-bg-color);
+
+  --md-footer-fg-color: var(--md-default-fg-color);
+  --md-footer-fg-color--light: var(--md-default-fg-color--light);
+  --md-footer-fg-color--lighter: var(--md-default-fg-color--lighter);
+  --md-footer-bg-color: var(--md-default-bg-color);
+  --md-footer-bg-color--dark: var(--sl-color-neutral-950);
+
+  /* Custom Webrecorder variables */
+  --wr-primary-fg-color--darker: var(--color-lime-100);
+  --wr-primary-bg-color--lighter: var(--sl-color-neutral-900);
+
+  --wr-accent-border-color: var(--color-cyan-700);
+
+  --wr-info-fg-color: var(--color-blue-100);
+  --wr-info-bg-color: var(--sl-color-neutral-900);
+  --wr-info-border-color: var(--color-blue-700);
+
+  --wr-border-color: var(--color-stone-700);
+
+  --wr-task-list-indicator-bg-color: var(--color-lime-600);
+
+  --wr-callout-blue-fg-color: var(--color-cyan-200);
+  --wr-callout-blue-bg-color: var(--color-cyan-700);
+  --wr-callout-green-fg-color: var(--color-lime-200);
+  --wr-callout-green-bg-color: var(--color-lime-700);
+  --wr-callout-orange-fg-color: var(--color-orange-200);
+  --wr-callout-orange-bg-color: var(--color-orange-700);
+}
+
+[data-md-color-scheme="webrecorder-dark"] .md-typeset hr {
+  border-bottom: 1px solid var(--wr-border-color);
+}
+
+[data-md-color-scheme="webrecorder-dark"]
+  .md-typeset
+  a:not([class*="-button"]):not([href^="#__tabbed"]) {
+  text-decoration-color: var(--color-stone-500);
+}
+
+[data-md-color-scheme="webrecorder-dark"]
+  .md-typeset
+  a:not([class*="-button"]):not([href^="#__tabbed"]):hover {
+  color: var(--md-typeset-color);
+  text-decoration-color: var(--color-stone-300);
+}
+
+[data-md-color-scheme="webrecorder-dark"] .md-typeset code {
+  border-color: var(--color-stone-800);
+}
+
+[data-md-color-scheme="webrecorder-dark"]
+  .md-typeset
+  .md-button:not(.md-button--primary) {
+  color: var(--color-lime-200);
+}
