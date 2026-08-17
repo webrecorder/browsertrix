@@ -2,6 +2,7 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
+import { addMinutes } from "date-fns/fp";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -1527,9 +1528,19 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderRateLimitedNotice() {
-    if (this.workflow?.lastCrawlState !== "rate-limited") {
-      return html``;
+    const latestCrawl = this.latestCrawlTask.value;
+
+    if (latestCrawl?.state !== "rate-limited") {
+      return;
     }
+
+    const expiryDate =
+      this.appState.settings?.rateLimitDurationMinutes &&
+      latestCrawl.rateLimitedAt
+        ? addMinutes(this.appState.settings.rateLimitDurationMinutes)(
+            latestCrawl.rateLimitedAt,
+          )
+        : null;
 
     return html`
       <btrix-alert class="sticky top-2 z-50 part-[base]:mb-5" variant="warning">
@@ -1549,6 +1560,12 @@ export class WorkflowDetail extends BtrixElement {
             ${msg(
               "This crawl is running slower due to being rate limited by a website being crawled.",
             )}
+            ${when(expiryDate, (date) => {
+              const date_to_pause = this.localize.date(date);
+              return msg(
+                str`The crawl run will automatically pause on ${date_to_pause} if rate limiting continues.`,
+              );
+            })}
             <a
               target="_blank"
               href="${this
