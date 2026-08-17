@@ -19,11 +19,31 @@ Org name and URLs are unique to each Browsertrix instance (for example, on `app.
 
 Enable a homepage for your public collections to easily share all public collections in your org. Once enabled, anyone on the internet with a link to your org's public collections gallery will be able to browse public collections and view general information like the org name, description, and website.
 
+See [Public Collections Gallery](public-collections-gallery.md) guide for more information.
+
 ## Billing
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
-View and manage your org's current payment plan and associated quotas. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
+View and manage your org's current subscription plan and payment information from the **Billing & Usage** section of your org settings.
+
+### Upgrade, Downgrade, or Cancel Plan
+
+To update your subscription, visit the **Manage Subscription** link.
+
+### Change Payment Method
+
+To update payment information for an active subscription, visit the **Manage Subscription** link.
+
+To replace a failed payment method, visit the **Update Billing** link.
+
+### Re-Subscribe to Plan
+
+To subscribe again after canceling your plan, visit the **Choose Plan** link, or **Subscribe Now** for canceled trials.
+
+### Usage History
+
+Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
 ## Crawling Defaults
 
