@@ -49,7 +49,7 @@ Choose one of the following options to tailor this guide to what you’d like to
     ??? Question "Can I use my existing social media account?"
         Although there is nothing preventing you from doing so, using your personal account to archive social media pages may [put your personal login information at risk](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving){ data-preview }. We always recommend creating a new account dedicated to archiving to reduce the risk of accidentally archiving your private data.
 
-=== "Entire website<div data-tab-description="Archive every page on a webs"></div>"
+=== "Entire website<div data-tab-description="Archive every page on a website"></div>"
 
 ## Starting the crawl
 
