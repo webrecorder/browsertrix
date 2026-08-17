@@ -6,6 +6,7 @@ extra_css:
   - stylesheets/theme-light.css
   - stylesheets/theme-dark.css
   - stylesheets/extra.css
+  - stylesheets/browsertrix.css
 extra_javascript:
   - js/insertversion.js
   - js/embed.js
