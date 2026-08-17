@@ -23,9 +23,27 @@ Refer to the full [Public Collections Gallery](public-collections-gallery.md) gu
 
 ## Billing
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
-View and manage your org's current payment plan and associated quotas. Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
+View and manage your org's current subscription plan and payment information from the **Billing & Usage** section of your org settings.
+
+### Upgrade, Downgrade, or Cancel Plan
+
+To update your subscription, visit the **Manage Subscription** link.
+
+### Change Payment Method
+
+To update payment information for an active subscription, visit the **Manage Subscription** link.
+
+To replace a failed payment method, visit the **Update Billing** link.
+
+### Re-Subscribe to Plan
+
+To subscribe again after canceling your plan, visit the **Choose Plan** link, or **Subscribe Now** for canceled trials.
+
+### Usage History
+
+Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
 ## Crawling Defaults
 
