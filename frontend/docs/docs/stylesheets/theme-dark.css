@@ -19,9 +19,9 @@
   --md-default-bg-color--lightest: var(--sl-color-neutral-900);
 
   --md-code-fg-color: var(--sl-color-teal-200);
-  --md-code-bg-color: var(--md-default-bg-color--light);
+  --md-code-bg-color: var(--md-default-bg-color--lightest);
   --md-code-bg-color--light: var(--md-default-bg-color--lighter);
-  --md-code-bg-color--lighter: var(--md-default-bg-color--lightest);
+  --md-code-bg-color--lighter: var(--md-default-bg-color--light);
 
   --md-code-hl-number-color: var(--sl-color-rose-300);
   --md-code-hl-special-color: var(--sl-color-fuchsia-300);
@@ -29,6 +29,9 @@
   --md-code-hl-constant-color: var(--sl-color-violet-300);
   --md-code-hl-keyword-color: var(--sl-color-blue-300);
   --md-code-hl-string-color: var(--sl-color-teal-300);
+  --md-code-hl-comment-color: var(--md-default-fg-color--lightest);
+  --md-code-hl-operator-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-name-color: var(--sl-color-neutral-50);
 
   --md-typeset-color: var(--md-default-fg-color);
   --md-typeset-a-color: var(--md-primary-fg-color--light);
