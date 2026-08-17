@@ -1,3 +1,8 @@
+---
+hide:
+    - footer
+---
+
 # Self-Hosting
 
 !!! info "Already signed up for Browsertrix?"
