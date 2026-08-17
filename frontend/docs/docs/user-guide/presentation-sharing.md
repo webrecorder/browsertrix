@@ -2,6 +2,10 @@
 
 To present a collection to viewers outside of your organization, you can enable a shareable link.
 
+[Live Demo :octicons-arrow-up-right-16:](https://app.browsertrix.com/explore/webrecorder/collections/webrecorder-websites){ .md-button target="_blank" }
+
+---
+
 ## Share a Collection
 
 A collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover.
