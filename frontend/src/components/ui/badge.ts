@@ -94,7 +94,7 @@ export class Badge extends TailwindElement {
                 neutral: tw`bg-neutral-100 text-neutral-600`,
                 "high-contrast": tw`bg-neutral-600 text-neutral-0`,
                 primary: tw`bg-primary text-neutral-0`,
-                notification: tw`bg-rose-600 text-neutral-0`,
+                notification: tw`bg-rose-500 text-neutral-0 ring-white/50`,
                 lime: tw`bg-lime-50 text-lime-600`,
                 cyan: tw`bg-cyan-50 text-cyan-600`,
                 sky: tw`bg-sky-50 text-sky-700`,

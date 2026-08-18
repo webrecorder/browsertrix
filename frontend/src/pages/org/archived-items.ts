@@ -34,6 +34,7 @@ import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   finishedCrawlStates,
+  inactiveCrawlStates,
   isActive,
   isCrawl,
   isSuccessfullyFinished,
@@ -56,7 +57,7 @@ type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
 type Keys<T> = (keyof T)[];
 
-const POLL_INTERVAL_SECONDS = 5;
+const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
@@ -324,7 +325,7 @@ export class CrawlsList extends BtrixElement {
       { signal },
     ) => {
       try {
-        const data = await this.getArchivedItems(
+        const data = this.getArchivedItems(
           {
             itemType,
             pagination,
@@ -333,6 +334,11 @@ export class CrawlsList extends BtrixElement {
             filterByCurrentUser,
             filterByTags,
             filterByTagsType,
+            state: filterBy.state?.length
+              ? filterBy.state
+              : itemType === "upload"
+                ? [...inactiveCrawlStates, ...UPLOAD_STATES]
+                : finishedCrawlStates,
           },
           signal,
         );
@@ -365,6 +371,27 @@ export class CrawlsList extends BtrixElement {
         this.filterByTags.value,
         this.filterByTagsType.value,
       ] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
+
+  private readonly activeUploadsTask = new PollTask(this, {
+    task: async (_args, { signal }) => {
+      const data = await this.getArchivedItems(
+        {
+          itemType: "upload",
+          state: ["failed", ...UPLOAD_STATES],
+          pagination: {
+            page: 1,
+            // TODO Handle more than max page size
+            pageSize: 1000,
+          },
+        },
+        signal,
+      );
+
+      return data;
+    },
+    args: () => [] as const,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
@@ -442,7 +469,7 @@ export class CrawlsList extends BtrixElement {
         itemType: "upload",
         icon: "upload",
         label: msg("Uploads"),
-        badge: this.renderUploadBadge,
+        badge: this.renderUploadsBadge,
       },
     ];
 
@@ -526,8 +553,14 @@ export class CrawlsList extends BtrixElement {
     `;
   }
 
-  private readonly renderUploadBadge = () => {
-    // return html`<btrix-badge variant="notification" pill></btrix-badge>`;
+  private readonly renderUploadsBadge = () => {
+    const total = this.activeUploadsTask.value?.total;
+
+    if (!total) return;
+
+    return html`<btrix-badge variant="notification" pill>
+      ${this.localize.number(total, { notation: "compact" })}
+    </btrix-badge>`;
   };
 
   private readonly renderArchivedItems = ({
@@ -944,33 +977,30 @@ export class CrawlsList extends BtrixElement {
   private async getArchivedItems(
     params: {
       itemType: CrawlsList["itemType"];
+      state: readonly CrawlState[];
       pagination: CrawlsList["pagination"];
-      orderBy: CrawlsList["orderBy"]["value"];
-      filterBy: CrawlsList["filterBy"]["value"];
-      filterByCurrentUser: CrawlsList["filterByCurrentUser"]["value"];
-      filterByTags: CrawlsList["filterByTags"]["value"];
-      filterByTagsType: CrawlsList["filterByTagsType"]["value"];
+      orderBy?: CrawlsList["orderBy"]["value"];
+      filterBy?: CrawlsList["filterBy"]["value"];
+      filterByCurrentUser?: CrawlsList["filterByCurrentUser"]["value"];
+      filterByTags?: CrawlsList["filterByTags"]["value"];
+      filterByTagsType?: CrawlsList["filterByTagsType"]["value"];
     },
     signal: AbortSignal,
   ) {
-    const { id, ...filterBy } = params.filterBy;
+    const { id, ...filterBy } = params.filterBy || {};
     const query = queryString.stringify(
       {
         ...filterBy,
         ids: id ? [id] : undefined,
-        state: filterBy.state?.length
-          ? filterBy.state
-          : params.itemType === "upload"
-            ? [...finishedCrawlStates, ...UPLOAD_STATES]
-            : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
         tagMatch: params.filterByTagsType,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
-        sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortBy: params.orderBy?.field,
+        sortDirection: params.orderBy?.direction === "desc" ? -1 : 1,
         crawlType: params.itemType ?? undefined,
+        state: params.state,
       },
       {
         arrayFormat: "none",
