@@ -51,7 +51,7 @@ def main():
         event_webhook_ops,
         _,
         _,
-        _,
+        file_ops,
         crawl_log_ops,
         _,
         _,
@@ -69,6 +69,7 @@ def main():
         background_job_ops,
         page_ops,
         crawl_log_ops,
+        file_ops,
     )
 
 
