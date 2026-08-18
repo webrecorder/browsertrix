@@ -36,11 +36,11 @@ import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import {
   finishedCrawlStates,
-  inactiveCrawlStates,
   isActive,
   isCrawl,
   isSuccessfullyFinished,
   renderName,
+  uploadStates,
 } from "@/utils/crawler";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
@@ -354,7 +354,7 @@ export class CrawlsList extends BtrixElement {
             state: filterBy.state?.length
               ? filterBy.state
               : itemType === "upload"
-                ? [...inactiveCrawlStates, ...UPLOAD_STATES]
+                ? uploadStates
                 : finishedCrawlStates,
           },
           signal,
@@ -675,6 +675,7 @@ export class CrawlsList extends BtrixElement {
             ${msg("Filter by:")}
           </span>
           <btrix-archived-item-state-filter
+            itemType=${ifDefined(this.itemType ?? undefined)}
             .states=${this.filterBy.value.state}
             @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
               this.filterBy.setValue({

@@ -15,20 +15,23 @@ import {
   state,
 } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
+import uniq from "lodash/fp/uniq";
 import { isFocusable } from "tabbable";
 
 import { CrawlStatus } from "./crawl-status";
+import { UploadStatus } from "./upload-status";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
-import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
-import { finishedCrawlStates } from "@/utils/crawler";
+import { type ArchivedItem } from "@/types/crawler";
+import { type CrawlState } from "@/types/crawlState";
+import { finishedCrawlStates, uploadStates } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 const MAX_STATES_IN_LABEL = 2;
 
-const filterStates = [...finishedCrawlStates, ...UPLOAD_STATES] as CrawlState[];
+const filterStates = uniq([...finishedCrawlStates, ...uploadStates]);
 
 type ChangeArchivedItemStateEventDetails = CrawlState[];
 
@@ -41,6 +44,9 @@ export type BtrixChangeArchivedItemStateFilterEvent =
 @customElement("btrix-archived-item-state-filter")
 @localized()
 export class ArchivedItemStateFilter extends BtrixElement {
+  @property({ type: String })
+  itemType?: ArchivedItem["type"];
+
   @property({ type: Array })
   states?: CrawlState[];
 
@@ -226,13 +232,22 @@ export class ArchivedItemStateFilter extends BtrixElement {
   }
 
   private renderList(opts: { item: CrawlState }[]) {
+    const uploads = this.itemType === "upload";
+    const validStates = uploads ? uploadStates : finishedCrawlStates;
+
     const state = (state: CrawlState) => {
       const checked = this.selected.get(state) === true;
 
-      const { icon, label } = CrawlStatus.getContent({
-        state,
-        originalState: state,
-      });
+      if (!checked && !validStates.includes(state)) {
+        return;
+      }
+
+      const { icon, label } = uploads
+        ? UploadStatus.getContentForState(state)
+        : CrawlStatus.getContent({
+            state,
+            originalState: state,
+          });
 
       return html`
         <li role="option" aria-checked=${checked}>
