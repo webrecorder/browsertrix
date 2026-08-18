@@ -19,6 +19,7 @@ import {
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
   UPLOAD_STATES,
+  type CrawlState,
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
@@ -27,9 +28,15 @@ import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
-export const activeCrawlStates = RUNNING_AND_WAITING_STATES;
-export const finishedCrawlStates = SUCCESSFUL_STATES;
+export const activeCrawlStates =
+  RUNNING_AND_WAITING_STATES as readonly CrawlState[];
+export const finishedCrawlStates = SUCCESSFUL_STATES as readonly CrawlState[];
 export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
+export const uploadStates = [
+  "complete",
+  "failed",
+  ...UPLOAD_STATES,
+] as readonly CrawlState[];
 
 export const DEFAULT_MAX_SCALE = 8;
 
