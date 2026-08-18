@@ -53,6 +53,7 @@ import {
   DEFAULT_MAX_SCALE,
   isActive,
   isPaused,
+  isRateLimited,
   isSkipped,
   isSuccessfullyFinished,
   renderName,
@@ -1530,17 +1531,15 @@ export class WorkflowDetail extends BtrixElement {
   private renderRateLimitedNotice() {
     const latestCrawl = this.latestCrawlTask.value;
 
-    if (latestCrawl?.state !== "rate-limited") {
+    if (!latestCrawl || !isRateLimited(latestCrawl)) {
       return;
     }
 
-    const expiryDate =
-      this.appState.settings?.rateLimitDurationMinutes &&
-      latestCrawl.rateLimitedAt
-        ? addMinutes(this.appState.settings.rateLimitDurationMinutes)(
-            latestCrawl.rateLimitedAt,
-          )
-        : null;
+    const expiryDate = this.appState.settings?.rateLimitDurationMinutes
+      ? addMinutes(this.appState.settings.rateLimitDurationMinutes)(
+          latestCrawl.rateLimitedAt,
+        )
+      : null;
 
     return html`
       <btrix-alert class="sticky top-2 z-50 part-[base]:mb-5" variant="warning">
@@ -1625,6 +1624,7 @@ export class WorkflowDetail extends BtrixElement {
 
   private readonly renderCrawlDetails = () => {
     const latestCrawl = this.latestCrawlTask.value;
+    const rateLimited = latestCrawl && isRateLimited(latestCrawl);
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     const duration = (workflow: Workflow) => {
@@ -1636,6 +1636,16 @@ export class WorkflowDetail extends BtrixElement {
           : new Date()
         ).valueOf() - new Date(workflow.lastCrawlStartTime).valueOf(),
       );
+    };
+
+    const rateLimitedTime = () => {
+      if (!rateLimited) return skeleton;
+
+      return html`<span class="text-warning">
+        ${this.localize.humanizeDuration(
+          new Date().valueOf() - new Date(latestCrawl.rateLimitedAt).valueOf(),
+        )}
+      </span>`;
     };
 
     const execTime = () => {
@@ -1702,6 +1712,9 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : duration(workflow),
         )}
+        ${rateLimited
+          ? this.renderDetailItem(msg("Rate Limited Time"), rateLimitedTime)
+          : nothing}
         ${this.renderDetailItem(msg("Execution Time"), () =>
           isLoading(this.runNowTask)
             ? html`${until(
