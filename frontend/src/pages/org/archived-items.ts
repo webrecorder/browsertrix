@@ -1,5 +1,4 @@
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -24,6 +23,7 @@ import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-comb
 import type { TagFilter } from "@/components/ui/tag-filter/tag-filter";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
+import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -310,7 +310,7 @@ export class CrawlsList extends BtrixElement {
     this.filterByTagsType.setValue("or");
   }
 
-  private readonly archivedItemsTask = new Task(this, {
+  private readonly archivedItemsTask = new PollTask(this, {
     task: async (
       [
         itemType,
@@ -323,10 +323,6 @@ export class CrawlsList extends BtrixElement {
       ],
       { signal },
     ) => {
-      if (this.getArchivedItemsTimeout) {
-        window.clearTimeout(this.getArchivedItemsTimeout);
-      }
-
       try {
         const data = await this.getArchivedItems(
           {
@@ -340,10 +336,6 @@ export class CrawlsList extends BtrixElement {
           },
           signal,
         );
-
-        this.getArchivedItemsTimeout = window.setTimeout(() => {
-          void this.archivedItemsTask.run();
-        }, POLL_INTERVAL_SECONDS * 1000);
 
         return data;
       } catch (e) {
@@ -373,9 +365,8 @@ export class CrawlsList extends BtrixElement {
         this.filterByTags.value,
         this.filterByTagsType.value,
       ] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
-
-  private getArchivedItemsTimeout?: number;
 
   // For fuzzy search:
   private readonly searchKeys = ["id", "name", "firstSeed"];
@@ -428,11 +419,6 @@ export class CrawlsList extends BtrixElement {
       this.filterBy.setValue({});
       void this.fetchConfigSearchValues();
     }
-  }
-
-  disconnectedCallback(): void {
-    window.clearTimeout(this.getArchivedItemsTimeout);
-    super.disconnectedCallback();
   }
 
   render() {
