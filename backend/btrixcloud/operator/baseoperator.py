@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from btrixcloud.crawl_logs import CrawlLogOps
     from btrixcloud.crawlconfigs import CrawlConfigOps
     from btrixcloud.crawls import CrawlOps
+    from btrixcloud.file_uploads import FileUploadOps
     from btrixcloud.orgs import OrgOps
     from btrixcloud.pages import PageOps
     from btrixcloud.storages import StorageOps
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
 else:
     CrawlConfigOps = CrawlOps = OrgOps = CollectionOps = Redis = CrawlLogOps = object
     StorageOps = EventWebhookOps = UserManager = BackgroundJobOps = PageOps = object
+    FileUploadOps = object
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
@@ -205,6 +207,7 @@ class BaseOperator:
     page_ops: PageOps
     user_ops: UserManager
     crawl_log_ops: CrawlLogOps
+    file_ops: FileUploadOps
 
     fast_retry_secs: int
 
@@ -220,6 +223,7 @@ class BaseOperator:
         background_job_ops,
         page_ops,
         crawl_log_ops,
+        file_ops,
     ):
         self.k8s = k8s
         self.crawl_config_ops = crawl_config_ops
@@ -232,6 +236,7 @@ class BaseOperator:
         self.page_ops = page_ops
         self.user_ops = crawl_config_ops.user_manager
         self.crawl_log_ops = crawl_log_ops
+        self.file_ops = file_ops
 
         self.fast_retry_secs = int(os.environ.get("FAST_RETRY_SECS") or 0)
 
