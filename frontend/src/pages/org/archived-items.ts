@@ -1,3 +1,4 @@
+import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
@@ -22,6 +23,7 @@ import {
 import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { TagFilter } from "@/components/ui/tag-filter/tag-filter";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
+import orgUploadsContext from "@/context/org-uploads";
 import { ClipboardController } from "@/controllers/clipboard";
 import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
@@ -120,6 +122,21 @@ export class CrawlsList extends BtrixElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
+
+  readonly #orgUploads = new ContextConsumer(this, {
+    context: orgUploadsContext,
+    subscribe: true,
+    callback: (value) => {
+      console.log("upload changed", Object.values(value)[0]);
+      if (Object.values(value).some(({ loaded, total }) => loaded === total)) {
+        void this.incompleteUploadsTask.run();
+
+        if (this.itemType === "upload") {
+          void this.archivedItemsTask.run();
+        }
+      }
+    },
+  });
 
   @property({ type: Boolean })
   isCrawler!: boolean;
@@ -374,7 +391,7 @@ export class CrawlsList extends BtrixElement {
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
-  private readonly activeUploadsTask = new PollTask(this, {
+  private readonly incompleteUploadsTask = new PollTask(this, {
     task: async (_args, { signal }) => {
       const data = await this.getArchivedItems(
         {
@@ -554,7 +571,7 @@ export class CrawlsList extends BtrixElement {
   }
 
   private readonly renderUploadsBadge = () => {
-    const total = this.activeUploadsTask.value?.total;
+    const total = this.incompleteUploadsTask.value?.total;
 
     if (!total) return;
 
