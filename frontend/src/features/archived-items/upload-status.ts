@@ -39,7 +39,7 @@ export class UploadStatus extends TailwindElement {
         name="x-octagon-fill"
         class="text-danger"
       ></sl-icon>`;
-      label = msg("Failed");
+      label = msg("Processing Failed");
     }
 
     return labelWithIcon({

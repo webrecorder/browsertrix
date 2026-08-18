@@ -18,6 +18,7 @@ import {
   RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
+  UPLOAD_STATES,
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
@@ -60,8 +61,10 @@ export function isRateLimited(
   return crawl.state === "rate-limited";
 }
 
-export function isActive({ state }: Partial<Crawl | QARun>) {
-  return (activeCrawlStates as readonly (typeof state)[]).includes(state);
+export function isActive({ state }: Partial<Crawl | Upload | QARun>) {
+  return (
+    [...activeCrawlStates, ...UPLOAD_STATES] as readonly (typeof state)[]
+  ).includes(state);
 }
 
 export function isSuccessfullyFinished({ state }: { state: string | null }) {
@@ -70,6 +73,12 @@ export function isSuccessfullyFinished({ state }: { state: string | null }) {
 
 export function isSkipped({ state }: { state: string | null }) {
   return state?.startsWith("skipped");
+}
+
+export function isFailed({ state }: { state: string | null }) {
+  return (
+    state && (FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
 }
 
 export function isNotFailed({ state }: { state: string | null }) {
