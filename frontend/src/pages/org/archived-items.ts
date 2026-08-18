@@ -454,7 +454,7 @@ export class CrawlsList extends BtrixElement {
       {
         itemType: "upload",
         icon: "upload",
-        label: msg("Uploaded Items"),
+        label: msg("Uploads"),
       },
     ];
 
@@ -967,9 +967,9 @@ export class CrawlsList extends BtrixElement {
         ids: id ? [id] : undefined,
         state: filterBy.state?.length
           ? filterBy.state
-          : params.itemType === "crawl"
-            ? finishedCrawlStates
-            : [...finishedCrawlStates, ...UPLOAD_STATES],
+          : params.itemType === "upload"
+            ? [...finishedCrawlStates, ...UPLOAD_STATES]
+            : finishedCrawlStates,
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
