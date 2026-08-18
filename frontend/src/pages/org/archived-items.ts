@@ -831,7 +831,7 @@ export class CrawlsList extends BtrixElement {
 
     return html`
       ${when(
-        this.isCrawler,
+        this.isCrawler && isSuccessfullyFinished(item),
         () => html`
           <sl-menu-item
             @click=${async () => {
@@ -899,7 +899,7 @@ export class CrawlsList extends BtrixElement {
         ${msg("Copy Item ID")}
       </sl-menu-item>
       ${when(
-        this.isCrawler && (item.type !== "crawl" || !isActive(item)),
+        this.isCrawler && (item.type === "crawl" || !isActive(item)),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -907,7 +907,9 @@ export class CrawlsList extends BtrixElement {
             @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Item")}
+            ${isSuccessfullyFinished(item)
+              ? msg("Delete Archived Item")
+              : msg("Delete Failed Item")}
           </sl-menu-item>
         `,
       )}
