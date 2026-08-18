@@ -1561,9 +1561,15 @@ export class WorkflowDetail extends BtrixElement {
               "This crawl is running slower due to being rate limited by a website being crawled.",
             )}
             ${when(expiryDate, (date) => {
-              const date_to_pause = this.localize.date(date);
+              const date_to_pause = html`<strong class="font-medium"
+                >${this.localize.date(date)}</strong
+              >`;
               return msg(
-                str`The crawl run will automatically pause on ${date_to_pause} if rate limiting continues.`,
+                html`The crawl run will automatically pause on ${date_to_pause}
+                if rate limiting continues.`,
+                {
+                  desc: "`date_to_pause` example: '01/01/2036, 01:00 PM'",
+                },
               );
             })}
             <a
