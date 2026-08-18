@@ -123,13 +123,13 @@ export class CrawlsList extends BtrixElement {
     firstSeed: msg("Crawl Start URL"),
   };
 
+  // Update uploads list when user upload completes
   readonly #orgUploads = new ContextConsumer(this, {
     context: orgUploadsContext,
     subscribe: true,
     callback: (value) => {
-      console.log("upload changed", Object.values(value)[0]);
       if (Object.values(value).some(({ loaded, total }) => loaded === total)) {
-        void this.incompleteUploadsTask.run();
+        void this.activeUploadsTotalTask.run();
 
         if (this.itemType === "upload") {
           void this.archivedItemsTask.run();
@@ -391,22 +391,21 @@ export class CrawlsList extends BtrixElement {
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
-  private readonly incompleteUploadsTask = new PollTask(this, {
+  private readonly activeUploadsTotalTask = new PollTask(this, {
     task: async (_args, { signal }) => {
       const data = await this.getArchivedItems(
         {
           itemType: "upload",
-          state: ["failed", ...UPLOAD_STATES],
+          state: UPLOAD_STATES,
           pagination: {
             page: 1,
-            // TODO Handle more than max page size
-            pageSize: 1000,
+            pageSize: 1,
           },
         },
         signal,
       );
 
-      return data;
+      return data.total;
     },
     args: () => [] as const,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
@@ -571,7 +570,7 @@ export class CrawlsList extends BtrixElement {
   }
 
   private readonly renderUploadsBadge = () => {
-    const total = this.incompleteUploadsTask.value?.total;
+    const total = this.activeUploadsTotalTask.value;
 
     if (!total) return;
 
