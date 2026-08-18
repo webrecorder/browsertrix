@@ -11,6 +11,7 @@ export type BadgeVariant =
   | "danger"
   | "neutral"
   | "primary"
+  | "notification"
   | "lime"
   | "cyan"
   | "sky"
@@ -75,6 +76,7 @@ export class Badge extends TailwindElement {
                   neutral: tw`bg-neutral-100 text-neutral-600 ring-neutral-300`,
                   "high-contrast": tw`bg-neutral-0 text-neutral-700 ring-neutral-600`,
                   primary: tw`bg-white text-primary ring-primary`,
+                  notification: tw`bg-rose-50 text-rose-700 ring-rose-400`,
                   lime: tw`bg-lime-50 text-lime-600 ring-lime-600`,
                   cyan: tw`bg-cyan-50 text-cyan-600 ring-cyan-600`,
                   sky: tw`bg-sky-50 text-sky-700 ring-sky-700`,
@@ -92,6 +94,7 @@ export class Badge extends TailwindElement {
                 neutral: tw`bg-neutral-100 text-neutral-600`,
                 "high-contrast": tw`bg-neutral-600 text-neutral-0`,
                 primary: tw`bg-primary text-neutral-0`,
+                notification: tw`bg-rose-600 text-neutral-0`,
                 lime: tw`bg-lime-50 text-lime-600`,
                 cyan: tw`bg-cyan-50 text-cyan-600`,
                 sky: tw`bg-sky-50 text-sky-700`,

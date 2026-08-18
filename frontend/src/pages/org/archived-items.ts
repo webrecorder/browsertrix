@@ -1,7 +1,7 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -440,6 +440,7 @@ export class CrawlsList extends BtrixElement {
       itemType: ArchivedItem["type"] | null;
       label: string;
       icon?: string;
+      badge?: () => TemplateResult | void;
     }[] = [
       {
         itemType: null,
@@ -455,6 +456,7 @@ export class CrawlsList extends BtrixElement {
         itemType: "upload",
         icon: "upload",
         label: msg("Uploads"),
+        badge: this.renderUploadBadge,
       },
     ];
 
@@ -484,7 +486,7 @@ export class CrawlsList extends BtrixElement {
             classNames: tw`mb-3`,
           })}
           <div class="mb-3 flex gap-2">
-            ${listTypes.map(({ label, itemType, icon }) => {
+            ${listTypes.map(({ label, itemType, icon, badge }) => {
               const isSelected = itemType === this.itemType;
               return html` <btrix-navigation-button
                 ?active=${isSelected}
@@ -496,6 +498,7 @@ export class CrawlsList extends BtrixElement {
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
                 <span>${label}</span>
+                ${badge ? badge() : nothing}
               </btrix-navigation-button>`;
             })}
           </div>
@@ -536,6 +539,10 @@ export class CrawlsList extends BtrixElement {
       )}
     `;
   }
+
+  private readonly renderUploadBadge = () => {
+    // return html`<btrix-badge variant="notification" pill></btrix-badge>`;
+  };
 
   private readonly renderArchivedItems = ({
     items,
