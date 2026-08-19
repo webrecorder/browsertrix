@@ -75,23 +75,12 @@ export const renderInviteMessage = (
             : "opacity-0 pointer-events-none"} transition-opacity"
         >
           <sl-divider class="mt-8"></sl-divider>
-          <h2 class="mb-3 italic text-primary">${msg("What is an org?")}</h2>
+          <h2 class="mb-3 italic text-neutral-500">
+            ${msg("What is an org?")}
+          </h2>
           <p class="mb-3 text-neutral-600">
             ${msg(
               "An org, or organization, is your workspace for web archiving. If you’re archiving collaboratively, an org workspace can be shared between team members.",
-            )}
-          </p>
-          <p class="text-neutral-600">
-            ${msg(
-              html`Refer to our user guide on
-                <a
-                  class="text-neutral-500 underline hover:text-primary"
-                  href="/docs/user-guide/org-settings/"
-                  target="_blank"
-                  rel="noopener"
-                  >org settings</a
-                >
-                for details.`,
             )}
           </p>
         </div>

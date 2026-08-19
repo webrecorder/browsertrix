@@ -3,7 +3,7 @@ import UrlPattern from "url-pattern";
 
 import type { ROUTES } from "@/routes";
 
-type RouteName = keyof typeof ROUTES;
+export type RouteName = keyof typeof ROUTES;
 type Routes = Record<RouteName, UrlPattern>;
 type Paths = Record<RouteName, string>;
 
