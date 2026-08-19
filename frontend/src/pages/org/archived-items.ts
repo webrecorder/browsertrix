@@ -462,6 +462,13 @@ export class CrawlsList extends BtrixElement {
     }
 
     if (changedProperties.has("itemType")) {
+      if (
+        this.itemType === "upload" &&
+        this.activeUploadsTotalTask.previousValue !== undefined
+      ) {
+        void this.activeUploadsTotalTask.run();
+      }
+
       if (changedProperties.get("itemType") !== undefined) {
         this.filterBy.setValue({});
       }
