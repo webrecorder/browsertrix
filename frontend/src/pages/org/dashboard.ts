@@ -400,35 +400,33 @@ export class Dashboard extends BtrixElement {
                     ? msg("Public Collections")
                     : msg("All Collections"),
               })}
-              ${
-                this.collectionsView === CollectionGridView.Public
-                  ? html` <span class="text-sm text-neutral-400"
-                      >—
-                      <a
-                        href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                        class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
-                        @click=${this.navigate.link}
-                      >
-                        ${this.org?.enablePublicProfile
-                          ? msg("Visit public collections gallery")
-                          : msg("Preview public collections gallery")}
-                      </a>
-                      <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+              ${this.collectionsView === CollectionGridView.Public
+                ? html` <span class="text-sm text-neutral-400"
+                    >—
+                    <a
+                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                      class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
+                      @click=${this.navigate.link}
+                    >
                       ${this.org?.enablePublicProfile
-                        ? html`<btrix-copy-button
-                            value=${new URL(
-                              `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                              window.location.toString(),
-                            ).toString()}
-                            content=${msg(
-                              "Copy Link to Public Collections Gallery",
-                            )}
-                            class="inline-block"
-                          ></btrix-copy-button>`
-                        : nothing}
-                    </span>`
-                  : nothing
-              }
+                        ? msg("Visit public collections gallery")
+                        : msg("Preview public collections gallery")}
+                    </a>
+                    <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
+                    ${this.org?.enablePublicProfile
+                      ? html`<btrix-copy-button
+                          value=${new URL(
+                            `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
+                            window.location.toString(),
+                          ).toString()}
+                          content=${msg(
+                            "Copy Link to Public Collections Gallery",
+                          )}
+                          class="inline-block"
+                        ></btrix-copy-button>`
+                      : nothing}
+                  </span>`
+                : nothing}
             </div>
             <div class="flex items-center gap-2">
               ${when(
@@ -488,41 +486,34 @@ export class Dashboard extends BtrixElement {
             >
               ${this.renderNoPublicCollections()}
               <span slot="empty-text"
-                >${
-                  this.collectionsView === CollectionGridView.Public
-                    ? msg("No public collections yet.")
-                    : msg("No collections yet.")
-                }</span
+                >${this.collectionsView === CollectionGridView.Public
+                  ? msg("No public collections yet.")
+                  : msg("No collections yet.")}</span
               >
-              ${
-                this.collections.value &&
-                this.collections.value.total >
-                  this.collections.value.items.length
-                  ? html`
-                      <btrix-pagination
-                        page=${this.collectionPage}
-                        size=${PAGE_SIZE}
-                        totalCount=${this.collections.value.total}
-                        @page-change=${(e: PageChangeEvent) => {
-                          this.collectionPage = e.detail.page;
-                        }}
-                        slot="pagination"
-                      >
-                      </btrix-pagination>
-                    `
-                  : nothing
-              }
-            </btrix-collections-grid>
-            ${
-              this.collections.status === TaskStatus.PENDING &&
-              this.collections.value
-                ? html`<div
-                    class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
-                  >
-                    <sl-spinner></sl-spinner>
-                  </div>`
-                : nothing
-            }
+              ${this.collections.value &&
+              this.collections.value.total > this.collections.value.items.length
+                ? html`
+                    <btrix-pagination
+                      page=${this.collectionPage}
+                      size=${PAGE_SIZE}
+                      totalCount=${this.collections.value.total}
+                      @page-change=${(e: PageChangeEvent) => {
+                        this.collectionPage = e.detail.page;
+                      }}
+                      slot="pagination"
+                    >
+                    </btrix-pagination>
+                  `
+                : nothing}
+            </btrix-collections-grid-with-edit-dialog>
+            ${this.collections.status === TaskStatus.PENDING &&
+            this.collections.value
+              ? html`<div
+                  class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
+                >
+                  <sl-spinner></sl-spinner>
+                </div>`
+              : nothing}
           </div>
         </section>
       </main>
@@ -652,7 +643,7 @@ export class Dashboard extends BtrixElement {
           <dt class="order-last">
             ${value === 1
               ? stat.singleLabel
-              : stat.pluralLabel ?? stat.singleLabel}
+              : (stat.pluralLabel ?? stat.singleLabel)}
           </dt>
           <dd class="mr-1">
             ${typeof value === "number" ? this.localize.number(value) : value}
