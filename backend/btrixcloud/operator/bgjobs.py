@@ -86,6 +86,7 @@ class BgJobOperator(BaseOperator):
 
         # pylint: disable=broad-except
         except Exception:
+            finalized = False
             logger.exception(
                 "background_job_update_failed",
                 unstructured_message="Update Background Job Error",
