@@ -1,6 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
@@ -9,10 +9,13 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { OrgTab, RouteNamespace } from "@/routes";
-import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
+import type { UserInfo, UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
 
 import "./ui/org-form";
+
+const isUserInfo = (info: UserOrgInviteInfo | UserInfo): info is UserInfo =>
+  "id" in info;
 
 @customElement("btrix-join")
 @localized()
@@ -51,11 +54,16 @@ export class Join extends BtrixElement {
             ${msg("Welcome to Browsertrix")}
           </h1>
           ${this.inviteInfo.render({
-            complete: (inviteInfo) =>
-              renderInviteMessage(inviteInfo, {
+            complete: (inviteInfo) => {
+              if (inviteInfo && isUserInfo(inviteInfo)) {
+                return nothing;
+              }
+
+              return renderInviteMessage(inviteInfo, {
                 isExistingUser: false,
                 isOrgMember: this._isLoggedIn,
-              }),
+              });
+            },
           })}
         </header>
 
@@ -84,18 +92,28 @@ export class Join extends BtrixElement {
                         }}
                       ></btrix-org-form>
                     `
-                  : html`
-                      <btrix-sign-up-form
-                        email=${this.email!}
-                        inviteToken=${this.token!}
-                        .inviteInfo=${inviteInfo || undefined}
-                        submitLabel=${inviteInfo?.firstOrgAdmin
-                          ? msg("Next")
-                          : msg("Create Account")}
-                        @success=${this._onSignUpSuccess}
-                        @authenticated=${this._onAuthenticated}
-                      ></btrix-sign-up-form>
-                    `,
+                  : inviteInfo && isUserInfo(inviteInfo)
+                    ? html`
+                        <sl-button
+                          class="w-full"
+                          variant="primary"
+                          href="/"
+                          @click=${this.navigate.link}
+                          >${msg("Go to Dashboard")}</sl-button
+                        >
+                      `
+                    : html`
+                        <btrix-sign-up-form
+                          email=${this.email!}
+                          inviteToken=${this.token!}
+                          .inviteInfo=${inviteInfo || undefined}
+                          submitLabel=${inviteInfo?.firstOrgAdmin
+                            ? msg("Next")
+                            : msg("Create Account")}
+                          @success=${this._onSignUpSuccess}
+                          @authenticated=${this._onAuthenticated}
+                        ></btrix-sign-up-form>
+                      `,
               error: (err) =>
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
@@ -120,7 +138,7 @@ export class Join extends BtrixElement {
   }: {
     token: string;
     email: string;
-  }): Promise<UserOrgInviteInfo | void> {
+  }): Promise<UserOrgInviteInfo | UserInfo | void> {
     const resp = await fetch(
       `/api/users/invite/${token}?email=${encodeURIComponent(email)}`,
     );
@@ -134,12 +152,18 @@ export class Join extends BtrixElement {
             "This invite doesn't exist or has expired. Please ask the organization administrator to resend an invitation.",
           ),
         );
-      case 400:
-        throw new Error(
-          msg(
-            str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
-          ),
-        );
+      case 400: {
+        if (this.userInfo?.email === email) {
+          // User is already logged in, return user info instead
+          return this.userInfo;
+        } else {
+          throw new Error(
+            msg(
+              str`This is not a valid invite, or it may have expired. If you believe this is an error, please contact ${this.appState.settings?.supportEmail || msg("your Browsertrix administrator")} for help.`,
+            ),
+          );
+        }
+      }
       default:
         throw new Error(
           msg(
@@ -151,7 +175,7 @@ export class Join extends BtrixElement {
 
   _onSignUpSuccess(e: CustomEvent<SignUpSuccessDetail>) {
     const inviteInfo = this.inviteInfo.value;
-    if (!inviteInfo) return;
+    if (!inviteInfo || isUserInfo(inviteInfo)) return;
 
     if (inviteInfo.firstOrgAdmin) {
       const { orgName, orgSlug } = e.detail;
@@ -173,8 +197,10 @@ export class Join extends BtrixElement {
 
     const inviteInfo = this.inviteInfo.value;
 
-    if (!inviteInfo?.firstOrgAdmin) {
-      if (inviteInfo?.orgSlug) {
+    if (!inviteInfo || isUserInfo(inviteInfo)) return;
+
+    if (!inviteInfo.firstOrgAdmin) {
+      if (inviteInfo.orgSlug) {
         this.navigate.to(`/orgs/${inviteInfo.orgSlug}/dashboard`);
       } else {
         this.navigate.to(this.navigate.orgBasePath);

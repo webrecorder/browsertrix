@@ -15,11 +15,18 @@ import {
 } from "@/types/localization";
 import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { type UserOrg } from "@/types/user";
-import { type ViewState } from "@/utils/APIRouter";
+import { type RouteName, type ViewState } from "@/utils/APIRouter";
 import { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
+
+// TODO Validate against mkdocs paths
+const mapToUserGuide: Partial<Record<RouteName, string>> = {
+  home: "",
+  org: "#quick-links",
+  join: "signup#set-up-your-personal-account",
+};
 
 @customElement("btrix-app-bar")
 @localized()
@@ -283,7 +290,11 @@ export class AppBar extends BtrixElement {
       new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
         "btrix-user-guide-show",
         {
-          detail: { path: "" },
+          detail: {
+            path:
+              (this.viewState?.route && mapToUserGuide[this.viewState.route]) ??
+              "",
+          },
           bubbles: true,
           composed: true,
         },
