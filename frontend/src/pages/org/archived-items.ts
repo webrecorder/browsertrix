@@ -1,5 +1,6 @@
 import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { deepArrayEquals } from "@lit/task/deep-equals.js";
 import type { SlSelect } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -42,6 +43,7 @@ import {
   renderName,
   uploadStates,
 } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -342,7 +344,7 @@ export class CrawlsList extends BtrixElement {
       { signal },
     ) => {
       try {
-        const data = this.getArchivedItems(
+        const data = await this.getArchivedItems(
           {
             itemType,
             pagination,
@@ -388,6 +390,7 @@ export class CrawlsList extends BtrixElement {
         this.filterByTags.value,
         this.filterByTagsType.value,
       ] as const,
+    argsEqual: deepArrayEquals,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
@@ -459,7 +462,10 @@ export class CrawlsList extends BtrixElement {
     }
 
     if (changedProperties.has("itemType")) {
-      this.filterBy.setValue({});
+      if (changedProperties.get("itemType") !== undefined) {
+        this.filterBy.setValue({});
+      }
+
       void this.fetchConfigSearchValues();
     }
   }
@@ -677,10 +683,14 @@ export class CrawlsList extends BtrixElement {
             itemType=${ifDefined(this.itemType ?? undefined)}
             .states=${this.filterBy.value.state}
             @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                state: e.detail.value,
-              });
+              const value = e.detail.value.length ? e.detail.value : undefined;
+
+              if (isNotEqual(value, this.filterBy.value.state)) {
+                this.filterBy.setValue({
+                  ...this.filterBy.value,
+                  state: value,
+                });
+              }
             }}
           ></btrix-archived-item-state-filter>
 
@@ -700,10 +710,14 @@ export class CrawlsList extends BtrixElement {
           <btrix-qa-review-filter
             .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
             @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                reviewStatus: e.detail.value ?? undefined,
-              });
+              const value = e.detail.value ?? undefined;
+
+              if (this.filterBy.value.reviewStatus !== value) {
+                this.filterBy.setValue({
+                  ...this.filterBy.value,
+                  reviewStatus: value,
+                });
+              }
             }}
           ></btrix-qa-review-filter>
 
