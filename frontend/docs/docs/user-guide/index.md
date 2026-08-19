@@ -34,6 +34,8 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       { .btrix-embed-hidden }
       - [Set up your account](signup.md)
       { .btrix-embed-hidden }
+      - [Set up your org](signup.md)
+      { .btrix-embed-visible }
       - [Crawl your first webpage](getting-started.md#__tabbed_1_1)
       - [Crawl your first social media page](getting-started.md#__tabbed_1_2)
       - [Crawl an entire website](getting-started.md#__tabbed_1_3)

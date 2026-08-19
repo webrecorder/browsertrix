@@ -20,7 +20,7 @@
 
 /* Reveal elements */
 .btrix-app-embed .btrix-embed-visible:not(.grid) {
-  display: block !important;
+  display: revert !important;
 }
 .btrix-app-embed .btrix-embed-visible.grid {
   display: grid !important;
@@ -76,6 +76,7 @@
   padding: 0;
 }
 .btrix-app-embed .md-header__title {
+  font-size: 0.8rem;
   height: calc(2.25rem + 1px);
   padding-left: 0.5rem;
 }
