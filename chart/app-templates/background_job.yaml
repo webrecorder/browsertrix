@@ -13,7 +13,7 @@ metadata:
 {% endif %}
 
 spec:
-  ttlSecondsAfterFinished: 300
+  ttlSecondsAfterFinished: 0
   backoffLimit: 6
   {% if scale %}
   parallelism: {{ scale }}
