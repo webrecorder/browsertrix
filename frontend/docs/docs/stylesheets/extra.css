@@ -558,15 +558,10 @@ h5 {
 .md-typeset .card,
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.5rem;
-  border-color: var(--wr-border-color);
+  border-color: var(--wr-border-color) !important;
   padding: 1em;
   box-shadow: none !important;
   text-wrap: pretty;
-}
-
-.md-typeset .grid.cards > ul > li:hover,
-.md-typeset .grid.cards > ul > li:active {
-  border-color: var(--wr-border-color);
 }
 
 .md-typeset .card hr,
