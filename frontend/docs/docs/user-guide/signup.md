@@ -23,29 +23,34 @@
 
     ## Sign Up { .btrix-embed-hidden }
 
-    Each Browsertrix subscription includes one org (organization), which is created for you when you [sign up](https://webrecorder.net/browsertrix/#get-started).
+    Once you finish setting up your subscription, you’ll receive an email from Webrecorder with a link to confirm your email address and set up your org.
     { .btrix-embed-hidden }
-
-    Once you finish setting up your subscription, you’ll receive an email from Webrecorder with a link to set up your org.
-    { .btrix-embed-hidden }
-
-    ## Set Up Your Org
-
-    Choose an org name that's unique and memorable, like the name of your company or organization. Your org URL identifier will determine the unique URL of the org's home page.
 
     ## Set Up Your Personal Account
 
-    When prompted, set up the account that you will use to log in to Browsertrix.
-
-    ### Password
-
-    Your email and password will be used to log in to [app.browsertrix.com](https://app.browsertrix.com/log-in){ target="_blank" }.
+    Set up the account that you will use to log in to Browsertrix.
 
     ### Display Name
 
     Your display name is the name that is visible to other org members. For example, your display name will be visible next to crawl workflows that you create or run.
 
-    Once you’ve completed this step, you’re in!
+    ### Password
+
+    Your email and password will be used to log in to [app.browsertrix.com](https://app.browsertrix.com/log-in){ target="_blank" }.
+
+    ## Set Up Your Org
+
+    A Browsertrix org (organization) is your primary workspace for creating and publishing web archives. If you’re archiving collaboratively, an org workspace can be shared between team members.
+
+    Each Browsertrix subscription includes one org, which is created for you when you sign up.
+
+    ### Org Name
+
+    Your org name appears throughout the web application and in email notifications. Choose a display name for your org that's unique and memorable, like the name of your company, organization, or personal project.
+
+    ### Custom URL Identifier
+    
+    The org URL is where you and other org members will go to view the dashboard, configure org settings, and manage all other org-related activities.
 
     ---
 
