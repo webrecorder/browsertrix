@@ -187,6 +187,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         .config=${config}
         ?open=${this.openDialog === "browser" || duplicating}
         ?duplicating=${duplicating}
+        ?navigateOnSave=${duplicating}
         @btrix-updated=${duplicating ? undefined : this.onUpdated}
         @sl-after-hide=${this.closeBrowser}
       >
@@ -775,6 +776,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   }
 
   private readonly onUpdated = async (e: ProfileUpdatedEvent) => {
+    e.stopPropagation();
     this.updatedProfileParams = e.detail;
     void this.profileTask.run();
   };

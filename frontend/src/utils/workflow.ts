@@ -292,7 +292,7 @@ export type FormState = {
   dedupeType: DedupeType;
   dedupeCollection: { id: string } | { name: string } | null;
   jobName: WorkflowSettings["name"];
-  browserProfile: Profile | null;
+  browserProfile: (Partial<Profile> & Pick<Profile, "id" | "name">) | null;
   tags: Tags;
   autoAddCollections: string[];
   description: WorkflowSettings["description"];
