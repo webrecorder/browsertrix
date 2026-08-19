@@ -21,7 +21,7 @@
       
     </div>
 
-    ## Sign Up
+    ## Sign Up { .btrix-embed-hidden }
 
     Each Browsertrix subscription includes one org (organization), which is created for you when you [sign up](https://webrecorder.net/browsertrix/#get-started).
     { .btrix-embed-hidden }
