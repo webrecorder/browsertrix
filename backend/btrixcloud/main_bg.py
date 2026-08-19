@@ -8,6 +8,7 @@ from uuid import UUID
 import structlog
 
 from .logger import init_logging, set_log_context
+from .models import BgJobExitCode as ExitCode
 from .models import BgJobType
 from .ops import init_ops
 from .utils import btrix_env
@@ -47,7 +48,7 @@ async def main():
                 "Kubernetes not detected (KUBERNETES_SERVICE_HOST is not set), Exiting"
             ),
         )
-        return 1
+        return ExitCode.FATAL_DONT_RETRY
 
     (
         org_ops,
@@ -74,37 +75,37 @@ async def main():
     if job_type == BgJobType.OPTIMIZE_PAGES:
         try:
             await page_ops.optimize_crawl_pages(version=2)
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="optimize_pages failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.CLEANUP_SEED_FILES:
         try:
             await file_ops.cleanup_unused_seed_files()
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="cleanup_seed_files failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.RETRY_STUCK_UPLOADS:
         try:
             await upload_ops.retry_stuck_uploads()
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     # Run job (org-specific)
     if not oid:
@@ -112,7 +113,7 @@ async def main():
             "org_id_missing",
             unstructured_message="Org id missing, quitting",
         )
-        return 1
+        return ExitCode.FATAL_DONT_RETRY
 
     org = await org_ops.get_org_by_id(UUID(oid))
     if not org:
@@ -120,31 +121,31 @@ async def main():
             "org_id_invalid",
             unstructured_message="Org id invalid, quitting",
         )
-        return 1
+        return ExitCode.FATAL_DONT_RETRY
 
     if job_type == BgJobType.DELETE_ORG:
         try:
             await org_ops.delete_org_and_data(org, user_manager)
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="delete_org_and_data failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.RECALCULATE_ORG_STATS:
         try:
             await org_ops.recalculate_storage(org)
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="recalculate_storage failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.READD_ORG_PAGES:
         try:
@@ -154,14 +155,14 @@ async def main():
                 await page_ops.re_add_crawl_pages(crawl_id=crawl_id, oid=org.id)
 
             await coll_ops.recalculate_org_collection_stats(org)
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="readd_org_pages failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.UPDATE_COLL_STATS:
         crawl_logger.info(
@@ -191,36 +192,36 @@ async def main():
                     "No changes to collection since start of last update, job complete"
                 ),
             )
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
                 unstructured_message="update_collection_stats failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     if job_type == BgJobType.POSTPROCESS_UPLOAD:
         if not crawl_id:
             crawl_logger.critical(
                 "missing_crawl_id",
             )
-            return 1
+            return ExitCode.ERROR
         try:
             await upload_ops.post_process_upload(crawl_id, org)
-            return 0
+            return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:
             crawl_logger.exception(
                 "bg_job_failed",
             )
-            return 1
+            return ExitCode.ERROR
 
     crawl_logger.critical(
         "unsupported_job_type",
         unstructured_message=f"Provided job type {job_type} not currently supported",
     )
-    return 1
+    return ExitCode.ERROR
 
 
 # # ============================================================================
