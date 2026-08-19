@@ -1,21 +1,22 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
+import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { renderInviteMessage } from "./ui/inviteMessage";
 
+import { BtrixElement } from "@/classes/BtrixElement";
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { OrgTab, RouteNamespace } from "@/routes";
 import type { UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
-import LiteElement, { html } from "@/utils/LiteElement";
 
 import "./ui/org-form";
 
 @customElement("btrix-join")
 @localized()
-export class Join extends LiteElement {
+export class Join extends BtrixElement {
   @property({ type: String })
   token?: string;
 
@@ -77,7 +78,7 @@ export class Join extends LiteElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
-                          this.navTo(
+                          this.navigate.to(
                             `/${RouteNamespace.PrivateOrgs}/${e.detail.data.slug}/${OrgTab.Dashboard}`,
                           );
                         }}
@@ -99,8 +100,8 @@ export class Join extends LiteElement {
                 html`<btrix-alert variant="danger">
                   <div>${err instanceof Error ? err.message : err}</div>
                   <a
-                    href=${this.orgBasePath}
-                    @click=${this.navLink}
+                    href=${this.navigate.orgBasePath}
+                    @click=${this.navigate.link}
                     class="mt-3 inline-block underline hover:no-underline"
                   >
                     ${msg("Go to home page")}
@@ -174,9 +175,9 @@ export class Join extends LiteElement {
 
     if (!inviteInfo?.firstOrgAdmin) {
       if (inviteInfo?.orgSlug) {
-        this.navTo(`/orgs/${inviteInfo.orgSlug}/dashboard`);
+        this.navigate.to(`/orgs/${inviteInfo.orgSlug}/dashboard`);
       } else {
-        this.navTo(this.orgBasePath);
+        this.navigate.to(this.navigate.orgBasePath);
       }
     }
   }
