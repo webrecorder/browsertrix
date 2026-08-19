@@ -566,7 +566,7 @@ h5 {
 
 .md-typeset .grid.cards > ul > li:hover,
 .md-typeset .grid.cards > ul > li:active {
-  border: 1px solid var(--md-primary-bg-color--light);
+  border-color: var(--wr-border-color);
 }
 
 .md-typeset .card hr,
