@@ -45,3 +45,24 @@ export type WorkflowSearchValues = {
   descriptions: string[];
   firstSeeds: string[];
 };
+
+export type RunningWorkflowCounts = {
+  totalRunningPausedWaiting: number;
+  totalRunning: number;
+  totalPaused: number;
+  totalWaiting: number;
+  running: number;
+  pendingWait: number;
+  generateWACZ: number;
+  uploadingWACZ: number;
+  rateLimited: number;
+  paused: number;
+  pausedStorageQuotaReached: number;
+  pausedTimeQuotaReached: number;
+  pausedOrgReadOnly: number;
+  pausedRateLimitTimeReached: number;
+  starting: number;
+  waitingCapacity: number;
+  waitingOrgLimit: number;
+  waitingDedupeIndex: number;
+};

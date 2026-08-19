@@ -3,29 +3,28 @@ import "./global";
 
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import type {
-  SlDialog,
-  SlDrawer,
-  SlSelectEvent,
-} from "@shoelace-style/shoelace";
+import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
-import { when } from "lit/directives/when.js";
 import isEqual from "lodash/fp/isEqual";
 
 import "./components";
 import "./features";
 import "./pages";
 
+import {
+  activeCrawlsCountContext,
+  type ActiveCrawlsCountContext,
+} from "./context/active-crawls-count/active-crawls-count";
+import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
 import { docsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
 import { viewStateContext } from "./context/view-state";
 import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
-import { ORG_NAME_MAX_LENGTH } from "./types/org";
 import type { UserInfo, UserOrg } from "./types/user";
 import { pageView, type AnalyticsTrackProps } from "./utils/analytics";
 import { type ViewState } from "./utils/APIRouter";
@@ -38,17 +37,14 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
-import {
-  translatedLocales,
-  type TranslatedLocaleEnum,
-} from "@/types/localization";
 import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
-import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
+
+import "@/components/layout/app-bar";
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -102,6 +98,9 @@ export class App extends BtrixElement {
   @state()
   private globalDialogContent: DialogContent = {};
 
+  @provide({ context: activeCrawlsCountContext })
+  private activeCrawlsCount?: ActiveCrawlsCountContext;
+
   @query("#globalDialog")
   private readonly globalDialog!: SlDialog;
 
@@ -137,6 +136,16 @@ export class App extends BtrixElement {
     return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
   }
 
+  constructor() {
+    super();
+
+    this.addEventListener("btrix-navigate", this.onNavigateTo);
+    this.addEventListener("btrix-need-login", this.onNeedLogin);
+    this.addEventListener("btrix-logged-in", this.onLoggedIn);
+    this.addEventListener("btrix-log-out", this.onLogOut);
+    this.attachUserGuideListeners();
+  }
+
   async connectedCallback() {
     let authState: AuthService["authState"] = null;
     try {
@@ -154,11 +163,6 @@ export class App extends BtrixElement {
 
     super.connectedCallback();
 
-    this.addEventListener("btrix-navigate", this.onNavigateTo);
-    this.addEventListener("btrix-need-login", this.onNeedLogin);
-    this.addEventListener("btrix-logged-in", this.onLoggedIn);
-    this.addEventListener("btrix-log-out", this.onLogOut);
-    this.attachUserGuideListeners();
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -339,7 +343,13 @@ export class App extends BtrixElement {
   render() {
     return html`
       <div class="min-w-screen relative flex min-h-screen flex-col">
-        ${this.renderSuperadminBanner()} ${this.renderNavBar()}
+        ${this.renderSuperadminBanner()}
+        <btrix-app-bar
+          .docsUrl=${this.docsUrl}
+          .viewState=${this.viewState}
+          .orgSlugInPath=${this.orgSlugInPath}
+          @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}
+        ></btrix-app-bar>
         ${this.renderAlertBanner()}
         <main
           class="relative flex flex-auto transition-[padding] md:min-h-[calc(100vh-3.125rem)]"
@@ -372,7 +382,7 @@ export class App extends BtrixElement {
       <sl-drawer
         id="userGuideDrawer"
         label=${msg("User Guide")}
-        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
+        class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:31rem] part-[base]:fixed part-[base]:z-50 part-[header-actions]:px-1 part-[panel]:[border-left:1px_solid_var(--sl-panel-border-color)]"
         ?open=${this.appState.userGuideOpen}
         contained
         @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
@@ -385,16 +395,13 @@ export class App extends BtrixElement {
           class="size-full text-xs transition-opacity duration-slow"
           src="${url}"
         ></iframe>
-        <sl-button
-          size="small"
-          slot="footer"
-          variant="text"
+        <sl-icon-button
+          slot="header-actions"
+          name="box-arrow-up-right"
           href="${url}"
           target="_blank"
-        >
-          <sl-icon slot="suffix" name="box-arrow-up-right"></sl-icon>
-          ${msg("Open in new window")}</sl-button
-        >
+          label=${msg("Open in New Tab")}
+        ></sl-icon-button>
       </sl-drawer>
     `;
   }
@@ -434,305 +441,6 @@ export class App extends BtrixElement {
                 )}
           </sl-alert>
         </div>
-      </div>
-    `;
-  }
-
-  private renderNavBar() {
-    const isSuperAdmin = this.authState && this.userInfo?.isSuperAdmin;
-
-    const showFullLogo =
-      this.viewState.route === "login" || !this.authService.authState;
-
-    return html`
-      <div class="border-b bg-neutral-50">
-        <nav
-          class="box-border flex min-h-12 flex-wrap items-center gap-x-5 gap-y-3 p-3 leading-none md:py-0 xl:pl-6"
-        >
-          <div class="order-1 flex flex-1 items-center">
-            <a
-              class="items-between flex gap-2"
-              aria-label="home"
-              href=${this.homePath}
-              @click=${(e: MouseEvent) => {
-                if (isSuperAdmin) {
-                  this.clearSelectedOrg();
-                }
-                this.navigate.link(e);
-              }}
-            >
-              <div
-                class="${showFullLogo
-                  ? "w-[10.5rem]"
-                  : "w-6 lg:w-[10.5rem]"} h-6 bg-cover bg-no-repeat"
-                style="background-image: url(${brandLockupColor})"
-                role="img"
-                title="Browsertrix logo"
-              ></div>
-            </a>
-            ${when(
-              this.userInfo,
-              () => html`
-                ${isSuperAdmin
-                  ? html`
-                      <div
-                        role="separator"
-                        class="mx-2.5 h-6 w-0 border-l"
-                      ></div>
-                      <a
-                        class="flex items-center gap-2 font-medium text-primary-700 transition-colors hover:text-primary"
-                        href="/${RouteNamespace.Superadmin}"
-                        @click=${(e: MouseEvent) => {
-                          this.clearSelectedOrg();
-                          this.navigate.link(e);
-                        }}
-                      >
-                        <sl-icon
-                          class="text-lg"
-                          name="house-gear-fill"
-                        ></sl-icon>
-                        ${msg("Admin")}</a
-                      >
-                    `
-                  : nothing}
-                ${this.renderOrgs()}
-                ${isSuperAdmin && this.org?.note
-                  ? html`
-                      <btrix-popover>
-                        <span slot="content" class="whitespace-pre-line"
-                          >${this.org.note}</span
-                        >
-                        <sl-icon
-                          name="chat-left-text"
-                          class="relative flex-shrink-0 text-neutral-500"
-                          title=${msg("This org has a note")}
-                        ></sl-icon>
-                      </btrix-popover>
-                    `
-                  : nothing}
-              `,
-            )}
-          </div>
-          <div
-            class="${this.authState
-              ? "gap-4"
-              : "gap-2"} order-2 flex flex-grow-0 items-center md:order-3"
-          >
-            ${this.authState
-              ? html`${this.userInfo && !isSuperAdmin
-                    ? html`
-                        <button
-                          class="flex items-center gap-2 leading-none text-neutral-500 hover:text-primary"
-                          @click=${() => void this.showUserGuide()}
-                        >
-                          <sl-icon
-                            name="book"
-                            class="mt-px size-4 text-base"
-                          ></sl-icon>
-                          <span class="sr-only lg:not-sr-only"
-                            >${msg("User Guide")}</span
-                          >
-                        </button>
-                      `
-                    : nothing}
-                  <sl-dropdown
-                    class="ml-auto"
-                    placement="bottom-end"
-                    distance="4"
-                  >
-                    <button slot="trigger">
-                      <sl-avatar
-                        label=${msg("Open user menu")}
-                        shape="rounded"
-                        class="[--size:1.75rem]"
-                      ></sl-avatar>
-                    </button>
-                    <sl-menu class="w-60 min-w-min max-w-full">
-                      <div class="px-7 py-2">${this.renderMenuUserInfo()}</div>
-                      <sl-divider></sl-divider>
-                      <sl-menu-item
-                        @click=${() => this.routeTo("/account/settings")}
-                      >
-                        <sl-icon slot="prefix" name="person-gear"></sl-icon>
-                        ${msg("Account Settings")}
-                      </sl-menu-item>
-                      ${this.userInfo?.isSuperAdmin
-                        ? html` <sl-menu-item
-                            @click=${() =>
-                              this.routeTo(urlForName("adminUsersInvite"))}
-                          >
-                            <sl-icon slot="prefix" name="person-plus"></sl-icon>
-                            ${msg("Invite Users")}
-                          </sl-menu-item>`
-                        : ""}
-                      <sl-divider></sl-divider>
-                      <sl-menu-item @click="${this.onLogOut}">
-                        <sl-icon slot="prefix" name="door-open"></sl-icon>
-                        ${msg("Log Out")}
-                      </sl-menu-item>
-                    </sl-menu>
-                  </sl-dropdown>`
-              : html`
-                  ${this.viewState.route !== "login"
-                    ? html`
-                        <sl-button
-                          size="small"
-                          variant="primary"
-                          href="/log-in"
-                          @click=${this.navigate.link}
-                        >
-                          ${msg("Sign In")}
-                        </sl-button>
-                      `
-                    : nothing}
-                  ${(translatedLocales as unknown as string[]).length > 2
-                    ? html`
-                        <btrix-user-language-select
-                          @sl-select=${this.onSelectLocale}
-                        ></btrix-user-language-select>
-                      `
-                    : nothing}
-                `}
-          </div>
-
-          ${isSuperAdmin
-            ? html`
-                <div class="order-3 w-full auto-cols-max md:order-2 md:w-auto">
-                  <a
-                    class="inline-flex items-center gap-2 font-medium text-neutral-500 hover:text-primary"
-                    href=${urlForName("adminCrawls")}
-                    @click=${this.navigate.link}
-                  >
-                    ${msg("Active Crawls")}
-                    <btrix-active-crawls-badge></btrix-active-crawls-badge>
-                  </a>
-                </div>
-              `
-            : nothing}
-        </nav>
-      </div>
-    `;
-  }
-
-  private renderOrgs() {
-    const orgs = this.userInfo?.orgs;
-    if (!orgs) return;
-
-    const selectedOption = this.orgSlugInPath
-      ? orgs.find(({ slug }) => slug === this.orgSlugInPath)
-      : {
-          slug: "",
-          name: msg("All Organizations"),
-        };
-
-    if (!selectedOption) {
-      return;
-    }
-
-    // Limit org name display for orgs created before org name max length restriction
-    const orgNameLength = ORG_NAME_MAX_LENGTH;
-
-    return html`
-      <div role="separator" class="mx-2.5 h-7 w-0 border-l"></div>
-      <div class="max-w-32 truncate sm:max-w-52 md:max-w-none">
-        ${selectedOption.slug
-          ? html`
-              <a
-                class="font-medium text-neutral-600"
-                href=${`${this.navigate.orgBasePath}/${OrgTab.Dashboard}`}
-                @click=${this.navigate.link}
-              >
-                ${selectedOption.name.slice(0, orgNameLength)}
-              </a>
-            `
-          : html`
-              <span class="text-neutral-500">
-                ${selectedOption.name.slice(0, orgNameLength)}
-              </span>
-            `}
-      </div>
-      ${when(
-        orgs.length > 1,
-        () => html`
-          <sl-dropdown placement="bottom-end">
-            <sl-icon-button
-              slot="trigger"
-              name="chevron-expand"
-              label=${msg("Expand org list")}
-            ></sl-icon-button>
-            <sl-menu
-              @sl-select=${(e: CustomEvent<{ item: { value: string } }>) => {
-                const { value } = e.detail.item;
-                if (value) {
-                  this.routeTo(
-                    `/${RouteNamespace.PrivateOrgs}/${value}/${OrgTab.Dashboard}`,
-                  );
-                } else {
-                  if (this.userInfo) {
-                    this.clearSelectedOrg();
-                  }
-                  this.routeTo(`/`);
-                }
-              }}
-            >
-              ${when(
-                this.userInfo?.isSuperAdmin,
-                () => html`
-                  <sl-menu-item
-                    type="checkbox"
-                    value=""
-                    ?checked=${!selectedOption.slug}
-                    >${msg("All Organizations")}</sl-menu-item
-                  >
-                  <sl-divider></sl-divider>
-                `,
-              )}
-              ${orgs.map(
-                (org) => html`
-                  <sl-menu-item
-                    type="checkbox"
-                    value=${org.slug}
-                    ?checked=${org.slug === selectedOption.slug}
-                    >${org.name.slice(0, orgNameLength)}</sl-menu-item
-                  >
-                `,
-              )}
-            </sl-menu>
-          </sl-dropdown>
-        `,
-      )}
-    `;
-  }
-
-  private renderMenuUserInfo() {
-    if (!this.userInfo) return;
-    if (this.userInfo.isSuperAdmin) {
-      return html`
-        <div class="mb-2">
-          <btrix-tag>${msg("Admin")}</btrix-tag>
-        </div>
-        <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
-        <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.userInfo.email}
-        </div>
-      `;
-    }
-
-    const orgs = this.userInfo.orgs;
-    if (orgs.length === 1) {
-      return html`
-        <div class="my-1 font-medium text-neutral-700">${orgs[0].name}</div>
-        <div class="text-neutral-500">${this.userInfo.name}</div>
-        <div class="whitespace-nowrap text-xs text-neutral-500">
-          ${this.userInfo.email}
-        </div>
-      `;
-    }
-
-    return html`
-      <div class="font-medium text-neutral-700">${this.userInfo.name}</div>
-      <div class="whitespace-nowrap text-xs text-neutral-500">
-        ${this.userInfo.email}
       </div>
     `;
   }
@@ -880,6 +588,7 @@ export class App extends BtrixElement {
           DEFAULT_MAX_SCALE}
           orgPath=${orgPath.split(slug)[1]}
           orgTab=${orgTab}
+          @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}
         ></btrix-org>`;
       }
 
@@ -926,6 +635,8 @@ export class App extends BtrixElement {
             html`<btrix-crawls
               class="w-full"
               crawlId=${this.viewState.params.crawlId}
+              @btrix-update-active-crawls-count=${this
+                .onUpdateActiveCrawlsCount}
             ></btrix-crawls>`,
         );
 
@@ -993,13 +704,16 @@ export class App extends BtrixElement {
     }
   }
 
-  onSelectLocale(e: SlSelectEvent) {
-    const locale = e.detail.item.value as TranslatedLocaleEnum;
+  private readonly onUpdateActiveCrawlsCount = (
+    e: BtrixUpdateActiveCrawlsCount,
+  ) => {
+    e.stopPropagation();
 
-    if (locale !== this.appState.userPreferences?.language) {
-      AppStateService.partialUpdateUserPreferences({ language: locale });
-    }
-  }
+    this.activeCrawlsCount = {
+      ...this.activeCrawlsCount,
+      ...e.detail,
+    };
+  };
 
   onLogOut(event: CustomEvent<{ redirect?: boolean } | null>) {
     const detail = event.detail || {};
@@ -1145,9 +859,5 @@ export class App extends BtrixElement {
         }
       },
     );
-  }
-
-  private clearSelectedOrg() {
-    AppStateService.updateOrgSlug(null);
   }
 }

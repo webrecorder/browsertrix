@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlDialog } from "@shoelace-style/shoelace";
@@ -23,6 +24,10 @@ import {
 } from "@/components/ui/pagination";
 import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import {
   Action,
@@ -110,6 +115,9 @@ type FilterBy = {
 @customElement("btrix-workflows-list")
 @localized()
 export class WorkflowsList extends BtrixElement {
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  activeCrawlsCount?: ActiveCrawlsCountContext;
+
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -594,7 +602,7 @@ export class WorkflowsList extends BtrixElement {
           });
         }}
       >
-        ${msg("Running")}
+        ${msg("Active Crawl")}
       </btrix-filter-chip>
 
       <btrix-filter-chip
@@ -896,15 +904,28 @@ export class WorkflowsList extends BtrixElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
-        {
-          method: "POST",
-        },
-      );
-      if (data.success) {
-        void this.workflowsTask.run();
-      } else {
+      try {
+        const data = await this.api.fetch<{ success: boolean }>(
+          `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
+          {
+            method: "POST",
+          },
+        );
+
+        if (data.success) {
+          // Make best guess until next tick
+          this.dispatchEvent(
+            makeUpdateActiveCrawlsCountEvent({
+              userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
+            }),
+          );
+          void this.workflowsTask.run();
+        } else {
+          throw data;
+        }
+      } catch (err) {
+        console.debug(err);
+
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
           variant: "danger",
@@ -924,6 +945,7 @@ export class WorkflowsList extends BtrixElement {
           method: "POST",
         },
       );
+
       if (data.success) {
         void this.workflowsTask.run();
       } else {
@@ -962,6 +984,13 @@ export class WorkflowsList extends BtrixElement {
         icon: "check2-circle",
         duration: 8000,
       });
+
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: (this.activeCrawlsCount?.userOrg ?? 0) + 1,
+        }),
+      );
 
       void this.workflowsTask.run();
       // Scroll to top of list

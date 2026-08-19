@@ -12,7 +12,7 @@ export class SuperAdminBanner extends TailwindElement {
 
   render() {
     if (this.hide) {
-      return html` <div class="absolute bottom-0 right-2 top-0 pt-14">
+      return html` <div class="absolute bottom-0 right-2 top-0 pt-[3.45rem]">
         <sl-tooltip
           placement="left"
           class="[--max-width:500px] [--show-delay:0] part-[base__arrow]:bg-warning-700 part-[body]:bg-warning-700 part-[body]:text-xs"

@@ -7,6 +7,7 @@ import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage } from "@/components/ui/pagination";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import PollTask from "@/controllers/poll";
 import needLogin from "@/decorators/needLogin";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -56,6 +57,9 @@ const sortableFields: Record<
 const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 100;
 
+/**
+ * @fires btrix-update-active-crawls-count
+ */
 @customElement("btrix-crawls")
 @localized()
 @needLogin
@@ -93,7 +97,7 @@ export class Crawls extends BtrixElement {
       }
 
       try {
-        return this.getCrawls(
+        const data = await this.getCrawls(
           {
             ...filterBy,
             page:
@@ -104,6 +108,14 @@ export class Crawls extends BtrixElement {
           },
           signal,
         );
+
+        if (data.total !== this.#poll.previousValue?.total) {
+          this.dispatchEvent(
+            makeUpdateActiveCrawlsCountEvent({ allOrgs: data.total }),
+          );
+        }
+
+        return data;
       } catch (err) {
         console.debug(err);
 

@@ -57,22 +57,31 @@ export class PollTask<
       },
     });
 
-    const options = { timeoutSeconds, pauseWhenHidden, stopPollOnError };
     this.#options = {
       ...defaultOptions,
-      ...options,
+      pauseWhenHidden: pauseWhenHidden ?? defaultOptions.pauseWhenHidden,
+      stopPollOnError: stopPollOnError ?? defaultOptions.stopPollOnError,
+      timeoutSeconds,
     };
+
+    // Clear timer every time args change
+    new Task(host, {
+      task: () => {
+        this.clearTimer();
+      },
+      args: taskConfig.args,
+      argsEqual: taskConfig.argsEqual,
+    });
 
     this.#pollTask = new Task(host, {
       task: async ([status]) => {
         const timeoutSeconds = this.#options.timeoutSeconds;
         if (!timeoutSeconds) return;
 
-        if (status === TaskStatus.PENDING) {
+        if (status < TaskStatus.COMPLETE) {
           this.clearTimer();
+          return;
         }
-
-        if (status < TaskStatus.COMPLETE) return;
         if (this.#options.stopPollOnError && status === TaskStatus.ERROR) {
           return;
         }
@@ -98,6 +107,11 @@ export class PollTask<
    */
   public get paused() {
     return this.#paused;
+  }
+
+  async run(args?: T): Promise<void> {
+    this.clearTimer();
+    return super.run(args);
   }
 
   /**
@@ -166,6 +180,7 @@ export class PollTask<
    */
   async start() {
     this.#paused = false;
+    this.clearTimer();
     void this.run();
     return this.taskComplete;
   }

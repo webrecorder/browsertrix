@@ -1,42 +1,114 @@
+import { consume } from "@lit/context";
 import { localized } from "@lit/localize";
-import { html } from "lit";
-import { customElement } from "lit/decorators.js";
-import queryString from "query-string";
+import { Task } from "@lit/task";
+import { html, nothing, type PropertyValues } from "lit";
+import { customElement, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  activeCrawlsCountContext,
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
+import { viewStateContext, type ViewStateContext } from "@/context/view-state";
 import PollTask from "@/controllers/poll";
-import type { APIPaginatedList } from "@/types/api";
-import type { Crawl } from "@/types/crawler";
+import { type RunningWorkflowCounts } from "@/types/workflow";
+import { urlForName } from "@/utils/router";
 
 const POLL_INTERVAL_SECONDS = 30;
 
+/**
+ * @fires btrix-update-active-crawls-count
+ */
 @customElement("btrix-active-crawls-badge")
 @localized()
 export class ActiveCrawlsBadge extends BtrixElement {
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  @state()
+  activeCrawlsCount?: ActiveCrawlsCountContext;
+
+  @consume({ context: viewStateContext, subscribe: true })
+  @state()
+  viewState?: ViewStateContext;
+
+  private get isCrawlsPageVisible() {
+    return this.viewState?.pathname === urlForName("adminCrawls");
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("viewState") && this.viewState) {
+      if (this.userInfo?.isSuperAdmin) {
+        this.updatePollForPage();
+      }
+    }
+  }
+
+  private updatePollForPage() {
+    // Use most updated totals from crawls page poll instead
+    if (this.isCrawlsPageVisible) {
+      this.#poll.pause();
+    } else {
+      if (this.#poll.paused) {
+        void this.#poll.start();
+      } else {
+        void this.#poll.run();
+      }
+    }
+  }
+
   readonly #poll = new PollTask(this, {
-    task: async (_args, { signal }) => {
-      return await this.getActiveCrawlsTotal(signal);
+    task: async ([isSuperAdmin], { signal }) => {
+      if (!isSuperAdmin) return;
+
+      try {
+        return this.getActiveCrawlsTotal(signal);
+      } catch (err) {
+        console.debug(err);
+      }
     },
-    args: () => [] as const,
+    args: () =>
+      [
+        this.userInfo?.isSuperAdmin,
+        this.orgId,
+        this.activeCrawlsCount?.userOrg,
+      ] as const,
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
+  constructor() {
+    super();
+
+    // Update context on poll value change
+    new Task(this, {
+      task: ([total]) => {
+        if (total === undefined) return;
+
+        this.dispatchEvent(
+          makeUpdateActiveCrawlsCountEvent({
+            allOrgs: total,
+          }),
+        );
+      },
+      args: () => [this.#poll.value?.totalRunningPausedWaiting] as const,
+    });
+  }
+
   render() {
-    return this.#poll.render(
-      ({ total }) =>
-        html`<btrix-badge variant=${total > 0 ? "primary" : "blue"}>
-          ${this.localize.number(total)}
-        </btrix-badge>`,
+    // Render value from context instead of task so that
+    // it's synced to the active crawls page
+    return guard([this.activeCrawlsCount?.allOrgs], () =>
+      this.activeCrawlsCount?.allOrgs
+        ? html`<btrix-badge variant="primary">
+            ${this.localize.number(this.activeCrawlsCount.allOrgs)}
+          </btrix-badge>`
+        : nothing,
     );
   }
 
   private async getActiveCrawlsTotal(signal: AbortSignal) {
-    const query = queryString.stringify({
-      pageSize: 1,
-    });
-
-    const data = await this.api.fetch<APIPaginatedList<Crawl>>(
-      `/orgs/all/crawls?${query}`,
+    const data = await this.api.fetch<RunningWorkflowCounts>(
+      `/orgs/all/crawlconfigs/running`,
       { signal, priority: "low" },
     );
 
