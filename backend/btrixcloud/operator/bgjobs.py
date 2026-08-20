@@ -56,7 +56,7 @@ class BgJobOperator(BaseOperator):
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")
 
-        finalized = True
+        finalized = False
 
         started = None
         finished = None
@@ -83,10 +83,13 @@ class BgJobOperator(BaseOperator):
                 finished=finished,
                 oid=org_id,
             )
+            finalized = True
 
         # pylint: disable=broad-except
         except Exception:
-            finalized = False
+            # TODO: Depending on exception (e.g. if job isn't found
+            # because the org has been deleted), we may want to
+            # finalize anyway
             logger.exception(
                 "background_job_update_failed",
                 unstructured_message="Update Background Job Error",
