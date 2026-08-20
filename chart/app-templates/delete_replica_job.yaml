@@ -9,7 +9,7 @@ metadata:
 
 spec:
   ttlSecondsAfterFinished: 0
-  backoffLimit: 5
+  backoffLimit: 6
   template:
     spec:
       restartPolicy: Never
