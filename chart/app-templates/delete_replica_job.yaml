@@ -6,8 +6,8 @@ metadata:
     - metacontroller.io/decoratorcontroller-background-job-operator
   labels:
     role: "background-job"
-    job_type: {{ job_type }}
-    btrix.org: {{ oid }}
+    job_type: "{{ job_type }}"
+    btrix.org: "{{ oid }}"
 
 spec:
   ttlSecondsAfterFinished: 0
