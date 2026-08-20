@@ -804,7 +804,7 @@ export class ArchivedItemDetail extends BtrixElement {
         >
         <sl-menu>
           ${when(
-            this.isCrawler,
+            this.isCrawler && isSuccessfullyFinished(this.item),
             () => html`
               <sl-menu-item @click=${this.openMetadataEditor}>
                 <sl-icon name="pencil" slot="prefix"></sl-icon>
@@ -899,7 +899,7 @@ export class ArchivedItemDetail extends BtrixElement {
                   ? msg("Delete Crawl")
                   : isSuccess
                     ? msg("Delete Archived Item")
-                    : msg("Delete Item")}
+                    : msg("Delete Failed Item")}
               </sl-menu-item>
             `,
           )}
@@ -1002,7 +1002,11 @@ export class ArchivedItemDetail extends BtrixElement {
           item.type === "upload"
             ? html`
                 <btrix-desc-list-item label=${msg("Uploaded")}>
-                  ${this.formattedFinishedDate}
+                  <btrix-format-date
+                    date=${item.started}
+                    dateStyle="long"
+                    timeStyle="long"
+                  ></btrix-format-date>
                 </btrix-desc-list-item>
               `
             : html`

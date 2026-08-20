@@ -10,7 +10,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type { ArchivedItem } from "@/types/crawler";
-import { isCrawl, renderName } from "@/utils/crawler";
+import { isCrawl, isFailed, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 
 /**
@@ -58,7 +58,9 @@ export class DeleteItemDialog extends BtrixElement {
       .label=${this.item
         ? isCrawl(this.item)
           ? msg("Delete Crawl?")
-          : msg("Delete Archived Item?")
+          : isFailed(this.item)
+            ? msg("Delete Failed Item?")
+            : msg("Delete Archived Item?")
         : msg("Delete")}
       .open=${this.open}
     >
@@ -104,7 +106,11 @@ export class DeleteItemDialog extends BtrixElement {
               this.dispatchEvent(new CustomEvent("btrix-confirm"));
             }}
           >
-            ${crawl ? msg("Delete Crawl") : msg("Delete Archived Item")}
+            ${crawl
+              ? msg("Delete Crawl")
+              : isFailed(item)
+                ? msg("Delete Failed Item")
+                : msg("Delete Archived Item")}
           </sl-button>
         </btrix-popover>
       </div>

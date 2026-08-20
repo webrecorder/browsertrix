@@ -86,7 +86,7 @@ export class Crawls extends BtrixElement {
   private filterBy: Partial<Record<keyof Crawl, unknown>> & {
     state?: readonly CrawlState[];
   } = {
-    state: activeCrawlStates as readonly CrawlState[],
+    state: activeCrawlStates,
   };
 
   readonly #poll = new PollTask(this, {
