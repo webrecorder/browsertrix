@@ -1653,8 +1653,8 @@ class OrgOps(BaseOrgs):
         # Delete all background jobs except this one from database,
         # so that we are left with some record of the org having
         # existed and successfully deleted
-        await self.orgs.delete_one(
-            {"_id": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
+        await self.jobs_db.delete_one(
+            {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
 
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
