@@ -521,16 +521,23 @@ class OrgOps(BaseOrgs):
         else:
             slug = slug_from_name(name)
 
+        quotas = quotas or OrgQuotas()
+
         org = Organization(
             id=id_,
             name=name,
             slug=slug,
             created=dt_now(),
             storage=self.default_primary,
-            quotas=quotas or OrgQuotas(),
+            quotas=quotas,
             subscription=subscription,
             note=note,
         )
+
+        # initialize exec time pools from quotas
+        org.planExecSecondsAvailable = quotas.planExecMinutes * 60
+        org.extraExecSecondsAvailable = quotas.extraExecMinutes * 60
+        org.giftedExecSecondsAvailable = quotas.giftedExecMinutes * 60
 
         if (
             subscription
