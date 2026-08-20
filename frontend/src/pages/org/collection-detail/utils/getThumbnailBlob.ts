@@ -23,22 +23,12 @@ export const getThumbnailBlob = async (
     return;
   }
 
-  let resp: Response | undefined = undefined;
-
-  try {
-    resp = await rwp.shadowRoot
-      ?.querySelector("iframe")
-      ?.contentWindow?.fetch(
-        `/replay/w/${collectionId}/${formatRwpTimestamp(timestamp)}id_/urn:thumbnail:${url}`,
-        { signal },
-      );
-  } catch (err) {
-    if (signal.aborted || resp) {
-      return;
-    }
-
-    throw err;
-  }
+  const resp = await rwp.shadowRoot
+    ?.querySelector("iframe")
+    ?.contentWindow?.fetch(
+      `/replay/w/${collectionId}/${formatRwpTimestamp(timestamp)}id_/urn:thumbnail:${url}`,
+      { signal },
+    );
 
   if (resp?.status === 200) {
     return await resp.blob();
