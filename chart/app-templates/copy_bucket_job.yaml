@@ -4,29 +4,19 @@ metadata:
   name: "{{ id }}"
   labels:
     role: "background-job"
-    job_type: {{ job_type }}
-    btrix.org: {{ oid }}
+    job_type: "{{ job_type }}"
 
 spec:
-  ttlSecondsAfterFinished: 0
-  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 6
   template:
     spec:
       restartPolicy: Never
       priorityClassName: bg-job
-      podFailurePolicy:
-        rules:
-        - action: FailJob
-          onExitCodes:
-            containerName: rclone
-            operator: NotIn
-            values: [0]
       containers:
       - name: rclone
         image: rclone/rclone:latest
         env:
-
-{% if job_type == BgJobType.CREATE_REPLICA %}
         - name: RCLONE_CONFIG_PRIMARY_TYPE
           value: "s3"
 
@@ -56,8 +46,6 @@ spec:
 
         - name: RCLONE_CONFIG_PRIMARY_ENDPOINT
           value: "{{ primary_endpoint }}"
-
-{% endif %}
 
         - name: RCLONE_CONFIG_REPLICA_TYPE
           value: "s3"
@@ -89,15 +77,12 @@ spec:
         - name: RCLONE_CONFIG_REPLICA_ENDPOINT
           value: "{{ replica_endpoint }}"
 
-{% if job_type == BgJobType.CREATE_REPLICA %}
-        command: ["rclone", "-vv", "copyto", "--checksum", "--error-on-no-transfer", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
-{% elif job_type == BgJobType.DELETE_REPLICA %}
-        command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
-{% endif %}
+        command: ["rclone", "-vv", "copy", "--checksum", "primary:{{ primary_file_path }}", "replica:{{ replica_file_path }}"]
+
         resources:
           limits:
-            memory: "200Mi"
+            memory: "1200Mi"
 
           requests:
-            memory: "200Mi"
-            cpu: "50m"
+            memory: "500Mi"
+            cpu: "200m"

@@ -40,7 +40,6 @@ export const publicCollectionSchema = z.object({
       hash: z.string(),
       size: z.number(),
       crawlId: z.string().nullable(),
-      numReplicas: z.number(),
       expireAt: z.string().datetime().nullable(),
       fromDependency: z.boolean(),
     }),
