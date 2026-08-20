@@ -294,6 +294,8 @@ export class SelectCollectionThumbnail extends BtrixElement {
   }
 
   disconnectedCallback(): void {
+    super.disconnectedCallback();
+
     for (const screenshot of this.#screenshots.values()) {
       void screenshot.url.then((url) =>
         url ? URL.revokeObjectURL(url) : null,
