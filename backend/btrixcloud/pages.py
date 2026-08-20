@@ -984,7 +984,8 @@ class PageOps:
             crawl_id = crawl.get("_id")
             try:
                 await self.re_add_crawl_pages(crawl_id, org.id)
-            except:
+            # pylint: disable=broad-exception-caught
+            except Exception:
                 failures.append(crawl_id)
             count += 1
 
