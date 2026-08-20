@@ -17,13 +17,6 @@ spec:
       automountServiceAccountToken: false
       restartPolicy: Never
       priorityClassName: bg-job
-      podFailurePolicy:
-        rules:
-        - action: FailJob
-          onExitCodes:
-            containerName: rclone
-            operator: NotIn
-            values: [0]
       containers:
       - name: rclone
         image: rclone/rclone:latest
