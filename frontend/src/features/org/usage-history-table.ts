@@ -83,12 +83,12 @@ export class UsageHistoryTable extends BtrixElement {
       },
     ];
 
-    if (this.hasMonthlyTime()) {
+    if (this.hasMonthlyTime() || this.hasPlanTime()) {
       cols.push({
         field: Field.BillableExecutionTime,
         label: msg("Billable Execution Time"),
         description: msg(
-          "Execution time used that is billable to the current month of the plan.",
+          "Execution time used that is billable, including the monthly quota and the plan’s pool of execution minutes.",
         ),
       });
     }
@@ -171,7 +171,7 @@ export class UsageHistoryTable extends BtrixElement {
         [Field.Month]: mY,
         [Field.ElapsedTime]: crawlTime || 0,
         [Field.ExecutionTime]: totalSecondsUsed,
-        [Field.BillableExecutionTime]: monthlySecondsUsed,
+        [Field.BillableExecutionTime]: monthlySecondsUsed + planSecondsUsed,
         [Field.PlanExecutionTime]: planSecondsUsed,
         [Field.RolloverExecutionTime]: extraSecondsUsed,
         [Field.GiftedExecutionTime]: giftedSecondsUsed,
