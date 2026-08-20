@@ -206,7 +206,7 @@ async def main():
             crawl_logger.critical(
                 "missing_crawl_id",
             )
-            return ExitCode.ERROR
+            return ExitCode.FATAL_DONT_RETRY
         try:
             await upload_ops.post_process_upload(crawl_id, org)
             return ExitCode.SUCCESS
