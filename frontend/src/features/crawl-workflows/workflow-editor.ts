@@ -1105,6 +1105,11 @@ export class WorkflowEditor extends BtrixElement {
           value=${this.formState.seedListFormat}
           name="seedListFormat"
           size="small"
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              seedListFormat: (e.target as SlRadioGroup)
+                .value as SeedListFormat,
+            })}
         >
           <sl-radio-button value=${SeedListFormat.JSON}>
             ${msg("Enter URLs")}
@@ -3339,7 +3344,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         value = (elem as SlCheckbox).checked;
         break;
       case "sl-textarea":
-      case "sl-radio-group":
         value = elem.value;
         break;
       case "sl-input": {
