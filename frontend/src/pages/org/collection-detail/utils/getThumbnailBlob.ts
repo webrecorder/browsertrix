@@ -22,7 +22,6 @@ export const getThumbnailBlob = async (
     console.debug("no rwp");
     return;
   }
-
   const resp = await rwp.shadowRoot
     ?.querySelector("iframe")
     ?.contentWindow?.fetch(
