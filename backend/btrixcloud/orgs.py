@@ -147,9 +147,10 @@ class BaseOrgs:
         """Return bool for if execution minutes quota is reached"""
         monthly_quota = org.quotas.maxExecMinutesPerMonth
 
-        # if none of the 3 quotas set, then no quotas, always return false
+        # if none of the 4 quotas set, then no quotas, always return false
         if (
             not monthly_quota
+            and not org.quotas.planExecMinutes
             and not org.quotas.giftedExecMinutes
             and not org.quotas.extraExecMinutes
         ):
@@ -164,6 +165,10 @@ class BaseOrgs:
 
         # exec minutes available
         if org.quotas.extraExecMinutes > 0 and org.extraExecSecondsAvailable > 0:
+            return False
+
+        # plan minutes available (cadence-agnostic pool, refilled on renewal)
+        if org.quotas.planExecMinutes > 0 and org.planExecSecondsAvailable > 0:
             return False
 
         if monthly_quota:
@@ -516,16 +521,23 @@ class OrgOps(BaseOrgs):
         else:
             slug = slug_from_name(name)
 
+        quotas = quotas or OrgQuotas()
+
         org = Organization(
             id=id_,
             name=name,
             slug=slug,
             created=dt_now(),
             storage=self.default_primary,
-            quotas=quotas or OrgQuotas(),
+            quotas=quotas,
             subscription=subscription,
             note=note,
         )
+
+        # initialize exec time pools from quotas
+        org.planExecSecondsAvailable = quotas.planExecMinutes * 60
+        org.extraExecSecondsAvailable = quotas.extraExecMinutes * 60
+        org.giftedExecSecondsAvailable = quotas.giftedExecMinutes * 60
 
         if (
             subscription
@@ -655,6 +667,9 @@ class OrgOps(BaseOrgs):
             "subscription.futureCancelDate": update.futureCancelDate,
         }
 
+        if update.renewalDate is not None:
+            query["subscription.renewalDate"] = update.renewalDate
+
         if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
@@ -739,6 +754,7 @@ class OrgOps(BaseOrgs):
                 },
             )
 
+    # pylint: disable=too-many-branches
     async def update_quotas(
         self,
         org: Organization,
@@ -765,6 +781,11 @@ class OrgOps(BaseOrgs):
                 previous_gifted_mins = (
                     org.quotas.giftedExecMinutes
                     if (org.quotas and org.quotas.giftedExecMinutes)
+                    else 0
+                )
+                previous_plan_mins = (
+                    org.quotas.planExecMinutes
+                    if (org.quotas and org.quotas.planExecMinutes)
                     else 0
                 )
 
@@ -825,6 +846,13 @@ class OrgOps(BaseOrgs):
                     else:
                         update["$inc"]["extraExecSecondsAvailable"] = extra_secs_diff
 
+                if quotas.planExecMinutes is not None:
+                    plan_secs_diff = (quotas.planExecMinutes - previous_plan_mins) * 60
+                    if org.planExecSecondsAvailable + plan_secs_diff <= 0:
+                        update["$set"]["planExecSecondsAvailable"] = 0
+                    else:
+                        update["$inc"]["planExecSecondsAvailable"] = plan_secs_diff
+
                 if quotas.giftedExecMinutes is not None:
                     gifted_secs_diff = (
                         quotas.giftedExecMinutes - previous_gifted_mins
@@ -844,6 +872,29 @@ class OrgOps(BaseOrgs):
                     unstructured_message=f"Error updating organization quotas: {e}",
                 )
                 raise HTTPException(status_code=500, detail=str(e)) from e
+
+    async def refill_plan_minutes(
+        self, org: Organization, minutes: int, sub_event_id: str | None = None
+    ) -> None:
+        """Reset an organization's plan execution minutes pool to the full amount.
+
+        Used when a subscription renews: the cadence-agnostic plan pool is reset
+        to the full allotment and unused minutes do not roll over.
+        """
+        update: dict[str, Any] = {
+            "$set": {
+                "quotas.planExecMinutes": minutes,
+                "planExecSecondsAvailable": minutes * 60,
+            },
+            "$push": {
+                "quotaUpdates": OrgQuotaUpdate(
+                    modified=dt_now(),
+                    update=OrgQuotas(planExecMinutes=minutes),
+                    subEventId=sub_event_id,
+                ).model_dump()
+            },
+        }
+        await self.orgs.find_one_and_update({"_id": org.id}, update)
 
     async def update_feature_flags(
         self,
@@ -1089,6 +1140,7 @@ class OrgOps(BaseOrgs):
 
         if (
             not monthly_quota_secs
+            and not org.quotas.planExecMinutes
             and not org.quotas.extraExecMinutes
             and not org.quotas.giftedExecMinutes
         ):
@@ -1108,15 +1160,33 @@ class OrgOps(BaseOrgs):
             {"_id": oid},
             {"$inc": {f"monthlyExecSeconds.{yymm}": monthly_remaining_time}},
         )
-
-        if not org.giftedExecSecondsAvailable and not org.extraExecSecondsAvailable:
+        if (
+            not org.giftedExecSecondsAvailable
+            and not org.extraExecSecondsAvailable
+            and not org.planExecSecondsAvailable
+        ):
             return
 
         secs_over_quota = duration - monthly_remaining_time
 
-        # If we've surpassed monthly base quota, use gifted and extra exec minutes
-        # in that order if available, track their usage per month, and recalculate
-        # extraExecSecondsAvailable and giftedExecSecondsAvailable as needed
+        # If we've surpassed monthly base quota, drain the plan, gifted, and extra
+        # pools (in that order) as available, tracking usage per month and
+        # recalculating each *SecondsAvailable counter as needed
+        plan_secs_available = org.planExecSecondsAvailable
+        if plan_secs_available:
+            plan_secs_to_use = min(secs_over_quota, plan_secs_available)
+            plan_secs_remaining = plan_secs_available - plan_secs_to_use
+            await self.orgs.find_one_and_update(
+                {"_id": oid},
+                {
+                    "$inc": {f"planExecSeconds.{yymm}": plan_secs_to_use},
+                    "$set": {"planExecSecondsAvailable": plan_secs_remaining},
+                },
+            )
+            secs_over_quota = secs_over_quota - plan_secs_to_use
+            if not secs_over_quota:
+                return
+
         gifted_secs_available = org.giftedExecSecondsAvailable
         if gifted_secs_available:
             if secs_over_quota <= gifted_secs_available:
@@ -1976,6 +2046,7 @@ def init_orgs_api(
             plans = PlansResponse.model_validate_json(plans_json)
             return plans
         except ValidationError as err:
+            logger.exception("invalid_plans")
             raise HTTPException(status_code=400, detail="invalid_plans") from err
 
     @router.post("/quotas", tags=["organizations"], response_model=UpdatedResponse)
