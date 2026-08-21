@@ -219,11 +219,6 @@ export class OrgSettingsBilling extends BtrixElement {
                   const renewalDate = this.localize.date(
                     this.org!.subscription!.renewalDate!,
                     { dateStyle: "medium" },
-                    // {
-                    //   month: "long",
-                    //   day: "numeric",
-                    //   year: "numeric",
-                    // },
                   );
 
                   return html`
