@@ -7,6 +7,7 @@ from .conftest import API_PREFIX
 
 new_subs_oid = None
 new_subs_oid_2 = None
+refill_test_oid = None
 
 new_user_invite_token = None
 existing_user_invite_token = None
@@ -1045,6 +1046,9 @@ def test_create_sub_with_renewal_date(admin_auth_headers):
     assert data["added"]
     org_id = data["id"]
 
+    global refill_test_oid
+    refill_test_oid = org_id
+
     r = requests.get(f"{API_PREFIX}/orgs/{org_id}", headers=admin_auth_headers)
     assert r.status_code == 200
     org = r.json()
@@ -1078,7 +1082,7 @@ def test_refill_plan_minutes(admin_auth_headers):
         f"{API_PREFIX}/subscriptions/refill",
         headers=admin_auth_headers,
         json={
-            "subId": "123",
+            "subId": "refill-test-1",
             "minutes": 500,
             "renewalDate": renewal_date,
         },
@@ -1088,7 +1092,7 @@ def test_refill_plan_minutes(admin_auth_headers):
     assert r.json() == {"updated": True}
 
     # Verify org state after refill
-    r = requests.get(f"{API_PREFIX}/orgs/{new_subs_oid}", headers=admin_auth_headers)
+    r = requests.get(f"{API_PREFIX}/orgs/{refill_test_oid}", headers=admin_auth_headers)
     assert r.status_code == 200
     org = r.json()
 
@@ -1103,7 +1107,7 @@ def test_refill_plan_minutes(admin_auth_headers):
 
     # Refill event in subscription events log
     r = requests.get(
-        f"{API_PREFIX}/subscriptions/events?subId=123&type=refill",
+        f"{API_PREFIX}/subscriptions/events?subId=refill-test-1&type=refill",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -1111,7 +1115,7 @@ def test_refill_plan_minutes(admin_auth_headers):
     assert data["total"] == 1
     event = data["items"][0]
     assert event["type"] == "refill"
-    assert event["subId"] == "123"
-    assert event["oid"] == new_subs_oid
+    assert event["subId"] == "refill-test-1"
+    assert event["oid"] == refill_test_oid
     assert event["minutes"] == 500
     assert event["renewalDate"] == renewal_date
