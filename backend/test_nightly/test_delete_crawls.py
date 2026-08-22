@@ -104,7 +104,7 @@ def test_delete_replica_job_run(admin_auth_headers, default_org_id):
         )
         assert r.status_code == 200
         jobs = r.json()["items"]
-        if len(jobs) === 0:
+        if len(jobs) == 0:
             attempts += 1
             time.sleep(10)
             continue
