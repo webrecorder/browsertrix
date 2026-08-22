@@ -54,6 +54,12 @@ export function isRunning({ state }: Partial<Crawl>) {
   return (RUNNING_STATES as readonly (typeof state)[]).includes(state);
 }
 
+export function isRateLimited(
+  crawl: Crawl,
+): crawl is Crawl & { rateLimitedAt: string } {
+  return crawl.state === "rate-limited";
+}
+
 export function isActive({ state }: Partial<Crawl | QARun>) {
   return (activeCrawlStates as readonly (typeof state)[]).includes(state);
 }
