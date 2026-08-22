@@ -1564,7 +1564,7 @@ export class WorkflowDetail extends BtrixElement {
                 >${this.localize.date(date)}</strong
               >`;
               return msg(
-                html`The crawl run will automatically pause on ${date_to_pause}
+                html`The crawl will automatically pause after ${date_to_pause}
                 if rate limiting continues.`,
                 {
                   desc: "`date_to_pause` example: '01/01/2036, 01:00 PM'",
