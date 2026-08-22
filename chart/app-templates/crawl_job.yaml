@@ -2,6 +2,8 @@ apiVersion: btrix.cloud/v1
 kind: CrawlJob
 metadata:
   name: crawljob-{{ id }}
+  finalizers:
+    - metacontroller.io/compositecontroller-crawljobs-operator
   labels:
     crawl: "{{ id }}"
     role: {{ "qa-job" if qa_source else "job" }}

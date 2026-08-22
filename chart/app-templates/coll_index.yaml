@@ -2,6 +2,8 @@ apiVersion: btrix.cloud/v1
 kind: CollIndex
 metadata:
   name: collindex-{{ id }}
+  finalizers:
+    - metacontroller.io/compositecontroller-collindexes-operator
   labels:
     role: "collindex"
     oid: {{ oid }}
