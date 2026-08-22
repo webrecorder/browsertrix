@@ -1,12 +1,20 @@
 # Review Crawl Quality
 
-The crawl **Review** page provides a streamlined interface for quality assurance (QA). Assess and assign a score to the capture quality of an archived item using the heuristics collected during crawl analysis.
+The archived item **Review** page provides a streamlined interface for quality assurance (QA). Assess and assign a score to the capture quality of a crawl using the heuristics collected during crawl analysis.
 
-Crawls can only be reviewed once [crawl analysis](archived-items.md#crawl-analysis) has been run. If multiple analysis runs have been completed, the page analysis heuristics will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
+## Introduction { .invisible }
+
+---
+
+To review a crawl, select the completed crawl run from a workflow’s **Crawls** tab or the **Crawling** > **Crawl Runs** page, or select a crawled item from **Archived Items** > **Crawled Items**. Then, go to the **Quality Assurance** tab and tap the **Review Crawl** button.
+
+QA tools are available to org admins and members with “crawler” permissions.
 
 ## Heuristics
 
 Crawl analysis generates comparisons across three heuristics that can indicate which pages may be the most problematic.
+
+Heuristics are available once [crawl analysis](archived-items.md#crawl-analysis) has been run. If multiple analysis runs have been completed, the page analysis heuristics will be used from the selected analysis run, which are displayed next to the archived item name. The most recent analysis run is selected by default, but you can choose to display data from any other completed or stopped analysis run here as well.
 
 ### Screenshot Comparison
 

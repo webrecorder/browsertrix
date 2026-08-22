@@ -1,6 +1,19 @@
+---
+hide:
+  - tags
+tags:
+  - Social Media
+---
+
 # Behaviors
 
-Behaviors are browser operations that can be enabled to customize how the crawler interacts with a page. Browsertrix provides several built-in behaviors, some of which are automatically applied to ensure the highest crawl fidelity, and some of which can be configured. It is also possible to add fully custom behaviors to trigger specific actions on certain pages that are not supported by built-in behaviors.
+Behaviors are browser operations that allows you to customize how the crawler interacts with a page.
+
+## Introduction { .invisible }
+
+---
+
+Browsertrix provides several built-in behaviors, some of which are automatically applied to ensure the highest crawl fidelity, and some of which can be configured. It is also possible to add fully custom behaviors to trigger specific actions on certain pages that are not supported by built-in behaviors.
 
 ## Behavior Types
 

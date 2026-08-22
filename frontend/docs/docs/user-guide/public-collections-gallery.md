@@ -1,13 +1,10 @@
 # Public Collections Gallery
 
-Collections provide a way to dynamically combine and group multiple individual crawls and uploads into a contextual, unified archive replay experience.
+With a public collections gallery, you can create a dedicated page that showcases all public collections in one place, allowing you to personalize, curate, and share your web archives with the world.
 
-With Public Collections Gallery, you can create a dedicated page that showcases all public Collections in one place, allowing you to personalize, curate, and share your web archives with the world!
+[Live Demo :octicons-arrow-up-right-16:](https://app.browsertrix.com/explore/webrecorder){ .md-button target="_blank" }
 
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
-  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-av1.mp4"/>
-  <source src="https://webrecorder.net/assets/video/collections-full-walkthrough-h264.mp4"/>
-</video>
+---
 
 ## Enable Public Collections Gallery
 
@@ -21,7 +18,7 @@ The _enable public collections gallery_ toggle is located in the org's **Setting
 
 Note: If you choose to hide the gallery later, you can go back to the setting and set the toggle to off at any time.
 The gallery will still be available for logged in users to preview, but the public page will be hidden.
-Public Collections will be treated the same as *Unlisted* when the public gallery is turned off.
+Public Collections will be treated the same as _Unlisted_ when the public gallery is turned off.
 
 ### Customizing the Gallery
 
@@ -52,7 +49,6 @@ You'll take similar steps from [Add Collections](./public-collections-gallery.md
 1. Within the Public Collections Gallery, click the edit button :bootstrap-pencil: on the specific Collection you want to remove
 
 2. In that Collection's **Sharing** tab, change its visibility from the default **Public** to **Private**, save, and that Collection should be removed from the Public Collections Gallery!
-
 
 ### Customize Collections
 
