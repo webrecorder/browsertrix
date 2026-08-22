@@ -2,13 +2,15 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ id }}"
+  finalizers:
+    - metacontroller.io/decoratorcontroller-background-job-operator
   labels:
     role: "background-job"
     job_type: {{ job_type }}
     btrix.org: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 0
+  ttlSecondsAfterFinished: 10
   backoffLimit: 3
   template:
     spec:
