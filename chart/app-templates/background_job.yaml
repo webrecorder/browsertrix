@@ -4,31 +4,31 @@ metadata:
   name: "{{ id }}"
   labels:
     role: "background-job"
-    job_type: {{ job_type }}
+    job_type: "{{ job_type }}"
 {% if oid %}
-    btrix.org: {{ oid }}
+    btrix.org: "{{ oid }}"
 {% endif %}
 {% if collection_id %}
-    btrix.collid: {{ collection_id }}
+    btrix.collid: "{{ collection_id }}"
 {% endif %}
 
 spec:
   ttlSecondsAfterFinished: 0
-  backoffLimit: 3
+  backoffLimit: 6
   {% if scale %}
   parallelism: {{ scale }}
   {% endif %}
+  podFailurePolicy:
+    rules:
+    - action: FailJob
+      onExitCodes:
+        containerName: btrixbgjob
+        operator: In
+        values: [2]
   template:
     spec:
       restartPolicy: Never
       priorityClassName: bg-job
-      podFailurePolicy:
-        rules:
-        - action: FailJob
-          onExitCodes:
-            containerName: btrixbgjob
-            operator: NotIn
-            values: [0]
       
       volumes:
         - name: ops-configs
@@ -41,18 +41,18 @@ spec:
 
       containers:
         - name: btrixbgjob
-          image: {{ backend_image }}
-          imagePullPolicy: {{ pull_policy }}
+          image: "{{ backend_image }}"
+          imagePullPolicy: "{{ pull_policy }}"
           env:
           - name: BG_JOB_TYPE
             value: {{ job_type }}
 
 {% if oid %}
           - name: OID
-            value: {{ oid }}
+            value: "{{ oid }}"
 {% endif %}
           - name: CRAWL_TYPE
-            value: {{ crawl_type }}
+            value: "{{ crawl_type }}"
 
 {% if crawl_id %}
           - name: CRAWL_ID
@@ -61,7 +61,7 @@ spec:
 
 {% if collection_id %}
           - name: COLLECTION_ID
-            value: {{ collection_id }}
+            value: "{{ collection_id }}"
 {% endif %}
 
           envFrom:

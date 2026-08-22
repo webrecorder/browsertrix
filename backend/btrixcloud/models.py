@@ -3252,6 +3252,15 @@ class BgJobType(StrEnum):
 
 
 # ============================================================================
+class BgJobExitCode(IntEnum):
+    """Background job exit codes"""
+
+    SUCCESS = 0
+    ERROR = 1
+    FATAL_DONT_RETRY = 2
+
+
+# ============================================================================
 class BackgroundJob(BaseMongoModel):
     """Model for tracking background jobs"""
 

@@ -1647,15 +1647,16 @@ class OrgOps(BaseOrgs):
         # Delete invites
         await self.invites_db.delete_many({"oid": org.id})
 
-        # Delete org
-        await self.orgs.delete_one({"_id": org.id})
-
         # Delete all background jobs except this one from database,
         # so that we are left with some record of the org having
         # existed and successfully deleted
-        await self.orgs.delete_one(
-            {"_id": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
+        await self.jobs_db.delete_many(
+            {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
+
+        # Delete org last so that if the job fails at any point before
+        # this and need to be retried, the org still exists
+        await self.orgs.delete_one({"_id": org.id})
 
     async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
         """Recalculate org storage use"""
