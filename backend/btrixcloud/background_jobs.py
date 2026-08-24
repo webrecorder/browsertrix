@@ -632,7 +632,7 @@ class BackgroundJobOps:
                     finished=finished,
                     success=success,
                 )
-            if job_type == BgJobType.REPLICATE_FILES_CRON:
+            elif job_type == BgJobType.REPLICATE_FILES_CRON:
                 cron_job = ReplicateFilesCronJob(
                     id=f"replicate-cron-{secrets.token_hex(5)}",
                     started=started,
