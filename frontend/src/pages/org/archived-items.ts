@@ -1,7 +1,8 @@
+import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
+import { deepArrayEquals } from "@lit/task/deep-equals.js";
 import type { SlSelect } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
@@ -23,7 +24,9 @@ import {
 import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { TagFilter } from "@/components/ui/tag-filter/tag-filter";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
+import orgUploadsContext from "@/context/org-uploads";
 import { ClipboardController } from "@/controllers/clipboard";
+import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -38,7 +41,9 @@ import {
   isCrawl,
   isSuccessfullyFinished,
   renderName,
+  uploadStates,
 } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -56,7 +61,7 @@ type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
 type Keys<T> = (keyof T)[];
 
-const POLL_INTERVAL_SECONDS = 5;
+const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
 const sortableFields: Record<
@@ -119,6 +124,21 @@ export class CrawlsList extends BtrixElement {
     name: msg("Name"),
     firstSeed: msg("Crawl Start URL"),
   };
+
+  // Update uploads list when user upload completes
+  readonly #orgUploads = new ContextConsumer(this, {
+    context: orgUploadsContext,
+    subscribe: true,
+    callback: (value) => {
+      if (Object.values(value).some(({ loaded, total }) => loaded === total)) {
+        void this.activeUploadsTotalTask.run();
+
+        if (this.itemType === "upload") {
+          void this.archivedItemsTask.run();
+        }
+      }
+    },
+  });
 
   @property({ type: Boolean })
   isCrawler!: boolean;
@@ -310,7 +330,7 @@ export class CrawlsList extends BtrixElement {
     this.filterByTagsType.setValue("or");
   }
 
-  private readonly archivedItemsTask = new Task(this, {
+  private readonly archivedItemsTask = new PollTask(this, {
     task: async (
       [
         itemType,
@@ -323,10 +343,6 @@ export class CrawlsList extends BtrixElement {
       ],
       { signal },
     ) => {
-      if (this.getArchivedItemsTimeout) {
-        window.clearTimeout(this.getArchivedItemsTimeout);
-      }
-
       try {
         const data = await this.getArchivedItems(
           {
@@ -337,13 +353,14 @@ export class CrawlsList extends BtrixElement {
             filterByCurrentUser,
             filterByTags,
             filterByTagsType,
+            state: filterBy.state?.length
+              ? filterBy.state
+              : itemType === "upload"
+                ? uploadStates
+                : finishedCrawlStates,
           },
           signal,
         );
-
-        this.getArchivedItemsTimeout = window.setTimeout(() => {
-          void this.archivedItemsTask.run();
-        }, POLL_INTERVAL_SECONDS * 1000);
 
         return data;
       } catch (e) {
@@ -373,9 +390,29 @@ export class CrawlsList extends BtrixElement {
         this.filterByTags.value,
         this.filterByTagsType.value,
       ] as const,
+    argsEqual: deepArrayEquals,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
-  private getArchivedItemsTimeout?: number;
+  private readonly activeUploadsTotalTask = new PollTask(this, {
+    task: async (_args, { signal }) => {
+      const data = await this.getArchivedItems(
+        {
+          itemType: "upload",
+          state: UPLOAD_STATES,
+          pagination: {
+            page: 1,
+            pageSize: 1,
+          },
+        },
+        signal,
+      );
+
+      return data.total;
+    },
+    args: () => [] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
 
   // For fuzzy search:
   private readonly searchKeys = ["id", "name", "firstSeed"];
@@ -425,14 +462,19 @@ export class CrawlsList extends BtrixElement {
     }
 
     if (changedProperties.has("itemType")) {
-      this.filterBy.setValue({});
+      if (
+        this.itemType === "upload" &&
+        this.activeUploadsTotalTask.previousValue !== undefined
+      ) {
+        void this.activeUploadsTotalTask.run();
+      }
+
+      if (changedProperties.get("itemType") !== undefined) {
+        this.filterBy.setValue({});
+      }
+
       void this.fetchConfigSearchValues();
     }
-  }
-
-  disconnectedCallback(): void {
-    window.clearTimeout(this.getArchivedItemsTimeout);
-    super.disconnectedCallback();
   }
 
   render() {
@@ -440,6 +482,7 @@ export class CrawlsList extends BtrixElement {
       itemType: ArchivedItem["type"] | null;
       label: string;
       icon?: string;
+      badge?: () => TemplateResult | void;
     }[] = [
       {
         itemType: null,
@@ -454,7 +497,8 @@ export class CrawlsList extends BtrixElement {
       {
         itemType: "upload",
         icon: "upload",
-        label: msg("Uploaded Items"),
+        label: msg("Uploads"),
+        badge: this.renderUploadsBadge,
       },
     ];
 
@@ -484,7 +528,7 @@ export class CrawlsList extends BtrixElement {
             classNames: tw`mb-3`,
           })}
           <div class="mb-3 flex gap-2">
-            ${listTypes.map(({ label, itemType, icon }) => {
+            ${listTypes.map(({ label, itemType, icon, badge }) => {
               const isSelected = itemType === this.itemType;
               return html` <btrix-navigation-button
                 ?active=${isSelected}
@@ -496,6 +540,7 @@ export class CrawlsList extends BtrixElement {
               >
                 ${icon ? html`<sl-icon name=${icon}></sl-icon>` : ""}
                 <span>${label}</span>
+                ${badge ? badge() : nothing}
               </btrix-navigation-button>`;
             })}
           </div>
@@ -536,6 +581,16 @@ export class CrawlsList extends BtrixElement {
       )}
     `;
   }
+
+  private readonly renderUploadsBadge = () => {
+    const total = this.activeUploadsTotalTask.value;
+
+    if (!total) return;
+
+    return html`<btrix-badge variant="notification" pill>
+      ${this.localize.number(total, { notation: "compact" })}
+    </btrix-badge>`;
+  };
 
   private readonly renderArchivedItems = ({
     items,
@@ -632,12 +687,17 @@ export class CrawlsList extends BtrixElement {
             ${msg("Filter by:")}
           </span>
           <btrix-archived-item-state-filter
+            itemType=${ifDefined(this.itemType ?? undefined)}
             .states=${this.filterBy.value.state}
             @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                state: e.detail.value,
-              });
+              const value = e.detail.value.length ? e.detail.value : undefined;
+
+              if (isNotEqual(value, this.filterBy.value.state)) {
+                this.filterBy.setValue({
+                  ...this.filterBy.value,
+                  state: value,
+                });
+              }
             }}
           ></btrix-archived-item-state-filter>
 
@@ -657,10 +717,14 @@ export class CrawlsList extends BtrixElement {
           <btrix-qa-review-filter
             .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
             @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                reviewStatus: e.detail.value ?? undefined,
-              });
+              const value = e.detail.value ?? undefined;
+
+              if (this.filterBy.value.reviewStatus !== value) {
+                this.filterBy.setValue({
+                  ...this.filterBy.value,
+                  reviewStatus: value,
+                });
+              }
             }}
           ></btrix-qa-review-filter>
 
@@ -805,7 +869,7 @@ export class CrawlsList extends BtrixElement {
 
     return html`
       ${when(
-        this.isCrawler,
+        this.isCrawler && isSuccessfullyFinished(item),
         () => html`
           <sl-menu-item
             @click=${async () => {
@@ -873,7 +937,7 @@ export class CrawlsList extends BtrixElement {
         ${msg("Copy Item ID")}
       </sl-menu-item>
       ${when(
-        this.isCrawler && (item.type !== "crawl" || !isActive(item)),
+        this.isCrawler && (item.type === "crawl" || !isActive(item)),
         () => html`
           <sl-divider></sl-divider>
           <sl-menu-item
@@ -881,7 +945,9 @@ export class CrawlsList extends BtrixElement {
             @click=${() => this.confirmDeleteItem(item)}
           >
             <sl-icon name="trash3" slot="prefix"></sl-icon>
-            ${msg("Delete Item")}
+            ${isSuccessfullyFinished(item)
+              ? msg("Delete Archived Item")
+              : msg("Delete Failed Item")}
           </sl-menu-item>
         `,
       )}
@@ -951,33 +1017,30 @@ export class CrawlsList extends BtrixElement {
   private async getArchivedItems(
     params: {
       itemType: CrawlsList["itemType"];
+      state: readonly CrawlState[];
       pagination: CrawlsList["pagination"];
-      orderBy: CrawlsList["orderBy"]["value"];
-      filterBy: CrawlsList["filterBy"]["value"];
-      filterByCurrentUser: CrawlsList["filterByCurrentUser"]["value"];
-      filterByTags: CrawlsList["filterByTags"]["value"];
-      filterByTagsType: CrawlsList["filterByTagsType"]["value"];
+      orderBy?: CrawlsList["orderBy"]["value"];
+      filterBy?: CrawlsList["filterBy"]["value"];
+      filterByCurrentUser?: CrawlsList["filterByCurrentUser"]["value"];
+      filterByTags?: CrawlsList["filterByTags"]["value"];
+      filterByTagsType?: CrawlsList["filterByTagsType"]["value"];
     },
     signal: AbortSignal,
   ) {
-    const { id, ...filterBy } = params.filterBy;
+    const { id, ...filterBy } = params.filterBy || {};
     const query = queryString.stringify(
       {
         ...filterBy,
         ids: id ? [id] : undefined,
-        state: filterBy.state?.length
-          ? filterBy.state
-          : params.itemType === "crawl"
-            ? finishedCrawlStates
-            : [...finishedCrawlStates, ...UPLOAD_STATES],
         page: params.pagination.page,
         pageSize: params.pagination.pageSize,
         tags: params.filterByTags,
         tagMatch: params.filterByTagsType,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
-        sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortBy: params.orderBy?.field,
+        sortDirection: params.orderBy?.direction === "desc" ? -1 : 1,
         crawlType: params.itemType ?? undefined,
+        state: params.state,
       },
       {
         arrayFormat: "none",

@@ -5,7 +5,7 @@ import { when } from "lit/directives/when.js";
 
 import { iconFor, labelFor, variantFor } from "@/features/qa/review-status";
 import { type ArchivedItem } from "@/types/crawler";
-import { isCrawl } from "@/utils/crawler";
+import { isCrawl, isSuccessfullyFinished } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 import appState from "@/utils/state";
@@ -59,9 +59,16 @@ const qaReviewBadge = (reviewStatus: ArchivedItem["reviewStatus"]) => html`
 `;
 
 export const badges = (item: ArchivedItem) => {
-  return html`<div class="flex flex-wrap gap-3 whitespace-nowrap">
-    ${itemTypeBadge(item.type)} ${collectionBadge(item.collectionIds.length)}
-    ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)} ` : nothing}
+  return html`<div
+    class="flex flex-wrap items-center gap-3 whitespace-nowrap py-px"
+  >
+    ${itemTypeBadge(item.type)}
+    ${when(
+      isSuccessfullyFinished(item),
+      () =>
+        html`${collectionBadge(item.collectionIds.length)}
+        ${isCrawl(item) ? html`${qaReviewBadge(item.reviewStatus)}` : nothing}`,
+    )}
     ${when(
       appState.featureFlags.has("dedupeEnabled"),
       () => html`

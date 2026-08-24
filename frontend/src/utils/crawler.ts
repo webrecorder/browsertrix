@@ -18,6 +18,8 @@ import {
   RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
+  UPLOAD_STATES,
+  type CrawlState,
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
@@ -26,9 +28,15 @@ import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
-export const activeCrawlStates = RUNNING_AND_WAITING_STATES;
-export const finishedCrawlStates = SUCCESSFUL_STATES;
+export const activeCrawlStates =
+  RUNNING_AND_WAITING_STATES as readonly CrawlState[];
+export const finishedCrawlStates = SUCCESSFUL_STATES as readonly CrawlState[];
 export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
+export const uploadStates = [
+  "complete",
+  "failed",
+  ...UPLOAD_STATES,
+] as readonly CrawlState[];
 
 export const DEFAULT_MAX_SCALE = 8;
 
@@ -60,8 +68,10 @@ export function isRateLimited(
   return crawl.state === "rate-limited";
 }
 
-export function isActive({ state }: Partial<Crawl | QARun>) {
-  return (activeCrawlStates as readonly (typeof state)[]).includes(state);
+export function isActive({ state }: Partial<Crawl | Upload | QARun>) {
+  return (
+    [...activeCrawlStates, ...UPLOAD_STATES] as readonly (typeof state)[]
+  ).includes(state);
 }
 
 export function isSuccessfullyFinished({ state }: { state: string | null }) {
@@ -70,6 +80,12 @@ export function isSuccessfullyFinished({ state }: { state: string | null }) {
 
 export function isSkipped({ state }: { state: string | null }) {
   return state?.startsWith("skipped");
+}
+
+export function isFailed({ state }: { state: string | null }) {
+  return (
+    state && (FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
 }
 
 export function isNotFailed({ state }: { state: string | null }) {
