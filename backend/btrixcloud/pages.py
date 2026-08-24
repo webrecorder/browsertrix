@@ -1169,7 +1169,6 @@ class PageOps:
                     break
 
                 crawl_id = next_crawl.get("_id")
-                prev_crawl_version = next_crawl.get("version")
 
                 migrate_logger.info(
                     "crawl_migration_processing",
@@ -1216,10 +1215,10 @@ class PageOps:
                     )
                 # pylint: disable=broad-exception-caught
                 except Exception:
-                    # Update crawl version and unset isMigrating
+                    # Unset isMigrating so we can re-process this crawl on retry
                     await self.crawls.find_one_and_update(
                         {"_id": crawl_id},
-                        {"$set": {"version": prev_crawl_version, "isMigrating": False}},
+                        {"$set": {"isMigrating": False}},
                     )
 
         await process_finished_crawls()
