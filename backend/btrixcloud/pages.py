@@ -867,18 +867,18 @@ class PageOps:
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID | None = None):
         """Delete existing pages for crawl and re-add from WACZs."""
 
+        is_upload = await self.crawl_ops.is_upload(crawl_id)
+        crawl_type = "upload" if is_upload else "crawl"
+        readd_logger = logger.bind(crawl_id=crawl_id, crawl_type=crawl_type, oid=oid)
+
+        readd_logger.info(
+            "crawl_processing",
+            unstructured_message=f"Processing {crawl_type} {crawl_id}",
+        )
+
+        qa_temp_db_name = ""
+
         try:
-            is_upload = await self.crawl_ops.is_upload(crawl_id)
-            crawl_type = "upload" if is_upload else "crawl"
-
-            readd_logger = logger.bind(
-                crawl_id=crawl_id, crawl_type=crawl_type, oid=oid
-            )
-
-            readd_logger.info(
-                "crawl_processing",
-                unstructured_message=f"Processing {crawl_type} {crawl_id}",
-            )
             if not is_upload:
                 ts_now = dt_now().strftime("%Y%m%d%H%M%S")
                 qa_temp_db_name = f"pages-qa-temp-{crawl_id}-{ts_now}"
@@ -943,15 +943,19 @@ class PageOps:
                 )
 
                 assert await cursor.to_list() == []
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            readd_logger.exception("re_add_crawl_pages_failed")
+            raise
+        finally:
+            if qa_temp_db_name:
+                qa_temp_db = self.mdb[qa_temp_db_name]
                 await qa_temp_db.drop()
                 readd_logger.info(
                     "temp_db_dropped",
                     qa_temp_db_name=qa_temp_db_name,
                     unstructured_message=f"Dropped temp db {qa_temp_db_name}",
                 )
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            readd_logger.exception("page_re_add_error")
 
     async def re_add_all_crawl_pages(
         self, org: Organization, crawl_type: str | None = None
@@ -966,6 +970,8 @@ class PageOps:
 
         count = 1
         total = await self.crawls.count_documents(match_query)
+        failures: list[str] = []
+
         async for crawl in self.crawls.find(match_query, projection={"_id": 1}):
             logger.info(
                 "crawl_batch_progress",
@@ -975,8 +981,23 @@ class PageOps:
                 oid=org.id,
                 unstructured_message=f"Processing crawl {count} of {total}",
             )
-            await self.re_add_crawl_pages(crawl.get("_id"), org.id)
+            crawl_id = crawl.get("_id")
+            try:
+                await self.re_add_crawl_pages(crawl_id, org.id)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                failures.append(crawl_id)
             count += 1
+
+        if failures:
+            logger.error(
+                "re_add_pages_errors",
+                failed_crawls=failures,
+                failed_count=len(failures),
+                total=total,
+                oid=org.id,
+            )
+            raise HTTPException(status_code=400, detail="re_add_pages_error")
 
     async def get_qa_run_aggregate_counts(
         self,
@@ -1132,7 +1153,13 @@ class PageOps:
                     match_query,
                     {"$set": {"isMigrating": True}},
                     sort=[("finished", -1)],
-                    projection={"_id": 1, "pageCount": 1, "stats": 1, "state": 1},
+                    projection={
+                        "_id": 1,
+                        "pageCount": 1,
+                        "stats": 1,
+                        "state": 1,
+                        "version": 1,
+                    },
                 )
                 if next_crawl is None:
                     migrate_logger.info(
@@ -1142,48 +1169,57 @@ class PageOps:
                     break
 
                 crawl_id = next_crawl.get("_id")
+
                 migrate_logger.info(
                     "crawl_migration_processing",
                     crawl_id=crawl_id,
                     unstructured_message=f"Processing crawl: {crawl_id}",
                 )
 
-                # Re-add crawl pages if at least one page doesn't have filename set
-                has_page_no_filename = await self.pages.find_one(
-                    {"crawl_id": crawl_id, "filename": None}
-                )
-                if has_page_no_filename:
-                    migrate_logger.info(
-                        "pages_reimporting_migrate_v2",
-                        crawl_id=crawl_id,
-                        unstructured_message="Re-importing pages to migrate to v2",
+                try:
+                    # Re-add crawl pages if at least one page doesn't have filename set
+                    has_page_no_filename = await self.pages.find_one(
+                        {"crawl_id": crawl_id, "filename": None}
                     )
-                    await self.re_add_crawl_pages(crawl_id)
-                elif (
-                    next_crawl.get("pageCount") == 0
-                    and next_crawl.get("stats", {}).get("done", 0) > 0
-                    and next_crawl.get("state") not in ["canceled", "failed"]
-                ):
-                    migrate_logger.info(
-                        "pages_missing_import_migrate_v2",
-                        crawl_id=crawl_id,
-                        unstructured_message=(
-                            "Pages likely missing, importing pages to migrate to v2"
-                        ),
-                    )
-                    await self.re_add_crawl_pages(crawl_id)
-                else:
-                    migrate_logger.info(
-                        "pages_filename_exists_set_v2",
-                        crawl_id=crawl_id,
-                        unstructured_message="Pages already have filename, set to v2",
-                    )
+                    if has_page_no_filename:
+                        migrate_logger.info(
+                            "pages_reimporting_migrate_v2",
+                            crawl_id=crawl_id,
+                            unstructured_message="Re-importing pages to migrate to v2",
+                        )
+                        await self.re_add_crawl_pages(crawl_id)
+                    elif (
+                        next_crawl.get("pageCount") == 0
+                        and next_crawl.get("stats", {}).get("done", 0) > 0
+                        and next_crawl.get("state") not in ["canceled", "failed"]
+                    ):
+                        migrate_logger.info(
+                            "pages_missing_import_migrate_v2",
+                            crawl_id=crawl_id,
+                            unstructured_message=(
+                                "Pages likely missing, importing pages to migrate to v2"
+                            ),
+                        )
+                        await self.re_add_crawl_pages(crawl_id)
+                    else:
+                        migrate_logger.info(
+                            "pages_filename_exists_set_v2",
+                            crawl_id=crawl_id,
+                            unstructured_message="Pages already have filename, set to v2",
+                        )
 
-                # Update crawl version and unset isMigrating
-                await self.crawls.find_one_and_update(
-                    {"_id": crawl_id},
-                    {"$set": {"version": version, "isMigrating": False}},
-                )
+                    # Update crawl version and unset isMigrating
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id},
+                        {"$set": {"version": version, "isMigrating": False}},
+                    )
+                # pylint: disable=broad-exception-caught
+                except Exception:
+                    # Unset isMigrating so we can re-process this crawl on retry
+                    await self.crawls.find_one_and_update(
+                        {"_id": crawl_id},
+                        {"$set": {"isMigrating": False}},
+                    )
 
         await process_finished_crawls()
 
