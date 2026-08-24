@@ -203,7 +203,12 @@ export class SelectCollectionThumbnail extends BtrixElement {
 
           thumbnail = {
             blob,
-            url: blob.then((v) => (v ? URL.createObjectURL(v) : undefined)),
+            url: blob
+              .then((v) => (v ? URL.createObjectURL(v) : undefined))
+              .catch((err) => {
+                console.debug(err);
+                return undefined;
+              }),
           };
 
           // - Cache blob to use as upload payload
@@ -294,11 +299,14 @@ export class SelectCollectionThumbnail extends BtrixElement {
   }
 
   disconnectedCallback(): void {
-    for (const screenshot of this.#screenshots.values()) {
-      void screenshot.url.then((url) =>
-        url ? URL.revokeObjectURL(url) : null,
-      );
-    }
+    super.disconnectedCallback();
+
+    void Promise.allSettled(
+      Array.from(this.#screenshots.values()).map(
+        ({ url }) =>
+          void url.then((url) => (url ? URL.revokeObjectURL(url) : null)),
+      ),
+    );
   }
 
   render() {
