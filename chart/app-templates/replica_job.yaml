@@ -10,7 +10,7 @@ metadata:
     btrix.org: {{ oid }}
 
 spec:
-  ttlSecondsAfterFinished: 10
+  ttlSecondsAfterFinished: 0
   backoffLimit: 3
   template:
     spec:
