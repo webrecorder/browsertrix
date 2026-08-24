@@ -29,6 +29,7 @@ import activeCrawlsCountContext, {
 } from "@/context/active-crawls-count";
 import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import {
   Action,
   type BtrixSelectActionEvent,
@@ -40,6 +41,7 @@ import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -754,7 +756,7 @@ export class WorkflowsList extends BtrixElement {
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
             <span class="text-neutral-400"
-              >${msg("No matching Workflows found.")}</span
+              >${msg("No matching workflows found.")}</span
             >
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
@@ -777,16 +779,63 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    return html`
-      <div class="border-b border-t py-5">
-        <p class="text-center text-neutral-500">${msg("No Workflows yet.")}</p>
-      </div>
-    `;
+    const message = msg("Your org doesn’t have any crawl workflows yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "crawl-workflows" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
+
+    if (this.appState.isCrawler) {
+      return emptyMessage({
+        classNames: tw`border-y`,
+        message,
+        detail: msg("Schedule, run, and manage crawls with crawl workflows."),
+        actions: html`
+          <sl-button
+            href=${`${this.navigate.orgBasePath}/workflows/new`}
+            @click=${(e: MouseEvent) => {
+              if (e.metaKey) {
+                return;
+              }
+              e.preventDefault();
+
+              this.navigate.to((e.target as HTMLAnchorElement).href, {
+                scopeType: this.appState.userPreferences?.newWorkflowScopeType,
+              });
+            }}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Create New Workflow")}
+          </sl-button>
+          ${guideButton}
+        `,
+      });
+    }
+
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   }
 
   private renderLoading() {
     return html`<div
-      class="my-24 flex w-full items-center justify-center text-3xl"
+      class="my-24 flex w-full items-center justify-center text-2xl"
     >
       <sl-spinner></sl-spinner>
     </div>`;

@@ -28,9 +28,11 @@ import orgUploadsContext from "@/context/org-uploads";
 import { ClipboardController } from "@/controllers/clipboard";
 import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
@@ -1013,13 +1015,59 @@ export class CrawlsList extends BtrixElement {
       `;
     }
 
-    return html`
-      <div class="border-b border-t py-5">
-        <p class="text-center text-neutral-500">
-          ${msg("No archived items yet.")}
-        </p>
-      </div>
-    `;
+    if (this.itemType === "crawl") {
+      return html`
+        <div class="border-b border-t py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("No crawled items yet.")}
+          </p>
+        </div>
+      `;
+    }
+
+    const message = msg("Your org doesn’t have any archived items yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "archived-items" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
+
+    if (this.isCrawler) {
+      return emptyMessage({
+        classNames: tw`border-y`,
+        message,
+        detail: msg(
+          "Archived items are the result of a web archiving process, like crawl workflows.",
+        ),
+        actions: html`<sl-button
+            @click=${() => (this.isUploadingArchive = true)}
+            ?disabled=${isArchivingDisabled(this.org)}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Import Archived Item")}
+          </sl-button>
+          ${guideButton}`,
+      });
+    }
+
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   }
 
   private async getArchivedItems(

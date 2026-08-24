@@ -13,13 +13,12 @@ import { when } from "lit/directives/when.js";
 import debounce from "lodash/fp/debounce";
 import queryString from "query-string";
 
-import type { SelectNewDialogEvent } from ".";
-
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -299,7 +298,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   }
 
   private readonly renderLoading = () =>
-    html`<div class="my-24 flex w-full items-center justify-center text-3xl">
+    html`<div class="my-24 flex w-full items-center justify-center text-2xl">
       <sl-spinner></sl-spinner>
     </div>`;
 
@@ -535,39 +534,51 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
 
     const message = msg("Your org doesn’t have any collections yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "collection" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
 
-    return html`
-      ${when(
-        this.isCrawler,
-        () =>
-          emptyMessage({
-            classNames: tw`border-y`,
-            message,
-            detail: msg(
-              "Collections let you easily organize, replay, and share multiple crawls.",
-            ),
-            actions: html`
-              <sl-button
-                @click=${() => {
-                  this.dispatchEvent(
-                    new CustomEvent("select-new-dialog", {
-                      detail: "collection",
-                    }) as SelectNewDialogEvent,
-                  );
-                }}
-              >
-                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                ${msg("Create Collection")}
-              </sl-button>
-            `,
-          }),
-        () =>
-          emptyMessage({
-            classNames: tw`border-y`,
-            message,
-          }),
-      )}
-    `;
+    if (this.isCrawler) {
+      return emptyMessage({
+        classNames: tw`border-y`,
+        message,
+        detail: msg(
+          "Collections let you easily organize, replay, and share multiple crawls.",
+        ),
+        actions: html`
+          <sl-button
+            @click=${() => {
+              this.openDialogName = "create";
+            }}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Create New Collection")}
+          </sl-button>
+          ${guideButton}
+        `,
+      });
+    }
+
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   };
 
   private readonly renderItem = (col: Collection) => {
