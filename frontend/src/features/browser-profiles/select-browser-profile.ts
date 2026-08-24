@@ -320,6 +320,15 @@ export class SelectBrowserProfile extends BtrixElement {
       ${profiles.length
         ? html`<sl-option value="">${stringFor.none}</sl-option>`
         : nothing}
+      ${when(
+        this.allowNew,
+        () =>
+          html`${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
+            <sl-option value=${NEW_PROFILE_KEY}>
+              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+              ${msg("New Browser Profile")}
+            </sl-option>`,
+      )}
       ${suggestions.length
         ? html`
             <sl-divider></sl-divider>
@@ -353,15 +362,6 @@ export class SelectBrowserProfile extends BtrixElement {
               ${msg("Manage Profiles")}
             </btrix-link>
           </sl-menu-label>`,
-      )}
-      ${when(
-        this.allowNew,
-        () =>
-          html`${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
-            <sl-option value=${NEW_PROFILE_KEY}>
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("New Browser Profile")}
-            </sl-option>`,
       )}
     `;
   }
