@@ -1425,15 +1425,18 @@ class UserFile(BaseFile):
 
     async def get_public_file_out(
         self, org, storage_ops, headers: dict | None = None
-    ) -> PublicUserFileOut:
+    ) -> tuple[PublicUserFileOut, datetime]:
         """Get PublicUserFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers
+        )
         return PublicUserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             mime=self.mime,
-        )
+        ), expire_at
 
 
 # ============================================================================

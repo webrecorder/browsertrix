@@ -490,7 +490,7 @@ class CollectionOps:
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = UserFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_public_file_out(
+            result["thumbnail"], _ = await image_file.get_public_file_out(
                 org, self.storage_ops, headers
             )
 
@@ -513,7 +513,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
         image_file = UserFile(**thumbnail)
-        image_file_out = await image_file.get_public_file_out(
+        image_file_out, _ = await image_file.get_public_file_out(
             org, self.storage_ops, headers
         )
 
@@ -630,7 +630,7 @@ class CollectionOps:
                 image_file = UserFile(**thumbnail)
 
                 if public_colls_out:
-                    res["thumbnail"] = await image_file.get_public_file_out(
+                    res["thumbnail"], _ = await image_file.get_public_file_out(
                         org, self.storage_ops, headers
                     )
                 else:
