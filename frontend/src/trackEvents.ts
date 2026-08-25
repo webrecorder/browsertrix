@@ -16,4 +16,11 @@ export enum AnalyticsTrackEvent {
    * Workflows
    */
   ExpandWorkflowFormSection = "Expand workflow form section",
+  /**
+   * Trial
+   */
+  TrialOpenedUserGuide = "[Trial] Opened user guide",
+  TrialCreatedWorkflow = "[Trial] Created workflow",
+  TrialReplayedCrawledItem = "[Trial] Replayed crawled item",
+  TrialVisitedBillingTab = "[Trial] Visited billing tab",
 }
