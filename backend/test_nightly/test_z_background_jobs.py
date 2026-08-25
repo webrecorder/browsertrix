@@ -35,7 +35,7 @@ def test_background_jobs_list(admin_auth_headers, default_org_id, deleted_crawl_
 
 
 def test_background_jobs_list_filter_by_type(
-    admin_auth_headers, default_org_id, deleted_crawl_id, job_type
+    admin_auth_headers, default_org_id, deleted_crawl_id
 ):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=delete-replica",
