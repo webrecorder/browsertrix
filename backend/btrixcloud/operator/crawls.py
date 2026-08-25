@@ -471,13 +471,18 @@ class CrawlOperator(BaseOperator):
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
 
-        # Always update if seed file is used and presigned url has already
-        # expired or will expire within a day
-        config_update_needed = config_update_needed or (
-            bool(crawl.seed_file_id)
-            and status.seed_file_presigned_expiry is not None
-            and (status.seed_file_presigned_expiry <= (dt_now() + timedelta(days=1)))
+        # Update config to refresh seed file presigned url if it has
+        # already expired or will within the next hour
+        seed_file_presigned_update_needed = bool(crawl.seed_file_id) and (
+            status.seed_file_presigned_expiry is None
+            or (status.seed_file_presigned_expiry <= (dt_now() + timedelta(hours=1)))
         )
+        if seed_file_presigned_update_needed:
+            logger.debug(
+                "seed_file_presigned_url_update_needed",
+                expire_at=status.seed_file_presigned_expiry,
+            )
+        config_update_needed = config_update_needed or seed_file_presigned_update_needed
 
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
