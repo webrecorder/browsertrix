@@ -181,7 +181,6 @@ class CrawlOperator(BaseOperator):
 
         status = CrawlStatus(**data.parent.get("status", {}))
         status.last_state = status.state
-        status.update_seed_file_presigned = False
 
         spec: dict[str, str] = data.parent.get(
             "spec", {}
@@ -471,15 +470,20 @@ class CrawlOperator(BaseOperator):
         config_update_needed = (
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
-        # Always update if seed file to generate new presigned URL
+
+        # Always update if seed file is used and presigned url has already
+        # expired or will expire within a day
         config_update_needed = config_update_needed or (
-            bool(crawl.seed_file_id) and status.update_seed_file_presigned
+            bool(crawl.seed_file_id)
+            and status.seed_file_presigned_expiry is not None
+            and (status.seed_file_presigned_expiry <= (dt_now() + timedelta(days=1)))
         )
+
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
         children.extend(
             await self._load_crawl_configmap(
-                crawl, data.children, params, config_update_needed
+                crawl, data.children, params, status, config_update_needed
             )
         )
 
@@ -567,7 +571,12 @@ class CrawlOperator(BaseOperator):
         return behaviors
 
     async def _load_crawl_configmap(
-        self, crawl: CrawlSpec, children, params, config_update_needed: bool
+        self,
+        crawl: CrawlSpec,
+        children,
+        params,
+        status: CrawlStatus,
+        config_update_needed: bool,
     ):
         name = f"crawl-config-{crawl.id}"
 
@@ -597,8 +606,15 @@ class CrawlOperator(BaseOperator):
         )
 
         if crawl.seed_file_id:
-            seed_file_out = await self.file_ops.get_seed_file_out(
+            seed_file_out, expire_at = await self.file_ops.get_seed_file_out(
                 UUID(crawl.seed_file_id), crawl.org, force_update_presigned=True
+            )
+            status.seed_file_presigned_expiry = expire_at
+            logger.debug(
+                "seed_file_presigned_url_generated",
+                crawl_id=crawl.id,
+                seed_file_id=crawl.seed_file_id,
+                expire_at=expire_at,
             )
             raw_config["seedFile"] = seed_file_out.path
         raw_config.pop("seedFileId", None)
@@ -1166,7 +1182,6 @@ class CrawlOperator(BaseOperator):
             # skip if no newly exited pods
             if status.anyCrawlPodNewExit:
                 await self.log_crashes(crawl.id, status.podStatus, redis)
-                status.update_seed_file_presigned = True
 
             if not crawler_running or not redis:
                 # if either crawler is not running or redis is inaccessible
@@ -1955,9 +1970,6 @@ class CrawlOperator(BaseOperator):
         if status.stopReason in PAUSED_STATES and not crawl.paused_at:
             status.stopReason = None
             status.stopping = False
-            # Make sure we generate new presigned URL for seed file when loading
-            # crawl configmap, as old one may have expired
-            status.update_seed_file_presigned = True
             # should have already been removed, just in case
             await redis.delete(f"{crawl.id}:paused")
 

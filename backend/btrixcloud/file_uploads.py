@@ -3,7 +3,7 @@
 import os
 import tempfile
 from collections.abc import AsyncGenerator, Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -111,7 +111,7 @@ class FileUploadOps:
         type_: str | None = None,
         headers: dict | None = None,
         force_update_presigned: bool = False,
-    ) -> SeedFileOut:
+    ) -> tuple[SeedFileOut, datetime]:
         """Get file output model by UUID"""
         user_file = await self.get_seed_file(file_id, org, type_)
         return await user_file.get_file_out(
@@ -181,7 +181,7 @@ class FileUploadOps:
         user_files = []
         for res in items:
             file_ = SeedFile.from_dict(res)
-            file_out = await file_.get_file_out(org, self.storage_ops, headers)
+            file_out, _ = await file_.get_file_out(org, self.storage_ops, headers)
             user_files.append(file_out)
 
         return user_files, total
@@ -314,7 +314,7 @@ class FileUploadOps:
         first_seed = ""
         seed_count = 0
 
-        file_url = await file_obj.get_absolute_presigned_url(
+        file_url, _ = await file_obj.get_absolute_presigned_url(
             org, self.storage_ops, None
         )
 
@@ -530,7 +530,10 @@ def init_file_uploads_api(
     async def get_seed_file(
         file_id: UUID, request: Request, org: Organization = Depends(org_viewer_dep)
     ):
-        return await ops.get_seed_file_out(file_id, org, headers=dict(request.headers))
+        seed_file, _ = await ops.get_seed_file_out(
+            file_id, org, headers=dict(request.headers)
+        )
+        return seed_file
 
     @router.delete("/{file_id}", response_model=SuccessResponse)
     async def delete_user_file(
