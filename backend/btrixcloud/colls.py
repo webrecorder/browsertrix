@@ -442,7 +442,7 @@ class CollectionOps:
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = UserFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_file_out(
+            result["thumbnail"], _ = await image_file.get_file_out(
                 org, self.storage_ops, headers
             )
 
@@ -634,7 +634,7 @@ class CollectionOps:
                         org, self.storage_ops, headers
                     )
                 else:
-                    res["thumbnail"] = await image_file.get_file_out(
+                    res["thumbnail"], _ = await image_file.get_file_out(
                         org, self.storage_ops, headers
                     )
 
