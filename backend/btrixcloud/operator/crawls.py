@@ -618,6 +618,7 @@ class CrawlOperator(BaseOperator):
             logger.debug(
                 "seed_file_presigned_url_generated",
                 crawl_id=crawl.id,
+                seed_file_url=seed_file_out.path,
                 seed_file_id=crawl.seed_file_id,
                 expire_at=expire_at,
             )
