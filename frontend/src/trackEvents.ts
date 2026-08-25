@@ -23,4 +23,10 @@ export enum AnalyticsTrackEvent {
   TrialCreatedWorkflow = "[Trial] Created workflow",
   TrialReplayedCrawledItem = "[Trial] Replayed crawled item",
   TrialVisitedBillingTab = "[Trial] Visited billing tab",
+  /**
+   * User Guide
+   */
+  OpenedCrawlingOnePageGuide = "Opened crawling one page guide",
+  OpenedCrawlingSocialMediaGuide = "Opened crawling social media guide",
+  OpenedCrawlingWebsiteGuide = "Opened crawling website guide",
 }
