@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { type LocalizeController } from "@shoelace-style/localize";
 import type { SlAlert, SlIcon } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
@@ -6,9 +7,10 @@ import { customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type NavigateController } from "@/controllers/navigate";
 import { SubscriptionStatus } from "@/types/billing";
 import { OrgReadOnlyReason, type OrgData } from "@/types/org";
-import localize from "@/utils/localize";
+import globalLocalize, { type Localize } from "@/utils/localize";
 import appState from "@/utils/state";
 
 export enum OrgStatusName {
@@ -56,6 +58,39 @@ const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
 @customElement("btrix-org-status-banner")
 @localized()
 export class OrgStatusBanner extends BtrixElement {
+  static trialInfo(
+    org: OrgData,
+    localize: LocalizeController | Localize = globalLocalize,
+  ) {
+    let hoursUntilTrialEnd = 0;
+    let daysUntilTrialEnd = 0;
+    let trialEndDate = "";
+    const futureCancelDate = org.subscription?.futureCancelDate || null;
+
+    if (futureCancelDate) {
+      hoursUntilTrialEnd = differenceInHours(
+        new Date(),
+        new Date(futureCancelDate),
+      );
+      daysUntilTrialEnd = Math.ceil(hoursUntilTrialEnd / 24);
+
+      trialEndDate = localize.date(futureCancelDate, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        timeZoneName: "short",
+      });
+    }
+
+    return {
+      hoursUntilTrialEnd,
+      daysUntilTrialEnd,
+      trialEndDate,
+      futureCancelDate,
+    };
+  }
+
   render() {
     if (!this.org) return;
 
@@ -82,17 +117,21 @@ export class OrgStatusBanner extends BtrixElement {
   private get alerts(): Alert[] {
     if (!this.org) return [];
 
-    return OrgStatusBanner.alerts(this.org, this);
+    return OrgStatusBanner.alerts(this.org, this.localize, this.navigate);
   }
 
   /**
    * Alerts ordered by priority
    */
-  static alerts(org: OrgData, el?: BtrixElement): Alert[] {
+  static alerts(
+    org: OrgData,
+    localize: LocalizeController | Localize = globalLocalize,
+    navigate?: NavigateController,
+  ): Alert[] {
     const billingTabLink = html`<a
       class="underline hover:no-underline"
-      href=${`${el?.navigate.orgBasePath ?? ""}/settings/billing`}
-      @click=${el?.navigate.link}
+      href=${`${navigate?.orgBasePath ?? ""}/settings/billing`}
+      @click=${navigate?.link}
       >${msg("billing settings")}</a
     >`;
 
@@ -106,26 +145,12 @@ export class OrgStatusBanner extends BtrixElement {
     const readOnlyOnCancel =
       subscription?.readOnlyOnCancel ?? org.readOnlyOnCancel;
 
-    let hoursUntilTrialEnd = 0;
-    let daysUntilTrialEnd = 0;
-    let trialEndDate = "";
-    const futureCancelDate = subscription?.futureCancelDate || null;
-
-    if (futureCancelDate) {
-      hoursUntilTrialEnd = differenceInHours(
-        new Date(),
-        new Date(futureCancelDate),
-      );
-      daysUntilTrialEnd = Math.ceil(hoursUntilTrialEnd / 24);
-
-      trialEndDate = (el?.localize || localize).date(futureCancelDate, {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        timeZoneName: "short",
-      });
-    }
+    const {
+      hoursUntilTrialEnd,
+      daysUntilTrialEnd,
+      trialEndDate,
+      futureCancelDate,
+    } = OrgStatusBanner.trialInfo(org, localize);
 
     const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;
