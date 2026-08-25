@@ -53,6 +53,7 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { completeOnboardingStep } from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
@@ -968,6 +969,11 @@ export class ArchivedItemDetail extends BtrixElement {
                 replayBase="/replay/"
                 noSandbox="true"
                 noCache="true"
+                @rwp-url-change=${() => {
+                  if (this.itemType === "crawl") {
+                    completeOnboardingStep(2);
+                  }
+                }}
               ></replay-web-page>
             </div>`
           : html`
