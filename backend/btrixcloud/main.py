@@ -305,6 +305,7 @@ def main() -> None:
         page_ops,
         file_ops,
         crawl_config_ops,
+        storage_ops,
     )
 
     user_manager.set_ops(org_ops, crawl_config_ops, base_crawl_ops)

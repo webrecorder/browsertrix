@@ -114,10 +114,12 @@ if TYPE_CHECKING:
     from .invites import InviteOps
     from .pages import PageOps
     from .profiles import ProfileOps
+    from .storages import StorageOps
     from .users import UserManager
 else:
     InviteOps = BaseCrawlOps = ProfileOps = CollectionOps = CrawlConfigOps = object
     BackgroundJobOps = UserManager = PageOps = FileUploadOps = CrawlManager = object
+    StorageOps = object
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
@@ -572,12 +574,12 @@ class OrgOps(BaseOrgs):
             {"_id": org.id}, {"$set": org.dict(include=include)}
         )
 
-    async def check_all_org_default_storages(self, storage_ops) -> None:
+    async def check_all_org_default_storages(self) -> None:
         """ensure all default storages references by this org actually exist
 
         designed to help prevent removal of a 'storage' entry if
         an org is still referencing that storage"""
-        storage_names = list(storage_ops.default_storages.keys())
+        storage_names = list(self.storage_ops.default_storages.keys())
         errors = 0
 
         async for org_data in self.orgs.find(
@@ -1660,20 +1662,14 @@ class OrgOps(BaseOrgs):
             {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
 
-        # TODO: Clear out org storage
-        # - Delete everything at prefix for org in primary storage
-        #   (if we're doing this, maybe just don't do per-file deletion
-        #    anywhere?)
-        # await self.background_job_ops.create_delete_org_primary_storage_job(
-        #     org
-        # )
+        # Launch job to delete files at org prefix from primary storage
+        await self.background_job_ops.create_delete_org_primary_storage_job(org)
 
-        # - Make bg jobs to delete everything at prefix for org
-        #   in replica storages (but respect the replica delay deletion)
-        # for replica_storage in replica_storage_locations:
-        #     await self.background_job_ops.create_delete_org_replica_storage_job(
-        #         org, replica_storage
-        #     )
+        # Launch job to delete files from each default replica location
+        for replica_storage in self.storage_ops.get_default_replicas():
+            await self.background_job_ops.create_delete_org_replica_storage_job(
+                org, replica_storage
+            )
 
         # Delete org last so that if the job fails at any point before
         # this and need to be retried, the org still exists

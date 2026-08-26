@@ -194,7 +194,7 @@ async def update_and_prepare_db(
     )
     await user_manager.create_super_user()
     await org_ops.create_default_org()
-    await org_ops.check_all_org_default_storages(storage_ops)
+    await org_ops.check_all_org_default_storages()
     logger.info("db_updated_ready", unstructured_message="Database updated and ready")
 
 
