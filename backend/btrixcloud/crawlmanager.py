@@ -116,6 +116,40 @@ class CrawlManager(K8sAPI):
 
         return job_id
 
+    async def run_delete_org_files_job(
+        self,
+        storage_ref: StorageRef,
+        storage_endpoint: str,
+        org_files_prefix: str,
+        oid: str,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """run job to delete files from org prefix in given storage"""
+        job_type = BgJobType.DELETE_ORG_FILES
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"{job_type}-{secrets.token_hex(5)}"
+
+        params: dict[str, object] = {
+            "id": job_id,
+            "oid": oid,
+            "job_type": job_type,
+            "storage_secret_name": storage_ref.get_storage_secret_name(oid),
+            "storage_endpoint": storage_endpoint,
+            "org_files_prefix": org_files_prefix,
+            "BgJobType": BgJobType,
+        }
+
+        data = self.templates.env.get_template("delete_org_files_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
     async def run_delete_replica_job(
         self,
         oid: str,

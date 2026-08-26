@@ -21,6 +21,7 @@ from .models import (
     CleanupSeedFilesJob,
     CopyBucketJob,
     CreateReplicaJob,
+    DeleteOrgFilesJob,
     DeleteOrgJob,
     DeleteReplicaJob,
     OptimizePagesJob,
@@ -195,6 +196,80 @@ class BackgroundJobOps:
                 oid=org.id,
                 unstructured_message="warning: replica deletion job could not be "
                 f"started for {object_type} {file}: {exc}",
+            )
+            return ""
+
+    async def create_delete_org_files_jobs(self, org: Organization):
+        """Create background jobs to delete files at org prefix
+
+        Will create one job for primary storage and one job for each default
+        replica location.
+        """
+        primary_storage_ref = self.storage_ops.get_default_primary()
+        await self.create_delete_org_files_job(org, primary_storage_ref)
+
+        for default_replica_ref in self.storage_ops.get_default_replicas():
+            await self.create_delete_org_files_job(org, default_replica_ref)
+
+    async def create_delete_org_files_job(
+        self,
+        org: Organization,
+        storage_ref: StorageRef,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """Create background job to delete files at org prefix from storage"""
+        job_logger = logger.bind(
+            oid=org.id, storage_ref=storage_ref, existing_job_id=existing_job_id
+        )
+
+        try:
+            s3_storage = self.storage_ops.get_default_s3_storage(storage_ref)
+            storage_endpoint, bucket_suffix = self.strip_bucket(s3_storage.endpoint_url)
+
+            org_files_prefix = f"{bucket_suffix}/{org.id}/"
+            job_logger.bind(org_files_prefix=org_files_prefix)
+
+            job_id = await self.crawl_manager.run_delete_org_files_job(
+                storage_ref=storage_ref,
+                storage_endpoint=storage_endpoint,
+                org_files_prefix=org_files_prefix,
+                oid=str(org.id),
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                delete_org_files_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": delete_org_files_job.started,
+                    "finished": delete_org_files_job.finished,
+                }
+                if delete_org_files_job.previousAttempts:
+                    delete_org_files_job.previousAttempts.append(previous_attempt)
+                else:
+                    delete_org_files_job.previousAttempts = [previous_attempt]
+                delete_org_files_job.started = dt_now()
+                delete_org_files_job.finished = None
+                delete_org_files_job.success = None
+            else:
+                delete_org_files_job = DeleteOrgFilesJob(
+                    id=job_id,
+                    oid=org.id,
+                    started=dt_now(),
+                    storage_ref=storage_ref,
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": delete_org_files_job.to_dict()}, upsert=True
+            )
+
+            job_logger.info("delete_org_files_job_started", job_id=job_id)
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            job_logger.warning(
+                "delete_org_files_job_start_failed",
+                exc_info=True,
+                existing_job_id=existing_job_id,
             )
             return ""
 
@@ -717,6 +792,7 @@ class BackgroundJobOps:
         | RetryStuckUploadsJob
         | ReplicateFilesCronJob
         | CopyBucketJob
+        | DeleteOrgFilesJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -729,7 +805,7 @@ class BackgroundJobOps:
 
         return self._get_job_by_type_from_data(res)
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements, too-many-branches
     def _get_job_by_type_from_data(self, data: dict[str, object]):
         """convert dict to propert background job type"""
         if data["type"] == BgJobType.CREATE_REPLICA:
@@ -767,6 +843,9 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.DELETE_ORG:
             return DeleteOrgJob.from_dict(data)
+
+        if data["type"] == BgJobType.DELETE_ORG_FILES:
+            return DeleteOrgFilesJob.from_dict(data)
 
         logger.error("unhandled_background_job_type", type=data["type"], data=data)
         raise ValueError(f"Unhandled background job type: {data['type']}")
@@ -971,6 +1050,15 @@ class BackgroundJobOps:
             await self.create_postprocess_upload_job(
                 job.oid,
                 job.crawl_id,
+                existing_job_id=job.id,
+            )
+            return {"success": True}
+
+        if job.type == BgJobType.DELETE_ORG_FILES:
+            job = cast(DeleteOrgFilesJob, job)
+            await self.create_delete_org_files_job(
+                org,
+                job.storage_ref,
                 existing_job_id=job.id,
             )
             return {"success": True}

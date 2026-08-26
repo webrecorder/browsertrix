@@ -247,6 +247,7 @@ class OrgOps(BaseOrgs):
         page_ops: PageOps,
         file_ops: FileUploadOps,
         crawl_config_ops: CrawlConfigOps,
+        storage_ops: StorageOps,
     ) -> None:
         """Set additional ops classes"""
         # pylint: disable=attribute-defined-outside-init
@@ -257,6 +258,7 @@ class OrgOps(BaseOrgs):
         self.page_ops = page_ops
         self.file_ops = file_ops
         self.crawl_config_ops = crawl_config_ops
+        self.storage_ops = storage_ops
 
     def set_default_primary_storage(self, storage: StorageRef):
         """set default primary storage"""
@@ -1663,13 +1665,8 @@ class OrgOps(BaseOrgs):
         )
 
         # Launch job to delete files at org prefix from primary storage
-        await self.background_job_ops.create_delete_org_primary_storage_job(org)
-
-        # Launch job to delete files from each default replica location
-        for replica_storage in self.storage_ops.get_default_replicas():
-            await self.background_job_ops.create_delete_org_replica_storage_job(
-                org, replica_storage
-            )
+        # and any configured replica locations
+        await self.background_job_ops.create_delete_org_files_jobs(org)
 
         # Delete org last so that if the job fails at any point before
         # this and need to be retried, the org still exists
