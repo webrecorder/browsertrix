@@ -432,11 +432,12 @@ class CrawlOps(BaseCrawlOps):
         delete_list: DeleteCrawlList,
         type_="crawl",
         user: User | None = None,
+        skip_deleting_replicas: bool = False,
     ) -> tuple[int, dict[UUID, dict[str, int]], bool]:
         """Delete a list of crawls by id for given org"""
 
         count, cids_to_update, quota_reached = await super().delete_crawls(
-            org, delete_list, type_, user
+            org, delete_list, type_, user, skip_deleting_replicas
         )
 
         if count < 1:
