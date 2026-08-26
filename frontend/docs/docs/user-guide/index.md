@@ -39,8 +39,7 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       - [Crawl your first webpage](getting-started.md#__tabbed_1_1)
       - [Crawl your first social media page](getting-started.md#__tabbed_1_2)
       - [Crawl an entire website](getting-started.md#__tabbed_1_3)
-      - [Review glossary of terms :octicons-link-external-16:](https://webrecorder.net/resources/glossary){ target="_blank" }
-      - [Watch video tutorials :octicons-link-external-16:](https://www.youtube.com/@webrecorder){ target="_blank" }
+      - [High level concepts & terms](concepts.md)
       
 
 - **Crawl Settings**
