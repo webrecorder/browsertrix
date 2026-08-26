@@ -39,6 +39,10 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import {
+  OrgStatusBanner,
+  OrgStatusName,
+} from "@/features/org/org-status-banner";
 import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type {
   CrawlerChannelsAPIResponse,
@@ -145,6 +149,9 @@ export class Org extends BtrixElement {
 
   @state()
   private isCreateDialogVisible = false;
+
+  @state()
+  private showOrgStatusBanner = false;
 
   private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
   private readonly [orgUploadsContextKey] = new OrgUploadsContextController(
@@ -257,6 +264,22 @@ export class Org extends BtrixElement {
         this.openDialog(dialogName);
       }
     }
+
+    if (
+      (changedProperties.has("orgTab") ||
+        changedProperties.has("appState.org")) &&
+      this.org
+    ) {
+      // Hide banner if on dashboard and actively trialing
+      if (this.orgTab === OrgTab.Dashboard) {
+        const alerts = OrgStatusBanner.alerts(this.org);
+        const trialStatus = alerts.find(({ test }) => test());
+
+        this.showOrgStatusBanner = trialStatus?.name !== OrgStatusName.Trialing;
+      } else {
+        this.showOrgStatusBanner = true;
+      }
+    }
   }
 
   private readonly onRequestUpdateOrg = (e: BtrixRequestOrgUpdate) => {
@@ -344,7 +367,10 @@ export class Org extends BtrixElement {
       ></btrix-document-title>
 
       <div class="flex min-h-full flex-col">
-        <btrix-org-status-banner></btrix-org-status-banner>
+        ${when(
+          this.showOrgStatusBanner,
+          () => html`<btrix-org-status-banner></btrix-org-status-banner>`,
+        )}
         ${this.renderOrgNavBar()}
         <main
           class="${noMaxWidth
@@ -549,8 +575,6 @@ export class Org extends BtrixElement {
   private readonly renderDashboard = () => {
     return html`
       <btrix-dashboard
-        ?isCrawler=${this.appState.isCrawler}
-        ?isAdmin=${this.appState.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;

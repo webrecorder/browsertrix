@@ -31,7 +31,7 @@ import "./components/deduplication";
 
 const styles = unsafeCSS(stylesheet);
 
-type Tab =
+export type Tab =
   | "information"
   | "members"
   | "billing"
