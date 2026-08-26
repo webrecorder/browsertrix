@@ -53,7 +53,7 @@ const iconForVariant = (
 };
 
 // show banner as warning if <= this many days of trial is left
-const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
+export const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
 
 @customElement("btrix-org-status-banner")
 @localized()
