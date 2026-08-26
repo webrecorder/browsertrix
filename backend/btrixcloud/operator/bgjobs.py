@@ -88,8 +88,8 @@ class BgJobOperator(BaseOperator):
 
         except HTTPException as exc:
             # If job couldn't be found, it's possible the org has been
-            # deleted, which deletes this job from the database as well.
-            # If the org doesn't exist, finalize to avoid an endless loop.
+            # deleted, which deletes background jobs from the database
+            # as well. If so, finalize anyway to avoid an endless loop.
             if exc.status_code == 404 and org_id:
                 try:
                     _ = await self.org_ops.get_org_by_id(org_id)
