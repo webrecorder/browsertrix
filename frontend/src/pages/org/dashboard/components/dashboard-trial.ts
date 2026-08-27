@@ -2,7 +2,7 @@ import { localized, msg } from "@lit/localize";
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { primaryHeading } from "../layouts/primaryHeading";
+import { dashboardHeading } from "../layouts/dashboardHeading";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { tw } from "@/utils/tailwind";
@@ -17,7 +17,7 @@ export class DashboardTrial extends BtrixElement {
       <section>${this.renderIntro()}</section>
 
       <section>
-        ${primaryHeading(msg("What would you like to archive?"))}
+        ${dashboardHeading(msg("What would you like to archive?"))}
         ${this.renderCrawlingGuides()}
       </section>
     `;
@@ -37,7 +37,7 @@ export class DashboardTrial extends BtrixElement {
   }
 
   private renderCrawlingGuides() {
-    const cardClasses = tw`col-span-full block h-full @container lg:col-span-1`;
+    const cardClasses = tw`col-span-full block h-full @container/card @xl/org:col-span-1`;
 
     return html`
       <div class="grid grid-cols-3 items-center gap-3">

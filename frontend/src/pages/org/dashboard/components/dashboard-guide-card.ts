@@ -56,14 +56,14 @@ export class DashboardGuideCard extends TailwindElement {
     }
 
     return html`<section
-      class="${tw`[&:has(sl-button:hover)]:bg-neutral-50`} group flex h-full gap-3 p-3 transition-colors duration-fast focus-within:bg-neutral-50 @lg:items-center"
+      class="${tw`[&:has(sl-button:hover)]:bg-neutral-50`} group flex h-full gap-3 p-3 transition-colors duration-fast focus-within:bg-neutral-50 @lg/card:items-center"
       part="base"
     >
       ${this.renderIcon()}
       <div
-        class="flex flex-1 flex-col items-start justify-between gap-2 py-1 @lg:flex-row @lg:items-center @lg:py-0"
+        class="flex flex-1 flex-col items-start justify-between gap-2 py-1 @lg/card:flex-row @lg/card:items-center @lg/card:py-0"
       >
-        <div class="mb-2 leading-none @lg:mb-0">
+        <div class="mb-2 leading-none @lg/card:mb-0">
           ${this.renderTitle()} ${this.renderBody()}
         </div>
 

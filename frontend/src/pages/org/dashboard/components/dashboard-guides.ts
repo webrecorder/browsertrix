@@ -4,7 +4,7 @@ import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { primaryHeading } from "../layouts/primaryHeading";
+import { dashboardHeading } from "../layouts/dashboardHeading";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
@@ -12,6 +12,8 @@ import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { tw } from "@/utils/tailwind";
 
 import "./dashboard-guide-card";
+
+const cardClasses = tw`col-span-full block h-full overflow-hidden @container/card @4xl/org:col-span-1 @4xl/org:rounded-lg @4xl/org:border`;
 
 @customElement("btrix-dashboard-guides")
 @localized()
@@ -31,7 +33,7 @@ export class DashboardGuides extends BtrixElement {
         !trialing,
         () => html`
           <section class="mb-7">
-            ${primaryHeading(msg("Crawling Guides"))}
+            ${dashboardHeading(msg("Crawling Guides"))}
             ${this.renderCrawlingGuides()}
           </section>
         `,
@@ -42,10 +44,10 @@ export class DashboardGuides extends BtrixElement {
 
   private renderGettingStarted() {
     return html`<div
-      class="col-span-full grid grid-cols-3 gap-x-3 gap-y-7 lg:rounded-lg lg:border"
+      class="col-span-full grid grid-cols-3 gap-x-3 gap-y-7 @4xl/org:rounded-lg @4xl/org:border"
     >
       <div
-        class="col-span-full flex flex-col justify-center gap-3 py-3 lg:col-span-1 lg:p-5"
+        class="col-span-full flex flex-col justify-center gap-3 py-3 @4xl/org:col-span-1 @4xl/org:p-5"
       >
         <h2 class="text-base font-medium leading-6">
           ${msg("Getting Started")}
@@ -62,11 +64,11 @@ export class DashboardGuides extends BtrixElement {
         </p>
       </div>
       <div
-        class="col-span-full -mx-3 @container lg:col-span-2 lg:mx-0 lg:border-l"
+        class="col-span-full -mx-3 @container/card @4xl/org:col-span-2 @4xl/org:mx-0 @4xl/org:border-l"
       >
         <div>
           <btrix-dashboard-guide-card
-            class="block @lg:border-b"
+            class="block @lg/card:border-b"
             icon="book-half"
             path=""
           >
@@ -74,7 +76,7 @@ export class DashboardGuides extends BtrixElement {
             ${msg("Find detailed documentation on topics and settings")}
           </btrix-dashboard-guide-card>
           <btrix-dashboard-guide-card
-            class="block @lg:border-b"
+            class="block @lg/card:border-b"
             icon="easel"
             path="concepts"
           >
@@ -99,9 +101,11 @@ export class DashboardGuides extends BtrixElement {
   }
 
   private renderGeneralGuides() {
-    return html`<div class="-mx-3 grid grid-cols-3 items-center gap-3 lg:mx-0">
+    return html`<div
+      class="-mx-3 grid grid-cols-3 items-center gap-3 @4xl/org:mx-0"
+    >
       <btrix-dashboard-guide-card
-        class="col-span-full block h-full overflow-hidden border-b @container lg:col-span-1 lg:rounded-lg lg:border"
+        class="${cardClasses} border-b"
         icon="book-half"
         path=""
       >
@@ -109,7 +113,7 @@ export class DashboardGuides extends BtrixElement {
         ${msg("Find detailed documentation on topics and settings")}
       </btrix-dashboard-guide-card>
       <btrix-dashboard-guide-card
-        class="col-span-full block h-full overflow-hidden border-b @container lg:col-span-1 lg:rounded-lg lg:border"
+        class="${cardClasses} border-b"
         icon="speedometer"
         path="overview"
       >
@@ -117,7 +121,7 @@ export class DashboardGuides extends BtrixElement {
         ${msg("Read about the features of your dashboard")}
       </btrix-dashboard-guide-card>
       <btrix-dashboard-guide-card
-        class="col-span-full block h-full overflow-hidden @container lg:col-span-1 lg:rounded-lg lg:border"
+        class="${cardClasses}"
         icon="bookmarks"
         path="resources"
       >
@@ -129,9 +133,9 @@ export class DashboardGuides extends BtrixElement {
 
   private renderCrawlingGuides() {
     return html`
-      <div class="-mx-3 grid grid-cols-3 items-center gap-x-3 lg:mx-0">
+      <div class="-mx-3 grid grid-cols-3 items-center gap-x-3 @4xl/org:mx-0">
         <btrix-dashboard-guide-card
-          class="col-span-full block h-full overflow-hidden border-b @container lg:col-span-1 lg:rounded-lg lg:border"
+          class="${cardClasses} border-b"
           icon="window"
           path="getting-started/#__tabbed_1_1"
         >
@@ -140,7 +144,7 @@ export class DashboardGuides extends BtrixElement {
           ${msg("Archive a single page on a website")}
         </btrix-dashboard-guide-card>
         <btrix-dashboard-guide-card
-          class="col-span-full block h-full overflow-hidden border-b @container lg:col-span-1 lg:rounded-lg lg:border"
+          class="${cardClasses} border-b"
           icon="person-workspace"
           path="getting-started/#__tabbed_1_2"
         >
@@ -149,7 +153,7 @@ export class DashboardGuides extends BtrixElement {
           ${msg("Archive a social media post or profile")}
         </btrix-dashboard-guide-card>
         <btrix-dashboard-guide-card
-          class="col-span-full block h-full overflow-hidden @container lg:col-span-1 lg:rounded-lg lg:border"
+          class="${cardClasses}"
           icon="pc-display-horizontal"
           path="getting-started/#__tabbed_1_3"
         >
@@ -162,10 +166,14 @@ export class DashboardGuides extends BtrixElement {
   }
 
   private renderSettingsGuides() {
+    const sectionClasses = tw`col-span-full flex flex-col @4xl/org:col-span-1`;
+    const headingClasses = tw`mb-3 text-base font-medium leading-6`;
+    const listClasses = tw`flex-1 [&>li:not(:last-of-type)]:mb-3.5`;
+
     return html`<div class="grid grid-cols-3 gap-x-3 gap-y-7">
-      <section class="col-span-full flex flex-col lg:col-span-1">
-        <h3 class="mb-3 font-medium leading-6">${msg("Crawl Settings")}</h3>
-        <ul class="${tw`[&>li:not(:last-of-type)]:mb-3.5`} flex-1">
+      <section class="${sectionClasses}">
+        <h3 class="${headingClasses}">${msg("Crawl Settings")}</h3>
+        <ul class="${listClasses}">
           <li>
             ${this.renderGuideLink({
               label: msg("Exclude pages from the crawl"),
@@ -189,9 +197,9 @@ export class DashboardGuides extends BtrixElement {
           </li>
         </ul>
       </section>
-      <section class="col-span-full flex flex-col lg:col-span-1">
-        <h3 class="mb-3 font-medium leading-6">${msg("Org Settings")}</h3>
-        <ul class="${tw`[&>li:not(:last-of-type)]:mb-3.5`} flex-1">
+      <section class="${sectionClasses}">
+        <h3 class="${headingClasses}">${msg("Org Settings")}</h3>
+        <ul class="${listClasses}">
           <li>
             ${this.renderGuideLink({
               label: msg("Your org dashboard"),
@@ -229,9 +237,9 @@ export class DashboardGuides extends BtrixElement {
           </li>
         </ul>
       </section>
-      <section class="col-span-full flex flex-col lg:col-span-1">
-        <h3 class="mb-3 font-medium leading-6">${msg("Account Settings")}</h3>
-        <ul class="${tw`[&>li:not(:last-of-type)]:mb-3.5`} flex-1">
+      <section class="col-span-full flex flex-col @4xl/org:col-span-1">
+        <h3 class="${headingClasses}">${msg("Account Settings")}</h3>
+        <ul class="${listClasses}">
           <li>
             ${this.renderGuideLink({
               label: msg("Change your email"),
