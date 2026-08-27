@@ -226,7 +226,9 @@ class BackgroundJobOps:
             s3_storage = self.storage_ops.get_default_s3_storage(storage_ref)
             storage_endpoint, bucket_suffix = self.strip_bucket(s3_storage.endpoint_url)
 
-            org_files_prefix = f"{bucket_suffix}/{org.id}/"
+            bucket_with_trailing_slash = os.path.join(bucket_suffix, "")
+
+            org_files_prefix = f"{bucket_with_trailing_slash}{org.id}/"
             job_logger.bind(org_files_prefix=org_files_prefix)
 
             job_id = await self.crawl_manager.run_delete_org_files_job(
