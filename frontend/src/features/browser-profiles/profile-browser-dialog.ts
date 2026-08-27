@@ -142,7 +142,11 @@ export class ProfileBrowserDialog extends BtrixElement {
 
         this.dispatchEvent(
           new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated", {
-            detail: { id: data.id, name },
+            detail: {
+              id: data.id,
+              name,
+              proxyId: this.profile?.proxyId ?? this.config?.proxyId,
+            },
             composed: true,
             bubbles: true,
           }),

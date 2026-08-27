@@ -42,7 +42,8 @@ import { isNotEqual } from "@/utils/is-not-equal";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
-type SelectedProfile = Partial<Profile> & Pick<Profile, "id" | "name">;
+type SelectedProfile = Partial<Profile> &
+  Pick<Profile, "id" | "name" | "proxyId">;
 type SelectBrowserProfileChangeDetail = {
   value: SelectedProfile | undefined;
 };
@@ -225,7 +226,7 @@ export class SelectBrowserProfile extends BtrixElement {
             )}
             @btrix-updated=${async (e: ProfileUpdatedEvent) => {
               e.stopPropagation();
-              const { id, name } = e.detail;
+              const { id, name, proxyId } = e.detail;
 
               if (id) {
                 void this.profilesTask.run();
@@ -236,7 +237,7 @@ export class SelectBrowserProfile extends BtrixElement {
                     "on-change",
                     {
                       detail: {
-                        value: { id, name: name ?? id },
+                        value: { id, name: name ?? id, proxyId },
                       },
                     },
                   ),
