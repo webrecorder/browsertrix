@@ -2,7 +2,7 @@ import { msg } from "@lit/localize";
 import { html, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import { asideHeading } from "../layouts/asideHeading";
+import { dashboardHeading } from "../layouts/dashboardHeading";
 
 import { tw } from "@/utils/tailwind";
 
@@ -31,9 +31,9 @@ function externalLink({
 
 export function resourcesList() {
   return html`<section>
-    ${asideHeading(msg("Resources"))}
+    ${dashboardHeading(msg("Resources"), { aside: true })}
 
-    <ul class="${tw`[&>li:not(:last-of-type)]:mb-2.5`} text-xs">
+    <ul class="${tw`[&>li:not(:last-of-type)]:mb-2.5`} @5xl:text-xs">
       <li>
         ${externalLink({
           label: msg("What is Web Archiving?"),
