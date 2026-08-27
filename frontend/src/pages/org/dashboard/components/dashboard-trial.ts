@@ -4,10 +4,12 @@ import { customElement } from "lit/decorators.js";
 
 import { dashboardHeading } from "../layouts/dashboardHeading";
 
-import { BtrixElement } from "@/classes/BtrixElement";
-import { tw } from "@/utils/tailwind";
-
 import "./dashboard-guide-card";
+
+import { BtrixElement } from "@/classes/BtrixElement";
+import { AnalyticsTrackEvent } from "@/trackEvents";
+import { track, type AnalyticsTrackProps } from "@/utils/analytics";
+import { tw } from "@/utils/tailwind";
 
 @customElement("btrix-dashboard-trial")
 @localized()
@@ -39,6 +41,13 @@ export class DashboardTrial extends BtrixElement {
   private renderCrawlingGuides() {
     const cardClasses = tw`col-span-full block h-full @container/card @xl/org:col-span-1`;
 
+    const trackProps = {
+      trialing: this.appState.onboarding?.trialing,
+      has_usage: this.appState.onboarding
+        ? !this.appState.onboarding.noUsage
+        : undefined,
+    } satisfies AnalyticsTrackProps;
+
     return html`
       <div class="grid grid-cols-3 items-center gap-3">
         <btrix-dashboard-guide-card
@@ -46,6 +55,8 @@ export class DashboardTrial extends BtrixElement {
           icon="window"
           path="getting-started/#__tabbed_1_1"
           variant="button"
+          @click=${() =>
+            track(AnalyticsTrackEvent.OpenedCrawlingOnePageGuide, trackProps)}
         >
           <span slot="title">${msg("One Page")}</span>
           <span slot="label">${msg("Start Here")}</span>
@@ -56,6 +67,11 @@ export class DashboardTrial extends BtrixElement {
           icon="person-workspace"
           path="getting-started/#__tabbed_1_2"
           variant="button"
+          @click=${() =>
+            track(
+              AnalyticsTrackEvent.OpenedCrawlingSocialMediaGuide,
+              trackProps,
+            )}
         >
           <span slot="title">${msg("Social Media Page")}</span>
           <span slot="label">${msg("Start Here")}</span>
@@ -66,6 +82,8 @@ export class DashboardTrial extends BtrixElement {
           icon="pc-display-horizontal"
           path="getting-started/#__tabbed_1_3"
           variant="button"
+          @click=${() =>
+            track(AnalyticsTrackEvent.OpenedCrawlingWebsiteGuide, trackProps)}
         >
           <span slot="title">${msg("Entire Website")}</span>
           <span slot="label">${msg("Start Here")}</span>
