@@ -53,6 +53,7 @@ export function makeAppStateService() {
     // Org details
     org: OrgData | null | undefined = undefined;
 
+    @options(persist(window.sessionStorage))
     userGuideOpen = false;
 
     // Since org slug is used to ID an org, use `userOrg`
