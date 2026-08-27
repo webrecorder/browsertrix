@@ -99,6 +99,8 @@ nav:
           - user-guide/org-members.md
       - Account Settings:
           - user-guide/user-settings.md
+          - user-guide/change-password.md
+      - user-guide/resources.md
       - user-guide/contribute.md
   - Self-Hosting:
       - Overview: deploy/index.md
@@ -132,6 +134,7 @@ nav:
 
 markdown_extensions:
   - toc:
+      title: On This Page
       toc_depth: 3
       permalink: true
   - pymdownx.highlight:
@@ -173,6 +176,9 @@ copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 plugins:
   - search
+  - tags:
+      tags_allowed:
+        - Social Media
   - redirects:
       redirect_maps:
         "user-guide/collections.md": "user-guide/collection.md"
