@@ -1,12 +1,14 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { dashboardHeading } from "../layouts/dashboardHeading";
+import { docsFeedback } from "../templates/docsFeedback";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { docsEmail } from "@/constants/docs-email";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { tw } from "@/utils/tailwind";
@@ -21,6 +23,9 @@ export class DashboardGuides extends BtrixElement {
   @consume({ context: docsUrlContext })
   private readonly docsUrl?: DocsUrlContext;
 
+  @property({ type: Boolean })
+  showDocsEmail = false;
+
   render() {
     const trialing = this.appState.onboarding?.trialing;
     const noUsage = this.appState.onboarding?.noUsage;
@@ -32,10 +37,15 @@ export class DashboardGuides extends BtrixElement {
       ${when(
         !trialing,
         () => html`
-          <section class="mb-7">
-            ${dashboardHeading(msg("Crawling Guides"))}
+          <section class="mb-10">
+            ${noUsage
+              ? dashboardHeading(msg("What would you like to archive?"))
+              : dashboardHeading(msg("Crawling Guides"))}
             ${this.renderCrawlingGuides()}
           </section>
+
+          ${dashboardHeading(msg("Explore More Guides"))}
+          <sl-divider class="mb-5 mt-2"></sl-divider>
         `,
       )}
 
@@ -106,11 +116,11 @@ export class DashboardGuides extends BtrixElement {
     >
       <btrix-dashboard-guide-card
         class="${cardClasses} border-b"
-        icon="book-half"
-        path=""
+        icon="easel"
+        path="concepts"
       >
-        <span slot="title">${msg("Introduction to the user guide")}</span>
-        ${msg("Find detailed documentation on topics and settings")}
+        <span slot="title">${msg("Introduction to concepts")}</span>
+        ${msg("Read about Browsertrix concepts and terms")}
       </btrix-dashboard-guide-card>
       <btrix-dashboard-guide-card
         class="${cardClasses} border-b"
@@ -140,7 +150,6 @@ export class DashboardGuides extends BtrixElement {
           path="getting-started/#__tabbed_1_1"
         >
           <span slot="title">${msg("One Page")}</span>
-          <span slot="label">${msg("Read Guide")}</span>
           ${msg("Archive a single page on a website")}
         </btrix-dashboard-guide-card>
         <btrix-dashboard-guide-card
@@ -149,7 +158,6 @@ export class DashboardGuides extends BtrixElement {
           path="getting-started/#__tabbed_1_2"
         >
           <span slot="title">${msg("Social Media Page")}</span>
-          <span slot="label">${msg("Read Guide")}</span>
           ${msg("Archive a social media post or profile")}
         </btrix-dashboard-guide-card>
         <btrix-dashboard-guide-card
@@ -158,7 +166,6 @@ export class DashboardGuides extends BtrixElement {
           path="getting-started/#__tabbed_1_3"
         >
           <span slot="title">${msg("Entire Website")}</span>
-          <span slot="label">${msg("Read Guide")}</span>
           ${msg("Archive every page on a website")}
         </btrix-dashboard-guide-card>
       </div>
@@ -167,10 +174,14 @@ export class DashboardGuides extends BtrixElement {
 
   private renderSettingsGuides() {
     const sectionClasses = tw`col-span-full flex flex-col @4xl/org:col-span-1`;
-    const headingClasses = tw`mb-3 text-base font-medium leading-6`;
+    const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm`;
     const listClasses = tw`flex-1 [&>li:not(:last-of-type)]:mb-3.5`;
 
-    return html`<div class="grid grid-cols-3 gap-x-3 gap-y-7">
+    return html`<div
+      class="${this.showDocsEmail
+        ? tw`grid-cols-4`
+        : tw`grid-cols-3`} grid gap-x-3 gap-y-7"
+    >
       <section class="${sectionClasses}">
         <h3 class="${headingClasses}">${msg("Crawl Settings")}</h3>
         <ul class="${listClasses}">
@@ -178,21 +189,42 @@ export class DashboardGuides extends BtrixElement {
             ${this.renderGuideLink({
               label: msg("Exclude pages from the crawl"),
               icon: "file-earmark-minus",
-              path: "",
+              path: "workflow-setup/#exclude-pages",
+            })}
+          </li>
+          <li>
+            ${this.renderGuideLink({
+              label: msg("Exclude popups and prompts"),
+              icon: "window-dash",
+              path: "browser-profiles/browser-profiles-overview",
+            })}
+          </li>
+          <li>
+            ${this.renderGuideLink({
+              label: msg("Watch pages in real-time"),
+              icon: "eye-fill",
+              path: "running-crawl/#watch-crawl",
+            })}
+          </li>
+          <li>
+            ${this.renderGuideLink({
+              label: msg("Avoid crawler traps in real-time"),
+              icon: "shield-exclamation",
+              path: "running-crawl/#live-exclusion-editing",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Organize crawls into collections"),
               icon: "collection",
-              path: "",
+              path: "collection",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Review, rate, and comment on crawled content"),
               icon: "chat-square-text",
-              path: "",
+              path: "quality-assurance",
             })}
           </li>
         </ul>
@@ -202,37 +234,37 @@ export class DashboardGuides extends BtrixElement {
         <ul class="${listClasses}">
           <li>
             ${this.renderGuideLink({
-              label: msg("Your org dashboard"),
-              icon: "speedometer2",
-              path: "",
+              label: msg("Manage billing"),
+              icon: "credit-card-fill",
+              path: "org-settings/#billing",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Invite team members"),
               icon: "people-fill",
-              path: "",
+              path: "org-members",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
-              label: msg("Manage billing"),
-              icon: "credit-card-fill",
-              path: "",
+              label: msg("Import a collection"),
+              icon: "box-arrow-in-down",
+              path: "archived-items/#uploading-web-archives",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Create a public archive"),
               icon: "globe",
-              path: "",
+              path: "public-collections-gallery",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Enable deduplication"),
               icon: "stack",
-              path: "",
+              path: "deduplication/#enable-deduplication-across-your-entire-organization",
             })}
           </li>
         </ul>
@@ -244,32 +276,34 @@ export class DashboardGuides extends BtrixElement {
             ${this.renderGuideLink({
               label: msg("Change your email"),
               icon: "person-badge",
-              path: "",
+              path: "user-settings",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Change your password"),
               icon: "shield-lock-fill",
-              path: "",
+              path: "change-password/#change-password",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Choose your preferred language"),
               icon: "translate",
-              path: "",
+              path: "user-settings",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Change how your name appears to team members"),
               icon: "file-person-fill",
-              path: "",
+              path: "user-settings",
             })}
           </li>
         </ul>
       </section>
+
+      ${when(this.showDocsEmail, () => docsFeedback(docsEmail))}
     </div>`;
   }
 
@@ -289,7 +323,7 @@ export class DashboardGuides extends BtrixElement {
         <sl-icon class="text-neutral-500" name=${icon}></sl-icon>
       </div>
       <a
-        class="leading-4 text-primary-700 hover:underline"
+        class="max-w-[30ch] leading-4 text-primary-700 hover:underline"
         href=${link}
         @click=${(e: MouseEvent) => {
           if (!e.metaKey) {
