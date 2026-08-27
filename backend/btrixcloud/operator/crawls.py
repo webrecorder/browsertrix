@@ -1521,10 +1521,10 @@ class CrawlOperator(BaseOperator):
                 exec_time += duration
                 max_duration = max(duration, max_duration)
 
-        if exec_time <= 0:
-            return
-
-        await self.org_ops.inc_org_time_stats(crawl.oid, exec_time, True, crawl.is_qa)
+        if exec_time > 0:
+            await self.org_ops.inc_org_time_stats(
+                crawl.oid, exec_time, True, crawl.is_qa
+            )
 
         newExecTime, newElapsedTime = await self.crawl_ops.inc_crawl_exec_time(
             crawl.db_crawl_id, crawl.is_qa, exec_time, max_duration, now

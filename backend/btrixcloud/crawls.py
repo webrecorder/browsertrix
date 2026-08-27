@@ -728,7 +728,14 @@ class CrawlOps(BaseCrawlOps):
     ) -> tuple[int, int]:
         """increment exec time"""
         # update both crawl-shared qa exec seconds and per-qa run exec seconds
-        if is_qa:
+
+        field = "_lut"
+
+        # nop if times are 0
+        if elapsed_time <= 0 and exec_time <= 0:
+            inc_update = {}
+
+        elif is_qa:
             inc_update = {
                 "qaCrawlExecSeconds": exec_time,
                 "qa.crawlExecSeconds": exec_time,
@@ -741,7 +748,6 @@ class CrawlOps(BaseCrawlOps):
                 "crawlExecSeconds": exec_time,
                 "crawlElapsedSeconds": elapsed_time,
             }
-            field = "_lut"
 
         res = await self.crawls.find_one_and_update(
             {
