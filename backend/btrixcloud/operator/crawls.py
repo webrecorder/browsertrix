@@ -1530,8 +1530,11 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, exec_time, max_duration, now
         )
 
-        status.crawlExecTime = newExecTime
-        status.elapsedCrawlTime = newElapsedTime
+        if newExecTime > status.crawlExecTime:
+            status.crawlExecTime = newExecTime
+
+        if newElapsedTime > status.elapsedCrawlTime:
+            status.elapsedCrawlTime = newElapsedTime
 
         logger.debug(
             "pod_exec_time_total_computed",
