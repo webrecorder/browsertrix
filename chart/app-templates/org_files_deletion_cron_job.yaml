@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ id }}"
+  labels:
+    role: "cron-background-job"
+    job_type: "{{ job_type }}"
+    btrix.org: "{{ oid }}"
+
+spec:
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 2
+
+  schedule: "{{ schedule }}"
+
+  jobTemplate:
+    metadata:
+      finalizers:
+        - metacontroller.io/decoratorcontroller-background-job-operator
+      labels:
+        role: "background-job"
+        job_type: "{{ job_type }}"
+        job_id: "{{ id }}"
+        btrix.org: "{{ oid }}"
+
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          priorityClassName: bg-job
+          containers:
+            - name: rclone
+              image: rclone/rclone:latest
+              env:
+              - name: RCLONE_CONFIG_TARGET_TYPE
+                value: "s3"
+
+              - name: RCLONE_CONFIG_TARGET_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ storage_secret_name }}"
+                    key: STORE_ACCESS_KEY
+
+              - name: RCLONE_CONFIG_TARGET_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ storage_secret_name }}"
+                    key: STORE_SECRET_KEY
+
+              - name: RCLONE_CONFIG_TARGET_REGION
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ storage_secret_name }}"
+                    key: STORE_REGION
+
+              - name: RCLONE_CONFIG_TARGET_PROVIDER
+                valueFrom:
+                  secretKeyRef:
+                    name: "{{ storage_secret_name }}"
+                    key: STORE_S3_PROVIDER
+
+              - name: RCLONE_CONFIG_TARGET_ENDPOINT
+                value: "{{ storage_endpoint }}"
+
+              command: ["rclone", "-vv", "purge", "target:{{ org_files_prefix }}"]
+
+              resources:
+                limits:
+                  memory: "1200Mi"
+
+                requests:
+                  memory: "500Mi"
+                  cpu: "200m"

@@ -100,6 +100,7 @@ def test_get_job_by_type_maps_all_enum_values(bg_job_ops):
             BgJobType.DELETE_ORG_FILES: {
                 "oid": oid,
                 "storage_ref": {"name": "test-storage"},
+                "is_replica": True,
             },
         }
     )

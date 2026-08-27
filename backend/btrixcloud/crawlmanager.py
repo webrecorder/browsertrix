@@ -122,8 +122,9 @@ class CrawlManager(K8sAPI):
         storage_endpoint: str,
         org_files_prefix: str,
         oid: str,
+        delay_days: int,
         existing_job_id: str | None = None,
-    ) -> str:
+    ) -> tuple[str, str | None]:
         """run job to delete files from org prefix in given storage"""
         job_type = BgJobType.DELETE_ORG_FILES
 
@@ -142,13 +143,19 @@ class CrawlManager(K8sAPI):
             "BgJobType": BgJobType,
         }
 
+        if delay_days > 0:
+            # If replica deletion delay is configured, schedule as cronjob
+            return await self.create_scheduled_deletion_job(
+                job_id, job_type, params, delay_days
+            )
+
         data = self.templates.env.get_template("delete_org_files_job.yaml").render(
             params
         )
 
         await self.create_from_yaml(data)
 
-        return job_id
+        return job_id, None
 
     async def run_delete_replica_job(
         self,
@@ -181,8 +188,8 @@ class CrawlManager(K8sAPI):
 
         if delay_days > 0:
             # If replica deletion delay is configured, schedule as cronjob
-            return await self.create_replica_deletion_scheduled_job(
-                job_id, params, delay_days
+            return await self.create_scheduled_deletion_job(
+                job_id, job_type, params, delay_days
             )
 
         data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
@@ -809,9 +816,10 @@ class CrawlManager(K8sAPI):
 
         return cron_job_id
 
-    async def create_replica_deletion_scheduled_job(
+    async def create_scheduled_deletion_job(
         self,
         job_id: str,
+        job_type: str,
         params: dict[str, object],
         delay_days: int,
     ) -> tuple[str, str | None]:
@@ -822,22 +830,29 @@ class CrawlManager(K8sAPI):
 
         params["schedule"] = schedule
 
-        logger.info(
+        if job_type == BgJobType.DELETE_REPLICA:
+            template_name = "replica_deletion_cron_job.yaml"
+        elif job_type == BgJobType.DELETE_ORG_FILES:
+            template_name = "org_files_deletion_cron_job.yaml"
+        else:
+            raise HTTPException(status_code=400, detail="invalid_job_type")
+
+        logger.debug(
             "replica_deletion_cron_schedule",
+            job_id=job_id,
+            job_type=job_type,
+            delay_days=delay_days,
             schedule=schedule,
-            unstructured_message=f"Replica deletion cron schedule: '{schedule}'",
         )
 
-        data = self.templates.env.get_template("replica_deletion_cron_job.yaml").render(
-            params
-        )
+        data = self.templates.env.get_template(template_name).render(params)
 
         await self.create_from_yaml(data, self.namespace)
 
         return job_id, schedule
 
-    async def delete_replica_deletion_scheduled_job(self, job_id: str):
-        """delete scheduled job to delay replica file in x days"""
+    async def delete_scheduled_deletion_job(self, job_id: str):
+        """delete scheduled job that temporarily existed to delay replica deletion"""
         cron_job = await self.batch_api.read_namespaced_cron_job(
             name=job_id,
             namespace=self.namespace,

@@ -3384,6 +3384,8 @@ class DeleteOrgFilesJob(BackgroundJob):
     type: Literal[BgJobType.DELETE_ORG_FILES] = BgJobType.DELETE_ORG_FILES
     oid: UUID
     storage_ref: StorageRef
+    is_replica: bool = False
+    schedule: str | None = None
 
 
 # ============================================================================
