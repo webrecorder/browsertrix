@@ -1,7 +1,7 @@
 import { msg } from "@lit/localize";
 import { html, type TemplateResult } from "lit";
 
-import { asideHeading } from "../layouts/asideHeading";
+import { dashboardHeading } from "../layouts/dashboardHeading";
 
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
 import appState from "@/utils/state";
@@ -13,7 +13,7 @@ function onboardingList(
   }[],
 ) {
   return html`<ol
-    class="grid grid-cols-[max-content_max-content_1fr] gap-x-1.5 gap-y-4 border-l"
+    class="grid grid-cols-[repeat(3,max-content)] gap-x-1.5 gap-y-4 border-l"
   >
     ${items.map((item, i) => {
       const checked = appState.onboarding?.stepsComplete?.[i];
@@ -22,7 +22,7 @@ function onboardingList(
           class="size-4 text-base text-primary"
           name=${checked ? "check-circle-fill" : `${i + 1}-circle`}
         ></sl-icon>
-        <div>${item.content}</div>
+        <span>${item.content}</span>
       `;
 
       return html`
@@ -45,7 +45,7 @@ function onboardingList(
                 </div>`
               : html`<div class="w-2 border-t"></div>`}
           ${item.tooltip
-            ? html`<btrix-popover placement="left-start" hoist>
+            ? html`<btrix-popover placement="bottom-start" hoist>
                 <div slot="content">${item.tooltip}</div>
                 ${content}
               </btrix-popover>`
@@ -59,16 +59,16 @@ function onboardingList(
 export function trialChecklist() {
   return html`
     <section>
-      ${asideHeading(msg("Trial Checklist"))}
+      ${dashboardHeading(msg("Trial Checklist"), { aside: true })}
 
-      <div class="text-xs leading-normal text-neutral-600">
-        <p class="mb-2">
-          ${msg("Optimize your trial with these recommended steps.")}
-        </p>
-      </div>
+      <p
+        class="mb-2 max-w-[30ch] text-pretty text-neutral-600 @5xl/org:text-xs @5xl/org:leading-normal"
+      >
+        ${msg("Optimize your trial with these recommended steps.")}
+      </p>
 
       <div
-        class="mb-1 mt-4 cursor-default text-xs font-medium text-neutral-600"
+        class="mb-1 mt-4 cursor-default font-medium text-neutral-600 @5xl/org:text-xs @5xl/org:leading-normal"
       >
         ${onboardingList(
           onboardingSteps.map(({ label, description }) => ({
