@@ -112,9 +112,9 @@ function makeTheme() {
       14: "repeat(14, minmax(0, 1fr))",
     },
     screens: {
-      desktop: "82.5rem", // 14 4.5rem columns with 1.5rem gutter
-      // Override default of:
-      // => @media (min-width: 1024px) { ... }
+      desktop: "var(--btrix-page-width)",
+      // This should match --btrix-page-width + --btrix-user-guide-width
+      "3xl": "1816px",
     },
     transitionDuration: {
       "x-slow": "var(--sl-transition-x-slow)",
