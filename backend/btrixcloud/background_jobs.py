@@ -96,7 +96,10 @@ class BackgroundJobOps:
         self.profile_ops = profile_ops
 
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
-        """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
+        """split the endpoint_url into the origin and return rest of endpoint as bucket path
+
+        Ensure bucket path always ends in a trailing slash for consistency.
+        """
         parts = urlsplit(endpoint_url)
         return os.path.join(f"{parts.scheme}://{parts.netloc}", ""), os.path.join(
             parts.path[1:], ""
@@ -226,9 +229,7 @@ class BackgroundJobOps:
             s3_storage = self.storage_ops.get_default_s3_storage(storage_ref)
             storage_endpoint, bucket_suffix = self.strip_bucket(s3_storage.endpoint_url)
 
-            bucket_with_trailing_slash = os.path.join(bucket_suffix, "")
-
-            org_files_prefix = f"{bucket_with_trailing_slash}{org.id}/"
+            org_files_prefix = f"{bucket_suffix}{org.id}/"
             job_logger.bind(org_files_prefix=org_files_prefix)
 
             job_id = await self.crawl_manager.run_delete_org_files_job(
