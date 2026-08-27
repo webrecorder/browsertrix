@@ -1,11 +1,20 @@
 # Remote: Self-Hosted and Cloud
 
-For remote and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain and (strongly recommended, but not required) second domain for signing web archives. 
+<!-- markdownlint-disable MD033 -->
+
+For remote and hosted deployments (both on a single machine or in the cloud), the only requirement is to have a designed domain and (strongly recommended, but not required) second domain for signing web archives.
 
 We are also experimenting with [Ansible playbooks](ansible/digitalocean.md) for cloud deployment setups.
 
 The production deployments also allow using an external mongodb server, and/or external S3-compatible storage instead of the bundled minio.
 
+<div class="btrix-embed-hidden card card-info card--button-right grid" markdown>
+
+**Need professional support?**<br/>Dedicated professional support is available with a custom plan or add-on.
+
+[View Plans](https://webrecorder.net/browsertrix/#get-started){ .md-button .md-button--primary .md-button--right target="_blank" }
+  
+</div>
 
 ## Single Machine Deployment with MicroK8S
 
@@ -15,11 +24,11 @@ For a single-machine remote deployment, we recommend using [MicroK8s](https://mi
 
 2. Copy `cp ./chart/examples/microk8s-hosted.yaml ./chart/my-config.yaml` to make local changes.
 
-2. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./chart/my-config.yaml` to your host and domain
+3. Set the `ingress.host`, `ingress.cert_email` and `signing.host` fields in `./chart/my-config.yaml` to your host and domain
 
-3. Set the super-admin username and password, and mongodb username and password in `./chart/my-config.yaml`
+4. Set the super-admin username and password, and mongodb username and password in `./chart/my-config.yaml`
 
-4. Run with:
+5. Run with:
 
     ```shell
     helm upgrade --install -f ./chart/values.yaml -f ./chart/my-config.yaml \
@@ -40,7 +49,7 @@ Another option for a single-machine remote deployment is [k3s](https://k3s.io)
       --namespace ingress-nginx --create-namespace
     ```
 
-3. Install `cert-manager`. We recommend installing `cert-manager` through Jetpack, like so: 
+3. Install `cert-manager`. We recommend installing `cert-manager` through Jetpack, like so:
 
     ```zsh
     helm repo add jetstack https://charts.jetstack.io
@@ -85,13 +94,11 @@ storages:
 
 Note that this setup is not limited to Amazon S3, but should work with any S3-compatible storage service.
 
-
 ### Using Custom MongoDB
 
 If you would like to use an externally hosted MongoDB, you can add the following config to point to a custom MongoDB instance.
 
 The `db_url` should follow the [MongoDB Connection String Format](https://www.mongodb.com/docs/manual/reference/connection-string/) which should include the username and password of the remote instance.
-
 
 ```yaml
 mongo_local: false
@@ -109,7 +116,7 @@ To simplify this process, we are working on Ansible playbooks for setting up Bro
 
 ### Ansible Deployment
 
-[Ansible](https://ansible.com) makes the initial setup and configuration of your Browsertrix instance automated and repeatable. 
+[Ansible](https://ansible.com) makes the initial setup and configuration of your Browsertrix instance automated and repeatable.
 
 To use, you will need to [install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#control-node-requirements) on your control computer and then you can use these to deploy to Browsertrix on remote and cloud environments.
 
