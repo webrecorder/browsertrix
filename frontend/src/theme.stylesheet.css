@@ -32,10 +32,22 @@
     /* Default border */
     --btrix-border: 1px solid var(--sl-panel-border-color);
 
+    /* Layout */
+    --btrix-page-width: 82.5rem; /* 14 4.5rem columns with 1.5rem gutter (1320px) */
+    --btrix-user-guide-width: 31rem;
+    --btrix-full-without-user-guide-width: calc(
+      100vw - var(--btrix-user-guide-width)
+    );
+    --btrix-3xl-with-user-guide-margin: calc(
+      calc(
+          var(--btrix-full-without-user-guide-width) - var(--btrix-page-width)
+        ) /
+        2
+    );
+
     /*
      * Shoelace Theme Tokens
-     */
-    /* Primary */
+     */ /* Primary */
     --sl-color-primary-50: theme(colors.primary.50);
     --sl-color-primary-100: theme(colors.primary.100);
     --sl-color-primary-200: theme(colors.primary.200);
