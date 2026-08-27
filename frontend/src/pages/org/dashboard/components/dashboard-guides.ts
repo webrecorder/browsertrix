@@ -7,13 +7,15 @@ import { when } from "lit/directives/when.js";
 import { dashboardHeading } from "../layouts/dashboardHeading";
 import { docsFeedback } from "../templates/docsFeedback";
 
+import "./dashboard-guide-card";
+
 import { BtrixElement } from "@/classes/BtrixElement";
 import { docsEmail } from "@/constants/docs-email";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
+import { AnalyticsTrackEvent } from "@/trackEvents";
+import { track, type AnalyticsTrackProps } from "@/utils/analytics";
 import { tw } from "@/utils/tailwind";
-
-import "./dashboard-guide-card";
 
 const cardClasses = tw`col-span-full block h-full overflow-hidden @container/card @4xl/org:col-span-1 @4xl/org:rounded-lg @4xl/org:border`;
 
@@ -142,12 +144,21 @@ export class DashboardGuides extends BtrixElement {
   }
 
   private renderCrawlingGuides() {
+    const trackProps = {
+      trialing: this.appState.onboarding?.trialing,
+      has_usage: this.appState.onboarding
+        ? !this.appState.onboarding.noUsage
+        : undefined,
+    } satisfies AnalyticsTrackProps;
+
     return html`
       <div class="-mx-3 grid grid-cols-3 items-center gap-x-3 @4xl/org:mx-0">
         <btrix-dashboard-guide-card
           class="${cardClasses} border-b"
           icon="window"
           path="getting-started/#__tabbed_1_1"
+          @click=${() =>
+            track(AnalyticsTrackEvent.OpenedCrawlingOnePageGuide, trackProps)}
         >
           <span slot="title">${msg("One Page")}</span>
           ${msg("Archive a single page on a website")}
@@ -156,6 +167,11 @@ export class DashboardGuides extends BtrixElement {
           class="${cardClasses} border-b"
           icon="person-workspace"
           path="getting-started/#__tabbed_1_2"
+          @click=${() =>
+            track(
+              AnalyticsTrackEvent.OpenedCrawlingSocialMediaGuide,
+              trackProps,
+            )}
         >
           <span slot="title">${msg("Social Media Page")}</span>
           ${msg("Archive a social media post or profile")}
@@ -164,6 +180,8 @@ export class DashboardGuides extends BtrixElement {
           class="${cardClasses}"
           icon="pc-display-horizontal"
           path="getting-started/#__tabbed_1_3"
+          @click=${() =>
+            track(AnalyticsTrackEvent.OpenedCrawlingWebsiteGuide, trackProps)}
         >
           <span slot="title">${msg("Entire Website")}</span>
           ${msg("Archive every page on a website")}

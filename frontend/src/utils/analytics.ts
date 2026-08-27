@@ -11,6 +11,7 @@ export type AnalyticsTrackProps = {
   org_slug?: string | null;
   logged_in?: boolean;
   trialing?: boolean;
+  has_usage?: boolean;
   collection_slug?: string;
   section?: string;
 };
