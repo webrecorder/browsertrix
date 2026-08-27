@@ -13,6 +13,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
 import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
 import { docsFeedback } from "./dashboard/templates/docsFeedback";
 import { resourcesList } from "./dashboard/templates/resourcesList";
@@ -22,6 +23,7 @@ import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { docsEmail } from "@/constants/docs-email";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import {
   OrgStatusBanner,
@@ -185,7 +187,6 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderContent() {
-    const contactEmail = "docs-feedback@webrecorder.net";
     const trialing = this.appState.onboarding?.trialing;
     const noUsage = this.appState.onboarding?.noUsage;
     const content: TemplateResult[] = [];
@@ -198,17 +199,15 @@ export class Dashboard extends BtrixElement {
 
       if (noUsage) {
         primary.push(
-          html`<header class="mb-2 mt-10">
-              <h2 class="text-base font-medium leading-6">
-                ${msg("Explore more guides")}
-              </h2>
-            </header>
+          html`${dashboardHeading(msg("Explore more guides"), {
+              classes: tw`mt-10`,
+            })}
             <btrix-dashboard-guides
               class="mb-10 block"
             ></btrix-dashboard-guides>`,
         );
 
-        aside.push(html`${resourcesList()} ${docsFeedback(contactEmail)}`);
+        aside.push(html`${resourcesList()} ${docsFeedback(docsEmail)}`);
       }
 
       content.push(primaryWithAside(html`${primary}`, html`${aside}`));
@@ -219,19 +218,26 @@ export class Dashboard extends BtrixElement {
     }
 
     if (!trialing) {
-      content.push(
-        primaryWithAside(
-          html`<header class="mb-2 mt-7">
-              <h2 class="text-base font-medium leading-6">
-                ${msg("Explore user guides")}
-              </h2>
-            </header>
-            <btrix-dashboard-guides
-              class="mb-10 block"
-            ></btrix-dashboard-guides>`,
-          html`${resourcesList()} ${docsFeedback(contactEmail)}`,
-        ),
-      );
+      if (noUsage) {
+        content.push(
+          primaryWithAside(
+            html`${dashboardHeading(msg("Welcome to Browsertrix"))}
+              <btrix-dashboard-guides
+                class="mb-10 block"
+              ></btrix-dashboard-guides>`,
+            html`${resourcesList()} ${docsFeedback(docsEmail)}`,
+          ),
+        );
+      } else {
+        content.push(html`
+          ${pageHeading({ content: msg("Guides"), classNames: tw`mt-20` })}
+          <sl-divider class="mb-3 mt-2"></sl-divider>
+          <btrix-dashboard-guides
+            class="mb-10 block"
+            showDocsEmail
+          ></btrix-dashboard-guides>
+        `);
+      }
     }
 
     return html`${content}`;

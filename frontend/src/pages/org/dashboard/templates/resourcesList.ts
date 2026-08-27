@@ -30,7 +30,7 @@ function externalLink({
 }
 
 export function resourcesList() {
-  return html`<section>
+  return html`<section class="@5xl/org:first:mt-2">
     ${dashboardHeading(msg("Resources"), { aside: true })}
 
     <ul class="${tw`[&>li:not(:last-of-type)]:mb-2.5`} @5xl:text-xs">
