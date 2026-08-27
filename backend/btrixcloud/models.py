@@ -945,6 +945,7 @@ class CoreCrawlable(BaseModel):
     state: str
 
     crawlExecSeconds: int = 0
+    crawlElapsedSeconds: int = 0
 
     image: str | None = None
 
@@ -1036,6 +1037,8 @@ class CrawlOut(BaseMongoModel):
 
     crawlExecSeconds: int = 0
     qaCrawlExecSeconds: int = 0
+    crawlElapsedSeconds: int = 0
+    qaCrawlElapsedSeconds: int = 0
 
     # automated crawl fields
     config: RawCrawlConfig | None = None
@@ -1181,6 +1184,7 @@ class QARunOut(BaseModel):
     state: str
 
     crawlExecSeconds: int = 0
+    crawlElapsedSeconds: int = 0
 
     stats: CrawlStats = CrawlStats()
 
