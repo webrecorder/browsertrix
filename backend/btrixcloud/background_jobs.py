@@ -750,6 +750,8 @@ class BackgroundJobOps:
 
         # If org has been successfully deleted in job, delete k8s resources
         # associated with this org now that no jobs are running
+        # TODO: Modify to make sure replica and org file deletion jobs started
+        # and/or scheduled by org deletion aren't removed before they complete!
         if job_type == BgJobType.DELETE_ORG and oid and success:
             await self.crawl_manager.delete_all_k8s_resources_for_org(str(oid))
 
