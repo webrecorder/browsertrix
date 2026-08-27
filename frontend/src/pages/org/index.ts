@@ -376,7 +376,7 @@ export class Org extends BtrixElement {
         ${this.renderOrgNavBar()}
         <main
           class=${clsx(
-            tw`box-border flex w-full flex-1 flex-col p-3 lg:px-10 lg:pb-10`,
+            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-10 lg:pb-10`,
             !noMaxWidth && [
               this.appState.userGuideOpen
                 ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
