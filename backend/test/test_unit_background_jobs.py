@@ -14,6 +14,7 @@ from btrixcloud.models import (
     CleanupSeedFilesJob,
     CopyBucketJob,
     CreateReplicaJob,
+    DeleteOrgFilesJob,
     DeleteOrgJob,
     DeleteReplicaJob,
     OptimizePagesJob,
@@ -38,6 +39,7 @@ JOB_TYPE_TO_CLASS = {
     BgJobType.RETRY_STUCK_UPLOADS: RetryStuckUploadsJob,
     BgJobType.REPLICATE_FILES_CRON: ReplicateFilesCronJob,
     BgJobType.COPY_BUCKET: CopyBucketJob,
+    BgJobType.DELETE_ORG_FILES: DeleteOrgFilesJob,
 }
 
 _TYPE_EXTRAS = {
@@ -94,6 +96,10 @@ def test_get_job_by_type_maps_all_enum_values(bg_job_ops):
             BgJobType.POSTPROCESS_UPLOAD: {
                 "oid": oid,
                 "crawl_id": crawl_id,
+            },
+            BgJobType.DELETE_ORG_FILES: {
+                "oid": oid,
+                "storage_ref": {"name": "test-storage"},
             },
         }
     )
