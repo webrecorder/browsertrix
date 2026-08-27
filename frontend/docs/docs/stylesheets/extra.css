@@ -728,6 +728,7 @@ h5 {
 
 /* .btrix-button is used to indicate a button in the application and is not interactive */
 
+.btrix-button,
 .md-button.btrix-button {
   vertical-align: baseline;
   border-radius: 0.25rem;
@@ -745,6 +746,10 @@ h5 {
   background-color: var(--sl-color-success-600);
   border-color: var(--sl-color-success-700);
   color: white;
+}
+
+.btrix-button:not(.md-button) {
+  border: 1px solid var(--wr-border-color);
 }
 
 .md-typeset [type="checkbox"]:checked + .task-list-indicator::before {
