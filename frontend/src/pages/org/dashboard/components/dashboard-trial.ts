@@ -2,9 +2,10 @@ import { localized, msg } from "@lit/localize";
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { dashboardHeading } from "../layouts/dashboardHeading";
-
 import "./dashboard-guide-card";
+
+import { dashboardHeading } from "../layouts/dashboardHeading";
+import { dashboardHeadingFor } from "../strings/dashboardHeading";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { AnalyticsTrackEvent } from "@/trackEvents";
@@ -19,7 +20,7 @@ export class DashboardTrial extends BtrixElement {
       <section>${this.renderIntro()}</section>
 
       <section>
-        ${dashboardHeading(msg("What would you like to archive?"))}
+        ${dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)}
         ${this.renderCrawlingGuides()}
       </section>
     `;
