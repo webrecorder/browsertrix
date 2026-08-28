@@ -188,61 +188,59 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderContent() {
+    const subscription = this.org?.subscription;
     const trialing = this.appState.onboarding?.trialing;
     const noUsage = this.appState.onboarding?.noUsage;
+    const hasUsage = !noUsage;
     const content: TemplateResult[] = [];
 
-    if (trialing) {
-      const primary: TemplateResult[] = [
-        html`<btrix-dashboard-trial></btrix-dashboard-trial>`,
-      ];
-      const aside: TemplateResult[] = [trialChecklist()];
-
-      if (noUsage) {
-        primary.push(
-          html`${dashboardHeading(dashboardHeadingFor.exploreMoreGuides, {
+    if (noUsage && trialing) {
+      content.push(
+        primaryWithAside(
+          html`<btrix-dashboard-trial></btrix-dashboard-trial>
+            ${dashboardHeading(dashboardHeadingFor.exploreMoreGuides, {
               classes: tw`mt-10`,
             })}
             <btrix-dashboard-guides
               class="mb-10 block"
             ></btrix-dashboard-guides>`,
-        );
-
-        aside.push(html`${resourcesList()} ${docsFeedback(docsEmail)}`);
-      }
-
-      content.push(primaryWithAside(html`${primary}`, html`${aside}`));
-
-      if (!noUsage) {
-        content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
-      }
+          html`${trialChecklist()} ${resourcesList()} ${docsFeedback(docsEmail)}`,
+        ),
+      );
     }
 
-    if (!noUsage) {
+    if (noUsage && !trialing) {
+      content.push(
+        primaryWithAside(
+          html`${dashboardHeading(msg("Welcome to Browsertrix"))}
+            <btrix-dashboard-guides
+              class="mb-10 block"
+            ></btrix-dashboard-guides>`,
+          html`${resourcesList()} ${docsFeedback(docsEmail)}`,
+        ),
+      );
+    }
+
+    if (hasUsage && trialing) {
+      content.push(
+        primaryWithAside(
+          html`<btrix-dashboard-trial></btrix-dashboard-trial>`,
+          html`${trialChecklist()}`,
+        ),
+      );
+      content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
+    }
+
+    if (hasUsage) {
       content.push(this.renderUsage());
-    }
-
-    if (!trialing) {
-      if (noUsage) {
-        content.push(
-          primaryWithAside(
-            html`${dashboardHeading(msg("Welcome to Browsertrix"))}
-              <btrix-dashboard-guides
-                class="mb-10 block"
-              ></btrix-dashboard-guides>`,
-            html`${resourcesList()} ${docsFeedback(docsEmail)}`,
-          ),
-        );
-      } else {
-        content.push(html`
-          ${pageHeading({ content: msg("Guides"), classNames: tw`mt-20` })}
-          <sl-divider class="mb-3 mt-2"></sl-divider>
-          <btrix-dashboard-guides
-            class="mb-10 block"
-            showDocsEmail
-          ></btrix-dashboard-guides>
-        `);
-      }
+      content.push(html`
+        ${pageHeading({ content: msg("Guides"), classNames: tw`mt-20` })}
+        <sl-divider class="mb-3 mt-2"></sl-divider>
+        <btrix-dashboard-guides
+          class="mb-10 block"
+          showDocsEmail
+        ></btrix-dashboard-guides>
+      `);
     }
 
     return html`${content}`;
@@ -292,15 +290,19 @@ export class Dashboard extends BtrixElement {
   private renderStats() {
     return html`<header class="mb-3 flex items-center justify-between gap-3">
         ${pageHeading({ content: msg("Usage Stats") })}
-        <sl-button
-          size="small"
-          href="${this.navigate
-            .orgBasePath}/${OrgTab.Settings}/${"billing" satisfies SettingsTab}"
-          @click=${this.navigate.link}
-        >
-          <sl-icon slot="prefix" name="gear"></sl-icon>
-          ${msg("Manage Plan")}
-        </sl-button>
+        ${when(
+          this.org?.subscription,
+          () =>
+            html`<sl-button
+              size="small"
+              href="${this.navigate
+                .orgBasePath}/${OrgTab.Settings}/${"billing" satisfies SettingsTab}"
+              @click=${this.navigate.link}
+            >
+              <sl-icon slot="prefix" name="gear"></sl-icon>
+              ${msg("Manage Plan")}
+            </sl-button>`,
+        )}
       </header>
       <div class="flex flex-col gap-6 md:flex-row">
         ${this.renderCard(

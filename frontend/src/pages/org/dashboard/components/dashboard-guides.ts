@@ -31,26 +31,29 @@ export class DashboardGuides extends BtrixElement {
 
   render() {
     const trialing = this.appState.onboarding?.trialing;
-    const noUsage = this.appState.onboarding?.noUsage;
+    const hasUsage = !this.appState.onboarding?.noUsage;
 
     return html`<section class="mb-7">
-        ${noUsage ? this.renderGettingStarted() : this.renderGeneralGuides()}
+        ${hasUsage ? this.renderGeneralGuides() : this.renderGettingStarted()}
       </section>
 
       ${when(
         !trialing,
         () => html`
           <section class="mb-10">
-            ${noUsage
-              ? dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)
-              : dashboardHeading(dashboardHeadingFor.crawlingGuides)}
+            ${hasUsage
+              ? dashboardHeading(dashboardHeadingFor.crawlingGuides)
+              : dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)}
             ${this.renderCrawlingGuides()}
           </section>
-
-          ${dashboardHeading(dashboardHeadingFor.exploreMoreGuides)}
-          <sl-divider class="mb-5 mt-2"></sl-divider>
-          ${this.renderSettingsGuides()}
         `,
+      )}
+      ${when(
+        !trialing || hasUsage,
+        () =>
+          html`${dashboardHeading(dashboardHeadingFor.exploreMoreGuides)}
+            <sl-divider class="mb-5 mt-2"></sl-divider>
+            ${this.renderSettingsGuides()}`,
       )}`;
   }
 
@@ -191,8 +194,8 @@ export class DashboardGuides extends BtrixElement {
   }
 
   private renderSettingsGuides() {
-    const sectionClasses = tw`col-span-full flex flex-col @4xl/org:col-span-1`;
-    const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm`;
+    const sectionClasses = tw`col-span-full flex flex-col @4xl/org:col-span-1 @5xl/org:text-xs`;
+    const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm @5xl/org:mb-2`;
     const listClasses = tw`flex-1 [&>li:not(:last-of-type)]:mb-3.5`;
 
     return html`<div
@@ -287,7 +290,7 @@ export class DashboardGuides extends BtrixElement {
           </li>
         </ul>
       </section>
-      <section class="col-span-full flex flex-col @4xl/org:col-span-1">
+      <section class="${sectionClasses}">
         <h3 class="${headingClasses}">${msg("Account Settings")}</h3>
         <ul class="${listClasses}">
           <li>
