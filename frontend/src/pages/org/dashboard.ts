@@ -212,6 +212,10 @@ export class Dashboard extends BtrixElement {
       }
 
       content.push(primaryWithAside(html`${primary}`, html`${aside}`));
+
+      if (!noUsage) {
+        content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
+      }
     }
 
     if (!noUsage) {
