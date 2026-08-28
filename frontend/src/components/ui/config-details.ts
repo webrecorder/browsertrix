@@ -26,6 +26,7 @@ import {
 import { labelFor, titlecaseLabelFor } from "@/strings/crawl-workflows/labels";
 import scopeTypeLabel from "@/strings/crawl-workflows/scopeType";
 import sectionStrings from "@/strings/crawl-workflows/section";
+import { stringFor } from "@/strings/ui";
 import {
   NewWorkflowOnlyScopeType,
   WorkflowScopeType,
@@ -276,9 +277,7 @@ export class ConfigDetails extends BtrixElement {
               `,
               () =>
                 crawlConfig?.profileName ||
-                html`<span class="text-neutral-400"
-                  >${msg("No custom profile")}</span
-                >`,
+                html`<span class="text-neutral-400">${stringFor.none}</span>`,
             ),
           )}
           ${this.renderSetting(

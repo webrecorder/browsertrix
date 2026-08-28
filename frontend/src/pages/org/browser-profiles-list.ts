@@ -332,6 +332,7 @@ export class BrowserProfilesList extends BtrixElement {
       }}
       ?open=${this.openDialog === "duplicate"}
       duplicating
+      navigateOnSave
       @sl-after-hide=${() => {
         this.selectedProfile = undefined;
         this.openDialog = undefined;

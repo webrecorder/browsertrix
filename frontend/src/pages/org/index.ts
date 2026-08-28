@@ -526,6 +526,7 @@ export class Org extends BtrixElement {
                 org.crawlingDefaults?.crawlerChannel || undefined,
               )}
               ?open=${this.openDialogName === "browser-profile"}
+              navigateOnSave
               @sl-hide=${() => (this.openDialogName = undefined)}
             >
             </btrix-new-browser-profile-dialog>`

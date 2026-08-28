@@ -50,6 +50,9 @@ export class ProfileBrowserDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: Boolean })
+  navigateOnSave = false;
+
   @state()
   private browserStatus = BrowserStatus.Initial;
 
@@ -91,6 +94,17 @@ export class ProfileBrowserDialog extends BtrixElement {
         this.browserStatus = BrowserStatus.Initial;
         this.#savedBrowserId = undefined;
         this.browserIdTask.abort();
+
+        if (this.saveProfileTask.status === TaskStatus.PENDING) {
+          this.saveProfileTask.abort();
+
+          this.notify.toast({
+            message: msg("Profile was not saved."),
+            variant: "warning",
+            icon: "exclamation-circle",
+            id: "browser-profile-save-status",
+          });
+        }
       }
     }
   }
@@ -110,14 +124,16 @@ export class ProfileBrowserDialog extends BtrixElement {
     task: async ([browserId, config], { signal }) => {
       if (!browserId || !config) return;
 
+      const name =
+        config.name ||
+        this.profile?.name ||
+        new URL(config.url).origin.slice(0, 50);
+
       try {
         const data = await this.saveProfile(
           {
             browserId,
-            name:
-              config.name ||
-              this.profile?.name ||
-              new URL(config.url).origin.slice(0, 50),
+            name,
           },
           signal,
         );
@@ -125,7 +141,15 @@ export class ProfileBrowserDialog extends BtrixElement {
         this.#savedBrowserId = browserId;
 
         this.dispatchEvent(
-          new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated"),
+          new CustomEvent<ProfileUpdatedEvent["detail"]>("btrix-updated", {
+            detail: {
+              id: data.id,
+              name,
+              proxyId: this.profile?.proxyId ?? this.config?.proxyId,
+            },
+            composed: true,
+            bubbles: true,
+          }),
         );
 
         return data;
@@ -372,19 +396,22 @@ export class ProfileBrowserDialog extends BtrixElement {
 
       if (this.saveProfileTask.value?.id) {
         void dialog?.hide();
-        this.navigate.to(
-          `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
-        );
-      } else {
-        await dialog?.hide();
-      }
 
-      this.notify.toast({
-        message: msg("Successfully saved browser profile."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "browser-profile-save-status",
-      });
+        if (this.navigateOnSave) {
+          this.navigate.to(
+            `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
+          );
+        } else {
+          await dialog?.hide();
+        }
+
+        this.notify.toast({
+          message: msg("Successfully saved browser profile."),
+          variant: "success",
+          icon: "check2-circle",
+          id: "browser-profile-save-status",
+        });
+      }
     } catch (err) {
       if (typeof err === "string") {
         this.notify.toast({

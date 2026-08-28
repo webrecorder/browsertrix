@@ -1,6 +1,5 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import type {
   SlBlurEvent,
   SlChangeEvent,
@@ -110,7 +109,6 @@ import {
   Behavior,
   CrawlerChannelImage,
   ScopeType,
-  type Profile,
   type Seed,
   type WorkflowSettings,
 } from "@/types/crawler";
@@ -445,15 +443,6 @@ export class WorkflowEditor extends BtrixElement {
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
   private readonly cssParser = createParser();
-
-  private readonly profileTask = new Task(this, {
-    task: async ([formState], { signal }) => {
-      if (!formState.browserProfile) return;
-
-      return this.getProfile(formState.browserProfile.id, signal);
-    },
-    args: () => [this.formState] as const,
-  });
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -2226,6 +2215,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
           .profileName=${this.formState.browserProfile?.name}
+          defaultProxyId=${ifDefined(this.formState.proxyId ?? undefined)}
+          defaultCrawlerChannel=${ifDefined(this.formState.crawlerChannel)}
           .suggestOrigins=${guard(
             [this.formState.primarySeedUrl, this.formState.urlList],
             priorityOrigins,
@@ -2242,6 +2233,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   : this.formState.saveStorage,
             });
           }}
+          allowNew
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(html`
@@ -2295,14 +2287,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 )}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
-                .profileProxyId=${profileProxyId}
+                .profileProxyId=${this.formState.browserProfile?.proxyId}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
               >
                 ${when(
-                  profileProxyId,
+                  this.formState.browserProfile?.proxyId,
                   () => html`
                     <span
                       slot="suffix"
@@ -3986,15 +3978,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
-  }
-
-  private async getProfile(profileId: string, signal: AbortSignal) {
-    const data = await this.api.fetch<Profile>(
-      `/orgs/${this.orgId}/profiles/${profileId}`,
-      { signal },
-    );
-
-    return data;
   }
 
   private async createCollection(
