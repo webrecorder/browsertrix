@@ -15,6 +15,7 @@ import queryString from "query-string";
 
 import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
 import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
+import { dashboardHeadingFor } from "./dashboard/strings/dashboardHeading";
 import { docsFeedback } from "./dashboard/templates/docsFeedback";
 import { resourcesList } from "./dashboard/templates/resourcesList";
 import { trialChecklist } from "./dashboard/templates/trialChecklist";
@@ -199,7 +200,7 @@ export class Dashboard extends BtrixElement {
 
       if (noUsage) {
         primary.push(
-          html`${dashboardHeading(msg("Explore more guides"), {
+          html`${dashboardHeading(dashboardHeadingFor.exploreMoreGuides, {
               classes: tw`mt-10`,
             })}
             <btrix-dashboard-guides
