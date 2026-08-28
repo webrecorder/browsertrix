@@ -5,6 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { dashboardHeading } from "../layouts/dashboardHeading";
+import { dashboardHeadingFor } from "../strings/dashboardHeading";
 import { docsFeedback } from "../templates/docsFeedback";
 
 import "./dashboard-guide-card";
@@ -41,17 +42,16 @@ export class DashboardGuides extends BtrixElement {
         () => html`
           <section class="mb-10">
             ${noUsage
-              ? dashboardHeading(msg("What would you like to archive?"))
-              : dashboardHeading(msg("Crawling Guides"))}
+              ? dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)
+              : dashboardHeading(dashboardHeadingFor.crawlingGuides)}
             ${this.renderCrawlingGuides()}
           </section>
 
-          ${dashboardHeading(msg("Explore More Guides"))}
+          ${dashboardHeading(dashboardHeadingFor.exploreMoreGuides)}
           <sl-divider class="mb-5 mt-2"></sl-divider>
+          ${this.renderSettingsGuides()}
         `,
-      )}
-
-      <div>${this.renderSettingsGuides()}</div>`;
+      )}`;
   }
 
   private renderGettingStarted() {
