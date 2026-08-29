@@ -574,7 +574,7 @@ ingress_class: nginx
 # optionally enable signer
 signer:
   enabled: false
-  image: webrecorder/authsign:0.6.0
+  image: webrecorder/authsign:0.6.0b2
   # host: <set to signer domain>
   # cert_email: "test@example.com
   # image_pull_policy: "IfNotPresent"
