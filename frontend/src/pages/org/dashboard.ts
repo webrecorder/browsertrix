@@ -188,7 +188,6 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderContent() {
-    const subscription = this.org?.subscription;
     const trialing = this.appState.onboarding?.trialing;
     const noUsage = this.appState.onboarding?.noUsage;
     const hasUsage = !noUsage;
