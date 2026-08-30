@@ -40,7 +40,7 @@ A link (or “hyperlink”) is a reference that connects web pages or data items
 
 ## URL
 
-A URL is the text entered into an Internet browser’s address bar to access a document, such as a web page. A URL can also be referred to as a web address, or [a link](#link) when used in the context of a URL that leads to a connected webpage.
+A URL is the text entered into an Internet browser’s address bar to access a document, such as a web page. A URL can also be referred to as a web address, or a “link” when used in the context of a URL that leads to a connected webpage.
 
 ## Browser
 
