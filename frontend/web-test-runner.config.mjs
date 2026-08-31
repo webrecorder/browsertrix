@@ -73,7 +73,6 @@ export default {
         "node_modules/slugify/**/*",
         "node_modules/parse-ms/**/*",
         "node_modules/regex-colorize/**/*",
-        "node_modules/@floating-ui/**/*",
       ],
     }),
     importMapsPlugin({
@@ -81,6 +80,10 @@ export default {
         importMap: {
           imports: {
             ...emptyImports,
+            // Prevents component dependencies from impacting page tests
+            "./src/components": fileURLToPath(
+              new URL("./src/__mocks__/_empty.js", import.meta.url),
+            ),
             "./src/shoelace": fileURLToPath(
               new URL("./src/__mocks__/shoelace.js", import.meta.url),
             ),
