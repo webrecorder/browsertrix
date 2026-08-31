@@ -16,7 +16,26 @@ You can browse and search all crawled and uploaded items from the **Archived Ite
 
 ## Uploading Web Archives
 
-To import an archived item, use the _Upload WACZ_ button on the **Archived Items** page. Metadata like name, tags, and collection can be assigned during import. Only archived items in the WACZ file format are accepted.
+To import an archived item, use the _Upload WACZ_ button on the **Archived Items** page. Metadata like name, tags, and collection can be assigned during import.
+
+Currently, only archived items in the [WACZ file](concepts.md#wacz-file){ data-preview } format are accepted.
+
+??? Tip "Tip: Convert a WARC file to WACZ"
+    Some archiving systems, like Archive-It, use the WARC file format to store your archived data. If you are comfortable with the command line interface, you can use the Python WACZ command line utility to convert your downloaded WARC files to WACZ.
+
+    Use [pip](https://pypi.org/project/pip/) to install the module and a command line utility:
+    ```sh
+    pip install wacz
+    ```
+
+    Create a new WACZ file from the WARC file:
+    ```sh
+    wacz create -o myfile.wacz myfile.warc
+    ```
+
+    The resulting `myfile.wacz` can now be uploaded to Browsertrix.
+
+    See <https://github.com/webrecorder/py-wacz> for full documentation.
 
 ## Status
 
