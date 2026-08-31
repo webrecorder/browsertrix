@@ -1,5 +1,6 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -194,7 +195,12 @@ export class DashboardGuides extends BtrixElement {
   }
 
   private renderSettingsGuides() {
-    const sectionClasses = tw`col-span-full flex flex-col @4xl/org:col-span-1 @5xl/org:text-xs`;
+    const sectionClasses = clsx(
+      tw`col-span-full flex flex-col @5xl/org:text-xs`,
+      this.showDocsEmail
+        ? tw`@2xl/org:col-span-2 @5xl/org:col-span-1`
+        : tw`@2xl/org:col-span-1`,
+    );
     const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm @5xl/org:mb-2`;
     const listClasses = tw`flex-1 [&>li:not(:last-of-type)]:mb-3.5`;
 
