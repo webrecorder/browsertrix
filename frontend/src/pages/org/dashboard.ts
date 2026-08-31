@@ -487,8 +487,8 @@ export class Dashboard extends BtrixElement {
               ${this.renderNoPublicCollections()}
               <span slot="empty-text"
                 >${this.collectionsView === CollectionGridView.Public
-                  ? msg("No public collections yet.")
-                  : msg("No collections yet.")}</span
+                  ? msg("Your org doesn’t have any public collections.")
+                  : msg("Your org doesn’t have any collections yet.")}</span
               >
               ${this.collections.value &&
               this.collections.value.total > this.collections.value.items.length
