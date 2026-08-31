@@ -831,9 +831,9 @@ class CrawlManager(K8sAPI):
         params["schedule"] = schedule
 
         if job_type == BgJobType.DELETE_REPLICA:
-            template_name = "replica_deletion_cron_job.yaml"
+            template_name = "delete_replica_cron_job.yaml"
         elif job_type == BgJobType.DELETE_ORG_FILES:
-            template_name = "org_files_deletion_cron_job.yaml"
+            template_name = "delete_org_files_cron_job.yaml"
         else:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
