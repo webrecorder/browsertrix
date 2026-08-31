@@ -184,6 +184,17 @@ async def test_postprocess_upload_job_other_create_failure_returns_none(bg_job_o
             "https://s3provider.example.com/",
             "btrix-replica-bucket/",
         ),
+        # More complicated paths
+        (
+            "https://s3provider.example.com/more/complex/path",
+            "https://s3provider.example.com/",
+            "more/complex/path/",
+        ),
+        (
+            "https://s3provider.example.com/more/complex/path/",
+            "https://s3provider.example.com/",
+            "more/complex/path/",
+        ),
     ],
 )
 def test_strip_bucket_consistent_trailing_slashes(

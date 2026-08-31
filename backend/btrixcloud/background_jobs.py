@@ -95,7 +95,9 @@ class BackgroundJobOps:
     def strip_bucket(self, endpoint_url: str) -> tuple[str, str]:
         """split the endpoint_url into the origin and return rest of endpoint as bucket path"""
         parts = urlsplit(endpoint_url)
-        return parts.scheme + "://" + parts.netloc + "/", parts.path[1:]
+        return os.path.join(f"{parts.scheme}://{parts.netloc}", ""), os.path.join(
+            parts.path[1:], ""
+        )
 
     async def handle_replica_job_succeeded(self, job: CreateReplicaJob) -> None:
         """Update replicas in corresponding file objects, based on type"""
