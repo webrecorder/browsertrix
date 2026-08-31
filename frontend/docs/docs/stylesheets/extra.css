@@ -300,6 +300,30 @@ h5 {
     "ss08" on;
 }
 
+/* Images */
+
+.wr-image {
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-brand-green-30);
+}
+
+.md-typeset figure:has(.wr-image) {
+  margin-bottom: 2em;
+}
+
+.md-typeset figure:has(.wr-image) p {
+  margin: 0;
+}
+
+.md-typeset figure:has(.wr-image) figcaption {
+  color: var(--color-brand-green);
+  font-size: 0.64rem;
+  font-style: normal;
+  text-align: left;
+  margin: 0.5rem 0 0;
+  max-width: 100%;
+}
+
 /* Add more spacing when previous/next buttons are hidden */
 .md-footer:has(nav[hidden]) {
   margin-top: 3rem;

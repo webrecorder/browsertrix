@@ -201,6 +201,22 @@ There are a lot of different options provided by Material for MkDocs — So many
 !!! Danger "Danger: Must have a title stating the warning"
     Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
 
+### Images
+
+![Image title](https://dummyimage.com/600x400/){ .wr-image }
+/// caption
+Image caption
+///
+
+To style an image, add the `.wr-image` class.
+
+```markdown
+![Image title](https://dummyimage.com/600x400/){ .wr-image }
+/// caption
+Image caption
+///
+```
+
 ### Hide in Browsertrix Embed
 
 The user guide is embedded in the Browsertrix web application. You may want to hide certain elements in the embed. To do so, add the `btrix-embed-hidden` class.

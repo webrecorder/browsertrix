@@ -120,6 +120,7 @@
 
     --color-brand-blue: #088eaf;
     --color-brand-green: #4d7c0f;
+    --color-brand-green-30: #4d7c0f4d;
 
     /* Fallback Shoelace colors */
     --sl-color-gray-50: hsl(0 0% 97.5%);
