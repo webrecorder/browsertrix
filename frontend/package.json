@@ -176,6 +176,7 @@
   "resolutions": {
     "playwright": "1.60.0",
     "lit": "~3.3.3",
+    "@lit/reactive-element": "~2.1.2",
     "@web/dev-server-core": "^0.7.5",
     "koa": "^2.16.1"
   },
