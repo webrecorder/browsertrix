@@ -6432,21 +6432,6 @@ __metadata:
     webpack-merge: "npm:^5.8.0"
     yaml: "npm:^2.9.0"
     zod: "npm:^3.23.8"
-  dependenciesMeta:
-    "@esm-bundle/chai":
-      optional: true
-    "@open-wc/testing":
-      optional: true
-    "@playwright/test":
-      optional: true
-    "@types/react":
-      optional: true
-    "@web/test-runner":
-      optional: true
-    "@web/test-runner-playwright":
-      optional: true
-    http-proxy-middleware:
-      optional: true
   languageName: unknown
   linkType: soft
 
