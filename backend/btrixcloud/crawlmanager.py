@@ -736,10 +736,14 @@ class CrawlManager(K8sAPI):
         items = resp.items or []
         return len(items)
 
-    async def delete_all_k8s_resources_for_org(self, oid_str: str) -> None:
-        """Delete all k8s resources related to org"""
+    async def delete_k8s_resources_for_org(self, oid_str: str) -> None:
+        """Delete all k8s resources related to org's crawls and profiles
+
+        Do not delete batch or cron jobs, as we don't want to interfere
+        with any ongoing or scheduled file deletion jobs, and org-specific
+        cron jobs will be cleaned up in the operator on completion.
+        """
         await self.delete_crawl_config_cron_jobs_for_org(oid_str)
-        await self.delete_bg_job_cron_jobs_for_org(oid_str)
         await self.delete_crawl_jobs_for_org(oid_str)
         await self.delete_profile_jobs_for_org(oid_str)
 
@@ -753,10 +757,6 @@ class CrawlManager(K8sAPI):
 
     # ========================================================================
     # Internal Methods
-    async def delete_bg_job_cron_jobs_for_org(self, oid_str: str) -> None:
-        """Delete all background cron jobs for given org"""
-        await self._delete_cron_jobs(f"btrix.org={oid_str},role=cron-background-job")
-
     async def delete_crawl_jobs_for_org(self, oid_str: str) -> None:
         """Delete all crawl jobs for given org"""
         await self._delete_custom_objects(f"btrix.org={oid_str}", plural="crawljobs")

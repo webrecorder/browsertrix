@@ -1658,8 +1658,8 @@ class OrgOps(BaseOrgs):
         await self.invites_db.delete_many({"oid": org.id})
 
         # Delete all background jobs except this one from database,
-        # so that we are left with some record of the org having
-        # existed and successfully deleted
+        # so that all that is left behind in the database is this
+        # job and any delete_org_files jobs that might be spawned
         await self.jobs_db.delete_many(
             {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
