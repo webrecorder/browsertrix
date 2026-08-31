@@ -1,18 +1,25 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { TailwindElement } from "@/classes/TailwindElement";
+import { BtrixElement } from "@/classes/BtrixElement";
+import { tw } from "@/utils/tailwind";
 
 @customElement("btrix-super-admin-banner")
 @localized()
-export class SuperAdminBanner extends TailwindElement {
+export class SuperAdminBanner extends BtrixElement {
   @state()
   hide = false;
 
   render() {
     if (this.hide) {
-      return html` <div class="absolute bottom-0 right-2 top-0 pt-[3.45rem]">
+      return html` <div
+        class=${clsx(
+          tw`absolute bottom-0 right-2 top-0`,
+          this.appState.userGuideOpen ? tw`pr-16` : tw`pt-[3.45rem]`,
+        )}
+      >
         <sl-tooltip
           placement="left"
           class="[--max-width:500px] [--show-delay:0] part-[base__arrow]:bg-warning-700 part-[body]:bg-warning-700 part-[body]:text-xs"
@@ -46,20 +53,20 @@ export class SuperAdminBanner extends TailwindElement {
         <div
           class="mx-auto box-border flex w-full items-center gap-2 px-3 xl:pl-6"
         >
-          <sl-icon
-            name="exclamation-diamond-fill"
-            class="size-4"
-          ></sl-icon>
+          <sl-icon name="exclamation-diamond-fill" class="size-4"></sl-icon>
           <span>
             <strong>${msg("You are logged in as a superadmin")}</strong> –
             ${msg("please be careful.")}
           </span>
-          <button type="button"
-              class="ml-auto flex"
-              @click=${() => {
-                this.hide = true;
-              }}>
-          <sl-icon name="x-circle" class="size-4"></sl-icon>
+          <button
+            type="button"
+            class="ml-auto flex"
+            @click=${() => {
+              this.hide = true;
+            }}
+          >
+            <sl-icon name="x-circle" class="size-4"></sl-icon>
+          </button>
         </div>
       </div>`;
     }
