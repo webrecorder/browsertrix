@@ -332,8 +332,6 @@ export class AppBar extends BtrixElement {
         }
       }
 
-      console.debug("no default org user:", this.userInfo);
-
       return this.renderNavButton({
         content: msg("Dashboard"),
         iconName: "grid-fill",
