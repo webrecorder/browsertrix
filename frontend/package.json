@@ -155,7 +155,7 @@
   },
   "optionalDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
-    "@open-wc/testing": "^3.2.0",
+    "@open-wc/testing": "^5.0.0",
     "@playwright/test": "1.61.1",
     "@types/react": "^19.2.17",
     "@web/test-runner": "^0.20.2",
