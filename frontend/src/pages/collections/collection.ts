@@ -31,7 +31,7 @@ enum PublicTab {
 export class Collection extends BtrixElement {
   @provide({ context: collectionRwpContext })
   @state()
-  replayEmbed?: ReplayWebPage | null;
+  private replayEmbed?: ReplayWebPage | null;
 
   @property({ type: String })
   orgSlug?: string;
@@ -263,7 +263,7 @@ export class Collection extends BtrixElement {
     ).href;
 
     return html`
-      <section class="relative h-[calc(100vh-4rem)]">
+      <section class="relative h-[--btrix-rwp-height]">
         <replay-web-page
           source=${replaySource}
           url=${ifDefined(collection.homeUrl || undefined)}
@@ -285,7 +285,10 @@ export class Collection extends BtrixElement {
           }}
         ></replay-web-page>
 
-        ${when(!this.replayEmbed, () => rwpSkeleton())}
+        ${when(
+          !this.replayEmbed,
+          () => html`<div class="absolute inset-0">${rwpSkeleton()}</div>`,
+        )}
       </section>
     `;
   }

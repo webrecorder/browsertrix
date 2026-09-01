@@ -42,6 +42,7 @@ import { SelectCollectionAccess } from "@/features/collections/select-collection
 import { createIndexDialog } from "@/features/collections/templates/create-index-dialog";
 import { deleteIndexDialog } from "@/features/collections/templates/delete-index-dialog";
 import { purgeIndexDialog } from "@/features/collections/templates/purge-index-dialog";
+import { rwpSkeleton } from "@/features/collections/templates/rwp-skeleton";
 import {
   metadataColumn,
   metadataItemWithCollection,
@@ -118,7 +119,8 @@ export class CollectionDetail extends BtrixElement {
   viewState?: ViewStateContext;
 
   @provide({ context: collectionRwpContext })
-  replayEmbed?: ReplayWebPage | null;
+  @state()
+  private replayEmbed?: ReplayWebPage | null;
 
   @query("btrix-collection-page-header")
   private readonly pageHeader?: CollectionPageHeader | null;
@@ -561,7 +563,7 @@ export class CollectionDetail extends BtrixElement {
               tw`offscreen`,
         )}
       >
-        ${when(this.collection, this.guardedRenderReplay, this.renderSpinner)}
+        ${when(this.collection, this.guardedRenderReplay)}
       </section>
 
       ${choose(this.collectionTab, [
@@ -1357,9 +1359,15 @@ export class CollectionDetail extends BtrixElement {
   `;
 
   private readonly guardedRenderReplay = (collection: Collection) => {
-    return guard([collection.crawlCount], () =>
+    return guard([collection.crawlCount, this.replayEmbed], () =>
       collection.crawlCount
-        ? guard([this.collectionId], this.renderReplay)
+        ? html`<div class="relative">
+            ${guard([this.collectionId], this.renderReplay)}
+            ${when(
+              !this.replayEmbed,
+              () => html`<div class="absolute inset-0">${rwpSkeleton()}</div>`,
+            )}
+          </div>`
         : this.renderEmptyState(),
     );
   };
@@ -1371,7 +1379,7 @@ export class CollectionDetail extends BtrixElement {
 
     return html`
       <replay-web-page
-        class="h-[calc(100vh-4rem)]"
+        class="h-[--btrix-rwp-height]"
         source=${replaySource}
         config="${config}"
         coll=${this.collectionId}
