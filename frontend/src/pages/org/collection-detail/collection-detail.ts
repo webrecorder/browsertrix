@@ -563,7 +563,9 @@ export class CollectionDetail extends BtrixElement {
               tw`offscreen`,
         )}
       >
-        ${when(this.collection, this.guardedRenderReplay)}
+        ${when(this.collection, this.guardedRenderReplay, () =>
+          rwpSkeleton(false),
+        )}
       </section>
 
       ${choose(this.collectionTab, [
