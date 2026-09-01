@@ -154,7 +154,14 @@ export function makeAppStateService() {
     @unlock()
     partialUpdateOnboarding(onboarding: Partial<AppState["onboarding"]>) {
       if (onboarding) {
-        appState.onboarding = mergeDeep(appState.onboarding, onboarding);
+        if (appState.onboarding) {
+          appState.onboarding = mergeDeep(appState.onboarding, onboarding);
+        } else {
+          appState.onboarding = {
+            ...onboarding,
+            orgId: onboarding.orgId || "",
+          };
+        }
       } else {
         appState.onboarding = onboarding;
       }
