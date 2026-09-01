@@ -5,10 +5,10 @@ import {
   dedupeIcon,
   dedupeLabelFor,
 } from "@/features/collections/templates/dedupe-icon";
-import type { ArchivedItem } from "@/types/crawler";
+import type { ArchivedItem, ListArchivedItem } from "@/types/crawler";
 import { tw } from "@/utils/tailwind";
 
-export function dedupeStatusIcon(item: ArchivedItem) {
+export function dedupeStatusIcon(item: ArchivedItem | ListArchivedItem) {
   const hasDependents = Boolean(item.requiredByCrawls.length);
   const hasDependencies = Boolean(item.requiresCrawls.length);
   const dedupeEnabled = hasDependents || hasDependencies;
