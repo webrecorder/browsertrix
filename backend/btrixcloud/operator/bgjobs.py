@@ -3,6 +3,7 @@
 from uuid import UUID
 
 import structlog
+from fastapi import HTTPException
 
 from btrixcloud.utils import (
     dt_now,
@@ -56,7 +57,7 @@ class BgJobOperator(BaseOperator):
         start_time = status.get("startTime")
         completion_time = status.get("completionTime")
 
-        finalized = True
+        finalized = False
 
         started = None
         finished = None
@@ -83,11 +84,27 @@ class BgJobOperator(BaseOperator):
                 finished=finished,
                 oid=org_id,
             )
+            finalized = True
 
+        except HTTPException as exc:
+            # If job couldn't be found, it's possible the org has been
+            # deleted, which deletes background jobs from the database
+            # as well. If so, finalize anyway to avoid an endless loop.
+            if exc.status_code == 404 and org_id:
+                try:
+                    _ = await self.org_ops.get_org_by_id(org_id)
+                except HTTPException:
+                    finalized = True
+            logger.exception(
+                "background_job_update_failed",
+                will_retry=not finalized,
+                unstructured_message="Update Background Job Error",
+            )
         # pylint: disable=broad-except
         except Exception:
             logger.exception(
                 "background_job_update_failed",
+                will_retry=True,
                 unstructured_message="Update Background Job Error",
             )
 

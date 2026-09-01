@@ -682,7 +682,15 @@ class BackgroundJobOps:
             await self.crawl_manager.delete_all_k8s_resources_for_org(str(oid))
 
         job = await self.get_background_job(job_id)
-        if not job or job.finished:
+        if job.finished:
+            logger.debug(
+                "job_already_updated",
+                job_id=job.id,
+                oid=oid,
+                job_type=job_type,
+                success=job.success,
+                finished=job.finished,
+            )
             return
 
         if job.type != job_type:
@@ -748,6 +756,7 @@ class BackgroundJobOps:
 
         res = await self.jobs.find_one(query)
         if not res:
+            logger.error("job_not_found", job_id=job_id, oid=oid)
             raise HTTPException(status_code=404, detail="job_not_found")
 
         return self._get_job_by_type_from_data(res)
