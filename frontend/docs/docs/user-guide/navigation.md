@@ -22,7 +22,7 @@ You can find links to navigate your org near the top of each page, directly belo
 
 ## Navigate to Active Crawls
 
-If any crawls in your org are active–i.e. visiting pages, waiting to visit pages, or temporarily paused–a link indicating the total number of active crawl runs will appear at the top of very page, next to the **User Guide** button.
+If any crawls in your org are active–i.e. visiting pages, waiting to visit pages, or temporarily paused–a link indicating the total number of active crawl runs will appear at the top of every page, next to the **User Guide** button.
 
 ![Image title](../assets/screenshots/active-crawl-status-feature-1.png){ .wr-image alt="Browsertrix org with one active crawl, which appears at the top of the collections page" }
 
