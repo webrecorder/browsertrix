@@ -9,8 +9,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { SignUpSuccessDetail } from "@/features/accounts/sign-up-form";
 import type { OrgUpdatedDetail } from "@/pages/invite/ui/org-form";
 import { OrgTab, RouteNamespace } from "@/routes";
+import { type Onboarding } from "@/types/onboarding";
 import type { UserInfo, UserOrg, UserOrgInviteInfo } from "@/types/user";
 import AuthService, { type LoggedInEventDetail } from "@/utils/AuthService";
+import { AppStateService } from "@/utils/state";
 
 import "./ui/org-form";
 
@@ -33,6 +35,21 @@ export class Join extends BtrixElement {
     task: async ([token, email]) => {
       if (!token || !email) throw new Error("Missing args");
       const inviteInfo = await this._getInviteInfo({ token, email });
+
+      if (inviteInfo) {
+        const onboarding: Onboarding = isUserInfo(inviteInfo)
+          ? {
+              orgId: this.orgId || "",
+              noUsage: true,
+            }
+          : {
+              orgId: inviteInfo.oid,
+              noUsage: true,
+            };
+
+        AppStateService.partialUpdateOnboarding(onboarding);
+      }
+
       return inviteInfo;
     },
     args: () => [this.token, this.email] as const,
