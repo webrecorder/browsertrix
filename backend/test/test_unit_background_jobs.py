@@ -153,3 +153,64 @@ async def test_postprocess_upload_job_other_create_failure_returns_none(bg_job_o
         uuid.uuid4(), "upload-test-crawl"
     )
     assert job_id is None
+
+
+@pytest.mark.parametrize(
+    "endpoint_url, expected_origin, expected_bucket_path",
+    [
+        # Endpoint URL with no bucket name and no trailing slash
+        # (as might be entered by user directly in chart)
+        (
+            "http://local-minio:9000/test-bucket",
+            "http://local-minio:9000/",
+            "test-bucket/",
+        ),
+        # Endpoint URL with trailing slash (as might be entered
+        # by user directly in chart or constructed by storage ops
+        # from endpoint url and bucket name configured separately)
+        (
+            "http://local-minio:9000/test-bucket/",
+            "http://local-minio:9000/",
+            "test-bucket/",
+        ),
+        # More realistic URLs
+        (
+            "https://s3provider.example.com/btrix-replica-bucket",
+            "https://s3provider.example.com/",
+            "btrix-replica-bucket/",
+        ),
+        (
+            "https://s3provider.example.com/btrix-replica-bucket/",
+            "https://s3provider.example.com/",
+            "btrix-replica-bucket/",
+        ),
+        # More complicated paths
+        (
+            "https://s3provider.example.com/more/complex/path",
+            "https://s3provider.example.com/",
+            "more/complex/path/",
+        ),
+        (
+            "https://s3provider.example.com/more/complex/path/",
+            "https://s3provider.example.com/",
+            "more/complex/path/",
+        ),
+    ],
+)
+def test_strip_bucket_consistent_trailing_slashes(
+    bg_job_ops, endpoint_url, expected_origin, expected_bucket_path
+):
+    """Both values returned should always terminate in one trailing slash
+
+    This helps us consistently build file paths and avoids errors due to missing or doubled
+    path separators.
+    """
+    origin, bucket_path = bg_job_ops.strip_bucket(endpoint_url)
+
+    assert origin == expected_origin
+    assert origin.endswith("/")
+    assert not origin.endswith("//")
+
+    assert bucket_path == expected_bucket_path
+    assert bucket_path.endswith("/")
+    assert not bucket_path.endswith("//")
