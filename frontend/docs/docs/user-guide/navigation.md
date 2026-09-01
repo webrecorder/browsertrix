@@ -16,7 +16,7 @@ You can find links to navigate your org near the top of each page, directly belo
 - **Settings**: Edit org information, manage billing and subscription plan, and add or remove org members.
 
 !!! Question "Why don‘t I see the “Settings” link?"
-    The link to **Settings** will not be available if you were invited to join an existing org and were not given permission to administrate the org. If this appears to be a mistake, contact your org administrator.
+    The link to **Settings** will not be available if you were invited to join an existing org and were not given permission to administrate the org. Contact your org administrator if this appears to be a mistake.
 
 ---
 
