@@ -2559,6 +2559,8 @@ class OrgOut(BaseMongoModel):
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int
     bytesStoredProfiles: int
     bytesStoredSeedFiles: int = 0
@@ -2629,6 +2631,8 @@ class Organization(BaseMongoModel):
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
     bytesStoredSeedFiles: int = 0
@@ -2785,6 +2789,8 @@ class OrgMetrics(BaseModel):
 
     storageUsedBytes: int
     storageUsedCrawls: int
+    storageUsedFinishedCrawls: int
+    storageUsedActiveCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
     storageUsedSeedFiles: int

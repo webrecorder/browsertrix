@@ -544,7 +544,10 @@ class BaseCrawlOps:
                 }
             },
         )
-        await self.orgs.inc_org_bytes_stored(oid, -deleted_file_size, "crawl")
+        if deleted_file_size != 0:
+            await self.orgs.inc_org_bytes_stored(
+                oid, -deleted_file_size, "crawl", active_crawl=True
+            )
 
     async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
         """Delete files for all qa runs in a crawl"""
@@ -1148,31 +1151,52 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: TYPE_CRAWL_TYPES | None = None
-    ) -> tuple[int, int, int]:
+    ) -> tuple[int, int, int, int, int]:
         """Calculate and return total size of crawl files in org.
 
-        Returns tuple of (total, crawls only, uploads only)
+        Optionally filterable by crawl type.
+
+        Returns tuple of (total, crawls only, finished crawls only,
+        active crawls only, uploads only).
         """
         total_size = 0
         crawls_size = 0
+        crawls_finished_size = 0
+        crawls_active_size = 0
         uploads_size = 0
 
-        cursor = self.crawls.find({"oid": oid})
+        match_query: dict[str, str | UUID] = {"oid": oid}
+        if type_:
+            match_query["type"] = type_
+
+        cursor = self.crawls.find(match_query)
         async for crawl_dict in cursor:
             files = crawl_dict.get("files", [])
-            type_ = crawl_dict.get("type")
+            crawl_type = crawl_dict.get("type")
 
             item_size = 0
             for file_ in files:
                 item_size += file_.get("size", 0)
 
             total_size += item_size
-            if type_ == "crawl":
+            if crawl_type == "crawl":
                 crawls_size += item_size
-            if type_ == "upload":
+
+                crawl_state = crawl_dict.get("state", "")
+                if crawl_state in RUNNING_AND_WAITING_STATES:
+                    crawls_active_size += item_size
+                else:
+                    crawls_finished_size += item_size
+            if crawl_type == "upload":
                 uploads_size += item_size
 
-        return total_size, crawls_size, uploads_size
+        return (
+            total_size,
+            crawls_size,
+            crawls_finished_size,
+            crawls_active_size,
+            uploads_size,
+        )
 
     async def get_org_last_crawl_finished(self, oid: UUID) -> datetime | None:
         """Get last crawl finished time for org"""
