@@ -43,7 +43,7 @@ export class AppBar extends BtrixElement {
     return html`
       <div class="border-b bg-neutral-50">
         <nav
-          class="box-border flex min-h-12 flex-wrap items-center gap-2 px-3 leading-none xl:px-6"
+          class="box-border flex h-12 flex-wrap items-center gap-2 px-3 leading-none xl:px-6"
         >
           <div class="order-1 flex flex-1 items-center">
             <a
