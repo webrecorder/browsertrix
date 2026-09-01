@@ -9,6 +9,11 @@ Get an overall picture of how your org archives
 
 The dashboard is the first page that you see when you log in. It gives you access to essential stats and a _Create New ..._ shortcut to quickly add a crawl workflow, collection, browser profile, or uploaded item.
 
+![Image title](../assets/screenshots/browsertrix-app-0.png){ .wr-image alt="Browsertrix dashboard" }
+/// caption
+Browsertrix dashboard with usage statistics
+///
+
 ## Usage Stats and Quotas
 
 ### Storage

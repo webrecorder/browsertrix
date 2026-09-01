@@ -66,11 +66,12 @@ nav:
       - user-guide/index.md
       - Getting Started:
           - user-guide/signup.md
+          - user-guide/navigation.md
           - user-guide/getting-started.md
       - Orgs:
           - user-guide/org.md
-          - user-guide/join.md
           - user-guide/overview.md
+          - user-guide/join.md
       - Crawling:
           - user-guide/crawl-workflows.md
           - user-guide/workflow-setup.md
