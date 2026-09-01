@@ -205,19 +205,16 @@ There are a lot of different options provided by Material for MkDocs — So many
 
 To style an image, add the `.wr-image` class.
 
-![Image title](https://dummyimage.com/600x400/){ .wr-image }
+![Image alt text](https://dummyimage.com/600x400/){ .wr-image }
 /// caption
 Image caption
 ///
 
 ```markdown
-![Image title](https://dummyimage.com/600x400/){ .wr-image }
+![Image alt text](https://dummyimage.com/600x400/){ .wr-image }
 /// caption
 Image caption
 ///
-
-<!-- Images should always have a description, either as a caption or an "alt" description for screen readers. -->
-![Image title](https://dummyimage.com/600x400/){ .wr-image alt="Image caption" }
 ```
 
 ### Hide in Browsertrix Embed
