@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
-import { html } from "lit";
+import { html, type TemplateResult } from "lit";
 
 import { renderComponent, type RenderProps } from "./ArchivedItemList";
 
@@ -22,22 +22,40 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
-const renderItems = (items: ListArchivedItem[]) =>
+const renderItems = (items: ListArchivedItem[], content?: TemplateResult) =>
   items.map(
     (item) =>
-      html`<btrix-archived-item-list-item
-        .item=${item}
-      ></btrix-archived-item-list-item>`,
+      html`<btrix-archived-item-list-item href="#" .item=${item}>
+        ${content}
+      </btrix-archived-item-list-item>`,
   );
 
-export const Viewer: Story = {
+export const Basic: Story = {
   args: {
     content: renderItems(archivedItemsMock.items as ListArchivedItem[]),
   },
 };
 
-export const Crawler: Story = {
+export const OverviewMenu: Story = {
   args: {
-    content: renderItems(archivedItemsMock.items as ListArchivedItem[]),
+    content: html`
+      <btrix-table-header-cell
+        slot="actionCell"
+        class="p-0"
+      ></btrix-table-header-cell>
+
+      ${renderItems(
+        archivedItemsMock.items as ListArchivedItem[],
+        html`<btrix-table-cell slot="actionCell" class="p-0">
+          <btrix-overflow-dropdown>
+            <sl-menu>
+              <sl-menu-item>Option 1</sl-menu-item>
+              <sl-menu-item>Option 2</sl-menu-item>
+              <sl-menu-item>Option 3</sl-menu-item>
+            </sl-menu>
+          </btrix-overflow-dropdown>
+        </btrix-table-cell>`,
+      )}
+    `,
   },
 };
