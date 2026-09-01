@@ -31,7 +31,9 @@ glob.sync("./src/assets/**/*").forEach((filepath) => {
 });
 
 export default {
-  nodeResolve: true,
+  nodeResolve: {
+    exportConditions: "development",
+  },
   rootDir: process.cwd(),
   browsers: [
     playwrightLauncher({
