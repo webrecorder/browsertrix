@@ -1010,12 +1010,19 @@ class OrgOps(BaseOrgs):
                 org_owners.append(key)
         return org_owners
 
-    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> None:
+    async def inc_org_bytes_stored(
+        self, oid: UUID, size: int, type_="crawl", active_crawl: bool = False
+    ) -> None:
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
+            crawl_inc = {"bytesStored": size, "bytesStoredCrawls": size}
+            if active_crawl:
+                crawl_inc["bytesStoredActiveCrawls"] = size
+            else:
+                crawl_inc["bytesStoredFinishedCrawls"] = size
             await self.orgs.find_one_and_update(
                 {"_id": oid},
-                {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}},
+                {"$inc": crawl_inc},
             )
         elif type_ == "upload":
             await self.orgs.find_one_and_update(
@@ -1027,6 +1034,31 @@ class OrgOps(BaseOrgs):
                 {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
+
+    async def update_org_bytes_stored_finished_crawl(
+        self, crawl_id: str, oid: UUID
+    ) -> None:
+        """Move finished crawl's file size from active to finished crawl bytes stored on org"""
+        crawl = await self.base_crawl_ops.get_base_crawl(crawl_id)
+        if not crawl.fileSize > 0:
+            return
+
+        logger.debug(
+            "crawl_finished_active_to_finished_bytes",
+            oid=oid,
+            crawl_id=crawl_id,
+            size=crawl.fileSize,
+        )
+
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {
+                "$inc": {
+                    "bytesStoredActiveCrawls": -crawl.fileSize,
+                    "bytesStoredFinishedCrawls": crawl.fileSize,
+                }
+            },
+        )
 
     def can_write_data(self, org: Organization, include_time=True) -> None:
         """check crawl quotas and readOnly state, throw if can not run"""
@@ -1200,6 +1232,8 @@ class OrgOps(BaseOrgs):
         return {
             "storageUsedBytes": org.bytesStored,
             "storageUsedCrawls": org.bytesStoredCrawls,
+            "storageUsedFinishedCrawls": org.bytesStoredFinishedCrawls,
+            "storageUsedActiveCrawls": org.bytesStoredActiveCrawls,
             "storageUsedUploads": org.bytesStoredUploads,
             "storageUsedProfiles": org.bytesStoredProfiles,
             "storageUsedSeedFiles": org.bytesStoredSeedFiles or 0,
@@ -1681,6 +1715,8 @@ class OrgOps(BaseOrgs):
             (
                 total_crawl_size,
                 crawl_size,
+                crawl_finished_size,
+                crawl_active_size,
                 upload_size,
             ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
                 org.id,
@@ -1691,9 +1727,12 @@ class OrgOps(BaseOrgs):
 
             seed_file_size = await self.file_ops.calculate_seed_file_storage(org.id)
 
-            thumbnail_size = await self.coll_ops.calculate_thumbnail_storage(org.id)
+            (
+                thumbnail_size,
+                dedupe_index_size,
+            ) = await self.coll_ops.calculate_collection_storage(org.id)
 
-            user_file_size = seed_file_size + thumbnail_size
+            user_file_size = seed_file_size + thumbnail_size + dedupe_index_size
 
             org_size = total_crawl_size + profile_size + user_file_size
 
@@ -1703,10 +1742,13 @@ class OrgOps(BaseOrgs):
                     "$set": {
                         "bytesStored": org_size,
                         "bytesStoredCrawls": crawl_size,
+                        "bytesStoredFinishedCrawls": crawl_finished_size,
+                        "bytesStoredActiveCrawls": crawl_active_size,
                         "bytesStoredUploads": upload_size,
                         "bytesStoredProfiles": profile_size,
                         "bytesStoredSeedFiles": seed_file_size,
                         "bytesStoredThumbnails": thumbnail_size,
+                        "bytesStoredDedupeIndexes": dedupe_index_size,
                     }
                 },
             )
