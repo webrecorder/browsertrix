@@ -723,19 +723,31 @@ class CrawlOps(BaseCrawlOps):
         crawl_id: str,
         is_qa: bool,
         exec_time: int,
+        elapsed_time: int,
         last_updated_time: datetime,
-    ) -> bool:
+    ) -> tuple[int, int]:
         """increment exec time"""
         # update both crawl-shared qa exec seconds and per-qa run exec seconds
-        if is_qa:
+
+        field = "_lut"
+
+        # nop if times are 0
+        if elapsed_time <= 0 and exec_time <= 0:
+            inc_update = {}
+
+        elif is_qa:
             inc_update = {
                 "qaCrawlExecSeconds": exec_time,
                 "qa.crawlExecSeconds": exec_time,
+                "qaCrawlElapsedSeconds": exec_time,
+                "qa.crawlElapsedSeconds": exec_time,
             }
             field = "qa._lut"
         else:
-            inc_update = {"crawlExecSeconds": exec_time}
-            field = "_lut"
+            inc_update = {
+                "crawlExecSeconds": exec_time,
+                "crawlElapsedSeconds": elapsed_time,
+            }
 
         res = await self.crawls.find_one_and_update(
             {
@@ -748,7 +760,16 @@ class CrawlOps(BaseCrawlOps):
                 "$set": {field: last_updated_time},
             },
         )
-        return res is not None
+        if not res:
+            return 0, 0
+
+        exec_seconds = res.get(
+            "crawlExecSeconds" if not is_qa else "qaCrawlExecSeconds"
+        )
+        elapsed_seconds = res.get(
+            "crawlElapsedSeconds" if not is_qa else "qaCrawlElapsedSeconds"
+        )
+        return exec_seconds, elapsed_seconds
 
     async def get_crawl_exec_last_update_time(
         self, crawl_id: str, is_qa: bool

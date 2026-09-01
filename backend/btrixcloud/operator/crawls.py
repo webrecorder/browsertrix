@@ -1419,7 +1419,7 @@ class CrawlOperator(BaseOperator):
                 )
 
             await self.crawl_ops.inc_crawl_exec_time(
-                crawl.db_crawl_id, crawl.is_qa, 0, now
+                crawl.db_crawl_id, crawl.is_qa, 0, 0, now
             )
             status.lastUpdatedTime = date_to_str(now)
             return
@@ -1521,12 +1521,17 @@ class CrawlOperator(BaseOperator):
                 exec_time += duration
                 max_duration = max(duration, max_duration)
 
-        if exec_time:
+        if exec_time > 0:
             await self.org_ops.inc_org_time_stats(
                 crawl.oid, exec_time, True, crawl.is_qa
             )
-            status.crawlExecTime += exec_time
-            status.elapsedCrawlTime += max_duration
+
+        newExecTime, newElapsedTime = await self.crawl_ops.inc_crawl_exec_time(
+            crawl.db_crawl_id, crawl.is_qa, exec_time, max_duration, now
+        )
+
+        status.crawlExecTime = max(newExecTime, status.crawlExecTime)
+        status.elapsedCrawlTime = max(newElapsedTime, status.elapsedCrawlTime)
 
         logger.debug(
             "pod_exec_time_total_computed",
@@ -1538,9 +1543,6 @@ class CrawlOperator(BaseOperator):
             ),
         )
 
-        await self.crawl_ops.inc_crawl_exec_time(
-            crawl.db_crawl_id, crawl.is_qa, exec_time, now
-        )
         status.lastUpdatedTime = date_to_str(now)
 
     def should_mark_waiting(self, state: TYPE_ALL_CRAWL_STATES, started: str) -> bool:
