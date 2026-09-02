@@ -21,6 +21,7 @@ export const emptyQuotas: OrgQuotas = {
   maxConcurrentCrawls: 0,
   maxExecMinutesPerMonth: 0,
   maxPagesPerCrawl: 0,
+  planExecMinutes: 0,
   storageQuota: 0,
 };
 
@@ -47,6 +48,10 @@ export const LABELS: {
   },
   maxExecMinutesPerMonth: {
     label: msg("Max Execution Minutes Per Month"),
+    type: "number",
+  },
+  planExecMinutes: {
+    label: msg("Plan Execution Minutes"),
     type: "number",
   },
   extraExecMinutes: {
