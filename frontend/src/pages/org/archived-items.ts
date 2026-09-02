@@ -280,13 +280,21 @@ export class CrawlsList extends BtrixElement {
         ? ([range[0] ?? 1, range[1] ?? 5] as const)
         : undefined;
 
-      return {
+      const values = {
         id: params.get("id") ?? undefined,
         name: params.get("name") ?? undefined,
         firstSeed: params.get("firstSeed") ?? undefined,
         state: state.length ? state : undefined,
         reviewStatus,
       };
+
+      if (Object.values(values).some((v) => v !== undefined)) {
+        return values;
+      }
+
+      // Since all values are optional, this can lead to an object with all undefined values,
+      // which should be considered equivalent to when all key-values are deleted from search params
+      return {};
     },
   );
 
