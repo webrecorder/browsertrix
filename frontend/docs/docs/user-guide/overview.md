@@ -13,6 +13,8 @@ The dashboard is the first page that you see when you log in. It gives you acces
 
 ## Usage Stats and Quotas
 
+Usage statistics and quotas will be visible once your org contains web archiving data.
+
 ### Storage
 
 The storage panel displays the total size and count of archived items and browser profiles.

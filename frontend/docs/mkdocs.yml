@@ -68,6 +68,7 @@ nav:
           - user-guide/signup.md
           - user-guide/navigation.md
           - user-guide/getting-started.md
+          - user-guide/concepts.md
       - Orgs:
           - user-guide/org.md
           - user-guide/overview.md
