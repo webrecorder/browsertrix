@@ -29,6 +29,7 @@ import {
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
 import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
+import { listControls } from "@/layouts/listControls";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
@@ -374,10 +375,11 @@ export class OrgCrawls extends BtrixElement {
   render() {
     return html`
       <main>
-        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-          ${this.renderControls()}
-        </div>
-
+        ${listControls({
+          renderSearchControl: this.renderSearch,
+          renderSortControl: this.renderSortControl,
+          renderFilterControl: this.renderFilterControl,
+        })}
         ${this.crawlsTask.render({
           initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
@@ -472,75 +474,55 @@ export class OrgCrawls extends BtrixElement {
     </btrix-delete-item-dialog>
   `;
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
+  private readonly renderFilterControl = () => {
+    return html`<btrix-crawl-state-filter
+        .states=${this.filterBy.value.state}
+        @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            state: e.detail.value,
+          });
+        }}
+      ></btrix-crawl-state-filter>
 
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
+      <btrix-tag-filter
+        tagType="workflow-crawl"
+        .tags=${this.filterByTags.value}
+        .type=${this.filterByTagsType.value}
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
+          this.filterByTags.setValue(e.detail.value?.tags || []);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+        }}
+      ></btrix-tag-filter>
+
+      ${this.userInfo?.id
+        ? html`<btrix-filter-chip
+            ?checked=${this.filterByCurrentUser.value}
+            @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+              const { checked } = e.target as FilterChip;
+              this.filterByCurrentUser.setValue(Boolean(checked));
+            }}
           >
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="whitespace-nowrap text-sm text-neutral-500">
-            ${msg("Filter by:")}
-          </span>
-          <btrix-crawl-state-filter
-            .states=${this.filterBy.value.state}
-            @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                state: e.detail.value,
-              });
-            }}
-          ></btrix-crawl-state-filter>
+            ${msg("Mine")}
+          </btrix-filter-chip> `
+        : ""}
+      ${when(
+        this.hasFiltersSet,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${this.clearFilters}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}`;
+  };
 
-          <btrix-tag-filter
-            tagType="workflow-crawl"
-            .tags=${this.filterByTags.value}
-            .type=${this.filterByTagsType.value}
-            @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags || []);
-              this.filterByTagsType.setValue(e.detail.value?.type || "or");
-            }}
-          ></btrix-tag-filter>
-
-          ${this.userInfo?.id
-            ? html`<btrix-filter-chip
-                ?checked=${this.filterByCurrentUser.value}
-                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                  const { checked } = e.target as FilterChip;
-                  this.filterByCurrentUser.setValue(Boolean(checked));
-                }}
-              >
-                ${msg("Mine")}
-              </btrix-filter-chip> `
-            : ""}
-          ${when(
-            this.hasFiltersSet,
-            () => html`
-              <sl-button
-                class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
-                size="small"
-                variant="text"
-                @click=${this.clearFilters}
-              >
-                <sl-icon slot="prefix" name="x-lg"></sl-icon>
-                ${msg("Clear All")}
-              </sl-button>
-            `,
-          )}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSortControl() {
+  private readonly renderSortControl = () => {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
@@ -588,9 +570,9 @@ export class OrgCrawls extends BtrixElement {
         ></sl-icon-button>
       </sl-tooltip>
     `;
-  }
+  };
 
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-workflow-search
         .searchOptions=${this.searchOptions}
@@ -624,7 +606,7 @@ export class OrgCrawls extends BtrixElement {
       >
       </btrix-workflow-search>
     `;
-  }
+  };
 
   private readonly renderArchivedItem = (crawl: Crawl) => html`
     <btrix-crawl-list-item
