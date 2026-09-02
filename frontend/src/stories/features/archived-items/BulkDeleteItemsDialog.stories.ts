@@ -23,8 +23,6 @@ type Story = StoryObj<RenderProps>;
 
 export const WithItems: Story = {
   args: {
-    items: (
-      archivedItemsMock as APIPaginatedList<ListArchivedItem>
-    ).items.slice(0, 5),
+    items: (archivedItemsMock as APIPaginatedList<ListArchivedItem>).items,
   },
 };

@@ -80,7 +80,7 @@ export default {
       fileSizeWithDeps: null,
       tags: [],
       dedupeCollId: null,
-      collectionIds: ["fake-1044-4abc-bd80-568155f13a8f"],
+      collectionIds: [],
       crawlExecSeconds: 31,
       qaCrawlExecSeconds: 0,
       config: null,
