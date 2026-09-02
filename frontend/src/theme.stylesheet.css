@@ -32,6 +32,9 @@
     /* Default border */
     --btrix-border: 1px solid var(--sl-panel-border-color);
 
+    /* Common widths */
+    --btrix-name-max-width: 30ch;
+
     /*
      * Shoelace Theme Tokens
      */
