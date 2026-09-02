@@ -7,6 +7,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type GridColumn } from "@/components/ui/data-grid/types";
 import type { Dialog } from "@/components/ui/dialog";
 import { pluralOfItems } from "@/plurals/items";
+import { pluralOfPages } from "@/plurals/pages";
 import { deleteConfirmation } from "@/strings/ui";
 import type { ListArchivedItem } from "@/types/crawler";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
@@ -31,29 +32,14 @@ export class BulkDeleteItemsDialog extends BtrixElement {
 
   private readonly columns = [
     {
-      field: "name",
-      label: msg("Name"),
-      renderCell: ({ item }) => renderName(item),
-      width: `var(--btrix-name-max-width)`,
-    },
-    {
-      field: "fileSize",
-      label: msg("Size"),
-      renderCell: ({ item }) =>
-        item.fileSize ? this.localize.bytes(item.fileSize) : `0`,
-    },
-    {
-      field: "collectionIds",
-      label: msg("Collections"),
-      renderCell: ({ item }) => this.localize.number(item.collectionIds.length),
-      renderCellClasses: ({ item }) =>
-        item.collectionIds.length > 0 && tw`bg-red-50`,
-    },
-    {
       field: "id",
       label: html`<span class="sr-only">${msg("Link")}</span>`,
       renderCell: ({ item }) =>
-        html`<sl-tooltip content=${msg("Open in New Tab")} hoist>
+        html`<sl-tooltip
+          content=${msg("Open in New Tab")}
+          placement="left"
+          hoist
+        >
           <sl-icon-button
             class="text-sm"
             name="arrow-up-right"
@@ -62,7 +48,33 @@ export class BulkDeleteItemsDialog extends BtrixElement {
           ></sl-icon-button>
         </sl-tooltip>`,
       renderCellClasses: () => tw`[--btrix-table-cell-padding:0]`,
-      width: `max-content`,
+      width: `min-content`,
+    },
+    {
+      field: "name",
+      label: msg("Name"),
+      renderCell: ({ item }) => renderName(item),
+      width: `minmax(var(--btrix-name-max-width), 1fr)`,
+    },
+    {
+      field: "fileSize",
+      label: msg("Size"),
+      renderCell: ({ item }) => this.localize.bytes(item.fileSize || 0),
+      width: `minmax(max-content, 1fr)`,
+    },
+    {
+      field: "pageCount",
+      label: msg("Pages"),
+      renderCell: ({ item }) => pluralOfPages(item.pageCount || 0),
+      width: `minmax(max-content, 1fr)`,
+    },
+    {
+      field: "collectionIds",
+      label: msg("In Collections"),
+      renderCell: ({ item }) => this.localize.number(item.collectionIds.length),
+      renderCellClasses: ({ item }) =>
+        item.collectionIds.length > 0 && tw`bg-red-50`,
+      width: `minmax(max-content, 1fr)`,
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
 
