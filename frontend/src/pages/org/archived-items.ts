@@ -1,7 +1,12 @@
 import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { deepArrayEquals } from "@lit/task/deep-equals.js";
-import type { SlSelect } from "@shoelace-style/shoelace";
+import type {
+  SlChangeEvent,
+  SlCheckbox,
+  SlSelect,
+} from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -28,11 +33,13 @@ import orgUploadsContext from "@/context/org-uploads";
 import { ClipboardController } from "@/controllers/clipboard";
 import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
+import { pluralOfItemsSelected } from "@/plurals/items-selected";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
@@ -147,6 +154,9 @@ export class CrawlsList extends BtrixElement {
 
   @property({ type: String })
   itemType: ArchivedItem["type"] | null = null;
+
+  @property({ type: Boolean, noAccessor: true })
+  bulkActions = false;
 
   @state()
   private pagination: Required<APIPaginationQuery> = {
@@ -321,6 +331,11 @@ export class CrawlsList extends BtrixElement {
   @query("btrix-tag-filter")
   private readonly tagFilter?: TagFilter | null;
 
+  private visibleItems = new Set<string>();
+
+  @state()
+  selectedItems = new Set<string>();
+
   private get hasFiltersSet() {
     return [
       this.filterBy.value.id,
@@ -371,6 +386,8 @@ export class CrawlsList extends BtrixElement {
           },
           signal,
         );
+
+        this.visibleItems = new Set(data.items.map(({ id }) => id));
 
         return data;
       } catch (e) {
@@ -558,6 +575,10 @@ export class CrawlsList extends BtrixElement {
             renderSearchControl: this.renderSearch,
             renderSortControl: this.renderSortControl,
             renderFilterControl: this.renderFilterControl,
+            renderBulkActionsControl:
+              this.isCrawler && this.bulkActions
+                ? this.renderBulkActionsControl
+                : undefined,
           })}
         </div>
 
@@ -612,6 +633,16 @@ export class CrawlsList extends BtrixElement {
       ${items.length
         ? html`
             <btrix-archived-item-list .listType=${this.itemType}>
+              ${when(
+                this.isCrawler && this.bulkActions,
+                () => html`
+                  <btrix-table-header-cell slot="checkboxCell" class="p-0">
+                    <span class="sr-only"
+                      >${msg("Selected for bulk actions")}</span
+                    >
+                  </btrix-table-header-cell>
+                `,
+              )}
               <btrix-table-header-cell slot="actionCell" class="p-0">
                 <span class="sr-only">${msg("Row actions")}</span>
               </btrix-table-header-cell>
@@ -798,6 +829,40 @@ export class CrawlsList extends BtrixElement {
       )}`;
   };
 
+  private readonly renderBulkActionsControl = () => {
+    const visibleCount = this.visibleItems.size;
+    const selected = this.visibleItems.intersection(this.selectedItems);
+    const selectedCount = selected.size;
+    const allSelected = selectedCount > 0 && selectedCount === visibleCount;
+    const someSelected = selectedCount > 0 && selectedCount !== visibleCount;
+
+    return html`<div class="flex items-center gap-4">
+        <sl-checkbox
+          class="leading-none part-[label]:sr-only"
+          ?checked=${allSelected}
+          ?indeterminate=${someSelected}
+          @sl-change=${(e: SlChangeEvent) => {
+            const checked = (e.target as SlCheckbox).checked;
+
+            if (checked) {
+              this.selectedItems = new Set(this.visibleItems);
+            } else {
+              this.selectedItems = new Set();
+            }
+          }}
+        >
+          ${msg("Select all")}
+        </sl-checkbox>
+
+        ${pluralOfItemsSelected(selectedCount)}
+      </div>
+
+      <sl-icon-button
+        class="text-base text-danger"
+        name="trash3"
+      ></sl-icon-button>`;
+  };
+
   private readonly renderSearch = () => {
     return html`
       <btrix-search-combobox
@@ -843,6 +908,17 @@ export class CrawlsList extends BtrixElement {
     <btrix-archived-item-list-item
       href=${`${this.navigate.orgBasePath}/${pathForArchivedItem(item)}`}
       .item=${item}
+      ?checkbox=${this.isCrawler && this.bulkActions}
+      ?checked=${this.selectedItems.has(item.id)}
+      @btrix-change=${(e: ArchivedItemCheckedEvent) => {
+        if (e.detail.value.checked) {
+          this.selectedItems.add(item.id);
+        } else {
+          this.selectedItems.delete(item.id);
+        }
+
+        this.selectedItems = new Set(this.selectedItems);
+      }}
     >
       <btrix-table-cell slot="actionCell" class="p-0">
         <btrix-overflow-dropdown>

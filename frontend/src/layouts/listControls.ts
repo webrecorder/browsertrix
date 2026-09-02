@@ -9,11 +9,13 @@ export function listControls({
   renderSortControl,
   renderViewControl,
   renderFilterControl,
+  renderBulkActionsControl,
 }: {
   renderSearchControl: () => TemplateResult;
   renderSortControl: () => TemplateResult;
   renderViewControl?: () => TemplateResult;
   renderFilterControl?: () => TemplateResult;
+  renderBulkActionsControl?: () => TemplateResult;
 }) {
   return html`
     <div
@@ -56,12 +58,29 @@ export function listControls({
             </div>`
           : nothing}
       </div>
-      ${renderFilterControl
-        ? html`<div class="flex flex-wrap items-center gap-2">
-            <span class="whitespace-nowrap text-sm text-neutral-500">
-              ${msg("Filter by:")}
-            </span>
-            ${renderFilterControl()}
+      ${renderFilterControl || renderBulkActionsControl
+        ? html`<div class="relative flex flex-col overflow-hidden">
+            ${renderBulkActionsControl
+              ? html`<div
+                  class="${tw`has-[sl-checkbox[checked]]:translate-y-0 has-[sl-checkbox[indeterminate]]:translate-y-0 has-[sl-checkbox[checked]]:opacity-100 has-[sl-checkbox[indeterminate]]:opacity-100`} peer absolute flex h-full translate-y-full flex-wrap items-center gap-2 text-neutral-500 opacity-0 transition-all"
+                >
+                  ${renderBulkActionsControl()}
+                </div>`
+              : nothing}
+            ${renderFilterControl
+              ? html`<div
+                  class=${clsx(
+                    tw`flex flex-wrap items-center gap-2`,
+                    renderBulkActionsControl &&
+                      tw`order-first transition-all peer-has-[sl-checkbox[checked]]:-translate-y-full peer-has-[sl-checkbox[indeterminate]]:-translate-y-full peer-has-[sl-checkbox[checked]]:opacity-0 peer-has-[sl-checkbox[indeterminate]]:opacity-0`,
+                  )}
+                >
+                  <span class="whitespace-nowrap text-sm text-neutral-500">
+                    ${msg("Filter by:")}
+                  </span>
+                  ${renderFilterControl()}
+                </div>`
+              : nothing}
           </div>`
         : nothing}
     </div>
