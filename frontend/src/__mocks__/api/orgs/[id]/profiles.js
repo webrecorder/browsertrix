@@ -9,7 +9,7 @@ export default {
       name: "instagram.com",
       description: "",
       userid: "fake-567b-4e02-b23d-85689019883f",
-      oid: "fake-6279-4b82-852c-19bc2e779bd8",
+      oid: "x_example_org_id_x",
       origins: ["https://www.instagram.com"],
       resource: {
         filename: "fake.tar.gz",
@@ -38,7 +38,7 @@ export default {
       name: "youtube.com",
       description: "",
       userid: "fake-567b-4e02-b23d-85689019883f",
-      oid: "fake-6279-4b82-852c-19bc2e779bd8",
+      oid: "x_example_org_id_x",
       origins: ["https://www.youtube.com"],
       resource: {
         filename: "fake.tar.gz",
@@ -70,7 +70,7 @@ export default {
       name: "facebook.com (proxied)",
       description: "",
       userid: "fake-567b-4e02-b23d-85689019883f",
-      oid: "fake-6279-4b82-852c-19bc2e779bd8",
+      oid: "x_example_org_id_x",
       origins: ["https://www.facebook.com"],
       resource: {
         filename: "fake.tar.gz",
@@ -99,7 +99,7 @@ export default {
       name: "Bluesky",
       description: "",
       userid: "fake-567b-4e02-b23d-85689019883f",
-      oid: "fake-6279-4b82-852c-19bc2e779bd8",
+      oid: "x_example_org_id_x",
       origins: ["https://bsky.app"],
       resource: {
         filename: "fake.tar.gz",
