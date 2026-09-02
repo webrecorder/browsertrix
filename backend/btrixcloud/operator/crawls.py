@@ -229,7 +229,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
-            seed_file_url=spec.get("seedFileUrl", ""),
+            seed_file_id=spec.get("seedFileId", ""),
         )
 
         # if finalizing, crawl is being deleted
@@ -470,11 +470,25 @@ class CrawlOperator(BaseOperator):
         config_update_needed = (
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
+
+        # Update config to refresh seed file presigned url if it has
+        # already expired or will within the next hour
+        seed_file_presigned_update_needed = bool(crawl.seed_file_id) and (
+            status.seed_file_presigned_expiry is None
+            or (status.seed_file_presigned_expiry <= (dt_now() + timedelta(hours=1)))
+        )
+        if seed_file_presigned_update_needed:
+            logger.debug(
+                "seed_file_presigned_url_update_needed",
+                expire_at=status.seed_file_presigned_expiry,
+            )
+        config_update_needed = config_update_needed or seed_file_presigned_update_needed
+
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
         children.extend(
             await self._load_crawl_configmap(
-                crawl, data.children, params, config_update_needed
+                crawl, data.children, params, status, config_update_needed
             )
         )
 
@@ -562,7 +576,12 @@ class CrawlOperator(BaseOperator):
         return behaviors
 
     async def _load_crawl_configmap(
-        self, crawl: CrawlSpec, children, params, config_update_needed: bool
+        self,
+        crawl: CrawlSpec,
+        children,
+        params,
+        status: CrawlStatus,
+        config_update_needed: bool,
     ):
         name = f"crawl-config-{crawl.id}"
 
@@ -591,8 +610,19 @@ class CrawlOperator(BaseOperator):
             raw_config["behaviors"], crawler_image
         )
 
-        if crawl.seed_file_url:
-            raw_config["seedFile"] = crawl.seed_file_url
+        if crawl.seed_file_id:
+            seed_file_out, expire_at = await self.file_ops.get_seed_file_out(
+                UUID(crawl.seed_file_id), crawl.org, force_update_presigned=True
+            )
+            status.seed_file_presigned_expiry = expire_at
+            logger.debug(
+                "seed_file_presigned_url_generated",
+                crawl_id=crawl.id,
+                seed_file_url=seed_file_out.path,
+                seed_file_id=crawl.seed_file_id,
+                expire_at=expire_at,
+            )
+            raw_config["seedFile"] = seed_file_out.path
         raw_config.pop("seedFileId", None)
 
         params["config"] = json.dumps(raw_config)
