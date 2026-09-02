@@ -107,6 +107,38 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
+    bytes_total_after = data["bytesStored"]
+    bytes_crawls_after = data["bytesStoredCrawls"]
+    bytes_finished_crawls_after = data["bytesStoredFinishedCrawls"]
+    bytes_active_crawls_after = data["bytesStoredActiveCrawls"]
+    bytes_uploads_after = data["bytesStoredUploads"]
+    bytes_profiles_after = data["bytesStoredProfiles"]
+    bytes_seed_files_after = data["bytesStoredSeedFiles"]
+    bytes_thumbnails_after = data["bytesStoredThumbnails"]
+    bytes_dedupe_indexes_after = data["bytesStoredDedupeIndexes"]
+
+    logger.info(
+        "org_storage_stats_after",
+        bytes_total_after=bytes_total_after,
+        bytes_total=bytes_total,
+        bytes_crawls_after=bytes_crawls_after,
+        bytes_crawls=bytes_crawls,
+        bytes_finished_crawls_after=bytes_finished_crawls_after,
+        bytes_finished_crawls=bytes_finished_crawls,
+        bytes_active_crawls_after=bytes_active_crawls_after,
+        bytes_active_crawls=bytes_active_crawls,
+        bytes_uploads_after=bytes_uploads_after,
+        bytes_uploads=bytes_uploads,
+        bytes_profiles_after=bytes_profiles_after,
+        bytes_profiles=bytes_profiles,
+        bytes_seed_files_after=bytes_seed_files_after,
+        bytes_seed_files=bytes_seed_files,
+        bytes_thumbnails_after=bytes_thumbnails_after,
+        bytes_thumbnails=bytes_thumbnails,
+        bytes_dedupe_indexes_after=bytes_dedupe_indexes_after,
+        bytes_dedupe_indexes=bytes_dedupe_indexes,
+    )
+
     assert data["bytesStored"] == bytes_total
     assert data["bytesStoredCrawls"] == bytes_crawls
     assert data["bytesStoredFinishedCrawls"] == bytes_finished_crawls
