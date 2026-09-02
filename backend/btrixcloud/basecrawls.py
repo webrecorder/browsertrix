@@ -1159,36 +1159,54 @@ class BaseCrawlOps:
         Returns tuple of (total, crawls only, finished crawls only,
         active crawls only, uploads only).
         """
-        total_size = 0
         crawls_size = 0
         crawls_finished_size = 0
         crawls_active_size = 0
         uploads_size = 0
 
-        match_query: dict[str, str | UUID] = {"oid": oid}
-        if type_:
-            match_query["type"] = type_
+        match_query: dict[str, UUID | str] = {"oid": oid}
 
-        cursor = self.crawls.find(match_query)
-        async for crawl_dict in cursor:
-            files = crawl_dict.get("files", [])
-            crawl_type = crawl_dict.get("type")
+        calc_logger = logger.bind(oid=oid, crawl_type=type_)
 
-            item_size = 0
-            for file_ in files:
-                item_size += file_.get("size", 0)
+        # Calculate crawls
+        if type_ != "upload":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "crawl"}},
+                        {"$group": {"_id": "$state", "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list()
 
-            total_size += item_size
-            if crawl_type == "crawl":
-                crawls_size += item_size
+                for state_dict in res:
+                    state = state_dict["_id"]
+                    size = state_dict.get("size", 0)
 
-                crawl_state = crawl_dict.get("state", "")
-                if crawl_state in RUNNING_AND_WAITING_STATES:
-                    crawls_active_size += item_size
-                else:
-                    crawls_finished_size += item_size
-            if crawl_type == "upload":
-                uploads_size += item_size
+                    crawls_size += size
+                    if state in RUNNING_AND_WAITING_STATES:
+                        crawls_active_size += size
+                    else:
+                        crawls_finished_size += size
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_crawl_bytes_stored_calculation_error")
+
+        # Calculate uploads
+        if type_ != "crawl":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "upload"}},
+                        {"$group": {"_id": None, "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list(length=1)
+                if res:
+                    uploads_size = res[0].get("size", 0)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_upload_bytes_stored_calculation_error")
+
+        total_size = crawls_size + uploads_size
 
         return (
             total_size,
