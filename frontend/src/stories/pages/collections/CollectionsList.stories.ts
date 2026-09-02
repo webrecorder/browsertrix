@@ -4,6 +4,7 @@ import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./CollectionsList";
 
+import collectionsMock from "@/__mocks__/api/orgs/[id]/collections";
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {
   userDecorator,
@@ -44,6 +45,22 @@ export const NoItems: Story = {
             pageSize: 20,
             items: [],
           });
+        }),
+      ],
+    },
+  },
+};
+
+export const WithItems: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/collections/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Collection>>(
+            collectionsMock as APIPaginatedList<Collection>,
+          );
         }),
       ],
     },
