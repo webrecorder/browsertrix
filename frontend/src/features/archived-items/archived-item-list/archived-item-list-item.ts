@@ -124,7 +124,7 @@ export class ArchivedItemListItem extends BtrixElement {
         ${this.checkbox
           ? html`
               <btrix-table-cell
-                class="pr-1.5"
+                class="pl-2.5 pr-1"
                 @click=${(e: MouseEvent) =>
                   (e.target as HTMLElement)
                     .querySelector("sl-checkbox")
