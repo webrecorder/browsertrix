@@ -4,6 +4,7 @@ import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./OrgCrawls";
 
+import crawlRunsMock from "@/__mocks__/api/orgs/[id]/crawls";
 import { type TagCounts } from "@/components/ui/tag-filter/types";
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/stories/decorators/userDecorator";
 import { type APIPaginatedList } from "@/types/api";
 import { type ArchivedItemSearchValues } from "@/types/archivedItems";
-import { type Crawl } from "@/types/crawler";
+import { type ListCrawl } from "@/types/crawler";
 
 const meta = {
   title: "Pages/Crawl Runs",
@@ -50,6 +51,7 @@ const tagCountsRequest = () =>
       tags: [],
     });
   });
+
 export const NoItems: Story = {
   args: {},
   parameters: {
@@ -59,12 +61,30 @@ export const NoItems: Story = {
         tagCountsRequest(),
         http.get(/\/crawls/, async () => {
           await delay(500);
-          return HttpResponse.json<APIPaginatedList<Crawl>>({
+          return HttpResponse.json<APIPaginatedList<ListCrawl>>({
             total: 0,
             page: 1,
             pageSize: 20,
             items: [],
           });
+        }),
+      ],
+    },
+  },
+};
+
+export const WithItems: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListCrawl>>(
+            crawlRunsMock as APIPaginatedList<ListCrawl>,
+          );
         }),
       ],
     },
