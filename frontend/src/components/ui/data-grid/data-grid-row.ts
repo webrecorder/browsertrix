@@ -257,6 +257,7 @@ export class DataGridRow<
             this.alignContent === "end" && tw`items-end`,
             col.align === "center" && tw`justify-center`,
             col.align === "end" && tw`justify-end`,
+            col.renderCellClasses?.({ item }),
           )}
           .column=${col}
           .item=${item}
