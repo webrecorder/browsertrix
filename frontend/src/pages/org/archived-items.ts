@@ -6,7 +6,6 @@ import type {
   SlCheckbox,
   SlSelect,
 } from "@shoelace-style/shoelace";
-import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
