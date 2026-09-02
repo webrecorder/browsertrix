@@ -10,8 +10,49 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
-    # Prior to deleting org, ensure recalculating storage works now that
-    # resources of all types have been created.
+    """Prior to deleting org, ensure recalculating storage works as expected"""
+
+    # First get our baseline values
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    bytes_total = data["bytesStored"]
+    assert bytes_total > 0
+    bytes_crawls = data["bytesStoredCrawls"]
+    assert bytes_crawls > 0
+    bytes_finished_crawls = data["bytesStoredFinishedCrawls"]
+    assert bytes_finished_crawls > 0
+    bytes_active_crawls = data["bytesStoredActiveCrawls"]
+    assert bytes_active_crawls >= 0
+
+    assert bytes_crawls == bytes_finished_crawls + bytes_active_crawls
+
+    bytes_uploads = data["bytesStoredUploads"]
+    assert bytes_uploads > 0
+    bytes_profiles = data["bytesStoredProfiles"]
+    assert bytes_profiles > 0
+    bytes_seed_files = data["bytesStoredSeedFiles"]
+    assert bytes_seed_files >= 0
+    bytes_thumbnails = data["bytesStoredThumbnails"]
+    assert bytes_thumbnails >= 0
+    bytes_dedupe_indexes = data["bytesStoredDedupeIndexes"]
+    assert bytes_dedupe_indexes >= 0
+
+    assert (
+        bytes_total
+        == bytes_crawls
+        + bytes_uploads
+        + bytes_profiles
+        + bytes_seed_files
+        + bytes_thumbnails
+        + bytes_dedupe_indexes
+    )
+
+    # Recalculate
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/recalculate-storage",
         headers=admin_auth_headers,
@@ -58,6 +99,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
             unstructured_message=f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})",
         )
 
+    # Validate results of recalculation
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
         headers=admin_auth_headers,
@@ -65,10 +107,15 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
 
-    assert data["bytesStored"] > 0
-    assert data["bytesStoredCrawls"] > 0
-    assert data["bytesStoredUploads"] > 0
-    assert data["bytesStoredProfiles"] > 0
+    assert data["bytesStored"] == bytes_total
+    assert data["bytesStoredCrawls"] == bytes_crawls
+    assert data["bytesStoredFinishedCrawls"] == bytes_finished_crawls
+    assert data["bytesStoredActiveCrawls"] == bytes_active_crawls
+    assert data["bytesStoredUploads"] == bytes_uploads
+    assert data["bytesStoredProfiles"] == bytes_profiles
+    assert data["bytesStoredSeedFiles"] == bytes_seed_files
+    assert data["bytesStoredThumbnails"] == bytes_thumbnails
+    assert data["bytesStoredDedupeIndexes"] == bytes_dedupe_indexes
 
 
 def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
