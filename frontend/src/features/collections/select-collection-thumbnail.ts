@@ -705,10 +705,13 @@ export class SelectCollectionThumbnail extends BtrixElement {
         }
         break;
       }
-      case "Space":
-        // Prevent closing dropdown
+      case "Enter":
+      case " ": {
+        // Prevent making selection
+        e.preventDefault();
         e.stopPropagation();
         break;
+      }
       default:
         break;
     }
