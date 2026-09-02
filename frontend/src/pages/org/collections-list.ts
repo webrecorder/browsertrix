@@ -186,7 +186,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           })}
           ${this.collections
             ? html`
-                <div class="lg:mx-2">
+                <div class="lg:mx-1">
                   <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
                     ${guard(
                       [
