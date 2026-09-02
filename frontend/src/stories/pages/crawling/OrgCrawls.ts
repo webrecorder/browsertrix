@@ -2,7 +2,7 @@ import { html } from "lit";
 
 import type { OrgCrawls } from "@/pages/org/crawls";
 
-import "@/features/crawl-workflows";
+import "@/features/crawls";
 import "@/pages/org/crawls";
 
 export type RenderProps = OrgCrawls;
