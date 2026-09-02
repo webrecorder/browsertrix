@@ -465,7 +465,7 @@ export class BrowserProfilesList extends BtrixElement {
     return html`
       <sl-select
         id="sort-select"
-        class="md:min-w-[9.2rem]"
+        class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
         value=${this.orderBy.value.field}
