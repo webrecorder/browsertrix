@@ -607,7 +607,7 @@ export class CrawlsList extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<ArchivedItem>) => html`
-    <section class="lg:mx-2">
+    <section class="lg:mx-1">
       ${items.length
         ? html`
             <btrix-archived-item-list .listType=${this.itemType}>
