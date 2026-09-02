@@ -81,20 +81,53 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
-    async def run_replica_job(
+    async def run_copy_bucket_job(
+        self,
+        primary_storage: StorageRef,
+        replica_storage: StorageRef,
+        primary_endpoint: str,
+        primary_bucket_suffix: str,
+        replica_endpoint: str,
+        replica_bucket_suffix: str,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """run job to replicate primary storage bucket to replica location"""
+        job_type = BgJobType.COPY_BUCKET.value
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"{job_type}-{secrets.token_hex(5)}"
+
+        params: dict[str, object] = {
+            "id": job_id,
+            "primary_secret_name": primary_storage.get_storage_secret_name(),
+            "primary_file_path": primary_bucket_suffix,
+            "primary_endpoint": primary_endpoint,
+            "replica_secret_name": replica_storage.get_storage_secret_name(),
+            "replica_file_path": replica_bucket_suffix,
+            "replica_endpoint": replica_endpoint,
+            "BgJobType": BgJobType,
+        }
+
+        data = self.templates.env.get_template("copy_bucket_job.yaml").render(params)
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
+    async def run_delete_replica_job(
         self,
         oid: str,
-        job_type: str,
         replica_storage: StorageRef,
         replica_file_path: str,
         replica_endpoint: str,
         delay_days: int = 0,
-        primary_storage: StorageRef | None = None,
-        primary_file_path: str | None = None,
-        primary_endpoint: str | None = None,
         existing_job_id: str | None = None,
     ) -> tuple[str, str | None]:
         """run job to replicate file from primary storage to replica storage"""
+
+        job_type = BgJobType.DELETE_REPLICA.value
 
         if existing_job_id:
             job_id = existing_job_id
@@ -109,23 +142,16 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
-            "primary_secret_name": (
-                primary_storage.get_storage_secret_name(oid)
-                if primary_storage
-                else None
-            ),
-            "primary_file_path": primary_file_path if primary_file_path else None,
-            "primary_endpoint": primary_endpoint if primary_endpoint else None,
             "BgJobType": BgJobType,
         }
 
-        if job_type == BgJobType.DELETE_REPLICA.value and delay_days > 0:
+        if delay_days > 0:
             # If replica deletion delay is configured, schedule as cronjob
             return await self.create_replica_deletion_scheduled_job(
                 job_id, params, delay_days
             )
 
-        data = self.templates.env.get_template("replica_job.yaml").render(params)
+        data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 
@@ -352,7 +378,9 @@ class CrawlManager(K8sAPI):
             larger_resources=True,
         )
 
-    async def ensure_retry_stuck_uploads_cron_job_exists(self):
+    async def ensure_retry_stuck_uploads_cron_job_exists(
+        self, disable_job: bool = False
+    ):
         """ensure cron background job to retry stuck uploads exists"""
 
         default_schedule = "0 * * * *"
@@ -360,11 +388,42 @@ class CrawlManager(K8sAPI):
             "RETRY_STUCK_UPLOADS_CRON_SCHEDULE", default_schedule
         )
 
-        await self._ensure_bg_cron_job_exists(
-            "retry-stuck-uploads-cron",
-            BgJobType.RETRY_STUCK_UPLOADS.value,
-            job_schedule,
-        )
+        job_id = "retry-stuck-uploads-cron"
+
+        if not disable_job:
+            return await self._ensure_bg_cron_job_exists(
+                job_id,
+                BgJobType.RETRY_STUCK_UPLOADS.value,
+                job_schedule,
+            )
+
+        # If no replica locations are configured, make sure no replication cron
+        # job exists, as one could have been previously configured.
+        logger.info("bg_cron_job_deleting", job_id=job_id, disable_job=True)
+        await self._delete_cron_job_if_exists(job_id)
+
+    async def ensure_file_replication_cron_job_exists(
+        self, replicas_configured: bool = False
+    ):
+        """ensure cron background job to replica default storages exists"""
+
+        # Default schedule is every 2 hours
+        default_schedule = "0 */2 * * *"
+        job_schedule = os.environ.get("REPLICATION_JOB_CRON_SCHEDULE", default_schedule)
+
+        job_id = "replicate-files-cron"
+
+        if replicas_configured:
+            return await self._ensure_bg_cron_job_exists(
+                job_id,
+                BgJobType.REPLICATE_FILES_CRON.value,
+                job_schedule,
+            )
+
+        # If no replica locations are configured, make sure no replication cron
+        # job exists, as one could have been previously configured.
+        logger.info("bg_cron_job_deleting", job_id=job_id, replicas_configured=False)
+        await self._delete_cron_job_if_exists(job_id)
 
     async def _ensure_bg_cron_job_exists(
         self,
@@ -412,6 +471,17 @@ class CrawlManager(K8sAPI):
 
         cron_logger.info("bg_cron_job_creating")
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
+
+    async def _delete_cron_job_if_exists(self, job_id: str):
+        """Delete cron job by id if it exists"""
+        try:
+            await self.batch_api.delete_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
 
     async def create_crawl_job(
         self,

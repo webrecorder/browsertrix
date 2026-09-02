@@ -121,9 +121,13 @@ data:
 
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
+  REPLICATION_JOB_CRON_SCHEDULE: "{{ .Values.replication_job_cron_schedule }}"
+
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 
   RETRY_STUCK_UPLOADS_CRON_SCHEDULE: "{{ .Values.stuck_uploads_cron_schedule }}"
+
+  DISABLE_STUCK_UPLOADS_CRON: "{{ .Values.disable_stuck_uploads_cron }}"
 
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 

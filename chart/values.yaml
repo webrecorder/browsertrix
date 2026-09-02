@@ -192,6 +192,14 @@ cleanup_files_after_minutes: 1440
 # without a running background job and retrying them
 stuck_uploads_cron_schedule: "0 * * * *"
 
+# Option to disable stuck uploads cron job
+# Generally should only be set true for testing in CI
+disable_stuck_uploads_cron: false
+
+# Cron schedule for periodically syncing replica storage from primary
+# Defaults to every two hours
+replication_job_cron_schedule: "0 */2 * * *"
+
 # Emails Image
 # =========================================
 emails_image: "docker.io/webrecorder/browsertrix-emails:1.25.1"
