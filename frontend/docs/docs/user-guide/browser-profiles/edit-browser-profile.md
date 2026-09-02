@@ -6,7 +6,7 @@ To check or update the profile, go to the browser profile page and select _Load 
 
 !!! tip "Tip: Fail crawls early to identify logged-out profiles"
 
-    Enabling [_Fail Crawl If Not Logged In_](../workflow-setup.md#fail-crawl-if-not-logged-in) on a workflow can help identify which profiles need attention and prevent adding unwanted logged-out content to a collection.
+    Enabling [_Fail Crawl If Not Logged In_](../workflow-setup.md#fail-crawl-if-not-logged-in) on a workflow can help identify which profiles need attention and prevent archiving unwanted logged-out content.
 
 ## Load / Edit Profile Settings
 

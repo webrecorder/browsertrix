@@ -1,6 +1,14 @@
 # Intro to Collections
 
-Collections provide a way to dynamically combine and group multiple individual crawls and uploads into a contextual, unified archive replay experience.
+Dynamically combine and group multiple crawls and uploads into a contextual, unified archive replay experience.
+
+## Introduction { .invisible }
+
+---
+
+Collections are a flexible way of grouping archived items, either to provide context for multiple items at once, or to enable multi-item features like [deduplication](deduplication.md){ data-preview }, or both.
+
+If your web archives are meant to be public, you can [publish a collection](presentation-sharing.md){ data-preview } so that anyone can browse your shareable web archives, even without a Browsertrix account.
 
 ## Create a Collection
 
