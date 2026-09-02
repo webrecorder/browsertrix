@@ -77,7 +77,7 @@ In a list of three or more items, the list item proceeding the word "and" should
 
 ##### Example
 
-| Use                        | Don't use                 |
+| Do                         | Don’t                     |
 | -------------------------- | ------------------------- |
 | One, two, three, and four. | One, two, three and four. |
 | Charles, Ada, and Alan.    | Charles, Ada and Alan.    |
@@ -98,10 +98,6 @@ In the middle of a sentence:
 
 Webrecorder's software packages are all proper nouns and should always be capitalized. Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
 
-### Be Concise, Avoid "You" Statements
-
-Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder. "You can" or "you may" can be used, but preferably when giving supplemental advice and generally not when providing instructions that should be followed to achieve a successful outcome. Otherwise, avoid spending time referring to the reader, instead tell them what they should know.
-
 ##### Example
 
 > If you want to do x, you can click on y.
@@ -120,11 +116,37 @@ Avoid using acronyms when reuse is not frequent enough to warrant space savings.
 
 ### Headings
 
-All headings should be in [MLA style title case](https://capitalizemytitle.com/style/MLA/).
+Titles and primary headings should be in [MLA style title case](https://capitalizemytitle.com/style/MLA/).
 
 ##### Example
 
-> Indiana Jones and the Raiders of the Lost Ark
+> Create a New Browser Profile
+
+Secondary and tertiary headings can use sentence case.
+
+##### Example
+
+> Reset previous configuration on save
+
+### Hyphenation & Dashes
+
+Em dashes (—) are always surrounded by spaces when used in sentences. They’re used to separate thoughts without breaking sentences, to indicate a new direction, as an alternative to brackets or commas, etc.
+
+##### Example
+
+> Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button.
+
+En dashes (–) are used between two values, e.g. 5pm–10pm. They are usually used without spaces surrounding them, though when separating words spaces can be appropriate.
+
+Hyphens (-) are used to link words, e.g. “owner-operator” or “high-fidelity”. They’re only used when needed — when a term would be ambiguously grouped without one, or where not using one would cause a sentence to feel awkward. A good clue is if the term formed by the linked words is acting as an adjective.
+
+Certain terms, such as the ones listed below, should be preferred as hyphenated, rather than not. This is not a strict rule, however — use your best judgment!
+
+| Do             | Don’t          |
+|----------------|----------------|
+| real-time      | real time      |
+| cloud-based    | cloud based    |
+| logged-in user | logged in user |
 
 ### Referencing Features and Their Options
 
@@ -137,6 +159,13 @@ Actions with text (buttons in the app) should also be Title Cased and set in _it
 ##### Example
 
 > Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
+
+Page names should be Title Cased and **bolded**.
+
+##### Example
+
+> Navigate to your **Dashboard**.  
+> These settings and more can be found in the **Settings** page.
 
 ### Manual Word Wrapping
 
