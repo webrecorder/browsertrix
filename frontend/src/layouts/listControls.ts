@@ -17,7 +17,7 @@ export function listControls({
 }) {
   return html`
     <div
-      class="sticky top-2 z-10 mb-3 flex flex-col gap-3 rounded-lg border bg-neutral-50 p-3"
+      class="sticky top-2 z-10 mb-3 flex flex-col gap-3 rounded-lg border bg-neutral-50 px-3.5 py-3"
     >
       <div
         class=${clsx(
