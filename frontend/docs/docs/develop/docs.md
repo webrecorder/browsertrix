@@ -160,6 +160,13 @@ Actions with text (buttons in the app) should also be Title Cased and set in _it
 
 > Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
+Page names should be Title Cased and **bolded**.
+
+##### Example
+
+> Navigate to your **Dashboard**.  
+> These settings and more can be found in the **Settings** page.
+
 ### Manual Word Wrapping
 
 Do not manually wrap words by adding newlines when writing documentation.
