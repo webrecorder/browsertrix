@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/web-components";
 import { html, type TemplateResult } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { renderComponent, type RenderProps } from "./ArchivedItemList";
 
 import archivedItemsMock from "@/__mocks__/api/orgs/[id]/all-crawls";
+import { type ArchivedItemListItem } from "@/features/archived-items/archived-item-list/archived-item-list-item";
 import { type ListArchivedItem } from "@/types/crawler";
 
 const meta = {
@@ -22,11 +24,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
-const renderItems = (items: ListArchivedItem[], content?: TemplateResult) =>
+const renderItems = (
+  items: ListArchivedItem[],
+  props?: Partial<ArchivedItemListItem> & { content?: TemplateResult },
+) =>
   items.map(
     (item) =>
-      html`<btrix-archived-item-list-item href="#" .item=${item}>
-        ${content}
+      html`<btrix-archived-item-list-item
+        .item=${item}
+        href=${ifDefined(props?.href)}
+        ?checkbox=${props?.checkbox}
+      >
+        ${props?.content}
       </btrix-archived-item-list-item>`,
   );
 
@@ -44,9 +53,9 @@ export const OverviewMenu: Story = {
         class="p-0"
       ></btrix-table-header-cell>
 
-      ${renderItems(
-        archivedItemsMock.items as ListArchivedItem[],
-        html`<btrix-table-cell slot="actionCell" class="p-0">
+      ${renderItems(archivedItemsMock.items as ListArchivedItem[], {
+        href: "#",
+        content: html`<btrix-table-cell slot="actionCell" class="p-0">
           <btrix-overflow-dropdown>
             <sl-menu>
               <sl-menu-item>Option 1</sl-menu-item>
@@ -55,7 +64,36 @@ export const OverviewMenu: Story = {
             </sl-menu>
           </btrix-overflow-dropdown>
         </btrix-table-cell>`,
-      )}
+      })}
+    `,
+  },
+};
+
+export const Checkbox: Story = {
+  args: {
+    content: html`
+      <btrix-table-header-cell
+        slot="checkboxCell"
+        class="pr-1.5"
+      ></btrix-table-header-cell>
+      <btrix-table-header-cell
+        slot="actionCell"
+        class="p-0"
+      ></btrix-table-header-cell>
+
+      ${renderItems(archivedItemsMock.items as ListArchivedItem[], {
+        href: "#",
+        checkbox: true,
+        content: html`<btrix-table-cell slot="actionCell" class="p-0">
+          <btrix-overflow-dropdown>
+            <sl-menu>
+              <sl-menu-item>Option 1</sl-menu-item>
+              <sl-menu-item>Option 2</sl-menu-item>
+              <sl-menu-item>Option 3</sl-menu-item>
+            </sl-menu>
+          </btrix-overflow-dropdown>
+        </btrix-table-cell>`,
+      })}
     `,
   },
 };
