@@ -23,6 +23,7 @@ import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
+ * @fires btrix-change
  */
 @customElement("btrix-archived-item-list-item")
 @localized()
@@ -122,10 +123,16 @@ export class ArchivedItemListItem extends BtrixElement {
       >
         ${this.checkbox
           ? html`
-              <btrix-table-cell class="pr-0">
+              <btrix-table-cell
+                class="pr-1.5"
+                @click=${(e: MouseEvent) =>
+                  (e.target as HTMLElement)
+                    .querySelector("sl-checkbox")
+                    ?.click()}
+              >
                 <sl-checkbox
                   id=${checkboxId}
-                  class="flex"
+                  class="leading-none part-[label]:hidden"
                   ?checked=${this.checked}
                   @sl-change=${(e: CustomEvent) => {
                     this.dispatchEvent(
@@ -137,6 +144,8 @@ export class ArchivedItemListItem extends BtrixElement {
                               checked: (e.currentTarget as SlCheckbox).checked,
                             },
                           },
+                          composed: true,
+                          bubbles: true,
                         },
                       ),
                     );
@@ -145,7 +154,7 @@ export class ArchivedItemListItem extends BtrixElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell class="pr-0 text-base">
+        <btrix-table-cell class="pr-1.5 text-base">
           ${isUpload
             ? html`<btrix-upload-status
                 state=${this.item.state}
