@@ -574,11 +574,14 @@ ingress_class: nginx
 # optionally enable signer
 signer:
   enabled: false
-  image: webrecorder/authsign:0.5.2
+  image: webrecorder/authsign:0.6.0b3
   # host: <set to signer domain>
   # cert_email: "test@example.com
   # image_pull_policy: "IfNotPresent"
   # auth_token: <set to custom value>
+
+  # optional: set to use a custom timestamping service
+  # tsr_signing_url: http://timestamp.digicert.com/
 
 signer_cpu: "5m"
 
