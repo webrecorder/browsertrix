@@ -832,10 +832,11 @@ export class CrawlsList extends BtrixElement {
     const visibleCount = this.visibleItems.size;
     const selected = this.visibleItems.intersection(this.selectedItems);
     const selectedCount = selected.size;
-    const allSelected = selectedCount > 0 && selectedCount === visibleCount;
-    const someSelected = selectedCount > 0 && selectedCount !== visibleCount;
+    const anySelected = selectedCount > 0;
+    const allSelected = anySelected && selectedCount === visibleCount;
+    const someSelected = anySelected && selectedCount !== visibleCount;
 
-    return html`<div class="flex items-center gap-4">
+    return html`<div class="flex min-h-8 items-center gap-4">
         <sl-checkbox
           class="leading-none part-[label]:sr-only"
           ?checked=${allSelected}
@@ -856,10 +857,12 @@ export class CrawlsList extends BtrixElement {
         ${pluralOfItemsSelected(selectedCount)}
       </div>
 
-      <sl-icon-button
-        class="text-base text-danger"
-        name="trash3"
-      ></sl-icon-button>`;
+      ${anySelected
+        ? html`<sl-icon-button
+            class="text-base text-danger"
+            name="trash3"
+          ></sl-icon-button>`
+        : nothing} `;
   };
 
   private readonly renderSearch = () => {
