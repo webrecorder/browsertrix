@@ -1,5 +1,6 @@
 import { localized, msg, str } from "@lit/localize";
 import type { SlCheckbox, SlHideEvent } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { css, html, nothing } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -11,13 +12,18 @@ import type { ArchivedItemCheckedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
-import { ReviewStatus, type ArchivedItem, type Crawl } from "@/types/crawler";
+import {
+  ReviewStatus,
+  type Crawl,
+  type ListArchivedItem,
+} from "@/types/crawler";
 import { renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
 /**
  * @slot actionCell - Action cell
+ * @fires btrix-change
  */
 @customElement("btrix-archived-item-list-item")
 @localized()
@@ -45,7 +51,7 @@ export class ArchivedItemListItem extends BtrixElement {
   `;
 
   @property({ type: Object, attribute: false })
-  item?: ArchivedItem;
+  item?: ListArchivedItem;
 
   @property({ type: Boolean })
   checkbox = false;
@@ -109,16 +115,24 @@ export class ArchivedItemListItem extends BtrixElement {
 
     return html`
       <btrix-table-row
-        class=${this.href || this.checkbox
-          ? tw`cursor-pointer select-none whitespace-nowrap transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50`
-          : ""}
+        class=${clsx(
+          tw`whitespace-nowrap`,
+          (this.href || this.checkbox) &&
+            tw`cursor-pointer select-none transition-colors duration-fast focus-within:bg-neutral-50 hover:bg-neutral-50`,
+        )}
       >
         ${this.checkbox
           ? html`
-              <btrix-table-cell class="pr-0">
+              <btrix-table-cell
+                class="pr-1.5"
+                @click=${(e: MouseEvent) =>
+                  (e.target as HTMLElement)
+                    .querySelector("sl-checkbox")
+                    ?.click()}
+              >
                 <sl-checkbox
                   id=${checkboxId}
-                  class="flex"
+                  class="leading-none part-[label]:hidden"
                   ?checked=${this.checked}
                   @sl-change=${(e: CustomEvent) => {
                     this.dispatchEvent(
@@ -130,6 +144,8 @@ export class ArchivedItemListItem extends BtrixElement {
                               checked: (e.currentTarget as SlCheckbox).checked,
                             },
                           },
+                          composed: true,
+                          bubbles: true,
                         },
                       ),
                     );
@@ -138,7 +154,7 @@ export class ArchivedItemListItem extends BtrixElement {
               </btrix-table-cell>
             `
           : nothing}
-        <btrix-table-cell class="pr-0 text-base">
+        <btrix-table-cell class="pr-1.5 text-base">
           ${isUpload
             ? html`<btrix-upload-status
                 state=${this.item.state}
