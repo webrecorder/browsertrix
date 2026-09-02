@@ -304,6 +304,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private readonly renderSortControl = () => {
     return html`<sl-select
+        id="sort-select"
         class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
@@ -339,7 +340,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private readonly renderViewControl = () => {
     return html`<sl-radio-group
-      id="viewStyle"
+      id="view-select"
       value=${this.listView}
       size="small"
       @sl-change=${(e: SlChangeEvent) => {
