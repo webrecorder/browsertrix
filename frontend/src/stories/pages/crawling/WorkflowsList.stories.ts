@@ -4,6 +4,7 @@ import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./WorkflowsList";
 
+import workflowsMock from "@/__mocks__/api/orgs/[id]/crawlconfigs";
 import { type TagCounts } from "@/components/ui/tag-filter/types";
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {
@@ -50,6 +51,7 @@ const tagCountsRequest = () =>
       tags: [],
     });
   });
+
 export const NoItems: Story = {
   args: {},
   parameters: {
@@ -65,6 +67,24 @@ export const NoItems: Story = {
             pageSize: 20,
             items: [],
           });
+        }),
+      ],
+    },
+  },
+};
+
+export const WithItems: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/crawlconfigs/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListWorkflow>>(
+            workflowsMock as APIPaginatedList<ListWorkflow>,
+          );
         }),
       ],
     },

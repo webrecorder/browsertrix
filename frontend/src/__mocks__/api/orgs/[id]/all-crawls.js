@@ -5,7 +5,7 @@ export default {
   pageSize: 20,
   items: [
     {
-      id: "manual-20260901232643-55df3e06-4c8",
+      id: "fake-manual-20260901232643",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "Fake User Name",
@@ -62,7 +62,7 @@ export default {
       dedupeStats: null,
     },
     {
-      id: "manual-20260901232624-acf90e45-4c9",
+      id: "fake-manual-20260901232624",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "Fake User Name",
@@ -119,7 +119,7 @@ export default {
       dedupeStats: null,
     },
     {
-      id: "manual-20260901232543-43bc5934-c3a",
+      id: "fake-manual-20260901232543",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "Fake User Name",
@@ -233,7 +233,7 @@ export default {
       dedupeStats: null,
     },
     {
-      id: "manual-20260901232502-6d30f1a2-ad7",
+      id: "fake-manual-20260901232502",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "Fake User Name",

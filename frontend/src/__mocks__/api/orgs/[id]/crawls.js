@@ -5,7 +5,7 @@ export default {
   pageSize: 20,
   items: [
     {
-      id: "sched-1f918c99-ff4-29803680",
+      id: "fake-sched-29803680",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "User Name",
@@ -66,7 +66,7 @@ export default {
       dedupeStats: null,
     },
     {
-      id: "sched-1b8d61ed-787-29802660",
+      id: "fake-sched-29802660",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "User Name",
@@ -123,7 +123,7 @@ export default {
       dedupeStats: null,
     },
     {
-      id: "manual-20260810231145-5b5a7074-7b5",
+      id: "fake-manual-20260810231145",
       type: "crawl",
       userid: "x_example_user_id_x",
       userName: "admin",
