@@ -4,6 +4,7 @@ import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./BrowserProfilesList";
 
+import browserProfilesMock from "@/__mocks__/api/orgs/[id]/profiles";
 import { type TagCounts } from "@/components/ui/tag-filter/types";
 import { orgDecorator } from "@/stories/decorators/orgDecorator";
 import {
@@ -11,7 +12,7 @@ import {
   type StorybookUserProps,
 } from "@/stories/decorators/userDecorator";
 import { type APIPaginatedList } from "@/types/api";
-import { type ListArchivedItem } from "@/types/crawler";
+import { type Profile } from "@/types/crawler";
 import { type SearchValues } from "@/utils/searchValues";
 
 const meta = {
@@ -57,12 +58,30 @@ export const NoItems: Story = {
         tagCountsRequest(),
         http.get(/\/profiles/, async () => {
           await delay(500);
-          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>({
+          return HttpResponse.json<APIPaginatedList<Profile>>({
             total: 0,
             page: 1,
             pageSize: 20,
             items: [],
           });
+        }),
+      ],
+    },
+  },
+};
+
+export const WithItems: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/profiles/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>(
+            browserProfilesMock as APIPaginatedList<Profile>,
+          );
         }),
       ],
     },
