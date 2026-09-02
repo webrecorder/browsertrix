@@ -139,7 +139,9 @@ export class ArchivedItemDetailQA extends BtrixElement {
     const fileCount = this.crawl?.filePageCount || 0;
     const errorCount = this.crawl?.errorPageCount || 0;
     const doneCount = this.crawl?.stats?.done
-      ? parseInt(this.crawl.stats.done)
+      ? typeof this.crawl.stats.done === "string"
+        ? parseInt(this.crawl.stats.done)
+        : this.crawl.stats.done
       : 0;
     const htmlCount = doneCount - fileCount - errorCount;
 
