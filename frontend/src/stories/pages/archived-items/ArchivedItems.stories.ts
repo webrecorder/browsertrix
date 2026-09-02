@@ -51,6 +51,14 @@ const tagCountsRequest = () =>
       tags: [],
     });
   });
+const itemReplayRequest = () =>
+  http.get(/\/replay\.json/, async () => {
+    await delay(500);
+    return HttpResponse.json<ListArchivedItem>(
+      (archivedItemsMock as APIPaginatedList<ListArchivedItem>).items[0],
+    );
+  });
+
 export const NoItems: Story = {
   args: {},
   parameters: {
@@ -79,6 +87,7 @@ export const WithItems: Story = {
       handlers: [
         searchValuesRequest(),
         tagCountsRequest(),
+        itemReplayRequest(),
         http.get(/\/all-crawls/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
@@ -99,6 +108,7 @@ export const Crawler: Story = {
       handlers: [
         searchValuesRequest(),
         tagCountsRequest(),
+        itemReplayRequest(),
         http.get(/\/all-crawls/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
