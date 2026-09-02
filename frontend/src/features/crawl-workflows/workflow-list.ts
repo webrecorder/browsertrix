@@ -93,7 +93,7 @@ const columnCss = css`
 // Shared custom variables
 const hostVars = css`
   :host {
-    --row-offset: var(--sl-spacing-x-small);
+    --row-offset: var(--sl-spacing-2x-small);
   }
 `;
 
