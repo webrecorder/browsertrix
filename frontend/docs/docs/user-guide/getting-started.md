@@ -26,7 +26,7 @@ You likely have access already if:
 - [x] You joined an existing org and were given “crawler” permissions.
 - [x] You are the admin of a self-hosted instance.
 
-Check if you have access by logging in. If you see a [+ Create New...](#accessing-your-dashboard){ .md-button .md-button--primary .btrix-button } button in the dashboard, you’re able to start a site crawl. If you don’t see this button and think that you should, contact your org administrator to update your permissions.
+Check if you have access by logging in. If you see a **+ Create New...**{ .md-button .md-button--primary .btrix-button } button in the dashboard, you’re able to start a site crawl. If you don’t see this button and think that you should, contact your org administrator to update your permissions.
 
 ## Choose what to archive
 
@@ -53,11 +53,11 @@ Choose one of the following options to tailor this guide to what you’d like to
 
 ## Starting the crawl
 
-When you log in, the first page you see is the [org dashboard](overview.md){ data-preview }. If you’ve navigated away to another page, navigate back to **Dashboard**.
+When you log in, the first page you see is the org dashboard. If you’ve navigated away to another page, navigate back to **Dashboard**.
 
-You will create a [crawl workflow](crawl-workflows.md){ data-preview } to set up the crawl.
+You will create a [crawl workflow](concepts.md#crawl-workflow){ data-preview } to set up the crawl.
 
-1. Tap the [+ Create New...](#accessing-your-dashboard){ .md-button .md-button--primary .btrix-button } button and select **Crawl Workflow**.
+1. Tap the  **+ Create New...**{ .btrix-button } button and select **Crawl Workflow**.
 
 1. Select the [Crawl Scope](workflow-setup.md#crawl-scope){ data-preview } that best fits what you intend to archive:
 
@@ -101,7 +101,7 @@ You will create a [crawl workflow](crawl-workflows.md){ data-preview } to set up
         1. Scroll down and open the **Crawl Limits** section.
         1. Set a **Crawl Time Limit** and/or **Crawl Size Limit** according to what is reasonable within your org quotas.
 
-1. When you’re finished entering workflow settings, tap **Run Crawl**{ .md-button .md-button--primary .btrix-button }.
+1. When you’re finished entering workflow settings, tap **Run Crawl**{ .btrix-button }.
 
 You should now see your new crawl workflow running. Give the crawler a few moments to warm up, and then watch as it crawls the webpage!
 

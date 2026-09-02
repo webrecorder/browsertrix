@@ -7,7 +7,9 @@ import { locked, options, transaction, use } from "lit-shared-state";
 import { persist } from "./persist";
 
 import { authSchema, type Auth } from "@/types/auth";
+import { SubscriptionStatus } from "@/types/billing";
 import type { FeatureFlags } from "@/types/featureFlags";
+import { type Onboarding } from "@/types/onboarding";
 import type { OrgData } from "@/types/org";
 import {
   userInfoSchema,
@@ -36,6 +38,9 @@ export function makeAppStateService() {
     @options(persist(window.localStorage))
     userPreferences: UserPreferences | null = null;
 
+    @options(persist(window.localStorage))
+    onboarding: Onboarding | null = null;
+
     // TODO persist here
     auth: Auth | null = null;
 
@@ -48,6 +53,7 @@ export function makeAppStateService() {
     // Org details
     org: OrgData | null | undefined = undefined;
 
+    @options(persist(window.sessionStorage))
     userGuideOpen = false;
 
     // Since org slug is used to ID an org, use `userOrg`
@@ -146,15 +152,38 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
+    partialUpdateOnboarding(onboarding: Partial<AppState["onboarding"]>) {
+      if (onboarding) {
+        if (appState.onboarding) {
+          appState.onboarding = mergeDeep(appState.onboarding, onboarding);
+        } else {
+          appState.onboarding = {
+            ...onboarding,
+            orgId: onboarding.orgId || "",
+          };
+        }
+      } else {
+        appState.onboarding = onboarding;
+      }
+    }
+
+    @transaction()
+    @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
     }
 
+    @transaction()
     @unlock()
     updateOrg(org: AppState["org"]) {
       appState.org = org;
+
+      if (org) {
+        this.updateOnboardingForOrg(org);
+      }
     }
 
+    @transaction()
     @unlock()
     partialUpdateOrg(org: { id: string } & Partial<OrgData>) {
       if (org.id && appState.org?.id === org.id) {
@@ -162,6 +191,8 @@ export function makeAppStateService() {
           ...appState.org,
           ...org,
         };
+
+        this.updateOnboardingForOrg(appState.org);
       } else {
         console.warn("no matching org in app state");
       }
@@ -189,8 +220,30 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.userPreferences = null;
+      appState.onboarding = null;
       appState.orgSlug = null;
       appState.org = undefined;
+    }
+
+    private updateOnboardingForOrg(org: OrgData) {
+      const onboarding = !org.bytesStored;
+      const trialing = org.subscription?.status === SubscriptionStatus.Trialing;
+
+      if (appState.onboarding?.orgId === org.id) {
+        appState.onboarding = {
+          orgId: appState.onboarding.orgId,
+          noUsage: onboarding,
+          trialing,
+          stepsComplete: appState.onboarding.stepsComplete,
+        };
+      } else {
+        // Reset onboarding
+        appState.onboarding = {
+          orgId: org.id,
+          noUsage: onboarding,
+          trialing,
+        };
+      }
     }
   }
 

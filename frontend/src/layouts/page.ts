@@ -10,15 +10,17 @@ import { tw } from "@/utils/tailwind";
 export function pageHeading({
   content,
   level = 2,
+  classNames,
 }: {
   content?: string | TemplateResult | typeof nothing;
   level?: 2 | 3 | 4;
+  classNames?: typeof tw | string;
 }) {
   const tag = unsafeStatic(`h${level}`);
-  const classNames = tw`min-w-0 text-base font-medium leading-8 lg:text-lg`;
+  const classes = tw`min-w-0 text-base font-medium leading-8 lg:text-lg`;
 
   return staticHtml`
-    <${tag} class=${classNames}>
+    <${tag} class=${clsx(classes, classNames)}>
       ${
         content ||
         html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`
