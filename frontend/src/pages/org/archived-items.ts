@@ -31,6 +31,7 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
+import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
@@ -552,11 +553,11 @@ export class CrawlsList extends BtrixElement {
               </btrix-navigation-button>`;
             })}
           </div>
-          <div
-            class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
-          >
-            ${this.renderControls()}
-          </div>
+          ${listControls({
+            renderSearchControl: this.renderSearch,
+            renderSortControl: this.renderSortControl,
+            renderFilterControl: this.renderFilterControl,
+          })}
         </div>
 
         ${this.archivedItemsTask.render({
@@ -676,97 +677,7 @@ export class CrawlsList extends BtrixElement {
     </btrix-delete-item-dialog>
   `;
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
-
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
-          >
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="whitespace-nowrap text-sm text-neutral-500">
-            ${msg("Filter by:")}
-          </span>
-          <btrix-archived-item-state-filter
-            itemType=${ifDefined(this.itemType ?? undefined)}
-            .states=${this.filterBy.value.state}
-            @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
-              const value = e.detail.value.length ? e.detail.value : undefined;
-
-              if (isNotEqual(value, this.filterBy.value.state)) {
-                this.filterBy.setValue({
-                  ...this.filterBy.value,
-                  state: value,
-                });
-              }
-            }}
-          ></btrix-archived-item-state-filter>
-
-          <btrix-tag-filter
-            tagType=${this.itemType === "crawl"
-              ? "archived-item-crawl"
-              : this.itemType === "upload"
-                ? "upload"
-                : "archived-item"}
-            .tags=${this.filterByTags.value}
-            @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags || []);
-              this.filterByTagsType.setValue(e.detail.value?.type || "or");
-            }}
-          ></btrix-tag-filter>
-
-          <btrix-qa-review-filter
-            .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
-            @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
-              const value = e.detail.value ?? undefined;
-
-              if (this.filterBy.value.reviewStatus !== value) {
-                this.filterBy.setValue({
-                  ...this.filterBy.value,
-                  reviewStatus: value,
-                });
-              }
-            }}
-          ></btrix-qa-review-filter>
-
-          ${this.userInfo?.id
-            ? html`<btrix-filter-chip
-                ?checked=${this.filterByCurrentUser.value}
-                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                  const { checked } = e.target as FilterChip;
-                  this.filterByCurrentUser.setValue(Boolean(checked));
-                }}
-              >
-                ${msg("Mine")}
-              </btrix-filter-chip> `
-            : ""}
-          ${when(
-            this.hasFiltersSet,
-            () => html`
-              <sl-button
-                class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
-                size="small"
-                variant="text"
-                @click=${this.clearFilters}
-              >
-                <sl-icon slot="prefix" name="x-lg"></sl-icon>
-                ${msg("Clear All")}
-              </sl-button>
-            `,
-          )}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSortControl() {
+  private readonly renderSortControl = () => {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
@@ -814,9 +725,79 @@ export class CrawlsList extends BtrixElement {
         ></sl-icon-button>
       </sl-tooltip>
     `;
-  }
+  };
 
-  private renderSearch() {
+  private readonly renderFilterControl = () => {
+    return html`<btrix-archived-item-state-filter
+        itemType=${ifDefined(this.itemType ?? undefined)}
+        .states=${this.filterBy.value.state}
+        @btrix-change=${(e: BtrixChangeArchivedItemStateFilterEvent) => {
+          const value = e.detail.value.length ? e.detail.value : undefined;
+
+          if (isNotEqual(value, this.filterBy.value.state)) {
+            this.filterBy.setValue({
+              ...this.filterBy.value,
+              state: value,
+            });
+          }
+        }}
+      ></btrix-archived-item-state-filter>
+
+      <btrix-tag-filter
+        tagType=${this.itemType === "crawl"
+          ? "archived-item-crawl"
+          : this.itemType === "upload"
+            ? "upload"
+            : "archived-item"}
+        .tags=${this.filterByTags.value}
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
+          this.filterByTags.setValue(e.detail.value?.tags || []);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+        }}
+      ></btrix-tag-filter>
+
+      <btrix-qa-review-filter
+        .qaRatingRange=${this.filterBy.value.reviewStatus ?? null}
+        @btrix-change=${(e: BtrixChangeQARatingFilterEvent) => {
+          const value = e.detail.value ?? undefined;
+
+          if (this.filterBy.value.reviewStatus !== value) {
+            this.filterBy.setValue({
+              ...this.filterBy.value,
+              reviewStatus: value,
+            });
+          }
+        }}
+      ></btrix-qa-review-filter>
+
+      ${this.userInfo?.id
+        ? html`<btrix-filter-chip
+            ?checked=${this.filterByCurrentUser.value}
+            @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+              const { checked } = e.target as FilterChip;
+              this.filterByCurrentUser.setValue(Boolean(checked));
+            }}
+          >
+            ${msg("Mine")}
+          </btrix-filter-chip> `
+        : ""}
+      ${when(
+        this.hasFiltersSet,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${this.clearFilters}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}`;
+  };
+
+  private readonly renderSearch = () => {
     return html`
       <btrix-search-combobox
         .searchKeys=${this.searchKeys}
@@ -855,7 +836,7 @@ export class CrawlsList extends BtrixElement {
       >
       </btrix-search-combobox>
     `;
-  }
+  };
 
   private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
