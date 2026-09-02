@@ -119,3 +119,50 @@ export const Crawler: Story = {
     },
   },
 };
+
+export const BulkActions: Story = {
+  args: {
+    isCrawler: true,
+    bulkActions: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
+
+export const SelectedItems: Story = {
+  args: {
+    isCrawler: true,
+    bulkActions: true,
+    selectedItems: new Set(
+      (archivedItemsMock.items as ListArchivedItem[])
+        .slice(0, 2)
+        .map(({ id }) => id),
+    ),
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
