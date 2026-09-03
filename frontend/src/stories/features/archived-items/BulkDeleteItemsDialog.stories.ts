@@ -23,6 +23,22 @@ type Story = StoryObj<RenderProps>;
 
 export const WithItems: Story = {
   args: {
+    items: (
+      archivedItemsMock as APIPaginatedList<ListArchivedItem>
+    ).items.slice(0, 3),
+  },
+};
+
+export const ItemsWithDependencies: Story = {
+  args: {
     items: (archivedItemsMock as APIPaginatedList<ListArchivedItem>).items,
+  },
+};
+
+export const OnlyDependencies: Story = {
+  args: {
+    items: (
+      archivedItemsMock as APIPaginatedList<ListArchivedItem>
+    ).items.filter((item) => item.requiresCrawls.length),
   },
 };
