@@ -27,3 +27,8 @@ replay-app-main {
   border-radius: var(--sl-border-radius-large);
   overflow: hidden;
 }
+
+::part(wr-item__loader) {
+  border: 1px solid var(--sl-panel-border-color);
+  border-radius: var(--sl-border-radius-large);
+}
