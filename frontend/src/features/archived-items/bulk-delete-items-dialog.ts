@@ -8,6 +8,7 @@ import { type GridColumn } from "@/components/ui/data-grid/types";
 import type { Dialog } from "@/components/ui/dialog";
 import { pluralOfItems } from "@/plurals/items";
 import { pluralOfPages } from "@/plurals/pages";
+import { pluralOfSkippingItems } from "@/plurals/skipping-items";
 import { deleteConfirmation } from "@/strings/ui";
 import type { ListArchivedItem } from "@/types/crawler";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
@@ -78,13 +79,69 @@ export class BulkDeleteItemsDialog extends BtrixElement {
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
 
+  private readonly columnsWithDependencies = [
+    ...this.columns.slice(0, 2),
+    {
+      field: "requiredByCrawls",
+      label: msg("Dependencies"),
+      renderCell: ({ item }) =>
+        this.localize.number(item.requiresCrawls.length),
+      width: `minmax(max-content, 1fr)`,
+    },
+  ] as const satisfies GridColumn<ListArchivedItem>[];
+
   render() {
     return html`<btrix-dialog
       class="[--width:36rem]"
       .label=${msg("Delete Archived Items?")}
       .open=${this.open}
     >
-      ${when(this.items, this.renderItems)}
+      ${when(this.items, this.renderContent)}
+    </btrix-dialog>`;
+  }
+
+  private readonly renderContent = (items: ListArchivedItem[]) => {
+    const hasDeps = true;
+    const noDeps = false;
+    const grouped = Map.groupBy(items, (item) =>
+      item.requiresCrawls.length ? hasDeps : noDeps,
+    );
+    const deleteable = grouped.get(noDeps);
+    const notDeleteable = grouped.get(hasDeps);
+
+    return html`<div class="flex flex-col gap-3">
+        ${when(
+          deleteable,
+          (items) =>
+            html`<div>
+              <p class="max-w-prose text-pretty">
+                ${deleteConfirmation(pluralOfItems(items.length))}
+              </p>
+              <btrix-data-grid
+                class="part-[body]:text-xs"
+                .columns=${this.columns}
+                .items=${items}
+              ></btrix-data-grid>
+            </div>`,
+        )}
+        ${when(notDeleteable, (items) =>
+          deleteable
+            ? html`<btrix-details>
+                <span slot="title">
+                  <sl-icon
+                    class="mr-0.5 align-[-.175em]"
+                    name="exclamation-triangle"
+                  ></sl-icon>
+                  ${pluralOfSkippingItems(items.length)}
+                </span>
+
+                <div class="mt-2">
+                  ${this.renderItemsWithDependencies(items, true)}
+                </div>
+              </btrix-details>`
+            : this.renderItemsWithDependencies(items),
+        )}
+      </div>
 
       <div slot="footer" class="flex justify-between">
         <sl-button
@@ -99,7 +156,7 @@ export class BulkDeleteItemsDialog extends BtrixElement {
         <sl-button
           size="small"
           variant="danger"
-          ?disabled=${!this.items}
+          ?disabled=${!deleteable}
           @click=${() => {
             this.dispatchEvent(new CustomEvent("btrix-confirm"));
           }}
@@ -107,18 +164,23 @@ export class BulkDeleteItemsDialog extends BtrixElement {
           <sl-icon name="trash3" slot="prefix"></sl-icon>
           ${msg("Delete Items")}
         </sl-button>
-      </div>
-    </btrix-dialog>`;
-  }
+      </div>`;
+  };
 
-  private readonly renderItems = (items: ListArchivedItem[]) => {
-    console.log(items);
-    return html`<p>${deleteConfirmation(pluralOfItems(items.length))}</p>
-
+  private readonly renderItemsWithDependencies = (
+    items: ListArchivedItem[],
+    hasDeleteable = false,
+  ) => {
+    return html` <p class="max-w-prose text-pretty">
+        ${hasDeleteable
+          ? msg("The following items will not be deleted due to dependencies.")
+          : msg("The following items cannot be deleted due to dependencies.")}
+        ${msg("Each item must be deleted individually.")}
+      </p>
       <btrix-data-grid
         class="part-[body]:text-xs"
-        .columns=${this.columns}
+        .columns=${this.columnsWithDependencies}
         .items=${items}
-      ></btrix-data-grid> `;
+      ></btrix-data-grid>`;
   };
 }
