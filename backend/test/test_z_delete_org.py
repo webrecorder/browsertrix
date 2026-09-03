@@ -12,7 +12,45 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     """Prior to deleting org, ensure recalculating storage works as expected"""
 
-    # First get our baseline values
+    # First, wait for all crawls to complete
+    max_attempts = 18
+    attempts = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{API_PREFIX}/orgs/{default_org_id}/metrics",
+                headers=admin_auth_headers,
+            )
+            data = r.json()
+            logger.debug("org_metrics", data=data)
+
+            if (
+                r.status_code == 200
+                and data.get("workflowsRunningCount") == 0
+                and data.get("workflowsQueuedCount") == 0
+            ):
+                break
+        except:
+            pass
+
+        if attempts >= max_attempts:
+            pytest.fail(
+                f"Giving up waiting for crawls to finish after {max_attempts} attempts"
+            )
+
+        attempts += 1
+        time.sleep(10)
+
+        logger.info(
+            "test_crawls_complete_setup_retrying",
+            attempts=attempts,
+            max_attempts=max_attempts,
+        )
+
+    # Give post-crawl tasks a little time
+    time.sleep(30)
+
+    # Get our baseline values pre-recalculation
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}",
         headers=admin_auth_headers,
@@ -83,15 +121,15 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 
             if success is False:
                 pytest.fail("Job failed")
-
-            time.sleep(10)
         except:
-            time.sleep(10)
+            pass
 
         if attempts >= max_attempts:
             pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
 
         attempts += 1
+        time.sleep(10)
+
         logger.info(
             "test_job_retrying",
             attempts=attempts,
