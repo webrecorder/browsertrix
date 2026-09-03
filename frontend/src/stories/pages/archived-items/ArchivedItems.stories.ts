@@ -6,7 +6,10 @@ import { renderComponent, type RenderProps } from "./ArchivedItems";
 
 import archivedItemsMock from "@/__mocks__/api/orgs/[id]/all-crawls";
 import { type TagCounts } from "@/components/ui/tag-filter/types";
-import { orgDecorator } from "@/stories/decorators/orgDecorator";
+import {
+  orgDecorator,
+  type StorybookOrgProps,
+} from "@/stories/decorators/orgDecorator";
 import {
   userDecorator,
   type StorybookUserProps,
@@ -29,10 +32,10 @@ const meta = {
     user: true,
     auth: true,
   },
-} satisfies Meta<RenderProps & StorybookUserProps>;
+} satisfies Meta<RenderProps & StorybookUserProps & StorybookOrgProps>;
 
 export default meta;
-type Story = StoryObj<RenderProps>;
+type Story = StoryObj<RenderProps & StorybookOrgProps>;
 
 const searchValuesRequest = () =>
   http.get(/\/all-crawls\/search-values/, async () => {
@@ -148,6 +151,35 @@ export const SelectedItems: Story = {
     selectedItemIds: new Set(
       (archivedItemsMock.items as ListArchivedItem[])
         .slice(0, 2)
+        .map(({ id }) => id),
+    ),
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
+
+export const SelectedItemsWithDependents: Story = {
+  args: {
+    orgFeatureFlags: {
+      dedupeEnabled: true,
+    },
+    isCrawler: true,
+    bulkActions: true,
+    selectedItemIds: new Set(
+      (archivedItemsMock.items as ListArchivedItem[])
+        .slice(2)
         .map(({ id }) => id),
     ),
   },
