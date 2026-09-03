@@ -13,6 +13,6 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     ?isCrawler=${props.isCrawler}
     ?bulkActions=${props.bulkActions}
     itemType=${ifDefined(props.itemType || undefined)}
-    .selectedItems=${props.selectedItems || new Set()}
+    .selectedItemIds=${props.selectedItemIds || new Set()}
   ></btrix-archived-items>`;
 };
