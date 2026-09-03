@@ -73,7 +73,7 @@ export class BulkDeleteItemsDialog extends BtrixElement {
       label: msg("In Collections"),
       renderCell: ({ item }) => this.localize.number(item.collectionIds.length),
       renderCellClasses: ({ item }) =>
-        item.collectionIds.length > 0 && tw`bg-red-50`,
+        item.collectionIds.length > 0 && tw`bg-warning-50`,
       width: `minmax(max-content, 1fr)`,
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
