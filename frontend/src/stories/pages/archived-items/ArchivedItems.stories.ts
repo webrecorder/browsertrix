@@ -145,7 +145,7 @@ export const SelectedItems: Story = {
   args: {
     isCrawler: true,
     bulkActions: true,
-    selectedItems: new Set(
+    selectedItemIds: new Set(
       (archivedItemsMock.items as ListArchivedItem[])
         .slice(0, 2)
         .map(({ id }) => id),
