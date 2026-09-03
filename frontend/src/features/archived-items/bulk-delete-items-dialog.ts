@@ -13,6 +13,7 @@ import { deleteConfirmation } from "@/strings/ui";
 import type { ListArchivedItem } from "@/types/crawler";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -22,7 +23,7 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-bulk-delete-items-dialog")
 @localized()
 export class BulkDeleteItemsDialog extends BtrixElement {
-  @property({ type: Array })
+  @property({ type: Array, hasChanged: isNotEqual })
   items?: ListArchivedItem[];
 
   @property({ type: Boolean })
