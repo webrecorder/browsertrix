@@ -47,6 +47,7 @@ export type StorybookOrgProps = {
   orgQuotas?: boolean | OrgData["quotas"];
   orgSubscription?: boolean | OrgData["subscription"];
   orgOnboarding?: Onboarding;
+  orgFeatureFlags?: OrgData["featureFlags"];
 };
 
 @customElement("btrix-storybook-org")
@@ -64,6 +65,9 @@ export class StorybookOrg extends TailwindElement {
 
   @property({ type: Object })
   users?: OrgData["users"];
+
+  @property({ type: Object })
+  featureFlags?: OrgData["featureFlags"];
 
   @property({ type: Object })
   usage?: OrgData["usage"];
@@ -112,6 +116,7 @@ export class StorybookOrg extends TailwindElement {
       users: this.users || {},
       usage: this.usage || {},
       subscription: this.subscription || null,
+      featureFlags: this.featureFlags || {},
       quotas: this.quotas || (mapValues(() => 0, quotas) as typeof quotas),
       note: "",
     });
@@ -132,8 +137,14 @@ export class StorybookOrg extends TailwindElement {
 
 export function orgDecorator(story: StoryFn, context: StoryContext) {
   const { args } = context;
-  const { orgUsers, orgUsage, orgQuotas, orgSubscription, orgOnboarding } =
-    args as StorybookOrgProps;
+  const {
+    orgUsers,
+    orgUsage,
+    orgQuotas,
+    orgSubscription,
+    orgOnboarding,
+    orgFeatureFlags,
+  } = args as StorybookOrgProps;
 
   return html`<btrix-storybook-org
     .users=${orgUsers === true ? users : orgUsers || undefined}
@@ -143,6 +154,7 @@ export function orgDecorator(story: StoryFn, context: StoryContext) {
       ? subscription
       : orgSubscription || undefined}
     .onboarding=${orgOnboarding}
+    .featureFlags=${orgFeatureFlags}
   >
     ${story(args, context)}
   </btrix-storybook-org>`;
