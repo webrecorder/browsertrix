@@ -29,16 +29,16 @@ export const WithItems: Story = {
   },
 };
 
-export const ItemsWithDependencies: Story = {
+export const ItemsWithDependents: Story = {
   args: {
     items: (archivedItemsMock as APIPaginatedList<ListArchivedItem>).items,
   },
 };
 
-export const OnlyDependencies: Story = {
+export const OnlyDependents: Story = {
   args: {
     items: (
       archivedItemsMock as APIPaginatedList<ListArchivedItem>
-    ).items.filter((item) => item.requiresCrawls.length),
+    ).items.filter((item) => item.requiredByCrawls.length),
   },
 };
