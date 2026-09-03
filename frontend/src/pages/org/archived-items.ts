@@ -8,12 +8,13 @@ import type {
 } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import type { ArchivedItem, Crawl, Workflow } from "./types";
+import type { ArchivedItem, Crawl, ListArchivedItem, Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import {
@@ -34,7 +35,6 @@ import PollTask from "@/controllers/poll";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
-import { CrawlStatus } from "@/features/archived-items/crawl-status";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -313,16 +313,10 @@ export class CrawlsList extends BtrixElement {
   private itemToEdit: ArchivedItem | null = null;
 
   @state()
-  private isEditingItem = false;
-
-  @state()
   private itemToDelete: ArchivedItem | null = null;
 
   @state()
-  private isDeletingItem = false;
-
-  @state()
-  private isUploadingArchive = false;
+  private openDialog?: "edit" | "delete" | "bulkDelete" | "upload";
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
@@ -330,10 +324,13 @@ export class CrawlsList extends BtrixElement {
   @query("btrix-tag-filter")
   private readonly tagFilter?: TagFilter | null;
 
-  private visibleItems = new Set<string>();
+  /**
+   * Track visible items (i.e. items on current page) to compare with selected items for bulk actions
+   */
+  private visibleItems = new Map</* ID: */ string, ListArchivedItem>();
 
   @state()
-  selectedItems = new Set<string>();
+  selectedItemIds = new Set<string>();
 
   private get hasFiltersSet() {
     return [
@@ -386,7 +383,10 @@ export class CrawlsList extends BtrixElement {
           signal,
         );
 
-        this.visibleItems = new Set(data.items.map(({ id }) => id));
+        this.visibleItems = new Map(data.items.map((item) => [item.id, item]));
+        this.selectedItemIds = this.selectedItemIds.intersection(
+          this.visibleItems,
+        );
 
         return data;
       } catch (e) {
@@ -542,7 +542,7 @@ export class CrawlsList extends BtrixElement {
                     <sl-button
                       size="small"
                       variant="primary"
-                      @click=${() => (this.isUploadingArchive = true)}
+                      @click=${() => (this.openDialog = "upload")}
                       ?disabled=${isArchivingDisabled(this.org)}
                     >
                       <sl-icon slot="prefix" name="upload"></sl-icon>
@@ -601,10 +601,10 @@ export class CrawlsList extends BtrixElement {
         this.isCrawler && this.orgId,
         () => html`
           <btrix-file-uploader
-            ?open=${this.isUploadingArchive}
+            ?open=${this.openDialog === "upload"}
             @sl-after-hide=${(e: CustomEvent) => {
               e.stopPropagation();
-              this.isUploadingArchive = false;
+              this.openDialog = undefined;
             }}
           ></btrix-file-uploader>
         `,
@@ -677,8 +677,8 @@ export class CrawlsList extends BtrixElement {
       ? html`
           <btrix-item-metadata-editor
             .item=${this.itemToEdit}
-            ?open=${this.isEditingItem}
-            @request-close=${() => (this.isEditingItem = false)}
+            ?open=${this.openDialog === "edit"}
+            @request-close=${() => (this.openDialog = undefined)}
             @updated=${() => {
               /* TODO fetch current page or single crawl */
               void this.archivedItemsTask.run();
@@ -690,10 +690,10 @@ export class CrawlsList extends BtrixElement {
 
     <btrix-delete-item-dialog
       .item=${this.itemToDelete || undefined}
-      ?open=${this.isDeletingItem}
-      @sl-after-hide=${() => (this.isDeletingItem = false)}
+      ?open=${this.openDialog === "delete"}
+      @sl-after-hide=${() => (this.openDialog = undefined)}
       @btrix-confirm=${async () => {
-        this.isDeletingItem = false;
+        this.openDialog = undefined;
         if (this.itemToDelete) {
           await this.deleteItem(this.itemToDelete);
         }
@@ -706,6 +706,8 @@ export class CrawlsList extends BtrixElement {
           >`
         : nothing}
     </btrix-delete-item-dialog>
+
+    ${this.renderBulkActionsDialog()}
   `;
 
   private readonly renderSortControl = () => {
@@ -830,7 +832,7 @@ export class CrawlsList extends BtrixElement {
 
   private readonly renderBulkActionsControl = () => {
     const visibleCount = this.visibleItems.size;
-    const selected = this.visibleItems.intersection(this.selectedItems);
+    const selected = this.selectedItemIds.intersection(this.visibleItems);
     const selectedCount = selected.size;
     const anySelected = selectedCount > 0;
     const allSelected = anySelected && selectedCount === visibleCount;
@@ -845,13 +847,13 @@ export class CrawlsList extends BtrixElement {
             const checked = (e.target as SlCheckbox).checked;
 
             if (checked) {
-              this.selectedItems = new Set(this.visibleItems);
+              this.selectedItemIds = new Set(this.visibleItems.keys());
             } else {
-              this.selectedItems = new Set();
+              this.selectedItemIds = new Set();
             }
           }}
         >
-          ${msg("Select all")}
+          ${msg("Select Visible")}
         </sl-checkbox>
 
         ${pluralOfItemsSelected(selectedCount)}
@@ -859,8 +861,9 @@ export class CrawlsList extends BtrixElement {
 
       ${anySelected
         ? html`<sl-icon-button
-            class="text-base text-danger"
+            class="text-base hover:text-danger focus:text-danger"
             name="trash3"
+            @click=${() => (this.openDialog = "bulkDelete")}
           ></sl-icon-button>`
         : nothing} `;
   };
@@ -911,15 +914,15 @@ export class CrawlsList extends BtrixElement {
       href=${`${this.navigate.orgBasePath}/${pathForArchivedItem(item)}`}
       .item=${item}
       ?checkbox=${this.isCrawler && this.bulkActions}
-      ?checked=${this.selectedItems.has(item.id)}
+      ?checked=${this.selectedItemIds.has(item.id)}
       @btrix-change=${(e: ArchivedItemCheckedEvent) => {
         if (e.detail.value.checked) {
-          this.selectedItems.add(item.id);
+          this.selectedItemIds.add(item.id);
         } else {
-          this.selectedItems.delete(item.id);
+          this.selectedItemIds.delete(item.id);
         }
 
-        this.selectedItems = new Set(this.selectedItems);
+        this.selectedItemIds = new Set(this.selectedItemIds);
       }}
     >
       <btrix-table-cell slot="actionCell" class="p-0">
@@ -943,7 +946,7 @@ export class CrawlsList extends BtrixElement {
             @click=${async () => {
               this.itemToEdit = item;
               await this.updateComplete;
-              this.isEditingItem = true;
+              this.openDialog = "edit";
             }}
           >
             <sl-icon name="pencil" slot="prefix"></sl-icon>
@@ -1022,11 +1025,31 @@ export class CrawlsList extends BtrixElement {
     `;
   };
 
-  private readonly renderStatusMenuItem = (state: CrawlState) => {
-    const { icon, label } = CrawlStatus.getContent({ state });
+  private renderBulkActionsDialog() {
+    const dialog = () => {
+      const selected = true;
+      const notSelected = false;
+      const group = Map.groupBy([...this.visibleItems.values()], (item) =>
+        this.selectedItemIds.has(item.id) ? selected : notSelected,
+      );
+      const items = group.get(selected);
 
-    return html`<sl-option value=${state}>${icon}${label}</sl-option>`;
-  };
+      return html`<btrix-bulk-delete-items-dialog
+        .items=${items || []}
+        ?open=${this.openDialog === "bulkDelete"}
+        @sl-after-hide=${() => (this.openDialog = undefined)}
+        @btrix-confirm=${async () => {
+          this.openDialog = undefined;
+          console.log("TODO");
+        }}
+      ></btrix-bulk-delete-items-dialog>`;
+    };
+
+    return guard(
+      [this.selectedItemIds, this.openDialog === "bulkDelete"],
+      dialog,
+    );
+  }
 
   private renderEmptyState() {
     if (this.hasFiltersSet) {
@@ -1151,7 +1174,7 @@ export class CrawlsList extends BtrixElement {
 
   private readonly confirmDeleteItem = (item: ArchivedItem) => {
     this.itemToDelete = item;
-    this.isDeletingItem = true;
+    this.openDialog = "delete";
   };
 
   private async deleteItem(item: ArchivedItem) {
