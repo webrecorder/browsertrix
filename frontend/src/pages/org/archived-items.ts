@@ -36,6 +36,7 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
+import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import {
   finishedCrawlStates,
   isActive,
@@ -840,7 +841,7 @@ export class CrawlsList extends BtrixElement {
 
   private readonly renderArchivedItem = (item: ArchivedItem) => html`
     <btrix-archived-item-list-item
-      href=${`${this.navigate.orgBasePath}/${item.type === "crawl" ? `workflows/${item.cid}/crawls` : `items/${item.type}`}/${item.id}`}
+      href=${`${this.navigate.orgBasePath}/${pathForArchivedItem(item)}`}
       .item=${item}
     >
       <btrix-table-cell slot="actionCell" class="p-0">

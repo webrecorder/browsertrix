@@ -149,7 +149,12 @@ export function renderName(
     }
     return html`
       <span class="inline-flex max-w-full overflow-hidden whitespace-nowrap">
-        <div class=${clsx("min-w-0 truncate max-w-[30ch]", className)}>
+        <div
+          class=${clsx(
+            "min-w-0 truncate max-w-[--btrix-name-max-width]",
+            className,
+          )}
+        >
           ${item.firstSeed}
         </div>
         ${nameSuffix}
