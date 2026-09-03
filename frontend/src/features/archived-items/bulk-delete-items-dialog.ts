@@ -79,13 +79,13 @@ export class BulkDeleteItemsDialog extends BtrixElement {
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
 
-  private readonly columnsWithDependencies = [
+  private readonly colsWithDependents = [
     ...this.columns.slice(0, 2),
     {
       field: "requiredByCrawls",
-      label: msg("Dependencies"),
+      label: msg("Dependents"),
       renderCell: ({ item }) =>
-        this.localize.number(item.requiresCrawls.length),
+        this.localize.number(item.requiredByCrawls.length),
       width: `minmax(max-content, 1fr)`,
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
@@ -101,13 +101,13 @@ export class BulkDeleteItemsDialog extends BtrixElement {
   }
 
   private readonly renderContent = (items: ListArchivedItem[]) => {
-    const hasDeps = true;
-    const noDeps = false;
+    const hasDependents = true;
+    const noDependents = false;
     const grouped = Map.groupBy(items, (item) =>
-      item.requiresCrawls.length ? hasDeps : noDeps,
+      item.requiredByCrawls.length ? hasDependents : noDependents,
     );
-    const deleteable = grouped.get(noDeps);
-    const notDeleteable = grouped.get(hasDeps);
+    const deleteable = grouped.get(noDependents);
+    const notDeleteable = grouped.get(hasDependents);
 
     return html`<div class="flex flex-col gap-3">
         ${when(
@@ -136,10 +136,10 @@ export class BulkDeleteItemsDialog extends BtrixElement {
                 </span>
 
                 <div class="mt-2">
-                  ${this.renderItemsWithDependencies(items, true)}
+                  ${this.renderItemsWithDependents(items, true)}
                 </div>
               </btrix-details>`
-            : this.renderItemsWithDependencies(items),
+            : this.renderItemsWithDependents(items),
         )}
       </div>
 
@@ -167,19 +167,23 @@ export class BulkDeleteItemsDialog extends BtrixElement {
       </div>`;
   };
 
-  private readonly renderItemsWithDependencies = (
+  private readonly renderItemsWithDependents = (
     items: ListArchivedItem[],
     hasDeleteable = false,
   ) => {
     return html` <p class="max-w-prose text-pretty">
         ${hasDeleteable
-          ? msg("The following items will not be deleted due to dependencies.")
-          : msg("The following items cannot be deleted due to dependencies.")}
+          ? msg(
+              "The following items will not be deleted because they are required by other items.",
+            )
+          : msg(
+              "The following items cannot be deleted they are required by other items.",
+            )}
         ${msg("Each item must be deleted individually.")}
       </p>
       <btrix-data-grid
         class="part-[body]:text-xs"
-        .columns=${this.columnsWithDependencies}
+        .columns=${this.colsWithDependents}
         .items=${items}
       ></btrix-data-grid>`;
   };
