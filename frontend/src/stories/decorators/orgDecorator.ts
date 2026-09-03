@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import mapValues from "lodash/fp/mapValues";
 
 import orgMock from "@/__mocks__/api/orgs/[id]";
+import { type OrgData } from "@/types/org";
 import { AppStateService } from "@/utils/state";
 
 const { users, usage, quotas, ...org } = orgMock;
@@ -11,6 +12,7 @@ const { users, usage, quotas, ...org } = orgMock;
 export { orgMock };
 
 export type StorybookOrgProps = {
+  orgFeatureFlags?: OrgData["featureFlags"];
   orgUsers?: boolean;
   orgUsage?: boolean;
   orgQuotas?: boolean;
@@ -18,6 +20,9 @@ export type StorybookOrgProps = {
 
 @customElement("btrix-storybook-org")
 export class StorybookOrg extends LitElement {
+  @property({ type: Object })
+  featureFlags?: OrgData["featureFlags"];
+
   @property({ type: Boolean })
   users?: boolean;
 
@@ -32,11 +37,13 @@ export class StorybookOrg extends LitElement {
 
     AppStateService.updateOrg({
       ...org,
+      featureFlags: this.featureFlags || {},
       users: this.users ? users : {},
       usage: this.usage ? usage : {},
       quotas: this.quotas
         ? quotas
         : (mapValues(() => 0, quotas) as typeof quotas),
+      note: "",
     });
   }
 
@@ -47,9 +54,11 @@ export class StorybookOrg extends LitElement {
 
 export function orgDecorator(story: StoryFn, context: StoryContext) {
   const { args } = context;
-  const { orgUsers, orgUsage, orgQuotas } = args as StorybookOrgProps;
+  const { orgFeatureFlags, orgUsers, orgUsage, orgQuotas } =
+    args as StorybookOrgProps;
 
   return html`<btrix-storybook-org
+    .featureFlags=${orgFeatureFlags}
     ?users=${orgUsers}
     ?usage=${orgUsage}
     ?quotas=${orgQuotas}
