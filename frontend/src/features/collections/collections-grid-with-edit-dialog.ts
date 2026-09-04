@@ -33,6 +33,7 @@ export class CollectionsGridWithEditDialog extends BtrixElement {
           this.collectionBeingEdited = e.detail;
         }}
       >
+        <slot name="empty-text" slot="empty-text"></slot>
         <slot name="empty-actions" slot="empty-actions"></slot>
         <slot name="pagination" slot="pagination"></slot>
       </btrix-collections-grid>

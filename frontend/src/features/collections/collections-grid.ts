@@ -10,6 +10,7 @@ import { CollectionThumbnail } from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type PublicCollection } from "@/types/collection";
@@ -60,16 +61,12 @@ export class CollectionsGrid extends BtrixElement {
     }
 
     if (!this.collections.length) {
-      return html`
-        <div class="flex flex-col items-center justify-center gap-3 px-3 py-10">
-          <p class="text-base text-neutral-500">
-            <slot name="empty-text">
-              ${msg("No public collections yet.")}
-            </slot>
-          </p>
-          <slot name="empty-actions"></slot>
-        </div>
-      `;
+      return emptyMessage({
+        message: html`<slot name="empty-text">
+          ${msg("No public collections yet.")}
+        </slot>`,
+        actions: html`<slot name="empty-actions"></slot>`,
+      });
     }
 
     const showActions = !this.navigate.isPublicPage && this.appState.isCrawler;
