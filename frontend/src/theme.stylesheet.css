@@ -32,6 +32,9 @@
     /* Default border */
     --btrix-border: 1px solid var(--sl-panel-border-color);
 
+    /* Replay */
+    --btrix-rwp-height: calc(100vh - 4rem);
+
     /*
      * Shoelace Theme Tokens
      */

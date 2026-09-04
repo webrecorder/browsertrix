@@ -11,6 +11,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { collectionRwpContext } from "@/features/collections/context/collection-rwp";
 import { injectRwpStyles } from "@/features/collections/helpers/injectRwpStyles";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
+import { rwpSkeleton } from "@/features/collections/templates/rwp-skeleton";
 import { metadataColumn } from "@/layouts/collections/metadataColumn";
 import { page } from "@/layouts/page";
 import { type CollectionSavedEvent } from "@/pages/org/collection-detail/types";
@@ -29,7 +30,8 @@ enum PublicTab {
 @customElement("btrix-collection")
 export class Collection extends BtrixElement {
   @provide({ context: collectionRwpContext })
-  replayEmbed?: ReplayWebPage | null;
+  @state()
+  private replayEmbed?: ReplayWebPage | null;
 
   @property({ type: String })
   orgSlug?: string;
@@ -261,7 +263,7 @@ export class Collection extends BtrixElement {
     ).href;
 
     return html`
-      <section class="h-[calc(100vh-4rem)] overflow-hidden rounded-lg">
+      <section class="relative h-[--btrix-rwp-height]">
         <replay-web-page
           source=${replaySource}
           url=${ifDefined(collection.homeUrl || undefined)}
@@ -282,6 +284,11 @@ export class Collection extends BtrixElement {
             }
           }}
         ></replay-web-page>
+
+        ${when(
+          !this.replayEmbed,
+          () => html`<div class="absolute inset-0">${rwpSkeleton()}</div>`,
+        )}
       </section>
     `;
   }
