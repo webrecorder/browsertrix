@@ -17,6 +17,7 @@ import {
 import { TRIAL_DAYS_LEFT_SHOW_WARNING } from "@/features/org/org-status-banner";
 import {
   orgDecorator,
+  orgMock,
   type StorybookOrgProps,
 } from "@/stories/decorators/orgDecorator";
 import {
@@ -43,6 +44,10 @@ const meta = {
     auth: true,
     orgUsers: true,
   },
+  loaders: [
+    // Clear onboarding info from local storage
+    () => window.localStorage.clear(),
+  ],
 } satisfies Meta<RenderProps & StorybookUserProps & StorybookOrgProps>;
 
 export default meta;
@@ -53,7 +58,7 @@ const emptyCollectionsRequest = http.get(/\/collections/, async () => {
   return HttpResponse.json<APIPaginatedList<Collection>>(collections);
 });
 
-export const NoSubscriptionWithoutUsage: Story = {
+export const OnboardingWithoutUsage: Story = {
   args: {
     orgQuotas: {
       ...quotas,
@@ -76,7 +81,63 @@ export const NoSubscriptionWithoutUsage: Story = {
   },
 };
 
-export const NoSubscriptionWithUsage: Story = {
+export const NotOnboardingWithoutUsage: Story = {
+  args: {
+    orgQuotas: {
+      ...quotas,
+      ...quotasWithExecutionMinutes,
+    },
+    orgOnboarding: {
+      orgId: orgMock.id,
+      showOnboarding: false,
+    },
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/metrics/, async () => {
+          await delay(500);
+          return HttpResponse.json<Metrics>({
+            ...metrics,
+            ...metricsWithStorageQuota,
+          });
+        }),
+        emptyCollectionsRequest,
+      ],
+    },
+  },
+};
+
+export const OnboardingWithUsage: Story = {
+  args: {
+    orgQuotas: {
+      ...quotas,
+      ...quotasWithExecutionMinutes,
+    },
+    orgUsage: true,
+    orgOnboarding: {
+      orgId: orgMock.id,
+      showOnboarding: true,
+    },
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/metrics/, async () => {
+          await delay(500);
+          return HttpResponse.json<Metrics>({
+            ...metrics,
+            ...metricsWithStorageQuota,
+            ...metricsWithUsage,
+          });
+        }),
+        emptyCollectionsRequest,
+      ],
+    },
+  },
+};
+
+export const NotOnboardingWithUsage: Story = {
   args: {
     orgQuotas: {
       ...quotas,
@@ -163,7 +224,6 @@ export const TrialEndingWithoutUsage: Story = {
       ...quotas,
       ...quotasWithExecutionMinutes,
     },
-    orgUsage: true,
     orgSubscription: {
       ...subscription,
       status: SubscriptionStatus.Trialing,
@@ -181,7 +241,6 @@ export const TrialEndingWithoutUsage: Story = {
           return HttpResponse.json<Metrics>({
             ...metrics,
             ...metricsWithStorageQuota,
-            ...metricsWithUsage,
           });
         }),
         emptyCollectionsRequest,
@@ -205,56 +264,6 @@ export const TrialEndingWithUsage: Story = {
         new Date(),
       ).toISOString(),
     },
-  },
-  parameters: {
-    msw: {
-      handlers: [
-        http.get(/\/metrics/, async () => {
-          await delay(500);
-          return HttpResponse.json<Metrics>({
-            ...metrics,
-            ...metricsWithStorageQuota,
-            ...metricsWithUsage,
-          });
-        }),
-        emptyCollectionsRequest,
-      ],
-    },
-  },
-};
-
-export const ActiveSubscriptionWithoutUsage: Story = {
-  args: {
-    orgQuotas: {
-      ...quotas,
-      ...quotasWithExecutionMinutes,
-    },
-    orgSubscription: true,
-  },
-  parameters: {
-    msw: {
-      handlers: [
-        http.get(/\/metrics/, async () => {
-          await delay(500);
-          return HttpResponse.json<Metrics>({
-            ...metrics,
-            ...metricsWithStorageQuota,
-          });
-        }),
-        emptyCollectionsRequest,
-      ],
-    },
-  },
-};
-
-export const ActiveSubscriptionWithUsage: Story = {
-  args: {
-    orgQuotas: {
-      ...quotas,
-      ...quotasWithExecutionMinutes,
-    },
-    orgSubscription: true,
-    orgUsage: true,
   },
   parameters: {
     msw: {

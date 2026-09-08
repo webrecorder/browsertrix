@@ -1,6 +1,5 @@
 export type Onboarding = {
   orgId: string;
-  noUsage?: boolean;
-  trialing?: boolean;
+  showOnboarding?: boolean;
   stepsComplete?: Record<number, boolean>;
 };
