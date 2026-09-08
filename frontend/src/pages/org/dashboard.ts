@@ -45,7 +45,7 @@ import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
 
 import "@/pages/org/dashboard/components/dashboard-guides";
-import "@/pages/org/dashboard/components/dashboard-trial";
+import "@/pages/org/dashboard/components/dashboard-onboarding";
 
 enum CollectionGridView {
   All = "all",
@@ -188,52 +188,37 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderContent() {
-    const trialing = this.appState.onboarding?.trialing;
-    const noUsage = this.appState.onboarding?.noUsage;
-    const hasUsage = !noUsage;
+    const trialing = this.appState.isTrialing;
+    const showOnboarding = this.appState.onboarding?.showOnboarding;
+    const hasUsage =
+      this.appState.hasUsage ||
+      this.org?.enablePublicProfile ||
+      this.metrics?.workflowsQueuedCount ||
+      this.metrics?.workflowsRunningCount ||
+      this.metrics?.collectionsCount;
     const content: TemplateResult[] = [];
 
-    if (noUsage && trialing) {
+    if (showOnboarding) {
       content.push(
         primaryWithAside(
-          html`<btrix-dashboard-trial></btrix-dashboard-trial>
-            ${dashboardHeading(dashboardHeadingFor.moreGuides, {
-              classes: tw`mt-10`,
-            })}
-            <btrix-dashboard-guides
-              class="mb-10 block"
-            ></btrix-dashboard-guides>`,
-          html`${trialChecklist()} ${resourcesList()} ${docsFeedback(docsEmail)}`,
+          html`<btrix-dashboard-onboarding></btrix-dashboard-onboarding>`,
+          html`${trialing ? trialChecklist() : nothing} ${resourcesList()}
+          ${docsFeedback(docsEmail)}`,
         ),
       );
-    }
-
-    if (noUsage && !trialing) {
-      content.push(
-        primaryWithAside(
-          html`${dashboardHeading(msg("Welcome to Browsertrix"))}
-            <btrix-dashboard-guides
-              class="mb-10 block"
-            ></btrix-dashboard-guides>`,
-          html`${resourcesList()} ${docsFeedback(docsEmail)}`,
-        ),
-      );
-    }
-
-    if (hasUsage && trialing) {
-      content.push(
-        primaryWithAside(
-          html`<btrix-dashboard-trial></btrix-dashboard-trial>`,
-          html`${trialChecklist()}`,
-        ),
-      );
-      content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
     }
 
     if (hasUsage) {
+      if (showOnboarding) {
+        content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
+      }
+
       content.push(this.renderUsage());
+    }
+
+    if (!showOnboarding) {
       content.push(html`
-        ${pageHeading({ content: msg("Guides"), classNames: tw`mt-20` })}
+        ${pageHeading({ content: msg("Guides") })}
         <sl-divider class="mb-3 mt-2"></sl-divider>
         <btrix-dashboard-guides
           class="mb-10 block"
@@ -246,7 +231,7 @@ export class Dashboard extends BtrixElement {
   }
 
   private readonly renderTrialInfo = () => {
-    if (!this.appState.onboarding?.trialing || !this.org?.subscription) return;
+    if (!this.org || !this.appState.isTrialing) return;
 
     const { daysUntilTrialEnd, trialEndDate } = OrgStatusBanner.trialInfo(
       this.org,

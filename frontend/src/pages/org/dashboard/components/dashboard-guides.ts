@@ -31,97 +31,24 @@ export class DashboardGuides extends BtrixElement {
   showDocsEmail = false;
 
   render() {
-    const trialing = this.appState.onboarding?.trialing;
-    const hasUsage = !this.appState.onboarding?.noUsage;
+    return html`<section class="mb-5">${this.renderGuides()}</section>
 
-    return html`<section class="mb-5">
-        ${hasUsage ? this.renderGeneralGuides() : this.renderGettingStarted()}
-      </section>
-
-      ${when(
-        !trialing,
-        () => html`
-          <section class="mb-5">
-            ${hasUsage
-              ? dashboardHeading(dashboardHeadingFor.crawlingGuides)
-              : dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)}
-            ${this.renderCrawlingGuides()}
-          </section>
-        `,
-      )}
-      ${when(
-        !trialing || hasUsage,
-        () =>
-          html`<sl-details class="mb-5">
-            <header slot="summary">
-              <h2 class=${clsx(tw`text-base font-medium leading-6`)}>
-                ${dashboardHeadingFor.moreGuides}
-              </h2>
-            </header>
-            ${this.renderSettingsGuides()}
-          </sl-details>`,
-      )}`;
+      <sl-details class="mb-5">
+        <header slot="summary">
+          <h2 class=${clsx(tw`text-base font-medium leading-6`)}>
+            ${dashboardHeadingFor.moreGuides}
+          </h2>
+        </header>
+        ${this.renderSettingsGuides()}
+      </sl-details>`;
   }
 
-  private renderGettingStarted() {
-    return html`<div
-      class="col-span-full grid grid-cols-3 gap-x-3 gap-y-7 @4xl/org:rounded-lg @4xl/org:border"
-    >
-      <div
-        class="col-span-full flex flex-col justify-center gap-3 py-3 @4xl/org:col-span-1 @4xl/org:p-5"
-      >
-        <h2 class="text-base font-medium leading-6">
-          ${msg("Getting Started")}
-        </h2>
-        <p class="text-pretty">
-          ${msg(
-            "Explore detailed guides on how to start web archiving with Browsertrix.",
-          )}
-        </p>
-        <p class="text-pretty">
-          ${msg(
-            "You can access the user guide at any time from the button at the top of every page.",
-          )}
-        </p>
-      </div>
-      <div
-        class="col-span-full -mx-3 @container/card @4xl/org:col-span-2 @4xl/org:mx-0 @4xl/org:border-l"
-      >
-        <div>
-          <btrix-dashboard-guide-card
-            class="block @lg/card:border-b"
-            icon="book-half"
-            path=""
-          >
-            <span slot="title">${msg("User guide overview")}</span>
-            ${msg("Find detailed documentation on topics and settings")}
-          </btrix-dashboard-guide-card>
-          <btrix-dashboard-guide-card
-            class="block @lg/card:border-b"
-            icon="easel"
-            path="concepts"
-          >
-            <span slot="title">${msg("Introduction to concepts")}</span>
-            ${msg(
-              "Familiarize yourself with concepts and terms used throughout Browsertrix",
-            )}
-          </btrix-dashboard-guide-card>
-          <btrix-dashboard-guide-card
-            class="block"
-            icon="building-fill-gear"
-            path="overview"
-          >
-            <span slot="title">${msg("Setting up your org")}</span>
-            ${msg(
-              "Manage your subscription, edit the name, invite team members, and more",
-            )}
-          </btrix-dashboard-guide-card>
-        </div>
-      </div>
-    </div>`;
-  }
+  private renderGuides() {
+    const trackProps = {
+      trialing: this.appState.isTrialing,
+      has_usage: this.org ? this.org.bytesStored > 0 : undefined,
+    } satisfies AnalyticsTrackProps;
 
-  private renderGeneralGuides() {
     return html`<div
       class="-mx-3 grid grid-cols-3 items-center gap-3 @4xl/org:mx-0"
     >
@@ -149,54 +76,42 @@ export class DashboardGuides extends BtrixElement {
         <span slot="title">${msg("Resources")}</span>
         ${msg("Links to general web archiving resources")}
       </btrix-dashboard-guide-card>
+
+      <btrix-dashboard-guide-card
+        class="${cardClasses} border-b"
+        icon="window"
+        path="getting-started/#__tabbed_1_1"
+        @click=${() =>
+          track(AnalyticsTrackEvent.OpenedCrawlingOnePageGuide, trackProps)}
+      >
+        <span slot="title">${msg("Tutorial")}: ${msg("Crawl One Page")}</span>
+        ${msg("Archive a single page on a website")}
+      </btrix-dashboard-guide-card>
+      <btrix-dashboard-guide-card
+        class="${cardClasses} border-b"
+        icon="person-workspace"
+        path="getting-started/#__tabbed_1_2"
+        @click=${() =>
+          track(AnalyticsTrackEvent.OpenedCrawlingSocialMediaGuide, trackProps)}
+      >
+        <span slot="title"
+          >${msg("Tutorial")}: ${msg("Crawl Social Media Page")}</span
+        >
+        ${msg("Archive a social media post or profile")}
+      </btrix-dashboard-guide-card>
+      <btrix-dashboard-guide-card
+        class="${cardClasses}"
+        icon="pc-display-horizontal"
+        path="getting-started/#__tabbed_1_3"
+        @click=${() =>
+          track(AnalyticsTrackEvent.OpenedCrawlingWebsiteGuide, trackProps)}
+      >
+        <span slot="title"
+          >${msg("Tutorial")}: ${msg("Crawl Entire Website")}</span
+        >
+        ${msg("Archive every page on a website")}
+      </btrix-dashboard-guide-card>
     </div>`;
-  }
-
-  private renderCrawlingGuides() {
-    const trackProps = {
-      trialing: this.appState.onboarding?.trialing,
-      has_usage: this.appState.onboarding
-        ? !this.appState.onboarding.noUsage
-        : undefined,
-    } satisfies AnalyticsTrackProps;
-
-    return html`
-      <div class="-mx-3 grid grid-cols-3 items-center gap-x-3 @4xl/org:mx-0">
-        <btrix-dashboard-guide-card
-          class="${cardClasses} border-b"
-          icon="window"
-          path="getting-started/#__tabbed_1_1"
-          @click=${() =>
-            track(AnalyticsTrackEvent.OpenedCrawlingOnePageGuide, trackProps)}
-        >
-          <span slot="title">${msg("One Page")}</span>
-          ${msg("Archive a single page on a website")}
-        </btrix-dashboard-guide-card>
-        <btrix-dashboard-guide-card
-          class="${cardClasses} border-b"
-          icon="person-workspace"
-          path="getting-started/#__tabbed_1_2"
-          @click=${() =>
-            track(
-              AnalyticsTrackEvent.OpenedCrawlingSocialMediaGuide,
-              trackProps,
-            )}
-        >
-          <span slot="title">${msg("Social Media Page")}</span>
-          ${msg("Archive a social media post or profile")}
-        </btrix-dashboard-guide-card>
-        <btrix-dashboard-guide-card
-          class="${cardClasses}"
-          icon="pc-display-horizontal"
-          path="getting-started/#__tabbed_1_3"
-          @click=${() =>
-            track(AnalyticsTrackEvent.OpenedCrawlingWebsiteGuide, trackProps)}
-        >
-          <span slot="title">${msg("Entire Website")}</span>
-          ${msg("Archive every page on a website")}
-        </btrix-dashboard-guide-card>
-      </div>
-    `;
   }
 
   private renderSettingsGuides() {

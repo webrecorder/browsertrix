@@ -1,6 +1,7 @@
 /**
  * Store and access application-wide state
  */
+import { differenceInDays } from "date-fns/fp";
 import { mergeDeep } from "immutable";
 import { locked, options, transaction, use } from "lit-shared-state";
 
@@ -22,6 +23,16 @@ import type { AppSettings } from "@/utils/app";
 import { isAdmin, isCrawler } from "@/utils/orgs";
 
 export { use };
+
+const MAX_DAYS_ONBOARDING = 30;
+
+function isTrialing(org?: OrgData | null) {
+  return org?.subscription?.status === SubscriptionStatus.Trialing;
+}
+
+function hasUsage(org?: OrgData | null) {
+  return org ? org.bytesStored > 0 : undefined;
+}
 
 export function makeAppStateService() {
   // Prevent state updates from any component
@@ -88,6 +99,14 @@ export function makeAppStateService() {
       const userOrg = this.userOrg;
       if (userOrg) return isCrawler(userOrg.role);
       return false;
+    }
+
+    get isTrialing() {
+      return isTrialing(this.org);
+    }
+
+    get hasUsage() {
+      return hasUsage(this.org);
     }
 
     readonly featureFlags = {
@@ -226,22 +245,25 @@ export function makeAppStateService() {
     }
 
     private updateOnboardingForOrg(org: OrgData) {
-      const onboarding = !org.bytesStored;
-      const trialing = org.subscription?.status === SubscriptionStatus.Trialing;
+      const trialing = isTrialing(org);
+      const showOnboarding =
+        trialing ||
+        !hasUsage(org) ||
+        (org.created
+          ? differenceInDays(new Date(org.created))(new Date()) <=
+            MAX_DAYS_ONBOARDING
+          : false);
 
       if (appState.onboarding?.orgId === org.id) {
         appState.onboarding = {
-          orgId: appState.onboarding.orgId,
-          noUsage: onboarding,
-          trialing,
-          stepsComplete: appState.onboarding.stepsComplete,
+          ...appState.onboarding,
+          showOnboarding: appState.onboarding.showOnboarding ?? showOnboarding,
         };
       } else {
         // Reset onboarding
         appState.onboarding = {
           orgId: org.id,
-          noUsage: onboarding,
-          trialing,
+          showOnboarding: showOnboarding,
         };
       }
     }
