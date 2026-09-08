@@ -20,6 +20,7 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { originsWithRemainder } from "@/features/browser-profiles/templates/origins-with-remainder";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { pageHeader } from "@/layouts/pageHeader";
@@ -33,6 +34,7 @@ import { SortDirection as SortDirectionEnum } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { toSearchItem, type SearchValues } from "@/utils/searchValues";
+import { tw } from "@/utils/tailwind";
 
 const SORT_DIRECTIONS = ["asc", "desc"] as const;
 type SortDirection = (typeof SORT_DIRECTIONS)[number];
@@ -316,10 +318,16 @@ export class BrowserProfilesList extends BtrixElement {
               `
             : this.renderEmpty()}
         `,
+        this.renderLoading,
       )}
       ${when(this.selectedProfile, this.renderDuplicateDialog)}
     `;
   };
+
+  private readonly renderLoading = () =>
+    html`<div class="my-24 flex w-full items-center justify-center text-2xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
 
   private readonly renderDuplicateDialog = (profile: Profile) => {
     return html`<btrix-profile-browser-dialog
@@ -353,9 +361,28 @@ export class BrowserProfilesList extends BtrixElement {
     }
 
     const message = msg("Your org doesn’t have any browser profiles yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "browser-profiles" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
 
     if (this.isCrawler) {
       return emptyMessage({
+        classNames: tw`border-y`,
         message,
         detail: msg(
           "Browser profiles let you crawl pages behind paywalls and logins.",
@@ -376,11 +403,16 @@ export class BrowserProfilesList extends BtrixElement {
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             ${msg("Create Browser Profile")}
           </sl-button>
+          ${guideButton}
         `,
       });
     }
 
-    return emptyMessage({ message });
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   }
 
   private renderControls() {

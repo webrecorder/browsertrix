@@ -45,14 +45,18 @@ export class OrgCrawling extends BtrixElement {
                   variant="primary"
                   size="small"
                   ?disabled=${this.org?.readOnly}
-                  @click=${() =>
-                    this.navigate.to(
-                      `${this.navigate.orgBasePath}/workflows/new`,
-                      {
-                        scopeType:
-                          this.appState.userPreferences?.newWorkflowScopeType,
-                      },
-                    )}
+                  href=${`${this.navigate.orgBasePath}/workflows/new`}
+                  @click=${(e: MouseEvent) => {
+                    if (e.metaKey) {
+                      return;
+                    }
+                    e.preventDefault();
+
+                    this.navigate.to((e.target as HTMLAnchorElement).href, {
+                      scopeType:
+                        this.appState.userPreferences?.newWorkflowScopeType,
+                    });
+                  }}
                 >
                   <sl-icon slot="prefix" name="plus-lg"></sl-icon>
                   ${msg("New Workflow")}</sl-button
