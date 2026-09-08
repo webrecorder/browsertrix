@@ -34,14 +34,14 @@ export class DashboardGuides extends BtrixElement {
     const trialing = this.appState.onboarding?.trialing;
     const hasUsage = !this.appState.onboarding?.noUsage;
 
-    return html`<section class="mb-7">
+    return html`<section class="mb-5">
         ${hasUsage ? this.renderGeneralGuides() : this.renderGettingStarted()}
       </section>
 
       ${when(
         !trialing,
         () => html`
-          <section class="mb-10">
+          <section class="mb-5">
             ${hasUsage
               ? dashboardHeading(dashboardHeadingFor.crawlingGuides)
               : dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)}
@@ -52,9 +52,14 @@ export class DashboardGuides extends BtrixElement {
       ${when(
         !trialing || hasUsage,
         () =>
-          html`${dashboardHeading(dashboardHeadingFor.exploreMoreGuides)}
-            <sl-divider class="mb-5 mt-2"></sl-divider>
-            ${this.renderSettingsGuides()}`,
+          html`<sl-details class="mb-5">
+            <header slot="summary">
+              <h2 class=${clsx(tw`text-base font-medium leading-6`)}>
+                ${dashboardHeadingFor.moreGuides}
+              </h2>
+            </header>
+            ${this.renderSettingsGuides()}
+          </sl-details>`,
       )}`;
   }
 
