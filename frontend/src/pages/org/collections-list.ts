@@ -22,6 +22,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { RouteNamespace } from "@/routes";
@@ -178,56 +179,54 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         this.fetchErrorStatusCode,
         this.renderFetchError,
         () =>
-          html`<div
-              class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3"
-            >
-              ${this.renderControls()}
-            </div>
-            ${this.collections
-              ? html`
-                  <div class="lg:mx-2">
-                    <btrix-overflow-scroll
-                      class="-mx-3 pb-1 part-[content]:px-3"
-                    >
-                      ${guard(
-                        [
-                          this.collections,
-                          this.listView,
-                          this.collectionRefreshing,
-                        ],
-                        this.listView === ListView.List
-                          ? this.renderList
-                          : this.renderGrid,
-                      )}
-                    </btrix-overflow-scroll>
-                  </div>
-                  ${when(this.listView === ListView.List, () =>
-                    when(
-                      (this.collections &&
-                        this.collections.total > this.collections.pageSize) ||
-                        (this.collections && this.collections.page > 1),
-                      () => html`
-                        <footer class="mt-6 flex justify-center">
-                          <btrix-pagination
-                            page=${this.collections!.page}
-                            totalCount=${this.collections!.total}
-                            size=${this.collections!.pageSize}
-                            @page-change=${async (e: PageChangeEvent) => {
-                              await this.fetchCollections({
-                                page: e.detail.page,
-                              });
+          html`${listControls({
+            renderSearchControl: this.renderSearch,
+            renderSortControl: this.renderSortControl,
+            renderViewControl: this.renderViewControl,
+          })}
+          ${this.collections
+            ? html`
+                <div class="lg:mx-1">
+                  <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
+                    ${guard(
+                      [
+                        this.collections,
+                        this.listView,
+                        this.collectionRefreshing,
+                      ],
+                      this.listView === ListView.List
+                        ? this.renderList
+                        : this.renderGrid,
+                    )}
+                  </btrix-overflow-scroll>
+                </div>
+                ${when(this.listView === ListView.List, () =>
+                  when(
+                    (this.collections &&
+                      this.collections.total > this.collections.pageSize) ||
+                      (this.collections && this.collections.page > 1),
+                    () => html`
+                      <footer class="mt-6 flex justify-center">
+                        <btrix-pagination
+                          page=${this.collections!.page}
+                          totalCount=${this.collections!.total}
+                          size=${this.collections!.pageSize}
+                          @page-change=${async (e: PageChangeEvent) => {
+                            await this.fetchCollections({
+                              page: e.detail.page,
+                            });
 
-                              // Scroll to top of list
-                              // TODO once deep-linking is implemented, scroll to top of pushstate
-                              this.scrollIntoView({ behavior: "smooth" });
-                            }}
-                          ></btrix-pagination>
-                        </footer>
-                      `,
-                    ),
-                  )}
-                `
-              : this.renderLoading()}`,
+                            // Scroll to top of list
+                            // TODO once deep-linking is implemented, scroll to top of pushstate
+                            this.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        ></btrix-pagination>
+                      </footer>
+                    `,
+                  ),
+                )}
+              `
+            : this.renderLoading()}`,
       )}
 
       <btrix-dialog
@@ -303,84 +302,66 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       <sl-spinner></sl-spinner>
     </div>`;
 
-  private renderControls() {
-    return html`
-      <div
-        class="grid grid-cols-1 items-center gap-x-2 gap-y-2 lg:grid-cols-[minmax(0,100%)_fit-content(100%)]"
+  private readonly renderSortControl = () => {
+    return html`<sl-select
+        id="sort-select"
+        class="flex-1 md:min-w-[9.2rem]"
+        size="small"
+        pill
+        value=${this.orderBy.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy = {
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection || this.orderBy.direction,
+          };
+        }}
       >
-        <div class="col-span-1">${this.renderSearch()}</div>
-        <div class="col-span-1 flex items-center">
-          <div class="mx-2 whitespace-nowrap text-neutral-500">
-            ${msg("Sort by:")}
-          </div>
-          <div class="flex grow">
-            <sl-select
-              class="flex-1 md:min-w-[9.2rem]"
-              size="small"
-              pill
-              value=${this.orderBy.field}
-              @sl-change=${(e: Event) => {
-                const field = (e.target as HTMLSelectElement)
-                  .value as SortField;
-                this.orderBy = {
-                  field: field,
-                  direction:
-                    sortableFields[field].defaultDirection ||
-                    this.orderBy.direction,
-                };
-              }}
-            >
-              ${Object.entries(sortableFields).map(
-                ([value, { label }]) => html`
-                  <sl-option value=${value}>${label}</sl-option>
-                `,
-              )}
-            </sl-select>
-            <sl-tooltip content=${msg("Reverse sort")}>
-              <sl-icon-button
-                name="arrow-down-up"
-                label=${msg("Reverse sort")}
-                @click=${() => {
-                  this.orderBy = {
-                    ...this.orderBy,
-                    direction: -1 * this.orderBy.direction,
-                  };
-                }}
-              ></sl-icon-button>
-            </sl-tooltip>
-          </div>
-          <label for="viewStyle" class="mx-2 whitespace-nowrap text-neutral-500"
-            >${msg("View:")}</label
-          >
-          <sl-radio-group
-            id="viewStyle"
-            value=${this.listView}
-            size="small"
-            @sl-change=${(e: SlChangeEvent) => {
-              this.listView = (e.target as SlRadioGroup).value as ListView;
-            }}
-          >
-            <sl-tooltip content=${msg("View as List")}>
-              <sl-radio-button pill value=${ListView.List}>
-                <sl-icon
-                  name="view-list"
-                  label=${msg("List")}
-                ></sl-icon> </sl-radio-button
-            ></sl-tooltip>
-            <sl-tooltip content=${msg("View as Grid")}>
-              <sl-radio-button pill value=${ListView.Grid}>
-                <sl-icon
-                  name="grid"
-                  label=${msg("Grid")}
-                ></sl-icon> </sl-radio-button
-            ></sl-tooltip>
-          </sl-radio-group>
-        </div>
-      </div>
-    `;
-  }
+        ${Object.entries(sortableFields).map(
+          ([value, { label }]) => html`
+            <sl-option value=${value}>${label}</sl-option>
+          `,
+        )}
+      </sl-select>
+      <sl-tooltip content=${msg("Reverse sort")}>
+        <sl-icon-button
+          name="arrow-down-up"
+          label=${msg("Reverse sort")}
+          @click=${() => {
+            this.orderBy = {
+              ...this.orderBy,
+              direction: -1 * this.orderBy.direction,
+            };
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>`;
+  };
 
-  private renderSearch() {
+  private readonly renderViewControl = () => {
+    return html`<sl-radio-group
+      id="view-select"
+      value=${this.listView}
+      size="small"
+      @sl-change=${(e: SlChangeEvent) => {
+        this.listView = (e.target as SlRadioGroup).value as ListView;
+      }}
+    >
+      <sl-tooltip content=${msg("View as List")}>
+        <sl-radio-button pill value=${ListView.List}>
+          <sl-icon
+            name="view-list"
+            label=${msg("List")}
+          ></sl-icon> </sl-radio-button
+      ></sl-tooltip>
+      <sl-tooltip content=${msg("View as Grid")}>
+        <sl-radio-button pill value=${ListView.Grid}>
+          <sl-icon name="grid" label=${msg("Grid")}></sl-icon> </sl-radio-button
+      ></sl-tooltip>
+    </sl-radio-group>`;
+  };
+
+  private readonly renderSearch = () => {
     return html`
       <btrix-combobox
         ?open=${this.searchResultsOpen}
@@ -424,7 +405,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         ${this.renderSearchResults()}
       </btrix-combobox>
     `;
-  }
+  };
 
   private renderSearchResults() {
     if (!this.hasSearchStr) {
