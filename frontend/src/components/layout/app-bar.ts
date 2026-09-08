@@ -15,11 +15,18 @@ import {
 } from "@/types/localization";
 import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { type UserOrg } from "@/types/user";
-import { type ViewState } from "@/utils/APIRouter";
+import { type RouteName, type ViewState } from "@/utils/APIRouter";
 import { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
+
+// TODO Validate against mkdocs paths
+const mapToUserGuide: Partial<Record<RouteName, string>> = {
+  home: "",
+  org: "#quick-links",
+  join: "signup#set-up-your-personal-account",
+};
 
 @customElement("btrix-app-bar")
 @localized()
@@ -139,18 +146,20 @@ export class AppBar extends BtrixElement {
                     </sl-menu>
                   </btrix-popover-menu>`
               : html`
-                  ${this.viewState?.route !== "login"
-                    ? html`
-                        <sl-button
-                          size="small"
-                          variant="primary"
-                          href="/log-in"
-                          @click=${this.navigate.link}
-                        >
-                          ${msg("Sign In")}
-                        </sl-button>
-                      `
-                    : nothing}
+                  ${this.viewState?.route === "join"
+                    ? this.renderUserGuideButton()
+                    : this.viewState?.route !== "login"
+                      ? html`
+                          <sl-button
+                            size="small"
+                            variant="primary"
+                            href="/log-in"
+                            @click=${this.navigate.link}
+                          >
+                            ${msg("Sign In")}
+                          </sl-button>
+                        `
+                      : nothing}
                   ${(translatedLocales as unknown as string[]).length > 2
                     ? html`
                         <btrix-user-language-select
@@ -251,28 +260,9 @@ export class AppBar extends BtrixElement {
   }
 
   private renderOrgUserActions() {
-    const showUserGuide = () => {
-      this.dispatchEvent(
-        new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
-          "btrix-user-guide-show",
-          {
-            detail: { path: "" },
-            bubbles: true,
-            composed: true,
-          },
-        ),
-      );
-    };
-
     return html`<btrix-popover-menu>
-      ${this.renderNavButton({
-        slot: "trigger",
-        content: msg("User Guide"),
-        iconName: "book",
-        mobileIconOnly: true,
-        click: showUserGuide,
-      })}
-      <sl-menu @sl-select=${showUserGuide}>
+      ${this.renderUserGuideButton()}
+      <sl-menu @sl-select=${this.showUserGuide}>
         <sl-menu-item>
           ${msg("Open to Side")}
           <sl-icon slot="suffix" name="layout-sidebar-inset-reverse"></sl-icon>
@@ -284,6 +274,33 @@ export class AppBar extends BtrixElement {
       </sl-menu>
     </btrix-popover-menu>`;
   }
+
+  private renderUserGuideButton() {
+    return this.renderNavButton({
+      slot: "trigger",
+      content: msg("User Guide"),
+      iconName: "book",
+      mobileIconOnly: true,
+      click: this.showUserGuide,
+    });
+  }
+
+  private readonly showUserGuide = () => {
+    this.dispatchEvent(
+      new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+        "btrix-user-guide-show",
+        {
+          detail: {
+            path:
+              (this.viewState?.route && mapToUserGuide[this.viewState.route]) ??
+              "",
+          },
+          bubbles: true,
+          composed: true,
+        },
+      ),
+    );
+  };
 
   private renderOrgs() {
     const orgs = this.userInfo?.orgs;
