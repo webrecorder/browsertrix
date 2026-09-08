@@ -40,11 +40,11 @@ export class Join extends BtrixElement {
         const onboarding: Onboarding = isUserInfo(inviteInfo)
           ? {
               orgId: this.orgId || "",
-              noUsage: true,
+              showOnboarding: true,
             }
           : {
               orgId: inviteInfo.oid,
-              noUsage: true,
+              showOnboarding: true,
             };
 
         AppStateService.partialUpdateOnboarding(onboarding);

@@ -6,6 +6,7 @@ import mapValues from "lodash/fp/mapValues";
 
 import orgMock from "@/__mocks__/api/orgs/[id]";
 import { SubscriptionStatus } from "@/types/billing";
+import { type Onboarding } from "@/types/onboarding";
 import { type OrgData } from "@/types/org";
 import { AppStateService } from "@/utils/state";
 
@@ -35,6 +36,7 @@ export type StorybookOrgProps = {
   orgUsage?: boolean | OrgData["usage"];
   orgQuotas?: boolean | OrgData["quotas"];
   orgSubscription?: boolean | OrgData["subscription"];
+  orgOnboarding?: Onboarding;
 };
 
 @customElement("btrix-storybook-org")
@@ -50,6 +52,9 @@ export class StorybookOrg extends LitElement {
 
   @property({ type: Object })
   subscription?: OrgData["subscription"];
+
+  @property({ type: Object })
+  onboarding?: Partial<Onboarding>;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -75,6 +80,10 @@ export class StorybookOrg extends LitElement {
       quotas: this.quotas || (mapValues(() => 0, quotas) as typeof quotas),
       note: "",
     });
+
+    if (this.onboarding) {
+      AppStateService.partialUpdateOnboarding(this.onboarding);
+    }
   }
 
   render() {
@@ -84,7 +93,7 @@ export class StorybookOrg extends LitElement {
 
 export function orgDecorator(story: StoryFn, context: StoryContext) {
   const { args } = context;
-  const { orgUsers, orgUsage, orgQuotas, orgSubscription } =
+  const { orgUsers, orgUsage, orgQuotas, orgSubscription, orgOnboarding } =
     args as StorybookOrgProps;
 
   return html`<btrix-storybook-org
@@ -94,6 +103,7 @@ export function orgDecorator(story: StoryFn, context: StoryContext) {
     .subscription=${orgSubscription === true
       ? subscription
       : orgSubscription || undefined}
+    .onboarding=${orgOnboarding}
   >
     ${story(args, context)}
   </btrix-storybook-org>`;
