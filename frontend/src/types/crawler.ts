@@ -194,7 +194,7 @@ type ArchivedItemBase = {
   tags: string[];
   crawlExecSeconds: number;
   qaCrawlExecSeconds: number;
-  reviewStatus?: ReviewStatus;
+  reviewStatus?: ReviewStatus | null;
   completions?: number;
   stopping: boolean | null;
   qaRunCount: number | null;
@@ -237,7 +237,7 @@ export type CrawlReplay = Crawl & Pick<Workflow, "config" | "image">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
-  cid: undefined;
+  cid: undefined | null;
   resources: undefined;
   crawlerChannel: CrawlerChannelImage.Default;
   image: null;
@@ -267,6 +267,8 @@ export type CrawlerChannelsAPIResponse = {
 };
 
 export type ArchivedItem = Crawl | Upload;
+
+export type ListArchivedItem = Omit<ArchivedItem, "collections">;
 
 export type ArchivedItemPageComment = {
   id: string;
