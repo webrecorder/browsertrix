@@ -197,7 +197,7 @@ export class Dashboard extends BtrixElement {
       content.push(
         primaryWithAside(
           html`<btrix-dashboard-trial></btrix-dashboard-trial>
-            ${dashboardHeading(dashboardHeadingFor.exploreMoreGuides, {
+            ${dashboardHeading(dashboardHeadingFor.moreGuides, {
               classes: tw`mt-10`,
             })}
             <btrix-dashboard-guides
