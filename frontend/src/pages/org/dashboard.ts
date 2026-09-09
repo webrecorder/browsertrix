@@ -181,7 +181,7 @@ export class Dashboard extends BtrixElement {
           [this.org?.id, this.org?.subscription?.status],
           this.renderTrialInfo,
         )}
-        ${this.renderContent()}
+        ${when(this.org, () => this.renderContent())}
       </main>
     `;
   }
@@ -550,9 +550,7 @@ export class Dashboard extends BtrixElement {
       <div
         class=${clsx(
           tw`relative`,
-          this.metrics &&
-            !this.metrics.collectionsCount &&
-            tw`rounded-lg border`,
+          !this.collections.value?.items.length && tw`rounded-lg border`,
         )}
       >
         <btrix-collections-grid-with-edit-dialog
