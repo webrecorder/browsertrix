@@ -58,7 +58,7 @@ const emptyCollectionsRequest = http.get(/\/collections/, async () => {
   return HttpResponse.json<APIPaginatedList<Collection>>(collections);
 });
 
-export const OnboardingWithoutUsage: Story = {
+export const WithoutUsage: Story = {
   args: {
     orgQuotas: {
       ...quotas,
@@ -81,16 +81,13 @@ export const OnboardingWithoutUsage: Story = {
   },
 };
 
-export const NotOnboardingWithoutUsage: Story = {
+export const WithUsage: Story = {
   args: {
     orgQuotas: {
       ...quotas,
       ...quotasWithExecutionMinutes,
     },
-    orgOnboarding: {
-      orgId: orgMock.id,
-      showOnboarding: false,
-    },
+    orgUsage: true,
   },
   parameters: {
     msw: {
@@ -100,6 +97,7 @@ export const NotOnboardingWithoutUsage: Story = {
           return HttpResponse.json<Metrics>({
             ...metrics,
             ...metricsWithStorageQuota,
+            ...metricsWithUsage,
           });
         }),
         emptyCollectionsRequest,
@@ -119,31 +117,6 @@ export const OnboardingWithUsage: Story = {
       orgId: orgMock.id,
       showOnboarding: true,
     },
-  },
-  parameters: {
-    msw: {
-      handlers: [
-        http.get(/\/metrics/, async () => {
-          await delay(500);
-          return HttpResponse.json<Metrics>({
-            ...metrics,
-            ...metricsWithStorageQuota,
-            ...metricsWithUsage,
-          });
-        }),
-        emptyCollectionsRequest,
-      ],
-    },
-  },
-};
-
-export const NotOnboardingWithUsage: Story = {
-  args: {
-    orgQuotas: {
-      ...quotas,
-      ...quotasWithExecutionMinutes,
-    },
-    orgUsage: true,
   },
   parameters: {
     msw: {
