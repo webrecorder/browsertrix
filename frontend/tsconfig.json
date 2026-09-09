@@ -41,6 +41,9 @@
       "ES2021.Intl",
       "esnext.collection",
     ],
+    "types": [
+      "mocha"
+    ]
   },
   "include": [
     "**/*.ts"
