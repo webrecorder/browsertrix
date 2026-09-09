@@ -1,7 +1,6 @@
 import { localized, msg } from "@lit/localize";
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { customElement } from "lit/decorators.js";
-import { when } from "lit/directives/when.js";
 
 import { dashboardHeading } from "../layouts/dashboardHeading";
 import { dashboardHeadingFor } from "../strings/dashboardHeading";
@@ -18,8 +17,6 @@ import "./dashboard-guide-card";
 export class DashboardOnboarding extends BtrixElement {
   render() {
     return html`
-      <header class="mb-7">${this.renderIntro()}</header>
-
       <section class="mb-7">
         ${dashboardHeading(dashboardHeadingFor.newUserCrawlingGuides)}
         ${this.renderCrawlingGuides()}
@@ -30,21 +27,6 @@ export class DashboardOnboarding extends BtrixElement {
         ${this.renderGettingStarted()}
       </section>
     `;
-  }
-
-  private renderIntro() {
-    return html`<p class="text-xl font-semibold">
-        ${msg("Welcome to Browsertrix")}
-      </p>
-      <p class="mt-2 text-neutral-700">
-        ${this.appState.isTrialing
-          ? msg(
-              "Your dashboard is customized with guides and resources to help you get the most out of your trial experience.",
-            )
-          : msg(
-              "Your dashboard is customized with guides and resources to help you get started.",
-            )}
-      </p>`;
   }
 
   private renderGettingStarted() {

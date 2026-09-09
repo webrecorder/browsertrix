@@ -5,7 +5,6 @@ import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
-import { dashboardHeading } from "../layouts/dashboardHeading";
 import { dashboardHeadingFor } from "../strings/dashboardHeading";
 import { docsFeedback } from "../templates/docsFeedback";
 
@@ -121,7 +120,7 @@ export class DashboardGuides extends BtrixElement {
         ? tw`@2xl/org:col-span-2 @5xl/org:col-span-1`
         : tw`@2xl/org:col-span-1`,
     );
-    const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm @5xl/org:mb-2`;
+    const headingClasses = tw`mb-3 text-base font-medium leading-6 @4xl/org:text-sm`;
     const listClasses = tw`flex-1 [&>li:not(:last-of-type)]:mb-3.5`;
 
     return html`<div

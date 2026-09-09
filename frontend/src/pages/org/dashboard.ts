@@ -13,9 +13,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
-import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
 import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
-import { dashboardHeadingFor } from "./dashboard/strings/dashboardHeading";
 import { docsFeedback } from "./dashboard/templates/docsFeedback";
 import { resourcesList } from "./dashboard/templates/resourcesList";
 import { trialChecklist } from "./dashboard/templates/trialChecklist";
@@ -40,6 +38,7 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
+import { hasUsage } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
@@ -189,34 +188,30 @@ export class Dashboard extends BtrixElement {
 
   private renderContent() {
     const trialing = this.appState.isTrialing;
-    const showOnboarding = this.appState.onboarding?.showOnboarding;
-    const hasUsage =
-      this.appState.hasUsage ||
-      this.org?.enablePublicProfile ||
-      this.metrics?.workflowsQueuedCount ||
-      this.metrics?.workflowsRunningCount ||
-      this.metrics?.collectionsCount;
+    const showUsage =
+      this.org?.enablePublicProfile || hasUsage(this.org, this.metrics);
+    const showOnboarding =
+      this.appState.onboarding?.showOnboarding || !showUsage;
     const content: TemplateResult[] = [];
 
     if (showOnboarding) {
       content.push(
         primaryWithAside(
-          html`<btrix-dashboard-onboarding></btrix-dashboard-onboarding>`,
+          html`${this.renderOnboardingIntro()}
+            <btrix-dashboard-onboarding></btrix-dashboard-onboarding>`,
           html`${trialing ? trialChecklist() : nothing} ${resourcesList()}
           ${docsFeedback(docsEmail)}`,
         ),
       );
     }
 
-    if (hasUsage) {
+    if (showUsage) {
       if (showOnboarding) {
         content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
       }
 
       content.push(this.renderUsage());
-    }
 
-    if (!showOnboarding) {
       content.push(html`
         ${pageHeading({ content: msg("Guides") })}
         <sl-divider class="mb-3 mt-2"></sl-divider>
@@ -230,6 +225,21 @@ export class Dashboard extends BtrixElement {
     return html`${content}`;
   }
 
+  private renderOnboardingIntro() {
+    return html`<header class="mb-7 mt-3">
+      <p class="text-xl font-semibold">${msg("Welcome to Browsertrix")}</p>
+      <p class="mt-2 text-neutral-700">
+        ${this.appState.isTrialing
+          ? msg(
+              "Your dashboard is customized with guides and resources to help you get the most out of your trial experience.",
+            )
+          : msg(
+              "Your dashboard is customized with guides and resources to help you get started.",
+            )}
+      </p>
+    </header>`;
+  }
+
   private readonly renderTrialInfo = () => {
     if (!this.org || !this.appState.isTrialing) return;
 
@@ -239,9 +249,7 @@ export class Dashboard extends BtrixElement {
     );
     const warning = daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING;
 
-    return html`<div
-      class="mb-3 mt-7 flex items-center gap-1.5 text-neutral-600"
-    >
+    return html`<div class="mt-7 flex items-center gap-1.5 text-neutral-600">
       <btrix-popover
         content=${msg(str`Your free trial ends on ${trialEndDate}.`)}
         placement="bottom-start"
