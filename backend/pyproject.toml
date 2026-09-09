@@ -19,6 +19,7 @@ dependencies = [
     "kubernetes>=35.0.0",
     "kubernetes-asyncio==29.0.0",
     "motor>=3.7.1",
+    "packaging>=26.2",
     "pathvalidate>=3.3.1",
     "pwdlib[bcrypt]>=0.3.0",
     "pydantic==2.12.5",
