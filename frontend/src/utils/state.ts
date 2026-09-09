@@ -8,7 +8,6 @@ import { locked, options, transaction, use } from "lit-shared-state";
 import { persist } from "./persist";
 
 import { authSchema, type Auth } from "@/types/auth";
-import { SubscriptionStatus } from "@/types/billing";
 import type { FeatureFlags } from "@/types/featureFlags";
 import { type Onboarding } from "@/types/onboarding";
 import type { OrgData } from "@/types/org";
@@ -20,19 +19,11 @@ import {
   type UserPreferences,
 } from "@/types/user";
 import type { AppSettings } from "@/utils/app";
-import { isAdmin, isCrawler } from "@/utils/orgs";
+import { hasUsage, isAdmin, isCrawler, isTrialing } from "@/utils/orgs";
 
 export { use };
 
 const MAX_DAYS_ONBOARDING = 30;
-
-function isTrialing(org?: OrgData | null) {
-  return org?.subscription?.status === SubscriptionStatus.Trialing;
-}
-
-function hasUsage(org?: OrgData | null) {
-  return org ? org.bytesStored > 0 : undefined;
-}
 
 export function makeAppStateService() {
   // Prevent state updates from any component
