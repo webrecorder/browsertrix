@@ -53,7 +53,10 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
-import { completeOnboardingStep } from "@/utils/onboarding/onboardingEvents";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
@@ -971,7 +974,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 noCache="true"
                 @rwp-url-change=${() => {
                   if (this.itemType === "crawl") {
-                    completeOnboardingStep(2);
+                    completeOnboardingStep(OnboardingStep.ReplayItem);
                   }
                 }}
               ></replay-web-page>
