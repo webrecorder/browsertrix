@@ -36,18 +36,6 @@ export function resourcesList() {
     <ul class="${tw`[&>li:not(:last-of-type)]:mb-2.5`} @5xl:text-xs">
       <li>
         ${externalLink({
-          label: msg("What is Web Archiving?"),
-          href: "https://webrecorder.net/resources/what-is-web-archiving/",
-        })}
-      </li>
-      <li>
-        ${externalLink({
-          label: msg("Glossary of Terms"),
-          href: "https://webrecorder.net/resources/glossary/",
-        })}
-      </li>
-      <li>
-        ${externalLink({
           label: msg("Community Forum"),
           href: "https://forum.webrecorder.net/",
         })}
@@ -60,9 +48,22 @@ export function resourcesList() {
       </li>
       <li>
         ${externalLink({
+          label: msg("Feature Roadmap"),
+          href: "https://github.com/orgs/webrecorder/projects/9/views/20",
+          rel: "noopener noreferrer nofollow",
+        })}
+      </li>
+      <li>
+        ${externalLink({
           label: msg(html`Webinars & Presentations`),
           href: "https://www.youtube.com/@webrecorder",
           rel: "noopener noreferrer nofollow",
+        })}
+      </li>
+      <li>
+        ${externalLink({
+          label: msg("More Resources"),
+          href: "https://webrecorder.net/resources/",
         })}
       </li>
     </ul>
