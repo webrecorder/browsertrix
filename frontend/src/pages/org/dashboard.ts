@@ -7,7 +7,7 @@ import type {
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -22,6 +22,7 @@ import { resourcesList } from "./dashboard/templates/resourcesList";
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsEmail } from "@/constants/docs-email";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
@@ -49,6 +50,8 @@ import { cached } from "@/utils/weakCache";
 
 import "@/pages/org/dashboard/components/dashboard-guides";
 
+import { generalGuides } from "./dashboard/templates/generalGuides";
+
 enum CollectionGridView {
   All = "all",
   Public = "public",
@@ -70,6 +73,12 @@ export class Dashboard extends BtrixElement {
 
   @state()
   collectionPage = parsePage(new URLSearchParams(location.search).get("page"));
+
+  @property({ type: Boolean })
+  showOnboardingFinishedDialog = false;
+
+  @query("#onboarding-finished")
+  private readonly onboardingFinishedDialog?: Dialog | null;
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;
@@ -180,14 +189,57 @@ export class Dashboard extends BtrixElement {
         `,
         classNames: tw`mb-3`,
       })}
-      <main>
-        ${guard(
-          [this.org?.id, this.org?.subscription?.status],
-          this.renderTrialInfo,
-        )}
-        ${when(this.org, () => this.renderContent())}
-      </main>
+      <main>${when(this.org, () => this.renderContent())}</main>
+      ${this.renderOnboardingFinishedDialog()}
     `;
+  }
+
+  private renderOnboardingFinishedDialog() {
+    return html`<btrix-dialog
+      id="onboarding-finished"
+      class="[--width:40rem]"
+      label=${msg("Next Steps")}
+      ?open=${this.showOnboardingFinishedDialog}
+      @btrix-user-guide-show=${() => {
+        void this.onboardingFinishedDialog?.hide();
+      }}
+    >
+      <p class="mb-3">
+        ${msg("You’re all set up!")}
+        ${msg("Next, you may want to check out the following guides.")}
+      </p>
+      <div class="@container/card">
+        ${generalGuides({
+          trialing: this.appState.isTrialing,
+          billing: this.appState.settings?.billingEnabled,
+        })}
+      </div>
+
+      <p class="mt-5">
+        ${msg(
+          "These guides and more resources are always available at the bottom of your dashboard.",
+        )}
+      </p>
+
+      <sl-button
+        slot="footer"
+        variant="text"
+        @click=${() => {
+          AppStateService.partialUpdateOnboarding({ showOnboarding: true });
+          void this.onboardingFinishedDialog?.hide();
+        }}
+      >
+        ${msg("I’m still getting set up")}</sl-button
+      >
+
+      <sl-button
+        slot="footer"
+        variant="primary"
+        @click=${() => void this.onboardingFinishedDialog?.hide()}
+      >
+        ${msg("Go to Dashboard")}</sl-button
+      >
+    </btrix-dialog>`;
   }
 
   private renderContent() {
@@ -195,54 +247,79 @@ export class Dashboard extends BtrixElement {
       this.org?.enablePublicProfile || hasUsage(this.org, this.metrics);
     const showOnboarding =
       this.appState.onboarding?.showOnboarding || !showUsage;
+
     const content: TemplateResult[] = [];
-    const aside = html`${resourcesList()}
-      <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
 
     if (showOnboarding) {
-      content.push(
-        primaryWithAside(
-          html`${this.renderOnboardingIntro()}
-            <btrix-dashboard-guides onboarding></btrix-dashboard-guides>`,
-          html`${this.renderOnboardingChecklist()} ${aside}`,
-        ),
-      );
+      const org_name = html`<strong class="font-semibold"
+        >${this.org?.name}</strong
+      >`;
+      const primary = html`${this.appState.isTrialing
+          ? html`<div class="mt-2">${this.guardedRenderTrialInfo()}</div>`
+          : nothing}
+        <header
+          class="mb-7 mt-3 flex flex-wrap items-end justify-between gap-3"
+        >
+          <div>
+            <p class="text-xl font-semibold">
+              ${msg("Welcome to Browsertrix")}
+            </p>
+            <p class="mt-2 text-pretty text-neutral-700">
+              ${msg(html`Let’s get you set up with your new org ${org_name}.`)}
+            </p>
+          </div>
+          <div>
+            ${when(
+              showUsage,
+              () =>
+                html`<sl-button
+                  size="small"
+                  variant="success"
+                  pill
+                  @click=${() => {
+                    AppStateService.partialUpdateOnboarding({
+                      showOnboarding: false,
+                    });
+                    void this.onboardingFinishedDialog?.show();
+                  }}
+                >
+                  <sl-icon slot="prefix" name="check2-all"></sl-icon>
+                  ${msg("Finish Set Up")}
+                </sl-button>`,
+            )}
+          </div>
+        </header>
+        <btrix-dashboard-guides onboarding></btrix-dashboard-guides>`;
+      const aside = html`${this.renderOnboardingChecklist()} ${resourcesList()}
+        <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
+
+      content.push(primaryWithAside(primary, aside));
     }
 
     if (showUsage) {
       if (showOnboarding) {
-        content.push(html`<sl-divider class="mb-3 mt-10"></sl-divider>`);
+        content.push(html`<sl-divider class="mb-10 mt-7"></sl-divider>`);
       }
 
-      content.push(this.renderUsage());
+      content.push(
+        html`<section class="mb-10">${this.renderStats()}</section>
+          <section class="mb-10">${this.renderCollections()}</section>`,
+      );
     }
 
     if (!showOnboarding) {
+      const primary = html`<btrix-dashboard-guides></btrix-dashboard-guides>`;
+      const aside = html`${resourcesList()}
+        <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
+
       content.push(html`
-        ${pageHeading({ content: msg("Guides") })}
-        ${primaryWithAside(
-          html`<btrix-dashboard-guides
-            class="mb-10 mt-2 block"
-          ></btrix-dashboard-guides>`,
-          aside,
-        )}
+        <sl-divider class="mb-3 mt-10"></sl-divider>
+        ${pageHeading({ content: msg("Guides"), classNames: tw`mb-2` })}
+        ${primaryWithAside(primary, aside)}
       `);
     }
 
     return html`${content}`;
-  }
-
-  private renderOnboardingIntro() {
-    const org_name = html`<strong class="font-semibold"
-      >${this.org?.name}</strong
-    >`;
-
-    return html`<header class="mb-7 mt-3">
-      <p class="text-xl font-semibold">${msg("Welcome to Browsertrix")}</p>
-      <p class="mt-2 text-pretty text-neutral-700">
-        ${msg(html`Let’s get you set up with your new org ${org_name}.`)}
-      </p>
-    </header>`;
   }
 
   private renderOnboardingChecklist() {
@@ -287,6 +364,13 @@ export class Dashboard extends BtrixElement {
     `;
   }
 
+  private guardedRenderTrialInfo() {
+    return guard(
+      [this.org?.id, this.org?.subscription?.status],
+      this.renderTrialInfo,
+    );
+  }
+
   private readonly renderTrialInfo = () => {
     if (!this.org || !this.appState.isTrialing) return;
 
@@ -296,7 +380,7 @@ export class Dashboard extends BtrixElement {
     );
     const warning = daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING;
 
-    return html`<div class="mt-7 flex items-center gap-1.5">
+    return html`<div class="flex items-center gap-1.5">
       <btrix-popover
         content=${msg(str`Your free trial ends on ${trialEndDate}.`)}
         placement="bottom-start"
@@ -321,27 +405,29 @@ export class Dashboard extends BtrixElement {
     </div>`;
   };
 
-  private readonly renderUsage = () => {
-    return html`<section class="mb-10">${this.renderStats()}</section>
-      <section class="mb-10">${this.renderCollections()}</section>`;
-  };
-
   private renderStats() {
-    return html`<header class="mb-3 flex items-center justify-between gap-3">
+    return html`<header
+        class="mb-3 flex flex-wrap items-center justify-between gap-3"
+      >
         ${pageHeading({ content: msg("Usage Stats") })}
-        ${when(
-          this.appState.settings?.billingEnabled,
-          () =>
-            html`<sl-button
-              size="small"
-              href="${this.navigate
-                .orgBasePath}/${OrgTab.Settings}/${"billing" satisfies SettingsTab}"
-              @click=${this.navigate.link}
-            >
-              <sl-icon slot="prefix" name="gear"></sl-icon>
-              ${msg("Manage Plan")}
-            </sl-button>`,
-        )}
+        <div class="flex items-center gap-3">
+          ${this.appState.onboarding?.showOnboarding
+            ? nothing
+            : this.guardedRenderTrialInfo()}
+          ${when(
+            this.appState.settings?.billingEnabled,
+            () =>
+              html`<sl-button
+                size="small"
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Settings}/${"billing" satisfies SettingsTab}"
+                @click=${this.navigate.link}
+              >
+                <sl-icon slot="prefix" name="gear"></sl-icon>
+                ${msg("Manage Plan")}
+              </sl-button>`,
+          )}
+        </div>
       </header>
       <div class="flex flex-col gap-6 md:flex-row">
         ${this.renderCard(

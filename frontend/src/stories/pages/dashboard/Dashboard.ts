@@ -10,8 +10,8 @@ import { type StorybookUserProps } from "@/stories/decorators/userDecorator";
 
 export type RenderProps = Dashboard & StorybookUserProps & StorybookOrgProps;
 
-export const renderComponent = (_props: Partial<RenderProps>) => {
-  return html`<div class="@container/org">
-    <btrix-dashboard></btrix-dashboard>
-  </div>`;
+export const renderComponent = (props: Partial<RenderProps>) => {
+  return html`<btrix-dashboard
+    ?showOnboardingFinishedDialog=${props.showOnboardingFinishedDialog}
+  ></btrix-dashboard>`;
 };
