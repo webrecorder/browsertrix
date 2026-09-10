@@ -16,6 +16,7 @@ import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
+import { hasUsage } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 const cardClasses = tw`col-span-full block h-full overflow-hidden @container/card @4xl/org:col-span-1 @4xl/org:rounded-lg @4xl/org:border`;
@@ -45,7 +46,7 @@ export class DashboardGuides extends BtrixElement {
   private renderGuides() {
     const trackProps = {
       trialing: this.appState.isTrialing,
-      has_usage: this.org ? this.org.bytesStored > 0 : undefined,
+      has_usage: hasUsage(this.org),
     } satisfies AnalyticsTrackProps;
 
     return html`<div

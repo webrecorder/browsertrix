@@ -39,9 +39,11 @@ export function isTrialing(org?: OrgData | null) {
 
 export function hasUsage(org?: OrgData | null, metrics?: Metrics) {
   return org
-    ? org.bytesStored > 0 ||
+    ? Boolean(
+        org.bytesStored ||
         metrics?.workflowsQueuedCount ||
         metrics?.workflowsRunningCount ||
-        metrics?.collectionsCount
+        metrics?.collectionsCount,
+      )
     : undefined;
 }

@@ -8,6 +8,7 @@ import { dashboardHeadingFor } from "../strings/dashboardHeading";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
+import { hasUsage } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
 import "./dashboard-guide-card";
@@ -94,7 +95,7 @@ export class DashboardOnboarding extends BtrixElement {
 
     const trackProps = {
       trialing: this.appState.isTrialing,
-      has_usage: this.org ? this.org.bytesStored > 0 : undefined,
+      has_usage: hasUsage(this.org),
     } satisfies AnalyticsTrackProps;
 
     return html`
