@@ -58,7 +58,7 @@ enum CollectionGridView {
   Public = "public",
 }
 
-const PAGE_SIZE = 1;
+const PAGE_SIZE = 12;
 
 @customElement("btrix-dashboard")
 @localized()
