@@ -1,6 +1,5 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
-import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
