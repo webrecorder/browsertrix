@@ -1,10 +1,11 @@
 import type { StoryContext, StoryFn } from "@storybook/web-components";
 import { addDays } from "date-fns/fp";
-import { html, LitElement } from "lit";
+import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import mapValues from "lodash/fp/mapValues";
 
 import orgMock from "@/__mocks__/api/orgs/[id]";
+import { TailwindElement } from "@/classes/TailwindElement";
 import { SubscriptionStatus } from "@/types/billing";
 import { type Onboarding } from "@/types/onboarding";
 import { type OrgData } from "@/types/org";
@@ -40,7 +41,7 @@ export type StorybookOrgProps = {
 };
 
 @customElement("btrix-storybook-org")
-export class StorybookOrg extends LitElement {
+export class StorybookOrg extends TailwindElement {
   @property({ type: Object })
   users?: OrgData["users"];
 
@@ -101,7 +102,11 @@ export class StorybookOrg extends LitElement {
   }
 
   render() {
-    return html`<slot></slot>`;
+    return html`<div
+      class="mx-auto box-border max-w-screen-desktop p-3 @container/org lg:px-10 lg:pb-10"
+    >
+      <slot></slot>
+    </div>`;
   }
 }
 
