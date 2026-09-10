@@ -1,9 +1,11 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { dashboardHeading } from "../layouts/dashboardHeading";
+import { generalGuides } from "../templates/generalGuides";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
@@ -29,7 +31,7 @@ export class DashboardGuides extends BtrixElement {
       <section class="mb-7">
         ${this.onboarding
           ? this.renderGettingStarted()
-          : html`<div class="overflow-hidden rounded-lg border">
+          : html`<div class="overflow-hidden @container/card">
               ${this.renderGeneralGuides()}
             </div>`}
       </section>
@@ -47,7 +49,7 @@ export class DashboardGuides extends BtrixElement {
       </section>
 
       <sl-details
-        class="part-[content]:p-3 part-[header]:p-3 part-[summary]:font-medium part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)]"
+        class="part-[content]:p-3 part-[header]:p-3 part-[summary]:font-medium part-[base]:shadow-sm part-[base]:transition-shadow part-[content]:[border-top:solid_1px_var(--sl-panel-border-color)] part-[base]:open:shadow-none"
       >
         <div slot="summary" class="flex items-center gap-3">
           <sl-icon class="size-5 text-neutral-500" name="book"></sl-icon>
@@ -77,60 +79,22 @@ export class DashboardGuides extends BtrixElement {
         </div>
       </div>
       <div
-        class="col-span-full -mx-3 @4xl/org:col-span-2 @4xl/org:mx-0 @4xl/org:border-l"
+        class="col-span-full overflow-hidden @container/card @4xl/org:col-span-2 @4xl/org:border-l"
       >
-        ${this.renderGeneralGuides()}
+        ${this.renderGeneralGuides({
+          classes: tw`@4xl/org:rounded-none @4xl/org:border-0`,
+        })}
       </div>
     </div>`;
   }
 
-  private renderGeneralGuides() {
-    return html`<div class="@container/card">
-      ${this.onboarding
-        ? html`<btrix-dashboard-guide-card
-            class="block @lg/card:border-b part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-            icon="easel"
-            path="concepts"
-          >
-            <span slot="title">${msg("Introduction to Concepts")}</span>
-            ${msg(html`An overview of concepts & terms used in Browsertrix`)}
-          </btrix-dashboard-guide-card>`
-        : html`<btrix-dashboard-guide-card
-            class="block @lg/card:border-b part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-            icon="speedometer"
-            path="overview"
-          >
-            <span slot="title">${msg("Org Dashboard")}</span>
-            ${msg("Read about the features of your dashboard")}
-          </btrix-dashboard-guide-card>`}
-      <btrix-dashboard-guide-card
-        class="block @lg/card:border-b part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-        icon="map"
-        path="navigation"
-      >
-        <span slot="title">${msg("Navigating Your Org")}</span>
-        ${msg("Where to find org features and reference guides")}
-      </btrix-dashboard-guide-card>
-      ${this.appState.isTrialing
-        ? html`<btrix-dashboard-guide-card
-            class="block part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-            icon="calendar3"
-            path="signup/#your-free-trial"
-          >
-            <span slot="title">${msg("Your Free Trial")}</span>
-            ${msg("How to get the most out of your trial experience")}
-          </btrix-dashboard-guide-card>`
-        : html`<btrix-dashboard-guide-card
-            class="block part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-            icon="building-fill-gear"
-            path="org-settings"
-          >
-            <span slot="title">${msg("Org Settings")}</span>
-            ${this.appState.settings?.billingEnabled
-              ? msg("Manage your plan, invite team members, and more")
-              : msg("Change your org name, invite team members, and more")}
-          </btrix-dashboard-guide-card>`}
-    </div>`;
+  private renderGeneralGuides({ classes }: { classes?: string } = {}) {
+    return generalGuides({
+      onboarding: this.onboarding,
+      trialing: this.appState.isTrialing,
+      billing: this.appState.settings?.billingEnabled,
+      classes,
+    });
   }
 
   private renderCrawlingGuides() {
@@ -148,7 +112,7 @@ export class DashboardGuides extends BtrixElement {
           icon="window"
           path="getting-started/#__tabbed_1_1"
           variant="button"
-          @click=${() =>
+          @btrix-user-guide-show=${() =>
             track(AnalyticsTrackEvent.OpenedCrawlingOnePageGuide, trackProps)}
         >
           <span slot="title">${msg("One Page")}</span>
@@ -159,7 +123,7 @@ export class DashboardGuides extends BtrixElement {
           icon="person-workspace"
           path="getting-started/#__tabbed_1_2"
           variant="button"
-          @click=${() =>
+          @btrix-user-guide-show=${() =>
             track(
               AnalyticsTrackEvent.OpenedCrawlingSocialMediaGuide,
               trackProps,
@@ -173,7 +137,7 @@ export class DashboardGuides extends BtrixElement {
           icon="pc-display-horizontal"
           path="getting-started/#__tabbed_1_3"
           variant="button"
-          @click=${() =>
+          @btrix-user-guide-show=${() =>
             track(AnalyticsTrackEvent.OpenedCrawlingWebsiteGuide, trackProps)}
         >
           <span slot="title">${msg("Entire Website")}</span>
@@ -201,9 +165,9 @@ export class DashboardGuides extends BtrixElement {
           </li>
           <li>
             ${this.renderGuideLink({
-              label: msg("Exclude popups and prompts"),
-              icon: "window-dash",
-              path: "browser-profiles/browser-profiles-overview",
+              label: msg("Include extra pages"),
+              icon: "file-earmark-plus",
+              path: "workflow-setup/#additional-scope",
             })}
           </li>
           <li>
@@ -218,13 +182,6 @@ export class DashboardGuides extends BtrixElement {
               label: msg("Avoid crawler traps in real-time"),
               icon: "shield-exclamation",
               path: "running-crawl/#live-exclusion-editing",
-            })}
-          </li>
-          <li>
-            ${this.renderGuideLink({
-              label: msg("Organize crawls into collections"),
-              icon: "collection",
-              path: "collection",
             })}
           </li>
           <li>
