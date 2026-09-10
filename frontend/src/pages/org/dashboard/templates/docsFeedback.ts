@@ -3,13 +3,13 @@ import { html } from "lit";
 
 export function docsFeedback(email: string) {
   return html` <section
-    class="flex flex-col gap-3 text-neutral-700 @5xl/org:text-xs @5xl/org:leading-normal"
+    class="flex flex-col gap-3 text-neutral-600 @5xl/org:text-xs @5xl/org:leading-normal"
   >
     <p class="font-medium leading-none">
-      ${msg("Can‘t find a specific guide?")}
+      ${msg("Can’t find a specific guide?")}
     </p>
     <p class="max-w-[30ch] text-pretty">
-      ${msg("Let us know what you‘re looking for and how we can help.")}
+      ${msg("Let us know what you’re looking for and how we can help.")}
     </p>
     <div>
       <sl-button
