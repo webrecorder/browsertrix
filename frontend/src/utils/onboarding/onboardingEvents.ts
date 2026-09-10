@@ -7,8 +7,16 @@ import { SubscriptionStatus } from "@/types/billing";
 import { track } from "@/utils/analytics";
 import appState, { AppStateService } from "@/utils/state";
 
+export enum OnboardingStep {
+  UserGuide,
+  CreateWorkflow,
+  ReplayItem,
+  ReviewPlan,
+}
+
 export const onboardingSteps = [
   {
+    key: OnboardingStep.UserGuide,
     label: msg("Locate the user guide"),
     description: msg(
       "To open the user guide without leaving the Browsertrix application, select the “User Guide” button at the top of each page.",
@@ -22,6 +30,7 @@ export const onboardingSteps = [
     },
   },
   {
+    key: OnboardingStep.CreateWorkflow,
     label: msg("Create a crawl workflow"),
     description: msg(
       "Open the “Create New...” dropdown menu at the top of your dashboard and choose “Crawl Workflow”.",
@@ -35,6 +44,7 @@ export const onboardingSteps = [
     },
   },
   {
+    key: OnboardingStep.ReplayItem,
     label: msg("Replay crawled item"),
     description: msg(
       "Navigate to “Archived Items”, select the crawled item, and go to “Replay” to view an interactive replay of crawled pages.",
@@ -48,6 +58,7 @@ export const onboardingSteps = [
     },
   },
   {
+    key: OnboardingStep.ReviewPlan,
     label: msg("Review your plan"),
     description: msg(
       html`Navigate to “Settings” and review “Billing & Usage” to confirm that
