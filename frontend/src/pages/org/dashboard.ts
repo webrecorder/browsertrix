@@ -13,16 +13,18 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
 import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
 import { docsFeedback } from "./dashboard/templates/docsFeedback";
+import { onboardingChecklist } from "./dashboard/templates/onboardingChecklist";
 import { resourcesList } from "./dashboard/templates/resourcesList";
-import { trialChecklist } from "./dashboard/templates/trialChecklist";
 
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsEmail } from "@/constants/docs-email";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import {
   OrgStatusBanner,
@@ -38,16 +40,13 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
+import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
 import { hasUsage } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
 
 import "@/pages/org/dashboard/components/dashboard-guides";
-
-import { quickLinks } from "./dashboard/templates/quickLinks";
-
-import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 
 enum CollectionGridView {
   All = "all",
@@ -129,6 +128,7 @@ export class Dashboard extends BtrixElement {
               html`<sl-dropdown
                 distance="4"
                 placement="bottom-end"
+                hoist
                 @sl-select=${(e: SlSelectEvent) => {
                   const { value } = e.detail.item;
 
@@ -190,14 +190,12 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderContent() {
-    const trialing = this.appState.isTrialing;
     const showUsage =
       this.org?.enablePublicProfile || hasUsage(this.org, this.metrics);
     const showOnboarding =
       this.appState.onboarding?.showOnboarding || !showUsage;
     const content: TemplateResult[] = [];
-    const aside = html`${trialing ? trialChecklist() : nothing}
-      ${resourcesList()}
+    const aside = html`${resourcesList()}
       <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
 
     if (showOnboarding) {
@@ -205,7 +203,7 @@ export class Dashboard extends BtrixElement {
         primaryWithAside(
           html`${this.renderOnboardingIntro()}
             <btrix-dashboard-guides onboarding></btrix-dashboard-guides>`,
-          aside,
+          html`${this.renderOnboardingChecklist()} ${aside}`,
         ),
       );
     }
@@ -244,6 +242,23 @@ export class Dashboard extends BtrixElement {
         ${msg(html`Let’s get you set up with your new org ${org_name}.`)}
       </p>
     </header>`;
+  }
+
+  private renderOnboardingChecklist() {
+    return html`<section>
+      ${dashboardHeading(msg("Onboarding Checklist"), { aside: true })}
+
+      <div
+        class="mb-1 mt-4 cursor-default @5xl/org:text-xs @5xl/org:leading-normal"
+      >
+        ${onboardingChecklist(
+          onboardingSteps.map(({ label, description }) => ({
+            content: label,
+            tooltip: description,
+          })),
+        )}
+      </div>
+    </section>`;
   }
 
   private renderGuideSearch() {
