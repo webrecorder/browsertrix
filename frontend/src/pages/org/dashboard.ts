@@ -330,7 +330,8 @@ export class Dashboard extends BtrixElement {
         class="mb-1 mt-4 cursor-default @5xl/org:text-xs @5xl/org:leading-normal"
       >
         ${onboardingChecklist(
-          onboardingSteps.map(({ label, description }) => ({
+          onboardingSteps.map(({ key, label, description }) => ({
+            key,
             content: label,
             tooltip: description,
           })),

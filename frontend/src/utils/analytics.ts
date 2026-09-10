@@ -14,6 +14,7 @@ export type AnalyticsTrackProps = {
   has_usage?: boolean;
   collection_slug?: string;
   section?: string;
+  completed_onboarding_step?: string;
 };
 
 declare global {
