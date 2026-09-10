@@ -253,14 +253,14 @@ export class DashboardGuides extends BtrixElement {
             ${this.renderGuideLink({
               label: msg("Choose your preferred language"),
               icon: "translate",
-              path: "user-settings",
+              path: "user-settings/#language",
             })}
           </li>
           <li>
             ${this.renderGuideLink({
               label: msg("Change how your name appears to team members"),
               icon: "file-person-fill",
-              path: "user-settings",
+              path: "user-settings/#display-name",
             })}
           </li>
         </ul>
