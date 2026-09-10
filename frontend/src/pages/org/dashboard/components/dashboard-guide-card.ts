@@ -37,7 +37,7 @@ export class DashboardGuideCard extends TailwindElement {
 
     if (this.variant === "button") {
       return html`<a
-        class="group flex h-full flex-col gap-3 rounded-lg border p-3 shadow transition-all duration-fast hover:shadow-none"
+        class="group flex h-full flex-col gap-3 rounded-lg border p-3 shadow-sm transition-all duration-fast hover:shadow-none"
         href=${link}
         @click=${this.onClick}
         part="base"
@@ -69,7 +69,7 @@ export class DashboardGuideCard extends TailwindElement {
           ${this.renderTitle()} ${this.renderBody()}
         </div>
 
-        <sl-button-group class="[--sl-shadow-x-small:none]">
+        <sl-button-group>
           <sl-button
             class="part-[label]:font-medium"
             size="small"
