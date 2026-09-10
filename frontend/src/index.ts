@@ -385,7 +385,15 @@ export class App extends BtrixElement {
         class="[--body-spacing:0] [--footer-spacing:var(--sl-spacing-2x-small)] [--size:--btrix-user-guide-width] part-[base]:fixed part-[base]:z-50 part-[header-actions]:px-1 part-[panel]:shadow-[0_-1px_0_1px_rgba(0,0,0,0.1)] part-[header]:[border-bottom:var(--btrix-border)]"
         ?open=${this.appState.userGuideOpen}
         contained
-        @sl-hide=${() => AppStateService.updateUserGuideOpen(false)}
+        @sl-hide=${() => {
+          AppStateService.updateUserGuideOpen(false);
+        }}
+        @sl-after-hide=${() => {
+          if (this.userGuidePath.startsWith("?q=")) {
+            // Reset search
+            this.userGuidePath = "";
+          }
+        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book"></sl-icon>

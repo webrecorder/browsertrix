@@ -354,7 +354,7 @@ export class Dashboard extends BtrixElement {
             new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
               "btrix-user-guide-show",
               {
-                detail: { path: "/?q=" },
+                detail: { path: "?q=" },
                 bubbles: true,
                 composed: true,
               },
