@@ -44,7 +44,10 @@ import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
 
 import "@/pages/org/dashboard/components/dashboard-guides";
-import "@/pages/org/dashboard/components/dashboard-onboarding";
+
+import { quickLinks } from "./dashboard/templates/quickLinks";
+
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 
 enum CollectionGridView {
   All = "all",
@@ -193,14 +196,16 @@ export class Dashboard extends BtrixElement {
     const showOnboarding =
       this.appState.onboarding?.showOnboarding || !showUsage;
     const content: TemplateResult[] = [];
+    const aside = html`${trialing ? trialChecklist() : nothing}
+      ${resourcesList()}
+      <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
 
     if (showOnboarding) {
       content.push(
         primaryWithAside(
           html`${this.renderOnboardingIntro()}
-            <btrix-dashboard-onboarding></btrix-dashboard-onboarding>`,
-          html`${trialing ? trialChecklist() : nothing} ${resourcesList()}
-          ${docsFeedback(docsEmail)}`,
+            <btrix-dashboard-guides onboarding></btrix-dashboard-guides>`,
+          aside,
         ),
       );
     }
@@ -211,14 +216,17 @@ export class Dashboard extends BtrixElement {
       }
 
       content.push(this.renderUsage());
+    }
 
+    if (!showOnboarding) {
       content.push(html`
         ${pageHeading({ content: msg("Guides") })}
-        <sl-divider class="mb-3 mt-2"></sl-divider>
-        <btrix-dashboard-guides
-          class="mb-10 block"
-          showDocsEmail
-        ></btrix-dashboard-guides>
+        ${primaryWithAside(
+          html`<btrix-dashboard-guides
+            class="mb-10 mt-2 block"
+          ></btrix-dashboard-guides>`,
+          aside,
+        )}
       `);
     }
 
@@ -226,18 +234,41 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderOnboardingIntro() {
+    const org_name = html`<strong class="font-semibold"
+      >${this.org?.name}</strong
+    >`;
+
     return html`<header class="mb-7 mt-3">
       <p class="text-xl font-semibold">${msg("Welcome to Browsertrix")}</p>
-      <p class="mt-2 text-neutral-700">
-        ${this.appState.isTrialing
-          ? msg(
-              "Your dashboard is customized with guides and resources to help you get the most out of your trial experience.",
-            )
-          : msg(
-              "Your dashboard is customized with guides and resources to help you get started.",
-            )}
+      <p class="mt-2 text-pretty text-neutral-700">
+        ${msg(html`Let’s get you set up with your new org ${org_name}.`)}
       </p>
     </header>`;
+  }
+
+  private renderGuideSearch() {
+    return html`
+      <sl-button
+        class="mb-5 w-full"
+        size="small"
+        pill
+        @click=${() => {
+          this.dispatchEvent(
+            new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+              "btrix-user-guide-show",
+              {
+                detail: { path: "/?q=" },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          );
+        }}
+      >
+        <sl-icon slot="prefix" name="search"></sl-icon>
+        ${msg("Search Guides")}
+      </sl-button>
+    `;
   }
 
   private readonly renderTrialInfo = () => {
@@ -249,7 +280,7 @@ export class Dashboard extends BtrixElement {
     );
     const warning = daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING;
 
-    return html`<div class="mt-7 flex items-center gap-1.5 text-neutral-600">
+    return html`<div class="mt-7 flex items-center gap-1.5">
       <btrix-popover
         content=${msg(str`Your free trial ends on ${trialEndDate}.`)}
         placement="bottom-start"
@@ -264,10 +295,10 @@ export class Dashboard extends BtrixElement {
                 >${msg("Trial ending soon")}</span
               >`
           : html`<sl-icon
-                class="size-4 text-base text-neutral-500"
+                class="size-4 text-base text-neutral-600"
                 name="info-circle"
               ></sl-icon>
-              <span class="text-xs font-medium"
+              <span class="text-xs font-medium text-neutral-600"
                 >${pluralOfTrialDaysRemaining(daysUntilTrialEnd)}</span
               >`}
       </btrix-popover>
@@ -283,7 +314,7 @@ export class Dashboard extends BtrixElement {
     return html`<header class="mb-3 flex items-center justify-between gap-3">
         ${pageHeading({ content: msg("Usage Stats") })}
         ${when(
-          this.org?.subscription,
+          this.appState.settings?.billingEnabled,
           () =>
             html`<sl-button
               size="small"
