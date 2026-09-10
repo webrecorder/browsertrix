@@ -52,6 +52,9 @@ import "@/pages/org/dashboard/components/dashboard-guides";
 
 import { generalGuides } from "./dashboard/templates/generalGuides";
 
+import { AnalyticsTrackEvent } from "@/trackEvents";
+import { track } from "@/utils/analytics";
+
 enum CollectionGridView {
   All = "all",
   Public = "public",
@@ -227,6 +230,7 @@ export class Dashboard extends BtrixElement {
         @click=${() => {
           AppStateService.partialUpdateOnboarding({ showOnboarding: true });
           void this.onboardingFinishedDialog?.hide();
+          track(AnalyticsTrackEvent.UndoFinishSetUp);
         }}
       >
         ${msg("I’m still getting set up")}</sl-button
@@ -281,10 +285,11 @@ export class Dashboard extends BtrixElement {
                       showOnboarding: false,
                     });
                     void this.onboardingFinishedDialog?.show();
+                    track(AnalyticsTrackEvent.FinishSetUp);
                   }}
                 >
                   <sl-icon slot="prefix" name="check2-all"></sl-icon>
-                  ${msg("Finish Set Up")}
+                  ${msg("I’m Set Up")}
                 </sl-button>`,
             )}
           </div>
