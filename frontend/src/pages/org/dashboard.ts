@@ -42,6 +42,7 @@ import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
 import { hasUsage } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
@@ -53,7 +54,7 @@ enum CollectionGridView {
   Public = "public",
 }
 
-const PAGE_SIZE = 16;
+const PAGE_SIZE = 1;
 
 @customElement("btrix-dashboard")
 @localized()
@@ -516,7 +517,15 @@ export class Dashboard extends BtrixElement {
   }
 
   private renderCollections() {
-    return html`<header class="mb-3 flex items-baseline justify-between gap-3">
+    const noCollections =
+      this.collections.value && !this.collections.value.items.length;
+
+    return html`<header
+        class=${clsx(
+          tw`flex items-baseline justify-between gap-3 border-b pb-2`,
+          !noCollections && tw`mb-5`,
+        )}
+      >
         ${pageHeading({
           content:
             this.collectionsView === CollectionGridView.Public
@@ -593,12 +602,7 @@ export class Dashboard extends BtrixElement {
           </sl-radio-group>
         </div>
       </header>
-      <div
-        class=${clsx(
-          tw`relative`,
-          !this.collections.value?.items.length && tw`rounded-lg border`,
-        )}
-      >
+      <div class=${clsx(tw`relative`, noCollections && tw`border-b`)}>
         <btrix-collections-grid-with-edit-dialog
           .collections=${this.collections.value?.items}
           .collectionRefreshing=${this.collectionRefreshing}
@@ -638,7 +642,7 @@ export class Dashboard extends BtrixElement {
         ${this.collections.status === TaskStatus.PENDING &&
         this.collections.value
           ? html`<div
-              class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
+              class="absolute inset-0 rounded-lg bg-white/75 p-24 text-center text-4xl"
             >
               <sl-spinner></sl-spinner>
             </div>`
