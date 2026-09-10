@@ -16,6 +16,7 @@ import queryString from "query-string";
 import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
 import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
 import { docsFeedback } from "./dashboard/templates/docsFeedback";
+import { generalGuides } from "./dashboard/templates/generalGuides";
 import { onboardingChecklist } from "./dashboard/templates/onboardingChecklist";
 import { resourcesList } from "./dashboard/templates/resourcesList";
 
@@ -37,10 +38,12 @@ import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { type Tab as SettingsTab } from "@/pages/org/settings/settings";
 import { pluralOfTrialDaysRemaining } from "@/plurals/trial-days-remaining";
 import { OrgTab, RouteNamespace } from "@/routes";
+import { AnalyticsTrackEvent } from "@/trackEvents";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
+import { track } from "@/utils/analytics";
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
 import { hasUsage } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
@@ -49,11 +52,6 @@ import { timeoutCache } from "@/utils/timeoutCache";
 import { cached } from "@/utils/weakCache";
 
 import "@/pages/org/dashboard/components/dashboard-guides";
-
-import { generalGuides } from "./dashboard/templates/generalGuides";
-
-import { AnalyticsTrackEvent } from "@/trackEvents";
-import { track } from "@/utils/analytics";
 
 enum CollectionGridView {
   All = "all",
