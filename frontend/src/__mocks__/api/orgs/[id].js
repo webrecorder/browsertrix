@@ -85,6 +85,8 @@ export default {
   monthlyExecSeconds: { "2023-11": 760, "2023-12": 1771, "2024-01": 3000 },
   extraExecSeconds: {},
   giftedExecSeconds: {},
+  planExecSeconds: {},
+  planExecSecondsAvailable: 0,
   extraExecSecondsAvailable: 0,
   giftedExecSecondsAvailable: 0,
   quotas: {
@@ -92,6 +94,7 @@ export default {
     maxExecMinutesPerMonth: 0,
     maxConcurrentCrawls: 10,
     maxPagesPerCrawl: 0,
+    planExecMinutes: 0,
     extraExecMinutes: 0,
     giftedExecMinutes: 0,
   },
