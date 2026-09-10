@@ -182,6 +182,32 @@ export const OnboardingWithUsage: Story = {
   },
 };
 
+export const OnboardingFinished: Story = {
+  args: {
+    orgQuotas: {
+      ...quotas,
+      ...quotasWithExecutionMinutes,
+    },
+    orgUsage: true,
+    showOnboardingFinishedDialog: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/metrics/, async () => {
+          await delay(500);
+          return HttpResponse.json<Metrics>({
+            ...metrics,
+            ...metricsWithStorageQuota,
+            ...metricsWithUsage,
+          });
+        }),
+        collectionsRequest(),
+      ],
+    },
+  },
+};
+
 export const TrialWithoutUsage: Story = {
   args: {
     orgQuotas: {

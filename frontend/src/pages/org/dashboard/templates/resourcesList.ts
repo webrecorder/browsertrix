@@ -43,7 +43,7 @@ export function resourcesList() {
       <li>
         ${externalLink({
           label: msg("Community Forum"),
-          icon: "chat-right-text",
+          icon: "menu-up",
           href: "https://forum.webrecorder.net/",
         })}
       </li>
