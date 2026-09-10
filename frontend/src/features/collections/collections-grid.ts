@@ -45,7 +45,7 @@ export class CollectionsGrid extends BtrixElement {
   pagination!: Node[];
 
   render() {
-    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 @md/org:grid-cols-2 @lg/org:grid-cols-3`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`
@@ -56,7 +56,7 @@ export class CollectionsGrid extends BtrixElement {
       `;
 
       return html`
-        <div class=${gridClassNames}>${thumb}${thumb}${thumb}${thumb}</div>
+        <div class=${gridClassNames}>${thumb}${thumb}${thumb}</div>
       `;
     }
 
@@ -168,7 +168,11 @@ export class CollectionsGrid extends BtrixElement {
       </ul>
 
       <slot
-        class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
+        class=${clsx(
+          tw`flex justify-center`,
+          this.pagination.filter((node) => node.nodeName !== "SLOT").length &&
+            tw`mt-10`,
+        )}
         name="pagination"
       ></slot>
     `;

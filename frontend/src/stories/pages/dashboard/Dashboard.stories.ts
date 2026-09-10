@@ -14,6 +14,7 @@ import {
   subscription,
 } from "./data";
 
+import collectionsMock from "@/__mocks__/api/collections";
 import { TRIAL_DAYS_LEFT_SHOW_WARNING } from "@/features/org/org-status-banner";
 import {
   orgDecorator,
@@ -53,10 +54,31 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
-const emptyCollectionsRequest = http.get(/\/collections/, async () => {
-  await delay(500);
-  return HttpResponse.json<APIPaginatedList<Collection>>(collections);
-});
+const collectionsRequest = () =>
+  http.get(/\/collections/, async ({ request }) => {
+    const url = new URL(request.url);
+
+    await delay(500);
+
+    const collectionItems =
+      url.searchParams.get("access") === "public"
+        ? collectionsMock.items.filter(({ access }) => access === "public")
+        : collectionsMock.items;
+    const pageSize =
+      url.searchParams.get("pageSize") ?? collectionsMock.pageSize;
+
+    return HttpResponse.json<APIPaginatedList<Collection>>({
+      total: collectionItems.length,
+      page: 1,
+      pageSize,
+      items: collectionItems.slice(0, +pageSize),
+    } as APIPaginatedList<Collection>);
+  });
+const emptyCollectionsRequest = () =>
+  http.get(/\/collections/, async () => {
+    await delay(500);
+    return HttpResponse.json<APIPaginatedList<Collection>>(collections);
+  });
 
 export const WithoutUsage: Story = {
   args: {
@@ -75,13 +97,13 @@ export const WithoutUsage: Story = {
             ...metricsWithStorageQuota,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
       ],
     },
   },
 };
 
-export const WithUsage: Story = {
+export const WithoutCollections: Story = {
   args: {
     orgQuotas: {
       ...quotas,
@@ -100,7 +122,32 @@ export const WithUsage: Story = {
             ...metricsWithUsage,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
+      ],
+    },
+  },
+};
+
+export const WithCollections: Story = {
+  args: {
+    orgQuotas: {
+      ...quotas,
+      ...quotasWithExecutionMinutes,
+    },
+    orgUsage: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/metrics/, async () => {
+          await delay(500);
+          return HttpResponse.json<Metrics>({
+            ...metrics,
+            ...metricsWithStorageQuota,
+            ...metricsWithUsage,
+          });
+        }),
+        collectionsRequest(),
       ],
     },
   },
@@ -129,7 +176,7 @@ export const OnboardingWithUsage: Story = {
             ...metricsWithUsage,
           });
         }),
-        emptyCollectionsRequest,
+        collectionsRequest(),
       ],
     },
   },
@@ -156,7 +203,7 @@ export const TrialWithoutUsage: Story = {
             ...metricsWithStorageQuota,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
       ],
     },
   },
@@ -185,7 +232,7 @@ export const TrialWithUsage: Story = {
             ...metricsWithUsage,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
       ],
     },
   },
@@ -216,7 +263,7 @@ export const TrialEndingWithoutUsage: Story = {
             ...metricsWithStorageQuota,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
       ],
     },
   },
@@ -249,7 +296,7 @@ export const TrialEndingWithUsage: Story = {
             ...metricsWithUsage,
           });
         }),
-        emptyCollectionsRequest,
+        emptyCollectionsRequest(),
       ],
     },
   },
