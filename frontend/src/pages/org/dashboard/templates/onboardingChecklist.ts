@@ -1,9 +1,11 @@
 import { html, type TemplateResult } from "lit";
 
+import { type OnboardingStep } from "@/utils/onboarding/onboardingEvents";
 import appState from "@/utils/state";
 
 export function onboardingChecklist(
   items: {
+    key: OnboardingStep;
     content: TemplateResult | string;
     tooltip: TemplateResult | string;
   }[],
@@ -12,7 +14,7 @@ export function onboardingChecklist(
     class="grid grid-cols-[repeat(3,max-content)] gap-x-1.5 gap-y-3.5 border-l"
   >
     ${items.map((item, i) => {
-      const checked = appState.onboarding?.stepsComplete?.[i];
+      const checked = appState.onboarding?.stepsComplete?.[item.key];
 
       return html`
         <li class="col-span-full -ml-px grid grid-cols-subgrid items-center">
