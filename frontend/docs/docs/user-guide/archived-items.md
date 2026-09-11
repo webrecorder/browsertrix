@@ -21,7 +21,7 @@ To import an archived item, use the _Upload WACZ_ button on the **Archived Items
 Currently, only archived items in the [WACZ file](concepts.md#wacz-file){ data-preview } format are accepted.
 
 ??? Tip "Tip: Convert a WARC file to WACZ"
-    Some archiving systems, like Archive-It, use the WARC file format to store your archived data. If you are comfortable with the command line interface, you can use the Python WACZ command line utility to convert your downloaded WARC files to WACZ.
+    Some archiving systems, like Archive-It, use the WARC file format to store your archived data. If you are comfortable with the command line interface, you can use the Python WACZ command line utility to convert your downloaded WARC (`.warc`) and gzipped WARC (`.warc.gz`) files to WACZ.
 
     Use [pip](https://pypi.org/project/pip/) to install the module and a command line utility:
     ```sh
