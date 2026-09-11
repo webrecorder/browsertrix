@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
@@ -21,6 +22,14 @@ import {
   type CrawlerChannel,
   type Proxy,
 } from "@/types/crawler";
+import { tw } from "@/utils/tailwind";
+
+const socialMediaPlatformRegex = new RegExp(
+  `\\b(${Object.values(SocialMediaPlatform)
+    .map((v) => v.slice(0, v.indexOf(".")))
+    .join("|")})\\b`,
+  "i",
+);
 
 /**
  * @fires btrix-updated
@@ -129,7 +138,6 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
     return html`
       <btrix-dialog
-        class="[--width:36rem]"
         .label=${msg("New Browser Profile")}
         .open=${this.open}
         @sl-initial-focus=${async (e: CustomEvent) => {
@@ -160,16 +168,18 @@ export class NewBrowserProfileDialog extends BtrixElement {
           >
           </btrix-url-input>
 
-          <div class="form-help-text">
+          <div
+            class=${clsx(
+              tw`form-help-text`,
+              this.socialMediaPlatform && tw`text-success`,
+            )}
+          >
             ${this.socialMediaPlatform
-              ? html`<strong class="font-medium text-success"
-                  >${msg(
-                    "It looks like you’re visiting a social media site.",
-                  )}</strong
-                >`
+              ? msg("It looks like you’re visiting a social media site.")
               : msg("Logging into a public site?")}
             ${when(!this.showBestPractices, () => bestPracticesToggle)}
           </div>
+
           <div
             id="profile-best-practices"
             ?hidden=${!this.showBestPractices}
@@ -303,14 +313,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
     const value = (e.target as UrlInput).value;
 
     this.socialMediaPlatform =
-      value.length > 1 &&
-      Object.values(SocialMediaPlatform).some((name) =>
-        value.toLowerCase().includes(`${name}.`),
-      );
-
-    if (this.socialMediaPlatform && !this.showBestPractices) {
-      this.showBestPractices = true;
-    }
+      value.length > 1 && socialMediaPlatformRegex.test(value);
   };
 
   private async onSubmit(event: SubmitEvent) {
