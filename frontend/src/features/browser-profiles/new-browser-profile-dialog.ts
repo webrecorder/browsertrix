@@ -15,6 +15,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { UrlInput } from "@/components/ui/url-input";
+import { SocialMediaPlatform } from "@/constants/social-media-platforms";
 import {
   CrawlerChannelImage,
   type CrawlerChannel,
@@ -65,6 +66,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
   @state()
   private proxyId: string | null = null;
+
+  @state()
+  private socialMediaPlatform = false;
 
   @state()
   private showBestPractices = false;
@@ -125,6 +129,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
     return html`
       <btrix-dialog
+        class="[--width:36rem]"
         .label=${msg("New Browser Profile")}
         .open=${this.open}
         @sl-initial-focus=${async (e: CustomEvent) => {
@@ -150,11 +155,19 @@ export class NewBrowserProfileDialog extends BtrixElement {
               "The first page of the site to load, like a login page.",
             )}
             required
+            @sl-input=${this.checkPlatformOnInput}
+            @paste=${this.checkPlatformOnInput}
           >
           </btrix-url-input>
 
           <div class="form-help-text">
-            ${msg("Logging into a public site?")}
+            ${this.socialMediaPlatform
+              ? html`<strong class="font-medium text-success"
+                  >${msg(
+                    "It looks like you’re visiting a social media site.",
+                  )}</strong
+                >`
+              : msg("Logging into a public site?")}
             ${when(!this.showBestPractices, () => bestPracticesToggle)}
           </div>
           <div
@@ -164,17 +177,15 @@ export class NewBrowserProfileDialog extends BtrixElement {
           >
             <p class="mb-2">
               ${msg(
-                "We highly recommend avoiding use of your personal accounts when logging into public websites.",
+                "Avoid using your personal accounts when logging into public websites.",
+              )}
+              ${msg(
+                "While your username and password are never saved by Browsertrix, your finished web archive may still contain sensitive data like cookies and login tokens.",
               )}
             </p>
             <p class="mb-2">
               ${msg(
-                "While browser profiles are secure, and your username and password are never saved by Browsertrix, your finished web archive may still contain sensitive data like cookies and login tokens.",
-              )}
-            </p>
-            <p class="mb-2">
-              ${msg(
-                "We recommend using an account dedicated to archiving unless your intention is to archive private content accessible only from designated accounts.",
+                "Always use an account dedicated to archiving unless your intention is to archive private content accessible only from designated accounts.",
               )}
             </p>
 
@@ -287,6 +298,20 @@ export class NewBrowserProfileDialog extends BtrixElement {
       this.hide();
     }
   }
+
+  private readonly checkPlatformOnInput = (e: Event) => {
+    const value = (e.target as UrlInput).value;
+
+    this.socialMediaPlatform =
+      value.length > 1 &&
+      Object.values(SocialMediaPlatform).some((name) =>
+        value.toLowerCase().includes(`${name}.`),
+      );
+
+    if (this.socialMediaPlatform && !this.showBestPractices) {
+      this.showBestPractices = true;
+    }
+  };
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
