@@ -10,6 +10,7 @@ import { AnalyticsTrackEvent } from "../trackEvents";
 export type AnalyticsTrackProps = {
   org_slug?: string | null;
   logged_in?: boolean;
+  trialing?: boolean;
   collection_slug?: string;
   section?: string;
 };
