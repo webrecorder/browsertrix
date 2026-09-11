@@ -66,6 +66,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @state()
   private proxyId: string | null = null;
 
+  @state()
+  private showBestPractices = false;
+
   @query("btrix-url-input")
   private readonly urlInput?: UrlInput;
 
@@ -104,6 +107,21 @@ export class NewBrowserProfileDialog extends BtrixElement {
     const proxyServers = this.proxyServers;
     const showChannels = channels && channels.length > 1;
     const showProxies = proxyServers?.length;
+    const bestPracticesToggle = html`
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 font-medium"
+        aria-expanded=${this.showBestPractices}
+        aria-controls="profile-best-practices"
+        @click=${() => (this.showBestPractices = !this.showBestPractices)}
+      >
+        ${this.showBestPractices
+          ? html`${msg("Hide best practices")}
+              <sl-icon name="chevron-up"></sl-icon>`
+          : html` ${msg("Read best practices")}
+              <sl-icon name="chevron-down"></sl-icon>`}
+      </button>
+    `;
 
     return html`
       <btrix-dialog
@@ -134,6 +152,34 @@ export class NewBrowserProfileDialog extends BtrixElement {
             required
           >
           </btrix-url-input>
+
+          <div class="form-help-text">
+            ${msg("Logging into a public site?")}
+            ${when(!this.showBestPractices, () => bestPracticesToggle)}
+          </div>
+          <div
+            id="profile-best-practices"
+            ?hidden=${!this.showBestPractices}
+            class="form-help-text"
+          >
+            <p class="mb-2">
+              ${msg(
+                "We highly recommend avoiding use of your personal accounts when logging into public websites.",
+              )}
+            </p>
+            <p class="mb-2">
+              ${msg(
+                "While browser profiles are secure, and your username and password are never saved by Browsertrix, your finished web archive may still contain sensitive data like cookies and login tokens.",
+              )}
+            </p>
+            <p class="mb-2">
+              ${msg(
+                "We recommend using an account dedicated to archiving unless your intention is to archive private content accessible only from designated accounts.",
+              )}
+            </p>
+
+            ${bestPracticesToggle}
+          </div>
 
           ${showProxies
             ? html`
