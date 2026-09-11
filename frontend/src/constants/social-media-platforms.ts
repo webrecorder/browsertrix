@@ -28,7 +28,7 @@ export const socialMediaSitesForPlatform: Record<
   [SocialMediaPlatform.LINKEDIN]: ["linkedin.com"],
   [SocialMediaPlatform.REDDIT]: ["reddit.com"],
   [SocialMediaPlatform.TELEGRAM]: ["telegram.com"],
-  [SocialMediaPlatform.THREADS]: ["threads.com"],
+  [SocialMediaPlatform.THREADS]: ["threads.com", "threads.net"],
   [SocialMediaPlatform.TIKTOK]: ["tiktok.com"],
   [SocialMediaPlatform.TWITTER]: ["twitter.com"],
   [SocialMediaPlatform.SNAPCHAT]: ["snapchat.com"],
