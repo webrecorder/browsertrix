@@ -863,7 +863,7 @@ class StorageRef(BaseModel):
             return self.name
         return "cs-" + self.name
 
-    def get_storage_secret_name(self, oid: str) -> str:
+    def get_storage_secret_name(self, oid: str = "") -> str:
         """get k8s secret name for this storage and oid"""
         if not self.custom:
             return "storage-" + self.name
@@ -896,8 +896,6 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
-    replicas: list[StorageRef] | None = []
-
 
 # ============================================================================
 class CrawlFile(BaseFile):
@@ -914,7 +912,6 @@ class CrawlFileOut(BaseModel):
     size: int
 
     crawlId: str | None = None
-    numReplicas: int = 0
     expireAt: str | None = None
     fromDependency: bool = False
 
@@ -3239,7 +3236,6 @@ class WebhookNotification(BaseMongoModel):
 class BgJobType(StrEnum):
     """Background Job Types"""
 
-    CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
@@ -3249,6 +3245,12 @@ class BgJobType(StrEnum):
     UPDATE_COLL_STATS = "update-coll-stats"
     POSTPROCESS_UPLOAD = "postprocess-upload"
     RETRY_STUCK_UPLOADS = "retry-stuck-uploads"
+    # Deprecated per-file replication jobs
+    CREATE_REPLICA = "create-replica"
+    # New replication job that spins up rclone copy jobs as needed
+    REPLICATE_FILES_CRON = "replicate-files-cron"
+    # Per-bucket replication job
+    COPY_BUCKET = "copy-bucket"
 
 
 # ============================================================================
@@ -3335,6 +3337,21 @@ class CleanupSeedFilesJob(BackgroundJob):
 
 
 # ============================================================================
+class ReplicateFilesCronJob(BackgroundJob):
+    """Model for tracking cron jobs to replicate files"""
+
+    type: Literal[BgJobType.REPLICATE_FILES_CRON] = BgJobType.REPLICATE_FILES_CRON
+
+
+# ============================================================================
+class CopyBucketJob(BackgroundJob):
+    """Model for tracking job to copy primary storage bucket to replica storage"""
+
+    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
+    replica_storage: StorageRef
+
+
+# ============================================================================
 class UpdateCollStatsJob(BackgroundJob):
     """Model for tracking jobs to readd pages for an org or single crawl"""
 
@@ -3374,6 +3391,8 @@ AnyJob = RootModel[
     | UpdateCollStatsJob
     | PostProcessUploadJob
     | RetryStuckUploadsJob
+    | ReplicateFilesCronJob
+    | CopyBucketJob
 ]
 
 

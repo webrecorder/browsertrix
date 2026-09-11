@@ -131,11 +131,6 @@ export type ListWorkflow = Omit<Workflow, "config" | "image"> & {
   config: Workflow["config"] | null;
 };
 
-export type ProfileReplica = {
-  name: string;
-  custom?: boolean;
-};
-
 export type Profile = {
   id: string;
   name: string;
@@ -160,7 +155,6 @@ export type Profile = {
     path: string;
     hash: string;
     size: number;
-    replicas: ProfileReplica[] | null;
   };
   crawlerChannel?: CrawlerChannelImage | AnyString;
   proxyId?: string;

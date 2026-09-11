@@ -60,7 +60,7 @@ async def main():
         coll_ops,
         _,
         _,
-        _,
+        bg_job_ops,
         _,
         user_manager,
         _,
@@ -105,6 +105,15 @@ async def main():
             crawl_logger.exception(
                 "bg_job_failed",
             )
+            return ExitCode.ERROR
+
+    if job_type == BgJobType.REPLICATE_FILES_CRON:
+        try:
+            await bg_job_ops.create_copy_bucket_jobs()
+            return ExitCode.SUCCESS
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            crawl_logger.exception("bg_job_failed")
             return ExitCode.ERROR
 
     # Run job (org-specific)

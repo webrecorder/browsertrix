@@ -30,7 +30,6 @@ from .models import (
     ProfilePingResponse,
     ProfileSearchValuesResponse,
     ProfileUpdate,
-    StorageRef,
     SuccessResponse,
     SuccessResponseStorageQuota,
     TagsResponse,
@@ -351,10 +350,6 @@ class ProfileOps:
                 {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
             )
 
-            await self.background_job_ops.create_replica_jobs(
-                org.id, profile_file, str(profileid), "profile"
-            )
-
             await self.orgs.inc_org_bytes_stored(
                 org.id, file_size - prev_file_size, "profile"
             )
@@ -449,14 +444,6 @@ class ProfileOps:
         # same hash, profile unchanged, no updates needed
         if profile_file.hash == hash_:
             return True
-
-        profile_file.size = size
-        profile_file.hash = hash_
-
-        # update replica
-        await self.background_job_ops.create_replica_jobs(
-            org_id, profile_file, str(profileid), "profile"
-        )
 
         # update size stats, if changed
         if size != prev_file_size:
@@ -659,15 +646,6 @@ class ProfileOps:
             raise HTTPException(status_code=200, detail="waiting_for_browser")
 
         return data or {}
-
-    async def add_profile_file_replica(
-        self, profileid: UUID, filename: str, ref: StorageRef
-    ) -> dict[str, object]:
-        """Add replica StorageRef to existing ProfileFile"""
-        return await self.profiles.find_one_and_update(
-            {"_id": profileid, "resource.filename": filename},
-            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
-        )
 
     async def calculate_org_profile_file_storage(self, oid: UUID) -> int:
         """Calculate and return total size of profile files in org"""
