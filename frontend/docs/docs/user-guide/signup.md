@@ -84,7 +84,7 @@
 
 <div class="grid cards" markdown>
 
-- :material-clock-fast: **Your First Crawl**
+- :fontawesome-solid-flag-checkered: **Start Your First Crawl**
 
     ---
 
