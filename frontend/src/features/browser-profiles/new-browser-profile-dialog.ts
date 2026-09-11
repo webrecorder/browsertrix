@@ -16,20 +16,13 @@ import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
 import type { UrlInput } from "@/components/ui/url-input";
-import { SocialMediaPlatform } from "@/constants/social-media-platforms";
 import {
   CrawlerChannelImage,
   type CrawlerChannel,
   type Proxy,
 } from "@/types/crawler";
+import { isSocialMediaPlatform } from "@/utils/socialMediaPlatform";
 import { tw } from "@/utils/tailwind";
-
-const socialMediaPlatformRegex = new RegExp(
-  `\\b(${Object.values(SocialMediaPlatform)
-    .map((v) => v.slice(0, v.indexOf(".")))
-    .join("|")})\\b`,
-  "i",
-);
 
 /**
  * @fires btrix-updated
@@ -312,8 +305,7 @@ export class NewBrowserProfileDialog extends BtrixElement {
   private readonly checkPlatformOnInput = (e: Event) => {
     const value = (e.target as UrlInput).value;
 
-    this.socialMediaPlatform =
-      value.length > 1 && socialMediaPlatformRegex.test(value);
+    this.socialMediaPlatform = isSocialMediaPlatform(value);
   };
 
   private async onSubmit(event: SubmitEvent) {
