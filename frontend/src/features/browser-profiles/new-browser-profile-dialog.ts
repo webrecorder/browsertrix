@@ -98,6 +98,10 @@ export class NewBrowserProfileDialog extends BtrixElement {
           this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
+
+    if (changedProperties.has("defaultUrl") && this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
   }
 
   show() {
@@ -296,6 +300,10 @@ export class NewBrowserProfileDialog extends BtrixElement {
   private onReset() {
     this.urlInput?.setAttribute("value", this.defaultUrl ?? "");
     this.urlInput?.setCustomValidity("");
+
+    if (this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
 
     if (this.dialog?.open) {
       this.hide();
