@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
@@ -20,6 +21,8 @@ import {
   type CrawlerChannel,
   type Proxy,
 } from "@/types/crawler";
+import { isSocialMediaPlatform } from "@/utils/socialMediaPlatform";
+import { tw } from "@/utils/tailwind";
 
 /**
  * @fires btrix-updated
@@ -66,6 +69,12 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @state()
   private proxyId: string | null = null;
 
+  @state()
+  private socialMediaPlatform = false;
+
+  @state()
+  private showBestPractices = false;
+
   @query("btrix-url-input")
   private readonly urlInput?: UrlInput;
 
@@ -89,6 +98,10 @@ export class NewBrowserProfileDialog extends BtrixElement {
           this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
+
+    if (changedProperties.has("defaultUrl") && this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
   }
 
   show() {
@@ -104,6 +117,21 @@ export class NewBrowserProfileDialog extends BtrixElement {
     const proxyServers = this.proxyServers;
     const showChannels = channels && channels.length > 1;
     const showProxies = proxyServers?.length;
+    const bestPracticesToggle = html`
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 font-medium"
+        aria-expanded=${this.showBestPractices}
+        aria-controls="profile-best-practices"
+        @click=${() => (this.showBestPractices = !this.showBestPractices)}
+      >
+        ${this.showBestPractices
+          ? html`${msg("Hide best practices")}
+              <sl-icon name="chevron-up"></sl-icon>`
+          : html` ${msg("Read best practices")}
+              <sl-icon name="chevron-down"></sl-icon>`}
+      </button>
+    `;
 
     return html`
       <btrix-dialog
@@ -132,8 +160,44 @@ export class NewBrowserProfileDialog extends BtrixElement {
               "The first page of the site to load, like a login page.",
             )}
             required
+            @sl-input=${this.checkPlatformOnInput}
+            @paste=${this.checkPlatformOnInput}
           >
           </btrix-url-input>
+
+          <div
+            class=${clsx(
+              tw`form-help-text`,
+              this.socialMediaPlatform && tw`text-success`,
+            )}
+          >
+            ${this.socialMediaPlatform
+              ? msg("It looks like you’re visiting a social media site.")
+              : msg("Logging into a public site?")}
+            ${when(!this.showBestPractices, () => bestPracticesToggle)}
+          </div>
+
+          <div
+            id="profile-best-practices"
+            ?hidden=${!this.showBestPractices}
+            class="form-help-text"
+          >
+            <p class="mb-2">
+              ${msg(
+                "Avoid using your personal accounts when logging into public websites.",
+              )}
+              ${msg(
+                "While your username and password are never saved by Browsertrix, your finished web archive may still contain sensitive data like cookies and login tokens.",
+              )}
+            </p>
+            <p class="mb-2">
+              ${msg(
+                "Always use an account dedicated to archiving unless your intention is to archive private content accessible only from designated accounts.",
+              )}
+            </p>
+
+            ${bestPracticesToggle}
+          </div>
 
           ${showProxies
             ? html`
@@ -237,10 +301,20 @@ export class NewBrowserProfileDialog extends BtrixElement {
     this.urlInput?.setAttribute("value", this.defaultUrl ?? "");
     this.urlInput?.setCustomValidity("");
 
+    if (this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
+
     if (this.dialog?.open) {
       this.hide();
     }
   }
+
+  private readonly checkPlatformOnInput = (e: Event) => {
+    const value = (e.target as UrlInput).value;
+
+    this.socialMediaPlatform = isSocialMediaPlatform(value);
+  };
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();
