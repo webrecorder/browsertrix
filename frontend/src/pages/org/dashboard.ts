@@ -630,6 +630,7 @@ export class Dashboard extends BtrixElement {
                   content=${this.org?.enablePublicProfile
                     ? msg("Visit Public Gallery")
                     : msg("Preview Public Gallery")}
+                  hoist
                 >
                   <sl-icon-button
                     href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
@@ -643,6 +644,7 @@ export class Dashboard extends BtrixElement {
                   () =>
                     html`<sl-tooltip
                       content=${msg("Edit Public Gallery Settings")}
+                      hoist
                     >
                       <sl-icon-button
                         href=${`${this.navigate.orgBasePath}/settings`}
@@ -656,7 +658,7 @@ export class Dashboard extends BtrixElement {
           ${when(
             this.appState.isCrawler,
             () => html`
-              <sl-tooltip content=${msg("Manage Collections")}>
+              <sl-tooltip content=${msg("Manage Collections")} hoist>
                 <sl-icon-button
                   href=${`${this.navigate.orgBasePath}/collections`}
                   class="size-8 text-base"
@@ -675,14 +677,14 @@ export class Dashboard extends BtrixElement {
                 .value as CollectionGridView;
             }}
           >
-            <sl-tooltip content=${msg("Public Collections")}>
+            <sl-tooltip content=${msg("Public Collections")} hoist>
               <sl-radio-button pill value=${CollectionGridView.Public}>
                 <sl-icon
                   name="globe"
                   label=${msg("Public Collections")}
                 ></sl-icon> </sl-radio-button
             ></sl-tooltip>
-            <sl-tooltip content=${msg("All Collections")}>
+            <sl-tooltip content=${msg("All Collections")} hoist>
               <sl-radio-button pill value=${CollectionGridView.All}>
                 <sl-icon
                   name="asterisk"
@@ -885,7 +887,10 @@ export class Dashboard extends BtrixElement {
               href=${`${this.navigate.orgBasePath}${button.url}`}
               @click=${this.navigate.link}
               >${button.label ??
-              html`<sl-tooltip content=${msg("View All")} placement="right"
+              html`<sl-tooltip
+                content=${msg("View All")}
+                placement="right"
+                hoist
                 ><sl-icon name="arrow-right-circle"></sl-icon
               ></sl-tooltip>`}</btrix-button
             >`,
