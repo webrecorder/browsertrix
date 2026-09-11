@@ -1,4 +1,4 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type {
   SlChangeEvent,
@@ -7,43 +7,62 @@ import type {
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { dashboardHeading } from "./dashboard/layouts/dashboardHeading";
+import { primaryWithAside } from "./dashboard/layouts/primaryWithAside";
+import { docsFeedback } from "./dashboard/templates/docsFeedback";
+import { generalGuides } from "./dashboard/templates/generalGuides";
+import { onboardingChecklist } from "./dashboard/templates/onboardingChecklist";
+import { resourcesList } from "./dashboard/templates/resourcesList";
+
 import type { SelectNewDialogEvent } from ".";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import { docsEmail } from "@/constants/docs-email";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { storageColorClasses } from "@/features/meters/storage/colors";
+import {
+  OrgStatusBanner,
+  TRIAL_DAYS_LEFT_SHOW_WARNING,
+} from "@/features/org/org-status-banner";
 import { pageHeading } from "@/layouts/page";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
-import { RouteNamespace } from "@/routes";
+import { type Tab as SettingsTab } from "@/pages/org/settings/settings";
+import { pluralOfTrialDaysRemaining } from "@/plurals/trial-days-remaining";
+import { OrgTab, RouteNamespace } from "@/routes";
+import { AnalyticsTrackEvent } from "@/trackEvents";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
-import { richText } from "@/utils/rich-text";
+import { track } from "@/utils/analytics";
+import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
+import { hasUsage } from "@/utils/orgs";
+import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import { timeoutCache } from "@/utils/timeoutCache";
-import { toShortUrl } from "@/utils/url-helpers";
 import { cached } from "@/utils/weakCache";
+
+import "@/pages/org/dashboard/components/dashboard-guides";
 
 enum CollectionGridView {
   All = "all",
   Public = "public",
 }
 
-const PAGE_SIZE = 16;
+const PAGE_SIZE = 12;
 
 @customElement("btrix-dashboard")
 @localized()
 export class Dashboard extends BtrixElement {
-  @property({ type: Boolean })
-  isCrawler?: boolean;
-
   @state()
   private metrics?: Metrics;
 
@@ -55,6 +74,12 @@ export class Dashboard extends BtrixElement {
 
   @state()
   collectionPage = parsePage(new URLSearchParams(location.search).get("page"));
+
+  @property({ type: Boolean })
+  showOnboardingFinishedDialog = false;
+
+  @query("#onboarding-finished")
+  private readonly onboardingFinishedDialog?: Dialog | null;
 
   // Used for busting cache when updating visible collection
   cacheBust = 0;
@@ -106,64 +131,15 @@ export class Dashboard extends BtrixElement {
 
     return html`
       ${pageHeader({
-        title: this.userOrg?.name,
-        secondary: html`
-          ${when(
-            this.org?.publicDescription,
-            (publicDescription) => html`
-              <div class="text-pretty text-stone-600">
-                ${richText(publicDescription)}
-              </div>
-            `,
-          )}
-          ${when(this.org?.publicUrl, (urlStr) => {
-            let url: URL;
-            try {
-              url = new URL(urlStr);
-            } catch {
-              return nothing;
-            }
-
-            return html`
-              <div
-                class="flex items-center gap-1.5 text-pretty text-neutral-700"
-              >
-                <sl-icon
-                  name="globe"
-                  class="size-4 text-stone-400"
-                  label=${msg("Website")}
-                ></sl-icon>
-                <a
-                  class="truncate font-medium leading-none text-stone-500 transition-colors hover:text-stone-600"
-                  href="${url.href}"
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                >
-                  ${toShortUrl(url.href, null)}
-                </a>
-              </div>
-            `;
-          })}
-        `,
+        title: msg("Dashboard"),
         actions: html`
           ${when(
-            this.appState.isAdmin,
+            this.appState.isCrawler,
             () =>
-              html`<sl-tooltip content=${msg("Edit Org Settings")}>
-                <sl-icon-button
-                  href=${`${this.navigate.orgBasePath}/settings`}
-                  class="size-8 text-base"
-                  name="gear"
-                  @click=${this.navigate.link}
-                ></sl-icon-button>
-              </sl-tooltip>`,
-          )}
-          ${when(
-            this.isCrawler,
-            () =>
-              html` <sl-dropdown
+              html`<sl-dropdown
                 distance="4"
                 placement="bottom-end"
+                hoist
                 @sl-select=${(e: SlSelectEvent) => {
                   const { value } = e.detail.item;
 
@@ -212,312 +188,558 @@ export class Dashboard extends BtrixElement {
               </sl-dropdown>`,
           )}
         `,
-        classNames: tw`border-b-transparent lg:mb-2`,
+        classNames: tw`mb-3`,
       })}
-      <main>
-        <div class="mb-10 flex flex-col gap-6 md:flex-row">
-          ${this.renderCard(
-            msg("Storage"),
-            (metrics) => html`
-              ${this.renderStorageMeter(metrics)}
-              <dl>
-                ${this.renderStat({
-                  value: metrics.crawlCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedCrawls,
-                  ),
-                  singleLabel: msg("Crawl"),
-                  pluralLabel: msg("Crawls"),
+      <main>${when(this.org, () => this.renderContent())}</main>
+      ${this.renderOnboardingFinishedDialog()}
+    `;
+  }
 
-                  iconProps: {
-                    name: "gear-wide-connected",
-                    class: storageColorClasses.crawls,
-                  },
-                  button: {
-                    url: "/items/crawl",
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.uploadCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedUploads,
-                  ),
-                  singleLabel: msg("Upload"),
-                  pluralLabel: msg("Uploads"),
+  private renderOnboardingFinishedDialog() {
+    return html`<btrix-dialog
+      id="onboarding-finished"
+      class="[--width:40rem]"
+      label=${msg("Next Steps")}
+      ?open=${this.showOnboardingFinishedDialog}
+      @btrix-user-guide-show=${() => {
+        void this.onboardingFinishedDialog?.hide();
+      }}
+    >
+      <p class="mb-3">
+        ${msg("You’re all set up!")}
+        ${msg("Next, you may want to check out the following guides.")}
+      </p>
+      <div class="@container/card">
+        ${generalGuides({
+          trialing: this.appState.isTrialing,
+          billing: this.appState.settings?.billingEnabled,
+        })}
+      </div>
 
-                  iconProps: {
-                    name: "upload",
-                    class: storageColorClasses.uploads,
-                  },
-                  button: {
-                    url: "/items/upload",
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.profileCount,
-                  secondaryValue: this.localize.bytes(
-                    metrics.storageUsedProfiles,
-                  ),
-                  singleLabel: msg("Browser Profile"),
-                  pluralLabel: msg("Browser Profiles"),
-                  iconProps: {
-                    name: "window-fullscreen",
-                    class: storageColorClasses.browserProfiles,
-                  },
-                  button: {
-                    url: "/browser-profiles",
-                  },
-                })}
-                ${metrics.storageUsedSeedFiles ||
-                metrics.storageUsedThumbnails ||
-                metrics.storageUsedDedupeIndexes
-                  ? this.renderMiscStorage(metrics)
-                  : nothing}
+      <p class="mt-5">
+        ${msg(
+          "These guides and more resources are always available at the bottom of your dashboard.",
+        )}
+      </p>
 
-                <sl-divider class="my-4"></sl-divider>
-                ${this.renderStat({
-                  value: metrics.archivedItemCount,
-                  singleLabel: msg("Archived Item"),
-                  pluralLabel: msg("Archived Items"),
-                  iconProps: {
-                    name: "file-zip-fill",
-                    class: storageColorClasses.archivedItems,
-                  },
-                  button: {
-                    url: "/items",
-                  },
-                })}
-                ${when(
-                  metrics.storageUsedBytes && !metrics.storageQuotaBytes,
-                  () => html`
-                    ${this.renderStat({
-                      value: this.localize.bytes(metrics.storageUsedBytes, {
-                        compactDisplay: "short",
-                      }),
-                      singleLabel: msg("Total"),
-                      iconProps: {
-                        name: "database-fill",
-                      },
-                    })}
-                  `,
-                )}
-              </dl>
-            `,
-          )}
-          ${this.renderCard(
-            msg("Crawling"),
-            (metrics) => html`
-              ${this.renderCrawlingMeter(metrics)}
-              <dl>
-                ${this.renderStat({
-                  value:
-                    metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
-                      ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
-                      : metrics.workflowsRunningCount,
-                  singleLabel: msg("Crawl Running"),
-                  pluralLabel: msg("Crawls Running"),
-                  iconProps: {
-                    name: "dot",
-                    library: "app",
-                    class: metrics.workflowsRunningCount
-                      ? tw`animate-pulse text-green-600`
-                      : tw`text-neutral-600`,
-                  },
-                  button: {
-                    url: "/workflows?isCrawlRunning=true",
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.workflowsQueuedCount,
-                  singleLabel: msg("Crawl Workflow Waiting"),
-                  pluralLabel: msg("Crawl Workflows Waiting"),
-                  iconProps: {
-                    name: "hourglass-split",
-                    class: tw`text-violet-600`,
-                  },
-                })}
-                <sl-divider class="my-4"></sl-divider>
-                ${this.renderStat({
-                  value: metrics.crawlPageCount,
-                  singleLabel: msg("Page Crawled"),
-                  pluralLabel: msg("Pages Crawled"),
-                  iconProps: {
-                    name: "file-richtext-fill",
-                    class: storageColorClasses.crawls,
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.uploadPageCount,
-                  singleLabel: msg("Page Uploaded"),
-                  pluralLabel: msg("Pages Uploaded"),
-                  iconProps: {
-                    name: "file-richtext-fill",
-                    class: storageColorClasses.uploads,
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.pageCount,
-                  singleLabel: msg("Page Total"),
-                  pluralLabel: msg("Pages Total"),
-                  iconProps: { name: "file-richtext-fill" },
-                })}
-              </dl>
-            `,
-          )}
-          ${this.renderCard(
-            msg("Collections"),
-            (metrics) => html`
-              <dl>
-                ${this.renderStat({
-                  value: metrics.collectionsCount,
-                  singleLabel: msg("Collection Total"),
-                  pluralLabel: msg("Collections Total"),
-                  iconProps: { name: "collection-fill" },
-                  button: {
-                    url: "/collections",
-                  },
-                })}
-                ${this.renderStat({
-                  value: metrics.publicCollectionsCount,
-                  singleLabel: msg("Shareable Collection"),
-                  pluralLabel: msg("Shareable Collections"),
-                  iconProps: {
-                    name: "people-fill",
-                    class: tw`text-emerald-600`,
-                  },
-                })}
-              </dl>
-            `,
+      <sl-button
+        slot="footer"
+        variant="text"
+        @click=${() => {
+          AppStateService.partialUpdateOnboarding({ showOnboarding: true });
+          void this.onboardingFinishedDialog?.hide();
+          track(AnalyticsTrackEvent.UndoFinishSetUp);
+        }}
+      >
+        ${msg("I’m still getting set up")}</sl-button
+      >
+
+      <sl-button
+        slot="footer"
+        variant="primary"
+        @click=${() => void this.onboardingFinishedDialog?.hide()}
+      >
+        ${msg("Go to Dashboard")}</sl-button
+      >
+    </btrix-dialog>`;
+  }
+
+  private renderContent() {
+    const showUsage =
+      this.org?.enablePublicProfile || hasUsage(this.org, this.metrics);
+    const showOnboarding =
+      this.appState.onboarding?.showOnboarding || !showUsage;
+
+    const content: TemplateResult[] = [];
+
+    if (showOnboarding) {
+      const org_name = html`<strong class="font-semibold"
+        >${this.org?.name}</strong
+      >`;
+      const primary = html`${this.appState.isTrialing
+          ? html`<div class="mt-2">${this.guardedRenderTrialInfo()}</div>`
+          : nothing}
+        <header
+          class="mb-7 mt-3 flex flex-wrap items-end justify-between gap-3"
+        >
+          <div>
+            <p class="text-xl font-semibold">
+              ${msg("Welcome to Browsertrix")}
+            </p>
+            <p class="mt-2 text-pretty text-neutral-700">
+              ${msg(html`Let’s get you set up with your new org ${org_name}.`)}
+            </p>
+          </div>
+          <div>
+            ${when(
+              showUsage,
+              () =>
+                html`<sl-button
+                  size="small"
+                  variant="success"
+                  pill
+                  @click=${() => {
+                    AppStateService.partialUpdateOnboarding({
+                      showOnboarding: false,
+                    });
+                    void this.onboardingFinishedDialog?.show();
+                    track(AnalyticsTrackEvent.FinishSetUp);
+                  }}
+                >
+                  <sl-icon slot="prefix" name="check2-all"></sl-icon>
+                  ${msg("I’m Set Up")}
+                </sl-button>`,
+            )}
+          </div>
+        </header>
+        <btrix-dashboard-guides onboarding></btrix-dashboard-guides>`;
+      const aside = html`${this.renderOnboardingChecklist()} ${resourcesList()}
+        <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
+
+      content.push(primaryWithAside(primary, aside));
+    }
+
+    if (showUsage) {
+      if (showOnboarding) {
+        content.push(html`<sl-divider class="mb-10 mt-7"></sl-divider>`);
+      }
+
+      content.push(
+        html`<section class="mb-10">${this.renderStats()}</section>
+          <section class="mb-10">${this.renderCollections()}</section>`,
+      );
+    }
+
+    if (!showOnboarding) {
+      const primary = html`<btrix-dashboard-guides></btrix-dashboard-guides>`;
+      const aside = html`${resourcesList()}
+        <div>${this.renderGuideSearch()} ${docsFeedback(docsEmail)}</div>`;
+
+      content.push(html`
+        <sl-divider class="mb-3 mt-10"></sl-divider>
+        ${pageHeading({ content: msg("Guides"), classNames: tw`mb-2` })}
+        ${primaryWithAside(primary, aside)}
+      `);
+    }
+
+    return html`${content}`;
+  }
+
+  private renderOnboardingChecklist() {
+    return html`<section>
+      ${dashboardHeading(msg("Onboarding Checklist"), { aside: true })}
+
+      <div
+        class="mb-1 mt-4 cursor-default @5xl/org:text-xs @5xl/org:leading-normal"
+      >
+        ${onboardingChecklist(
+          onboardingSteps.map(({ key, label, description }) => ({
+            key,
+            content: label,
+            tooltip: description,
+          })),
+        )}
+      </div>
+    </section>`;
+  }
+
+  private renderGuideSearch() {
+    return html`
+      <sl-button
+        class="mb-5 w-full"
+        size="small"
+        pill
+        @click=${() => {
+          this.dispatchEvent(
+            new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+              "btrix-user-guide-show",
+              {
+                detail: { path: "?q=" },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          );
+        }}
+      >
+        <sl-icon slot="prefix" name="search"></sl-icon>
+        ${msg("Search Guides")}
+      </sl-button>
+    `;
+  }
+
+  private guardedRenderTrialInfo() {
+    return guard(
+      [this.org?.id, this.org?.subscription?.status],
+      this.renderTrialInfo,
+    );
+  }
+
+  private readonly renderTrialInfo = () => {
+    if (!this.org || !this.appState.isTrialing) return;
+
+    const { daysUntilTrialEnd, trialEndDate } = OrgStatusBanner.trialInfo(
+      this.org,
+      this.localize,
+    );
+    const warning = daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING;
+
+    return html`<div class="flex items-center gap-1.5">
+      <btrix-popover
+        content=${msg(str`Your free trial ends on ${trialEndDate}.`)}
+        placement="bottom-start"
+        hoist
+      >
+        ${warning
+          ? html`<sl-icon
+                class="size-4 text-base text-warning"
+                name="exclamation-diamond"
+              ></sl-icon>
+              <span class="text-xs font-medium text-warning"
+                >${msg("Trial ending soon")}</span
+              >`
+          : html`<sl-icon
+                class="size-4 text-base text-neutral-600"
+                name="info-circle"
+              ></sl-icon>
+              <span class="text-xs font-medium text-neutral-600"
+                >${pluralOfTrialDaysRemaining(daysUntilTrialEnd)}</span
+              >`}
+      </btrix-popover>
+    </div>`;
+  };
+
+  private renderStats() {
+    return html`<header
+        class="mb-3 flex flex-wrap items-center justify-between gap-3"
+      >
+        ${pageHeading({ content: msg("Usage Stats") })}
+        <div class="flex items-center gap-3">
+          ${this.appState.onboarding?.showOnboarding
+            ? nothing
+            : this.guardedRenderTrialInfo()}
+          ${when(
+            this.appState.settings?.billingEnabled,
+            () =>
+              html`<sl-button
+                size="small"
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Settings}/${"billing" satisfies SettingsTab}"
+                @click=${this.navigate.link}
+              >
+                <sl-icon slot="prefix" name="gear"></sl-icon>
+                ${msg("Manage Plan")}
+              </sl-button>`,
           )}
         </div>
+      </header>
+      <div class="flex flex-col gap-6 md:flex-row">
+        ${this.renderCard(
+          msg("Storage"),
+          (metrics) => html`
+            ${this.renderStorageMeter(metrics)}
+            <dl>
+              ${this.renderStat({
+                value: metrics.crawlCount,
+                secondaryValue: this.localize.bytes(metrics.storageUsedCrawls),
+                singleLabel: msg("Crawl"),
+                pluralLabel: msg("Crawls"),
 
-        <section class="mb-16">
-          <header class="mb-1.5 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              ${pageHeading({
-                content:
-                  this.collectionsView === CollectionGridView.Public
-                    ? msg("Public Collections")
-                    : msg("All Collections"),
+                iconProps: {
+                  name: "gear-wide-connected",
+                  class: storageColorClasses.crawls,
+                },
+                button: {
+                  url: "/items/crawl",
+                },
               })}
-              ${this.collectionsView === CollectionGridView.Public
-                ? html` <span class="text-sm text-neutral-400"
-                    >—
-                    <a
-                      href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
-                      class="inline-flex h-8 items-center text-sm font-medium text-primary-500 transition hover:text-primary-600"
-                      @click=${this.navigate.link}
-                    >
-                      ${this.org?.enablePublicProfile
-                        ? msg("Visit public collections gallery")
-                        : msg("Preview public collections gallery")}
-                    </a>
-                    <!-- TODO Refactor clipboard code, get URL in a nicer way? -->
-                    ${this.org?.enablePublicProfile
-                      ? html`<btrix-copy-button
-                          value=${new URL(
-                            `/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`,
-                            window.location.toString(),
-                          ).toString()}
-                          content=${msg(
-                            "Copy Link to Public Collections Gallery",
-                          )}
-                          class="inline-block"
-                        ></btrix-copy-button>`
-                      : nothing}
-                  </span>`
+              ${this.renderStat({
+                value: metrics.uploadCount,
+                secondaryValue: this.localize.bytes(metrics.storageUsedUploads),
+                singleLabel: msg("Upload"),
+                pluralLabel: msg("Uploads"),
+
+                iconProps: {
+                  name: "upload",
+                  class: storageColorClasses.uploads,
+                },
+                button: {
+                  url: "/items/upload",
+                },
+              })}
+              ${this.renderStat({
+                value: metrics.profileCount,
+                secondaryValue: this.localize.bytes(
+                  metrics.storageUsedProfiles,
+                ),
+                singleLabel: msg("Browser Profile"),
+                pluralLabel: msg("Browser Profiles"),
+                iconProps: {
+                  name: "window-fullscreen",
+                  class: storageColorClasses.browserProfiles,
+                },
+                button: {
+                  url: "/browser-profiles",
+                },
+              })}
+              ${metrics.storageUsedSeedFiles ||
+              metrics.storageUsedThumbnails ||
+              metrics.storageUsedDedupeIndexes
+                ? this.renderMiscStorage(metrics)
                 : nothing}
-            </div>
-            <div class="flex items-center gap-2">
+
+              <sl-divider class="my-4"></sl-divider>
+              ${this.renderStat({
+                value: metrics.archivedItemCount,
+                singleLabel: msg("Archived Item"),
+                pluralLabel: msg("Archived Items"),
+                iconProps: {
+                  name: "file-zip-fill",
+                  class: storageColorClasses.archivedItems,
+                },
+                button: {
+                  url: "/items",
+                },
+              })}
               ${when(
-                this.appState.isCrawler,
+                metrics.storageUsedBytes && !metrics.storageQuotaBytes,
                 () => html`
-                  <sl-tooltip content=${msg("Manage Collections")}>
-                    <sl-icon-button
-                      href=${`${this.navigate.orgBasePath}/collections`}
-                      class="size-8 text-base"
-                      name="collection"
-                      @click=${this.navigate.link}
-                    ></sl-icon-button>
-                  </sl-tooltip>
+                  ${this.renderStat({
+                    value: this.localize.bytes(metrics.storageUsedBytes, {
+                      compactDisplay: "short",
+                    }),
+                    singleLabel: msg("Total"),
+                    iconProps: {
+                      name: "database-fill",
+                    },
+                  })}
                 `,
               )}
+            </dl>
+          `,
+        )}
+        ${this.renderCard(
+          msg("Crawling"),
+          (metrics) => html`
+            ${this.renderCrawlingMeter(metrics)}
+            <dl>
+              ${this.renderStat({
+                value:
+                  metrics.workflowsRunningCount && metrics.maxConcurrentCrawls
+                    ? `${metrics.workflowsRunningCount} / ${metrics.maxConcurrentCrawls}`
+                    : metrics.workflowsRunningCount,
+                singleLabel: msg("Crawl Running"),
+                pluralLabel: msg("Crawls Running"),
+                iconProps: {
+                  name: "dot",
+                  library: "app",
+                  class: metrics.workflowsRunningCount
+                    ? tw`animate-pulse text-green-600`
+                    : tw`text-neutral-600`,
+                },
+                button: {
+                  url: "/workflows?isCrawlRunning=true",
+                },
+              })}
+              ${this.renderStat({
+                value: metrics.workflowsQueuedCount,
+                singleLabel: msg("Crawl Workflow Waiting"),
+                pluralLabel: msg("Crawl Workflows Waiting"),
+                iconProps: {
+                  name: "hourglass-split",
+                  class: tw`text-violet-600`,
+                },
+              })}
+              <sl-divider class="my-4"></sl-divider>
+              ${this.renderStat({
+                value: metrics.crawlPageCount,
+                singleLabel: msg("Page Crawled"),
+                pluralLabel: msg("Pages Crawled"),
+                iconProps: {
+                  name: "file-richtext-fill",
+                  class: storageColorClasses.crawls,
+                },
+              })}
+              ${this.renderStat({
+                value: metrics.uploadPageCount,
+                singleLabel: msg("Page Uploaded"),
+                pluralLabel: msg("Pages Uploaded"),
+                iconProps: {
+                  name: "file-richtext-fill",
+                  class: storageColorClasses.uploads,
+                },
+              })}
+              ${this.renderStat({
+                value: metrics.pageCount,
+                singleLabel: msg("Page Total"),
+                pluralLabel: msg("Pages Total"),
+                iconProps: { name: "file-richtext-fill" },
+              })}
+            </dl>
+          `,
+        )}
+        ${this.renderCard(
+          msg("Collections"),
+          (metrics) => html`
+            <dl>
+              ${this.renderStat({
+                value: metrics.collectionsCount,
+                singleLabel: msg("Collection Total"),
+                pluralLabel: msg("Collections Total"),
+                iconProps: { name: "collection-fill" },
+                button: {
+                  url: "/collections",
+                },
+              })}
+              ${this.renderStat({
+                value: metrics.publicCollectionsCount,
+                singleLabel: msg("Shareable Collection"),
+                pluralLabel: msg("Shareable Collections"),
+                iconProps: {
+                  name: "people-fill",
+                  class: tw`text-emerald-600`,
+                },
+              })}
+            </dl>
+          `,
+        )}
+      </div>`;
+  }
 
-              <sl-radio-group
-                value=${this.collectionsView}
-                size="small"
-                @sl-change=${(e: SlChangeEvent) => {
-                  this.collectionPage = 1;
-                  this.collectionsView = (e.target as SlRadioGroup)
-                    .value as CollectionGridView;
-                }}
-              >
-                <sl-tooltip content=${msg("Public Collections")}>
-                  <sl-radio-button pill value=${CollectionGridView.Public}>
-                    <sl-icon
-                      name="globe"
-                      label=${msg("Public Collections")}
-                    ></sl-icon> </sl-radio-button
-                ></sl-tooltip>
-                <sl-tooltip content=${msg("All Collections")}>
-                  <sl-radio-button pill value=${CollectionGridView.All}>
-                    <sl-icon
-                      name="asterisk"
-                      label=${msg("All Collections")}
-                    ></sl-icon> </sl-radio-button
-                ></sl-tooltip>
-              </sl-radio-group>
-            </div>
-          </header>
-          <div class="relative rounded-lg border p-10">
-            <btrix-collections-grid-with-edit-dialog
-              .collections=${this.collections.value?.items}
-              .collectionRefreshing=${this.collectionRefreshing}
-              ?showVisibility=${this.collectionsView === CollectionGridView.All}
-              @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
-                this.collectionRefreshing = e.detail.id;
-                void this.collections.run([
-                  this.orgId,
-                  this.collectionsView,
-                  this.collectionPage,
-                  ++this.cacheBust,
-                ]);
-              }}
-            >
-              ${this.renderNoPublicCollections()}
-              <span slot="empty-text"
-                >${this.collectionsView === CollectionGridView.Public
-                  ? msg("Your org doesn’t have any public collections.")
-                  : msg("Your org doesn’t have any collections yet.")}</span
-              >
-              ${this.collections.value &&
-              this.collections.value.total > this.collections.value.items.length
-                ? html`
-                    <btrix-pagination
-                      page=${this.collectionPage}
-                      size=${PAGE_SIZE}
-                      totalCount=${this.collections.value.total}
-                      @page-change=${(e: PageChangeEvent) => {
-                        this.collectionPage = e.detail.page;
-                      }}
-                      slot="pagination"
-                    >
-                    </btrix-pagination>
-                  `
-                : nothing}
-            </btrix-collections-grid-with-edit-dialog>
-            ${this.collections.status === TaskStatus.PENDING &&
-            this.collections.value
-              ? html`<div
-                  class="absolute inset-0 rounded-lg bg-stone-50/75 p-24 text-center text-4xl"
+  private renderCollections() {
+    const noCollections =
+      this.collections.value && !this.collections.value.items.length;
+
+    return html`<header
+        class=${clsx(
+          tw`flex items-baseline justify-between gap-3 border-b pb-2`,
+          !noCollections && tw`mb-5`,
+        )}
+      >
+        ${pageHeading({
+          content:
+            this.collectionsView === CollectionGridView.Public
+              ? msg("Public Collections")
+              : msg("All Collections"),
+        })}
+        <div class="flex items-center gap-1.5">
+          ${when(
+            this.collectionsView === CollectionGridView.Public,
+            () =>
+              html`<sl-tooltip
+                  content=${this.org?.enablePublicProfile
+                    ? msg("Visit Public Gallery")
+                    : msg("Preview Public Gallery")}
+                  hoist
                 >
-                  <sl-spinner></sl-spinner>
-                </div>`
-              : nothing}
-          </div>
-        </section>
-      </main>
-    `;
+                  <sl-icon-button
+                    href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
+                    class="size-8 text-base"
+                    name="link"
+                    @click=${this.navigate.link}
+                  ></sl-icon-button>
+                </sl-tooltip>
+                ${when(
+                  this.appState.isAdmin,
+                  () =>
+                    html`<sl-tooltip
+                      content=${msg("Edit Public Gallery Settings")}
+                      hoist
+                    >
+                      <sl-icon-button
+                        href=${`${this.navigate.orgBasePath}/settings`}
+                        class="size-8 text-base"
+                        name="gear"
+                        @click=${this.navigate.link}
+                      ></sl-icon-button>
+                    </sl-tooltip>`,
+                )}`,
+          )}
+          ${when(
+            this.appState.isCrawler,
+            () => html`
+              <sl-tooltip content=${msg("Manage Collections")} hoist>
+                <sl-icon-button
+                  href=${`${this.navigate.orgBasePath}/collections`}
+                  class="size-8 text-base"
+                  name="collection"
+                  @click=${this.navigate.link}
+                ></sl-icon-button>
+              </sl-tooltip>
+            `,
+          )}
+          <sl-radio-group
+            value=${this.collectionsView}
+            size="small"
+            @sl-change=${(e: SlChangeEvent) => {
+              this.collectionPage = 1;
+              this.collectionsView = (e.target as SlRadioGroup)
+                .value as CollectionGridView;
+            }}
+          >
+            <sl-tooltip content=${msg("Public Collections")} hoist>
+              <sl-radio-button pill value=${CollectionGridView.Public}>
+                <sl-icon
+                  name="globe"
+                  label=${msg("Public Collections")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+            <sl-tooltip content=${msg("All Collections")} hoist>
+              <sl-radio-button pill value=${CollectionGridView.All}>
+                <sl-icon
+                  name="asterisk"
+                  label=${msg("All Collections")}
+                ></sl-icon> </sl-radio-button
+            ></sl-tooltip>
+          </sl-radio-group>
+        </div>
+      </header>
+      <div class=${clsx(tw`relative`, noCollections && tw`border-b`)}>
+        <btrix-collections-grid-with-edit-dialog
+          .collections=${this.collections.value?.items}
+          .collectionRefreshing=${this.collectionRefreshing}
+          ?showVisibility=${this.collectionsView === CollectionGridView.All}
+          @btrix-collection-saved=${async (e: CollectionSavedEvent) => {
+            this.collectionRefreshing = e.detail.id;
+            void this.collections.run([
+              this.orgId,
+              this.collectionsView,
+              this.collectionPage,
+              ++this.cacheBust,
+            ]);
+          }}
+        >
+          ${this.renderNoPublicCollections()}
+          <span slot="empty-text"
+            >${this.collectionsView === CollectionGridView.Public
+              ? msg("Your org doesn’t have any public collections.")
+              : msg("Your org doesn’t have any collections yet.")}</span
+          >
+          ${this.collections.value &&
+          this.collections.value.total > this.collections.value.items.length
+            ? html`
+                <btrix-pagination
+                  page=${this.collectionPage}
+                  size=${PAGE_SIZE}
+                  totalCount=${this.collections.value.total}
+                  @page-change=${(e: PageChangeEvent) => {
+                    this.collectionPage = e.detail.page;
+                  }}
+                  slot="pagination"
+                >
+                </btrix-pagination>
+              `
+            : nothing}
+        </btrix-collections-grid-with-edit-dialog>
+        ${this.collections.status === TaskStatus.PENDING &&
+        this.collections.value
+          ? html`<div
+              class="absolute inset-0 rounded-lg bg-white/75 p-24 text-center text-4xl"
+            >
+              <sl-spinner></sl-spinner>
+            </div>`
+          : nothing}
+      </div>`;
   }
 
   private renderMiscStorage(metrics: Metrics) {
@@ -665,7 +887,10 @@ export class Dashboard extends BtrixElement {
               href=${`${this.navigate.orgBasePath}${button.url}`}
               @click=${this.navigate.link}
               >${button.label ??
-              html`<sl-tooltip content=${msg("View All")} placement="right"
+              html`<sl-tooltip
+                content=${msg("View All")}
+                placement="right"
+                hoist
                 ><sl-icon name="arrow-right-circle"></sl-icon
               ></sl-tooltip>`}</btrix-button
             >`,

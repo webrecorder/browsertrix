@@ -27,6 +27,7 @@ theme:
     - content.tooltips
     - content.tabs.link
     - search.suggest
+    - search.share
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: webrecorder-light

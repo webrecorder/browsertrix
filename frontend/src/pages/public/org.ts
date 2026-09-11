@@ -47,7 +47,7 @@ export class PublicOrg extends BtrixElement {
     }
 
     return html`
-      <div class="flex min-h-full flex-col">
+      <div class="flex min-h-full flex-col @container/org">
         ${this.orgCollections.render({
           complete: (profile) =>
             profile

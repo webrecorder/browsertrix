@@ -17,6 +17,10 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { Metrics, OrgData, OrgQuotas } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -72,6 +76,8 @@ export class OrgSettingsBilling extends BtrixElement {
 
       try {
         const { portalUrl } = await this.getPortalUrl();
+
+        completeOnboardingStep(OnboardingStep.ReviewPlan);
 
         if (portalUrl) {
           return portalUrl;
