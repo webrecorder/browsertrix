@@ -26,6 +26,7 @@ export const defaultPlan: Plan = {
     maxConcurrentCrawls: 0,
     maxExecMinutesPerMonth: 0,
     maxPagesPerCrawl: 0,
+    planExecMinutes: 0,
     storageQuota: 0,
   },
   testmode: false,
