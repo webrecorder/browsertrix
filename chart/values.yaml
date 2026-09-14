@@ -479,7 +479,7 @@ minio_local: true
 minio_scheme: "http"
 minio_host: "local-minio:9000"
 
-minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
+minio_image: docker.io/webrecorder/minio:RELEASE.2022-10-24T18-35-07Z
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
