@@ -1,5 +1,6 @@
 import { ContextConsumer } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import { deepArrayEquals } from "@lit/task/deep-equals.js";
 import type {
   SlChangeEvent,
@@ -442,6 +443,59 @@ export class CrawlsList extends BtrixElement {
     timeoutSeconds: POLL_INTERVAL_SECONDS,
   });
 
+  private readonly deleteItemsTask = new Task(this, {
+    autoRun: false,
+    task: async ([ids], { signal }) => {
+      if (!ids) return;
+
+      try {
+        const _data = await this.api.fetch(
+          `/orgs/${this.orgId}/all-crawls/delete`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              crawl_ids: ids,
+            }),
+            signal,
+          },
+        );
+
+        ids.forEach((id) => this.visibleItems.delete(id));
+        this.selectedItemIds = this.selectedItemIds.difference(new Set(ids));
+
+        void this.archivedItemsTask.run();
+
+        this.notify.toast({
+          message: msg(str`Successfully deleted archived item.`),
+          variant: "success",
+          icon: "check2-circle",
+          id: "archived-item-deleted",
+        });
+
+        this.tagFilter?.refreshOrgTags();
+      } catch (err) {
+        let message = msg(
+          str`Sorry, couldn't delete archived item at this time.`,
+        );
+        if (isApiError(err)) {
+          if (err.details == "not_allowed") {
+            message = msg(
+              str`Only org owners can delete other users' archived items.`,
+            );
+          } else if (err.message) {
+            message = err.message;
+          }
+        }
+        this.notify.toast({
+          message: message,
+          variant: "danger",
+          icon: "exclamation-octagon",
+        });
+      }
+    },
+    args: () => [undefined] as readonly [undefined | string[]],
+  });
+
   // For fuzzy search:
   private readonly searchKeys = ["id", "name", "firstSeed"];
 
@@ -834,7 +888,7 @@ export class CrawlsList extends BtrixElement {
 
   private readonly renderBulkActionsControl = () => {
     const visibleCount = this.visibleItems.size;
-    const selected = this.selectedItemIds.intersection(this.visibleItems);
+    const selected = this.selectedItemIds;
     const selectedCount = selected.size;
     const anySelected = selectedCount > 0;
     const allSelected = anySelected && selectedCount === visibleCount;
@@ -1039,16 +1093,23 @@ export class CrawlsList extends BtrixElement {
       return html`<btrix-bulk-delete-items-dialog
         .items=${items || []}
         ?open=${this.openDialog === "bulkDelete"}
+        ?inProgress=${this.deleteItemsTask.status === TaskStatus.PENDING}
         @sl-after-hide=${() => (this.openDialog = undefined)}
         @btrix-confirm=${async () => {
+          await this.deleteItemsTask.run([
+            Array.from(this.selectedItemIds.values()),
+          ]);
           this.openDialog = undefined;
-          console.log("TODO");
         }}
       ></btrix-bulk-delete-items-dialog>`;
     };
 
     return guard(
-      [this.selectedItemIds, this.openDialog === "bulkDelete"],
+      [
+        this.selectedItemIds,
+        this.openDialog === "bulkDelete",
+        this.deleteItemsTask.status === TaskStatus.PENDING,
+      ],
       dialog,
     );
   }
@@ -1250,6 +1311,9 @@ export class CrawlsList extends BtrixElement {
           }),
         },
       );
+
+      this.visibleItems.delete(item.id);
+
       // TODO eager list update before server response
       void this.archivedItemsTask.run();
       // const { items, ...crawlsData } = this.archivedItems!;
