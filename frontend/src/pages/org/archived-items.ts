@@ -474,23 +474,31 @@ export class CrawlsList extends BtrixElement {
 
         this.tagFilter?.refreshOrgTags();
       } catch (err) {
-        let message = msg(
-          str`Sorry, couldn't delete archived item at this time.`,
+        let title = "";
+        let message: string | TemplateResult = msg(
+          str`Sorry, couldn’t delete archived items at this time.`,
         );
         if (isApiError(err)) {
-          if (err.details == "not_allowed") {
-            message = msg(
-              str`Only org owners can delete other users' archived items.`,
-            );
-          } else if (err.message) {
-            message = err.message;
+          // TODO Automatically try deleting items once API returns all IDs
+          // https://github.com/webrecorder/browsertrix/issues/3649
+          if (err.statusCode === 404) {
+            title = msg("Some items cannot be deleted");
+
+            message = msg("Please check selected items and try again.");
+          } else if (err.details == "not_allowed") {
+            title = msg("Some items cannot be deleted");
+            message = `${msg("Only org owners can delete other users' archived items.")} ${msg("Please deselect items and try again.")}`;
           }
         }
         this.notify.toast({
+          title,
           message: message,
           variant: "danger",
           icon: "exclamation-octagon",
         });
+
+        // Reload items in the case of 404
+        void this.archivedItemsTask.run();
       }
     },
     args: () => [undefined] as readonly [undefined | string[]],
@@ -556,16 +564,6 @@ export class CrawlsList extends BtrixElement {
       }
 
       void this.fetchConfigSearchValues();
-    }
-  }
-
-  protected updated(changedProperties: PropertyValues): void {
-    if (changedProperties.has("selectedItemIds")) {
-      if (this.selectedItemIds.size) {
-        this.archivedItemsTask.pause();
-      } else {
-        this.archivedItemsTask.resume();
-      }
     }
   }
 
