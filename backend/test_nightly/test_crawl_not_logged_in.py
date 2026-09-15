@@ -127,6 +127,7 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
             time.sleep(5)
 
 
+@pytest.mark.timeout(1200)
 @pytest.fixture(scope="session")
 def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
     # Start crawl
@@ -134,10 +135,14 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
         "runNow": True,
         "name": "Fail Crawl Not Logged In",
         "config": {
-            "seeds": [{"url": "https://x.com/webrecorder_io"}],
+            "seeds": [{"url": "https://example-com.webrecorder.net"}],
             "scopeType": "page",
             "limit": 1,
             "failOnContentCheck": True,
+            "behaviors": "siteSpecific",
+            "customBehaviors": [
+              "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
+            ],
         },
         "profileid": profile_id,
     }
