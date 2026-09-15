@@ -1674,7 +1674,7 @@ export class ArchivedItemDetail extends BtrixElement {
       );
       this.navigate.to(this.listUrl);
       this.notify.toast({
-        message: msg(`Successfully deleted crawl`),
+        message: msg(`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
         id: "crawl-stop-error",
