@@ -134,10 +134,14 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
         "runNow": True,
         "name": "Fail Crawl Not Logged In",
         "config": {
-            "seeds": [{"url": "https://x.com/webrecorder_io"}],
+            "seeds": [{"url": "https://example-com.webrecorder.net"}],
             "scopeType": "page",
             "limit": 1,
             "failOnContentCheck": True,
+            "behaviors": "siteSpecific",
+            "customBehaviors": [
+              "https://raw.githubusercontent.com/webrecorder/browsertrix/1592617d0b8b6ca9fa7fad7d4e67e25114e8e960/backend/test/data/example-com.js"
+            ],
         },
         "profileid": profile_id,
     }
