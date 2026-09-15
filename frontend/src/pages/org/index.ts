@@ -572,6 +572,7 @@ export class Org extends BtrixElement {
 
     return html`<btrix-archived-items
       ?isCrawler=${this.appState.isCrawler}
+      ?bulkActions=${this.appState.isCrawler}
       itemType=${ifDefined(params.itemType || undefined)}
       @select-new-dialog=${this.onSelectNewDialog}
     ></btrix-archived-items>`;

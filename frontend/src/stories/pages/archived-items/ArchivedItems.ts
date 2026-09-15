@@ -11,6 +11,8 @@ export type RenderProps = CrawlsList;
 export const renderComponent = (props: Partial<RenderProps>) => {
   return html`<btrix-archived-items
     ?isCrawler=${props.isCrawler}
+    ?bulkActions=${props.bulkActions}
     itemType=${ifDefined(props.itemType || undefined)}
+    .selectedItemIds=${props.selectedItemIds || new Set()}
   ></btrix-archived-items>`;
 };
