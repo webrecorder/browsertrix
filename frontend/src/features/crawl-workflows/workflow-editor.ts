@@ -2047,8 +2047,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
                           },
                           true,
                         );
-
-                        el.setCustomValidity("");
                       } catch {
                         el.setCustomValidity(
                           msg("Please enter a valid CSS selector"),
