@@ -7,6 +7,7 @@ import {
   type ArchivedItem,
   type Crawl,
   type CrawlReplay,
+  type ListArchivedItem,
   type ProxiesAPIResponse,
   type Upload,
   type Workflow,
@@ -48,7 +49,7 @@ const DEPTH_SUPPORTED_SCOPES = [
   ScopeType.Any,
 ];
 
-export function isCrawl(item: Crawl | Upload): item is Crawl {
+export function isCrawl(item: ArchivedItem | ListArchivedItem): item is Crawl {
   return item.type === "crawl";
 }
 

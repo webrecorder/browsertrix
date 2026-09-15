@@ -1136,7 +1136,7 @@ export class CrawlsList extends BtrixElement {
           "Archived items are the result of a web archiving process, like crawl workflows.",
         ),
         actions: html`<sl-button
-            @click=${() => (this.isUploadingArchive = true)}
+            @click=${() => (this.openDialog = "upload")}
             ?disabled=${isArchivingDisabled(this.org)}
           >
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
