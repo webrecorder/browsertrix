@@ -2256,11 +2256,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             </sl-checkbox>
           `)}
           ${this.renderHelpTextCol(
-            html`${infoTextFor["failOnContentCheck"]}
-            ${this.renderUserGuideLink({
-              hash: "fail-crawl-if-not-logged-in",
-              content: msg("More details"),
-            })}`,
+            html`${infoTextFor["failOnContentCheck"]}`,
             false,
           )}
         `,
@@ -2270,14 +2266,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${labelFor["saveStorage"]}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["saveStorage"]}
-        ${this.renderUserGuideLink({
-          hash: "include-browser-storage-data",
-          content: msg("More details"),
-        })}`,
-        false,
-      )}
+      ${this.renderHelpTextCol(html`${infoTextFor["saveStorage"]}`, false)}
       ${proxies?.servers.length
         ? [
             inputCol(html`
