@@ -13,10 +13,13 @@ def behavior_log_crawl_id(admin_auth_headers, default_org_id):
         "name": "Crawl with behavior logs",
         "config": {
             "seeds": [
-                {"url": "https://x.com/webrecorder_io"},
+                {"url": "https://example-com.webrecorder.net"},
             ],
             "scopeType": "page",
             "limit": 1,
+            "customBehaviors": [
+              "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/misty/nightly_tests/backend/test/data/example-com.js"
+            ],
         },
     }
     r = requests.post(
