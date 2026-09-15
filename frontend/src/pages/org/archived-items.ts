@@ -559,6 +559,16 @@ export class CrawlsList extends BtrixElement {
     }
   }
 
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("selectedItemIds")) {
+      if (this.selectedItemIds.size) {
+        this.archivedItemsTask.pause();
+      } else {
+        this.archivedItemsTask.resume();
+      }
+    }
+  }
+
   render() {
     const listTypes: {
       itemType: ArchivedItem["type"] | null;
