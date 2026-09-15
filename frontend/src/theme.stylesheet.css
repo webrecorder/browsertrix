@@ -35,6 +35,9 @@
     /* Replay */
     --btrix-rwp-height: calc(100vh - 4rem);
 
+    /* Layout */
+    --btrix-name-max-width: 30ch;
+
     /*
      * Shoelace Theme Tokens
      */
