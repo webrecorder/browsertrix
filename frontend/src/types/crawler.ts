@@ -151,13 +151,12 @@ export type Profile = {
   modifiedCrawlId: string | null;
   modifiedCrawlCid: string | null;
   origins: string[];
-  profileId: string;
-  baseProfileName: string;
+  baseProfileName?: string;
   oid: string;
   inUse: boolean;
   resource?: {
-    name: string;
-    path: string;
+    filename: string;
+    path?: string;
     hash: string;
     size: number;
     replicas: ProfileReplica[] | null;
@@ -188,7 +187,12 @@ type ArchivedItemBase = {
   fileSize?: number;
   collectionIds: string[];
   collections: { id: string; name: string }[];
-  stats: { done: string; found: string; size: string } | null;
+  // TODO Check if this is still ever a string
+  stats: {
+    done: string | number;
+    found: string | number;
+    size: string | number;
+  } | null;
   firstSeed: string | null;
   seedCount: number | null;
   tags: string[];
@@ -269,6 +273,7 @@ export type CrawlerChannelsAPIResponse = {
 export type ArchivedItem = Crawl | Upload;
 
 export type ListArchivedItem = Omit<ArchivedItem, "collections">;
+export type ListCrawl = Omit<Crawl, "collections">;
 
 export type ArchivedItemPageComment = {
   id: string;
