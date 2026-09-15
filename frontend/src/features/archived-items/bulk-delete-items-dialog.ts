@@ -125,6 +125,13 @@ export class BulkDeleteItemsDialog extends BtrixElement {
             html`<div>
               <p class="max-w-prose text-pretty">
                 ${deleteConfirmation(pluralOfItems(items.length))}
+                ${when(
+                  items.some((item) => item.type === "crawl"),
+                  () =>
+                    msg(
+                      "Crawl runs associated with crawled items will also be deleted.",
+                    ),
+                )}
               </p>
               <btrix-data-grid
                 class="part-[body]:text-xs"
