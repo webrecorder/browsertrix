@@ -17,16 +17,16 @@ export enum AnalyticsTrackEvent {
    */
   ExpandWorkflowFormSection = "Expand workflow form section",
   /**
-   * Trial
+   * Onboarding
    */
-  TrialOpenedUserGuide = "[Trial] Opened user guide",
-  TrialCreatedWorkflow = "[Trial] Created workflow",
-  TrialReplayedCrawledItem = "[Trial] Replayed crawled item",
-  TrialVisitedBillingTab = "[Trial] Visited billing tab",
+  CompleteOnboardingStep = "Completed onboarding step",
+  FinishSetUp = "Finished set up",
+  UndoFinishSetUp = "Undo finished set up",
   /**
    * User Guide
    */
   OpenedCrawlingOnePageGuide = "Opened crawling one page guide",
   OpenedCrawlingSocialMediaGuide = "Opened crawling social media guide",
   OpenedCrawlingWebsiteGuide = "Opened crawling website guide",
+  ClickSearchGuides = "Clicked search guides",
 }

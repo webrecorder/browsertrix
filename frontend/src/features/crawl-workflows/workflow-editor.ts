@@ -134,6 +134,10 @@ import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import { isNotEqual } from "@/utils/is-not-equal";
 import localize from "@/utils/localize";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import slugifyStrict from "@/utils/slugify";
@@ -3575,6 +3579,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         icon: "check2-circle",
         id: "workflow-created-status",
       });
+
+      completeOnboardingStep(OnboardingStep.CreateWorkflow);
 
       this.navigate.to(
         `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}/${
