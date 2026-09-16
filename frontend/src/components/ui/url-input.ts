@@ -2,6 +2,12 @@ import { msg } from "@lit/localize";
 import SlInput from "@shoelace-style/shoelace/dist/components/input/input.js";
 import { customElement, property } from "lit/decorators.js";
 
+import { socialMediaSites } from "@/constants/social-media-platforms";
+import {
+  isSocialMediaPlatform,
+  socialMediaPlatformRegexFor,
+} from "@/utils/socialMediaPlatform";
+
 export function validURL(url: string) {
   // adapted from: https://gist.github.com/dperini/729294
   return /^(?:https?:\/\/)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test(
@@ -71,7 +77,18 @@ export class UrlInput extends SlInput {
   };
 
   private readonly onChange = () => {
-    const value = this.value.trim();
+    let value = this.value.trim();
+
+    if (value && !validURL(value) && isSocialMediaPlatform(value)) {
+      // Try autocompleting social media platform URLs
+      const site = socialMediaSites.find((v) =>
+        socialMediaPlatformRegexFor(v).test(value),
+      );
+
+      if (site) {
+        value = site;
+      }
+    }
 
     if (value && !validURL(value)) {
       const text = msg("Please enter a valid URL.");

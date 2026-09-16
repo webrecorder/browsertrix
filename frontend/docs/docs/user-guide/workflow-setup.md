@@ -359,7 +359,9 @@ For details about which websites are supported and how to add this functionality
 
 ### Include Browser Storage Data
 
-When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field. Enabling this option is recommended to properly archive and replay certain websites, as long as privacy and security implications have been reviewed.
+When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field.
+
+During a crawl, websites may store data in the browser itself, e.g. to persist logins. Including data from the browser’s local and session storage in the archive can improve replay quality, but may come with security implications. Enabling this option is recommended to properly archive and replay certain websites, as long as privacy and security implications have been reviewed.
 
 !!! Warning "Privacy & security implications when used with browser profiles"
     Websites can use browser storage to store arbitrary data. During the browser profile creation process, some websites may save sensitive data such as login information and user-identifying preferences in browser storage. Since every website can implement browser storage differently, Browsertrix does not attempt to detect whether the information stored is potentially sensitive.
