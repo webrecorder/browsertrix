@@ -1,8 +1,16 @@
-import type { Meta, StoryObj } from "@storybook/web-components";
+import type {
+  Meta,
+  StoryContext,
+  StoryFn,
+  StoryObj,
+} from "@storybook/web-components";
+import { html } from "lit";
+import { delay, http, HttpResponse } from "msw";
 import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./SelectBrowserProfile";
 
+import profilesMock from "@/__mocks__/api/orgs/[id]/profiles.js";
 import {
   orgDecorator,
   type StorybookOrgProps,
@@ -11,6 +19,16 @@ import {
   userDecorator,
   type StorybookUserProps,
 } from "@/stories/decorators/userDecorator";
+import { type APIPaginatedList } from "@/types/api";
+import { type Profile } from "@/types/crawler";
+
+const profiles = profilesMock as APIPaginatedList<Profile>;
+
+function wrapperDecorator(story: StoryFn, context: StoryContext) {
+  const { args } = context;
+
+  return html`<div class="max-w-sm">${story(args, context)}</div>`;
+}
 
 const meta = {
   title: "Features/Browser Profiles/Select Browser Profile",
@@ -19,6 +37,7 @@ const meta = {
   decorators: [
     userDecorator as DecoratorFunction,
     orgDecorator as DecoratorFunction,
+    wrapperDecorator as DecoratorFunction,
   ],
   render: renderComponent,
   argTypes: {},
@@ -26,11 +45,40 @@ const meta = {
     user: true,
     auth: true,
   },
-} satisfies Meta<RenderProps>;
+} satisfies Meta<RenderProps & StorybookUserProps & StorybookOrgProps>;
 
 export default meta;
-type Story = StoryObj<RenderProps & StorybookUserProps & StorybookOrgProps>;
+type Story = StoryObj<RenderProps>;
 
-export const Empty: Story = {
+export const WithoutProfiles: Story = {
   args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>({
+            total: 0,
+            items: [],
+            page: 1,
+            pageSize: 1000,
+          });
+        }),
+      ],
+    },
+  },
+};
+
+export const WithProfiles: Story = {
+  args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+        }),
+      ],
+    },
+  },
 };
