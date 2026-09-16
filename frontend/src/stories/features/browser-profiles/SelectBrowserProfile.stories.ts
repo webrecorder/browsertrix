@@ -69,8 +69,77 @@ export const WithoutProfiles: Story = {
   },
 };
 
+export const WithoutProfilesAllowNew: Story = {
+  args: {
+    allowNew: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>({
+            total: 0,
+            items: [],
+            page: 1,
+            pageSize: 1000,
+          });
+        }),
+      ],
+    },
+  },
+};
+
 export const WithProfiles: Story = {
   args: {},
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+        }),
+      ],
+    },
+  },
+};
+
+export const WithProfilesAllowNew: Story = {
+  args: {
+    allowNew: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+        }),
+      ],
+    },
+  },
+};
+
+export const WithValue: Story = {
+  args: {
+    profileId: "fake-0273-4131-99eb-a4c780818ed2",
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        http.get(/\/profiles$/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+        }),
+      ],
+    },
+  },
+};
+
+export const SuggestedOrigins: Story = {
+  args: {
+    suggestOrigins: ["instagram.com"],
+  },
   parameters: {
     msw: {
       handlers: [

@@ -3,7 +3,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 
 import type { SelectBrowserProfile } from "@/features/browser-profiles/select-browser-profile";
 
-import "@/features/browser-profiles/select-browser-profile";
+import "@/features/browser-profiles";
 
 export type RenderProps = SelectBrowserProfile;
 

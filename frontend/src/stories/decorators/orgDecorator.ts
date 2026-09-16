@@ -1,9 +1,18 @@
+import { provide } from "@lit/context";
 import type { StoryContext, StoryFn } from "@storybook/web-components";
 import { html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import mapValues from "lodash/fp/mapValues";
 
 import orgMock from "@/__mocks__/api/orgs/[id]";
+import {
+  orgCrawlerChannelsContext,
+  type OrgCrawlerChannelsContext,
+} from "@/context/org-crawler-channels";
+import {
+  orgProxiesContext,
+  type OrgProxiesContext,
+} from "@/context/org-proxies";
 import { AppStateService } from "@/utils/state";
 
 const { users, usage, quotas, ...org } = orgMock;
@@ -18,6 +27,15 @@ export type StorybookOrgProps = {
 
 @customElement("btrix-storybook-org")
 export class StorybookOrg extends LitElement {
+  @provide({ context: orgProxiesContext })
+  proxies: OrgProxiesContext = {
+    default_proxy_id: null,
+    servers: [],
+  };
+
+  @provide({ context: orgCrawlerChannelsContext })
+  crawlerChannels: OrgCrawlerChannelsContext = [];
+
   @property({ type: Boolean })
   users?: boolean;
 
