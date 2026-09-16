@@ -50,6 +50,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
+const getProfiles = () =>
+  http.get(/\/profiles$/, async () => {
+    await delay(500);
+    return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+  });
+
 export const WithoutProfiles: Story = {
   args: {},
   parameters: {
@@ -94,12 +100,7 @@ export const WithProfiles: Story = {
   args: {},
   parameters: {
     msw: {
-      handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
-        }),
-      ],
+      handlers: [getProfiles()],
     },
   },
 };
@@ -110,12 +111,7 @@ export const WithProfilesAllowNew: Story = {
   },
   parameters: {
     msw: {
-      handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
-        }),
-      ],
+      handlers: [getProfiles()],
     },
   },
 };
@@ -126,12 +122,7 @@ export const WithValue: Story = {
   },
   parameters: {
     msw: {
-      handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
-        }),
-      ],
+      handlers: [getProfiles()],
     },
   },
 };
@@ -142,12 +133,7 @@ export const SuggestedOrigins: Story = {
   },
   parameters: {
     msw: {
-      handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
-        }),
-      ],
+      handlers: [getProfiles()],
     },
   },
 };
