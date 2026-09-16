@@ -35,7 +35,7 @@ export const socialMediaSitesForPlatform: Record<
   [SocialMediaPlatform.VIMEO]: ["vimeo.com"],
   [SocialMediaPlatform.WHATSAPP]: ["whatsapp.com"],
   [SocialMediaPlatform.X]: ["x.com"],
-  [SocialMediaPlatform.YOUTUBE]: ["youtube.com", "youtu.be"],
+  [SocialMediaPlatform.YOUTUBE]: ["youtube.com", "youtu.be", "youtube-nocookie.com"],
 } as const;
 
 export const socialMediaSites = [
