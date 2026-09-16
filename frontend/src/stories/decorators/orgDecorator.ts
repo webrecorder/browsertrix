@@ -34,7 +34,9 @@ export class StorybookOrg extends LitElement {
   };
 
   @provide({ context: orgCrawlerChannelsContext })
-  crawlerChannels: OrgCrawlerChannelsContext = [];
+  crawlerChannels: OrgCrawlerChannelsContext = [
+    { id: "default", image: "fake-crawler-channel" },
+  ];
 
   @property({ type: Boolean })
   users?: boolean;
