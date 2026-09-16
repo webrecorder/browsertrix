@@ -851,6 +851,10 @@ h5 {
 
 /* Utilities */
 
+.no-underline {
+  text-decoration: none !important;
+}
+
 .invisible {
   visibility: collapse;
   height: 0;
