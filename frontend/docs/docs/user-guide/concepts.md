@@ -56,9 +56,15 @@ A browser profile is a data package consisting of login sessions and other setti
 
 !!! abstract "[Learn more about browser profiles :material-arrow-right:](browser-profiles/browser-profiles-overview.md){ .no-underline }"
 
+## Metadata
+
+Metadata is data that provides information about archived documents. In Browsertrix, metadata is used to describe the contents, characteristics, and general scope of an [archived item](#archived-item){ data-preview }.
+
+Metadata also makes it easier to find and organize archived items in Browsertrix. Archived items and [collections](#collection){ data-preview } can be located by metadata such as name (or title), description, and tags (or labels).
+
 ## Archived Item
 
-Archived items provide an interface between Browsertrix users and archived web content, enabling such organizational actions as grouping, reviewing, naming, and exporting archived content.
+An archived item is a discrete combination of archived web content and [metadata](#metadata){ data-preview } that enables contextualized [replay](#replay){ data-preview }. Archived items can be grouped, reviewed, named, exported, and otherwise managed both in and out of Browsertrix.
 
 Every successful Browsertrix [crawl run](#crawl-run){ data-preview } is associated with an archived item. This type of archived item is referred to as a “crawled item”.
 
