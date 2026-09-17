@@ -127,7 +127,6 @@ def profile_id(admin_auth_headers, default_org_id, profile_browser_id):
             time.sleep(5)
 
 
-@pytest.mark.timeout(1200)
 @pytest.fixture(scope="session")
 def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
     # Start crawl
@@ -189,6 +188,7 @@ def failed_crawl_finished(
         time.sleep(5)
 
 
+@pytest.mark.timeout(1200)
 def test_fail_crawl_not_logged_in(
     admin_auth_headers,
     default_org_id,
