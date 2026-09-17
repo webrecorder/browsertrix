@@ -1,3 +1,4 @@
+// eslint-disable import-x/no-unresolved -- Dev dependency
 import { faker } from "@faker-js/faker";
 import type {
   Meta,
@@ -9,10 +10,6 @@ import { html } from "lit";
 import { type DecoratorFunction } from "storybook/internal/types";
 
 import { renderComponent, type RenderProps } from "./Combobox";
-
-import { type Combobox } from "@/components/ui/combobox";
-
-// eslint-disable import-x/no-unresolved -- Dev dependency
 
 // Fixed seed for reproducibility
 faker.seed(0);
@@ -40,38 +37,44 @@ const data = Array.from({ length: 100 }).map(() => ({
   id: faker.string.nanoid(),
   label: faker.word.words({ count: { min: 1, max: 5 } }),
 }));
+const menuItems = data.slice(0, 10).map(
+  ({ id, label }) =>
+    html`<sl-menu-item
+      slot="menu-item"
+      id=${id}
+      @mouseover=${
+        // HACK Fixes https://github.com/shoelace-style/shoelace/issues/1676
+        (e: Event) => e.stopImmediatePropagation()
+      }
+    >
+      ${label}
+    </sl-menu-item>`,
+);
 
-/**
- * If a slotted anchor is provided it should have accessibility attributes such as `aria-autocomplete="list"`.
- */
-export const SlottedAnchor: Story = {
+export const WithItems: Story = {
   args: {
-    content: html`<sl-input
-        label="Slotted Label"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded="false"
-        aria-controls="custom-combobox-list"
-        aria-activedescendant="custom-combobox-list-item"
-        @sl-focus=${(e: CustomEvent) => {
-          (e.target as HTMLElement).closest<Combobox>("btrix-combobox")?.show();
-        }}
-        @sl-blur=${(e: CustomEvent) => {
-          (e.target as HTMLElement).closest<Combobox>("btrix-combobox")?.hide();
-        }}
-      ></sl-input>
-      ${data.slice(0, 10).map(
-        ({ id, label }) =>
-          html`<sl-menu-item
-            slot="menu-item"
-            id=${id}
-            @mouseover=${
-              // HACK Fixes https://github.com/shoelace-style/shoelace/issues/1676
-              (e: Event) => e.stopImmediatePropagation()
-            }
-          >
-            ${label}
-          </sl-menu-item>`,
-      )} `,
+    label: "Label",
+    content: html`${menuItems}`,
+  },
+};
+
+export const WithoutItems: Story = {
+  args: {
+    label: "Label",
+  },
+};
+
+export const AddNewWithoutItems: Story = {
+  args: {
+    label: "Label",
+    content: html`<sl-menu-item slot="new-menu-item">Add New</sl-menu-item>`,
+  },
+};
+
+export const AddNewWithItems: Story = {
+  args: {
+    label: "Label",
+    content: html`<sl-menu-item slot="new-menu-item">Add New</sl-menu-item>
+      ${menuItems}`,
   },
 };
