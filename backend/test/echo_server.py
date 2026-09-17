@@ -38,6 +38,12 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
                     {"checkoutUrl": "https://checkout.example.com/path/"}
                 ).encode("utf-8")
             )
+        elif self.path.endswith("/prices/additionalMinutes"):
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"value": 1.0, "currency": "usd"}).encode("utf-8")
+            )
         else:
             self.end_headers()
 

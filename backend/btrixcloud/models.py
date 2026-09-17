@@ -2304,7 +2304,7 @@ class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 
     orgId: str
-    subId: str
+    subId: str | None = None
     minutes: int | None = None
     return_url: str
 

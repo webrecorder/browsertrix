@@ -239,7 +239,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
-                  this.org?.subscription,
+                  this.appState.settings?.billingEnabled,
                   () =>
                     html`<btrix-org-settings-billing-addon-link
                       class="mt-3 flex items-center border-t py-2"
