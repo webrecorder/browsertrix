@@ -42,6 +42,7 @@ import {
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { listControls } from "@/layouts/listControls";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
@@ -413,10 +414,11 @@ export class WorkflowsList extends BtrixElement {
 
   render() {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-        ${this.renderControls()}
-      </div>
-
+      ${listControls({
+        renderSearchControl: this.renderSearch,
+        renderSortControl: this.renderSortControl,
+        renderFilterControl: this.renderFilterControl,
+      })}
       ${when(
         this.fetchErrorStatusCode,
         () => html`
@@ -487,76 +489,55 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
+  private readonly renderSortControl = () => {
+    return html`<sl-select
+        id="sort-select"
+        class="flex-1 md:min-w-[9.2rem]"
+        size="small"
+        pill
+        value=${this.orderBy.value.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy.setValue({
+            field: field,
+            direction:
+              sortableFields[field].defaultDirection ||
+              this.orderBy.value.direction,
+          });
+        }}
+      >
+        ${Object.entries(sortableFields).map(
+          ([value, { label }]) => html`
+            <sl-option value=${value}>${label}</sl-option>
+          `,
+        )}
+      </sl-select>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === "asc"
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
+        <sl-icon-button
+          name=${this.orderBy.value.direction === "asc"
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === "asc"
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
+          @click=${() => {
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+            });
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>`;
+  };
 
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
-          >
-            ${msg("Sort by:")}
-          </label>
-          <sl-select
-            id="sort-select"
-            class="flex-1 md:min-w-[9.2rem]"
-            size="small"
-            pill
-            value=${this.orderBy.value.field}
-            @sl-change=${(e: Event) => {
-              const field = (e.target as HTMLSelectElement).value as SortField;
-              this.orderBy.setValue({
-                field: field,
-                direction:
-                  sortableFields[field].defaultDirection ||
-                  this.orderBy.value.direction,
-              });
-            }}
-          >
-            ${Object.entries(sortableFields).map(
-              ([value, { label }]) => html`
-                <sl-option value=${value}>${label}</sl-option>
-              `,
-            )}
-          </sl-select>
-          <sl-tooltip
-            content=${this.orderBy.value.direction === "asc"
-              ? msg("Sort in descending order")
-              : msg("Sort in ascending order")}
-          >
-            <sl-icon-button
-              name=${this.orderBy.value.direction === "asc"
-                ? "sort-up-alt"
-                : "sort-down"}
-              class="text-base"
-              label=${this.orderBy.value.direction === "asc"
-                ? msg("Sort Descending")
-                : msg("Sort Ascending")}
-              @click=${() => {
-                this.orderBy.setValue({
-                  ...this.orderBy.value,
-                  direction:
-                    this.orderBy.value.direction === "asc" ? "desc" : "asc",
-                });
-              }}
-            ></sl-icon-button>
-          </sl-tooltip>
-        </div>
-
-        ${this.renderFilters()}
-      </div>
-    `;
-  }
-
-  private renderFilters() {
-    return html`<div class="flex flex-wrap items-center gap-2">
-      <span class="whitespace-nowrap text-sm text-neutral-500">
-        ${msg("Filter by:")}
-      </span>
-
-      <btrix-workflow-schedule-filter
+  private readonly renderFilterControl = () => {
+    return html`<btrix-workflow-schedule-filter
         .schedule=${this.filterBy.value.schedule}
         @btrix-change=${(e: BtrixChangeWorkflowScheduleFilterEvent) => {
           this.filterBy.setValue({
@@ -631,11 +612,10 @@ export class WorkflowsList extends BtrixElement {
             ${msg("Clear All")}
           </sl-button>
         `,
-      )}
-    </div>`;
-  }
+      )}`;
+  };
 
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-workflow-search
         .searchOptions=${this.searchOptions}
@@ -664,7 +644,7 @@ export class WorkflowsList extends BtrixElement {
       >
       </btrix-workflow-search>
     `;
-  }
+  };
 
   private renderWorkflowList() {
     if (!this.workflowsTask.value) return;
