@@ -123,12 +123,7 @@ export class OrgSettingsBilling extends BtrixElement {
         ${columns([
           [
             html`
-              <div
-                class=${clsx(
-                  tw`mt-5 rounded-lg border px-4`,
-                  !this.org?.subscription && tw`pb-4`,
-                )}
-              >
+              <div class="mt-5 rounded-lg border px-4">
                 <div
                   class="mb-3 flex items-center justify-between border-b py-2"
                 >
