@@ -268,6 +268,8 @@ class SubOps:
         quotas = OrgQuotasIn(extraExecMinutes=add_min.minutes)
         event_id = await self.add_sub_event("add-minutes", add_min, add_min.oid)
         await self.org_ops.update_quotas(org, quotas, mode="add", sub_event_id=event_id)
+        if add_min.customerId:
+            await self.org_ops.update_billing_customer_id(org, add_min.customerId)
         return {"updated": True}
 
     async def add_sub_event(
@@ -462,6 +464,7 @@ class SubOps:
                 req = CheckoutAddonMinutesRequest(
                     orgId=str(org.id),
                     subId=subscription_id,
+                    customerId=org.billingCustomerId,
                     minutes=minutes,
                     return_url=return_url,
                 )
