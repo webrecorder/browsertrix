@@ -60,16 +60,9 @@ export type SelectBrowserProfileChangeEvent =
   CustomEvent<SelectBrowserProfileChangeDetail>;
 
 /**
- * Browser profile select dropdown
+ * Users can select an existing browser profile or create a new profile.
  *
- * Usage example:
- * ```ts
- * <btrix-select-browser-profile
- *   on-change=${({value}) => selectedProfile = value}
- * ></btrix-select-browser-profile>
- * ```
- *
- * @event on-change
+ * @fires on-change
  */
 @customElement("btrix-select-browser-profile")
 @localized()
