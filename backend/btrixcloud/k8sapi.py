@@ -119,7 +119,7 @@ class K8sAPI:
         proxy_id: str = "",
         dedupe_coll_id: str = "",
         is_single_page: bool = False,
-        seed_file_url: str = "",
+        seed_file_id: str = "",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -147,7 +147,7 @@ class K8sAPI:
             "proxy_id": proxy_id,
             "dedupe_coll_id": dedupe_coll_id,
             "is_single_page": "1" if is_single_page else "0",
-            "seed_file_url": seed_file_url,
+            "seed_file_id": seed_file_id,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -174,7 +174,7 @@ class K8sAPI:
         proxy_id: str = "",
         dedupe_coll_id: str = "",
         is_single_page: bool = False,
-        seed_file_url: str = "",
+        seed_file_id: str = "",
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -197,7 +197,7 @@ class K8sAPI:
             proxy_id=proxy_id,
             dedupe_coll_id=dedupe_coll_id,
             is_single_page=is_single_page,
-            seed_file_url=seed_file_url,
+            seed_file_id=seed_file_id,
         )
 
         # create job directly

@@ -172,14 +172,6 @@ class CronJobOperator(BaseOperator):
         else:
             profile_filename = ""
 
-        if crawlconfig.config.seedFileId:
-            seed_file = await self.file_ops.get_seed_file_out(
-                crawlconfig.config.seedFileId, org
-            )
-            seed_file_url = seed_file.path
-        else:
-            seed_file_url = ""
-
         crawl_id, crawljob = self.k8s.new_crawl_job_yaml(
             cid=str(cid),
             userid=str(userid),
@@ -201,7 +193,9 @@ class CronJobOperator(BaseOperator):
                 str(crawlconfig.dedupeCollId) if crawlconfig.dedupeCollId else ""
             ),
             is_single_page=self.crawl_config_ops.is_single_page(crawlconfig.config),
-            seed_file_url=seed_file_url,
+            seed_file_id=str(crawlconfig.config.seedFileId)
+            if crawlconfig.config.seedFileId
+            else "",
         )
 
         return MCDecoratorSyncResponse(attachments=list(yaml.safe_load_all(crawljob)))

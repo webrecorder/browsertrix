@@ -1379,7 +1379,6 @@ class CrawlConfigOps:
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
 
-        seed_file_url = ""
         if crawlconfig.config.seedFileId:
             crawler_image = self.get_channel_crawler_image(crawlconfig.crawlerChannel)
             if (
@@ -1393,11 +1392,6 @@ class CrawlConfigOps:
                     status_code=400, detail="seed_file_not_supported_by_crawler"
                 )
 
-            seed_file_out = await self.file_ops.get_seed_file_out(
-                crawlconfig.config.seedFileId, org
-            )
-            seed_file_url = seed_file_out.path
-
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
@@ -1408,7 +1402,9 @@ class CrawlConfigOps:
                 profile_filename=profile_filename or "",
                 profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
                 is_single_page=self.is_single_page(crawlconfig.config),
-                seed_file_url=seed_file_url,
+                seed_file_id=str(crawlconfig.config.seedFileId)
+                if crawlconfig.config.seedFileId
+                else "",
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
