@@ -128,7 +128,8 @@ jobs:
 
       - name: Start Cluster with Helm
         run: |
-          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/test-nightly-addons.yaml btrix ./chart/
+          helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/test-nightly-addons.yaml \
+          ${{ matrix.module == 'test_cleanup_seed_files.py' && '-f ./chart/test/test-nightly-cleanup-seeds-addon.yaml' || '' }} btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v6

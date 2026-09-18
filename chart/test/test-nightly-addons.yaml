@@ -4,12 +4,6 @@ invite_expire_seconds: "10"
 
 max_pages_per_crawl: 300
 
-# Every minute, for use in testing cleaning up seed files
-cleanup_job_cron_schedule: "* * * * *"
-
-# Clean up files > 1 minute old in testing
-cleanup_files_after_minutes: 1
-
 # max crawl queue size x concurrent crawls
 crawl_queue_limit_scale: 1
 
