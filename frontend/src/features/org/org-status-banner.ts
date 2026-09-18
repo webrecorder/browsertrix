@@ -152,6 +152,8 @@ export class OrgStatusBanner extends BtrixElement {
       futureCancelDate,
     } = OrgStatusBanner.trialInfo(org, localize);
 
+    const billingEnabled = !!appState.settings?.billingEnabled;
+
     const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;
     const isTrial =
@@ -324,30 +326,26 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
-        name: OrgStatusName.ExecMinutesQuotaReachedPro,
-        test: () => !readOnly && !!execMinutesQuotaReached && !subscription,
-        content: () => ({
-          title: msg(
-            str`Your org has reached its monthly execution minutes limit`,
-          ),
-          detail: sales_email_address
-            ? msg(
-                str`Contact ${sales_email_address} to purchase additional monthly execution minutes or upgrade your plan.`,
-              )
-            : msg(
-                str`Contact your Browsertrix administrator to purchase additional monthly execution minutes or upgrade your plan.`,
-              ),
-        }),
-      },
-      {
         name: OrgStatusName.ExecMinutesQuotaReached,
-        test: () => !readOnly && !!execMinutesQuotaReached && !!subscription,
+        test: () => !readOnly && !!execMinutesQuotaReached && billingEnabled,
         content: () => ({
           title: msg(`Your org is out of execution minutes`),
           detail: msg(
             html`Any running crawls have been paused. To resume crawling, you
-            can purchase additional minutes or upgrade your monthly plan from
+            can purchase additional minutes or upgrade your plan from
             ${billingTabLink}.`,
+          ),
+        }),
+      },
+      {
+        name: OrgStatusName.ExecMinutesQuotaReachedPro,
+        test: () => !readOnly && !!execMinutesQuotaReached && !billingEnabled,
+        content: () => ({
+          title: msg(`Your org is out of execution minutes`),
+          detail: msg(
+            html`Any running crawls have been paused. To resume crawling, speak
+            to your Browsertrix administrator about increasing your org’s
+            quotas.`,
           ),
         }),
       },

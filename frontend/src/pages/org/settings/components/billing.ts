@@ -123,12 +123,7 @@ export class OrgSettingsBilling extends BtrixElement {
         ${columns([
           [
             html`
-              <div
-                class=${clsx(
-                  tw`mt-5 rounded-lg border px-4`,
-                  !this.org?.subscription && tw`pb-4`,
-                )}
-              >
+              <div class="mt-5 rounded-lg border px-4">
                 <div
                   class="mb-3 flex items-center justify-between border-b py-2"
                 >
@@ -239,7 +234,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
-                  this.org?.subscription,
+                  this.appState.settings?.billingEnabled,
                   () =>
                     html`<btrix-org-settings-billing-addon-link
                       class="mt-3 flex items-center border-t py-2"

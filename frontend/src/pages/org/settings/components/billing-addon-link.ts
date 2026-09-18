@@ -43,8 +43,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
 
   private readonly checkoutUrl = new Task(this, {
     task: async ([minutes]) => {
-      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
-        return;
+      if (!appState.settings?.billingEnabled) return;
 
       try {
         const { checkoutUrl } = await this.getCheckoutUrl(minutes);
