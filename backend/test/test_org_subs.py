@@ -373,6 +373,47 @@ def test_get_addon_minutes_price_and_checkout_url_no_subscription(
     assert post_bodies[-1]["subId"] is None
 
 
+def test_add_minutes_saves_customer_id(
+    admin_auth_headers, non_default_org_id, echo_server
+):
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/add-minutes",
+        headers=admin_auth_headers,
+        json={
+            "oid": str(non_default_org_id),
+            "minutes": 60,
+            "totalPrice": 1.0,
+            "currency": "usd",
+            "paymentId": "test-payment-customer",
+            "customerId": "stripe:cus_test123",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    # customer id is persisted on the org, but not exposed to org users
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    assert "billingCustomerId" not in r.json()
+
+    # saved customer id is forwarded on subsequent checkout requests
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/checkout/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
+    r = requests.get("http://127.0.0.1:18080/")
+    assert r.status_code == 200
+    post_bodies = r.json()["post_bodies"]
+    assert post_bodies[-1]["orgId"] == str(non_default_org_id)
+    assert post_bodies[-1]["subId"] is None
+    assert post_bodies[-1]["customerId"] == "stripe:cus_test123"
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(

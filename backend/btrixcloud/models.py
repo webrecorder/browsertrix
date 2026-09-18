@@ -2236,6 +2236,7 @@ class SubscriptionAddMinutes(BaseModel):
     totalPrice: float
     currency: str
     paymentId: str
+    customerId: str | None = None
 
 
 # ============================================================================
@@ -2305,6 +2306,8 @@ class CheckoutAddonMinutesRequest(BaseModel):
 
     orgId: str
     subId: str | None = None
+
+    customerId: str | None = None
     minutes: int | None = None
     return_url: str
 
@@ -2662,6 +2665,11 @@ class Organization(BaseMongoModel):
     readOnlyReason: str | None = None
 
     subscription: Subscription | None = None
+
+    # id of the org's last addon minutes purchaser in the billing provider,
+    # set via add-minutes events so subsequent checkouts can reuse the
+    # saved customer/payment method; only included in superadmin org exports
+    billingCustomerId: str | None = None
 
     # Internal note
     note: str | None = None

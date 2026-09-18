@@ -572,6 +572,14 @@ class OrgOps(BaseOrgs):
             {"_id": org.id}, {"$set": org.dict(include=include)}
         )
 
+    async def update_billing_customer_id(
+        self, org: Organization, customer_id: str
+    ) -> None:
+        """Save id of the org's last addon minutes purchaser"""
+        await self.orgs.find_one_and_update(
+            {"_id": org.id}, {"$set": {"billingCustomerId": customer_id}}
+        )
+
     async def check_all_org_default_storages(self, storage_ops) -> None:
         """ensure all default storages references by this org actually exist
 
