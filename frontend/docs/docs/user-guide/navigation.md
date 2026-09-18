@@ -20,6 +20,14 @@ You can find links to navigate your org near the top of each page, directly belo
 
 ---
 
+## Navigate to the User Guide
+
+You can access guides from any org page by tapping the **User Guide** button at the top of the page. The user guide will remain open as you navigate between org pages.
+
+By default, the user guide will open to the side so that you can use Browsertrix and view guides at the same time. To open the user guide in a new tab in your browser, activate the **User Guide** menu and select the _Open in New Tab_ option.
+
+---
+
 ## Navigate to Active Crawls
 
 If any crawls in your org are active—i.e. visiting pages, waiting to visit pages, or temporarily paused—a link indicating the total number of active crawl runs will appear at the top of every page, next to the **User Guide** button.
