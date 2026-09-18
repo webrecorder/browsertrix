@@ -31,10 +31,6 @@ export class ResetPassword extends LiteElement {
   @query('sl-input[name="newPassword"]')
   private readonly newPassword?: SlInput | null;
 
-  protected firstUpdated() {
-    void PasswordService.setOptions();
-  }
-
   render() {
     let formError;
 

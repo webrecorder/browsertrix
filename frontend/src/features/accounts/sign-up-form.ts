@@ -57,10 +57,6 @@ export class SignUpForm extends LiteElement {
   @query('sl-input[name="password"]')
   private readonly password?: SlInput | null;
 
-  protected firstUpdated() {
-    void PasswordService.setOptions();
-  }
-
   render() {
     let serverError;
 
