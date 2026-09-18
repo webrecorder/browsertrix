@@ -2277,13 +2277,14 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
                 .profileProxyId=${this.formState.browserProfile?.proxyId}
+                ?disabled=${!!this.formState.browserProfile}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
               >
                 ${when(
-                  this.formState.browserProfile?.proxyId,
+                  this.formState.browserProfile,
                   () => html`
                     <span
                       slot="suffix"
@@ -3817,7 +3818,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
-      proxyId: this.formState.browserProfile?.proxyId || this.formState.proxyId,
+      proxyId:
+        (this.formState.browserProfile
+          ? this.formState.browserProfile.proxyId
+          : this.formState.proxyId) || null,
     };
 
     return config;
