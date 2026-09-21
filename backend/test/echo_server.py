@@ -14,9 +14,17 @@ post_bodies = []
 
 class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(json.dumps({"post_bodies": post_bodies}).encode("utf-8"))
+        if self.path.endswith("/prices/additionalMinutes"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"value": 1.0, "currency": "usd"}).encode("utf-8")
+            )
+        else:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(json.dumps({"post_bodies": post_bodies}).encode("utf-8"))
 
     def do_POST(self):
         content_length = int(self.headers.get("content-length", 0))
