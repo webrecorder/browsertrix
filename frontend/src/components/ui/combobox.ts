@@ -7,7 +7,12 @@ import { focusable } from "tabbable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { HasSlotController } from "@/controllers/slot";
-import { dropdown } from "@/utils/css";
+import { animateTo, stopAnimations } from "@/utils/animations";
+import {
+  dropdownHide,
+  dropdownShow,
+  dropdownTiming,
+} from "@/utils/animations/dropdown";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -20,7 +25,6 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-combobox")
 export class Combobox extends TailwindElement {
   static styles = [
-    dropdown,
     css`
       :host {
         position: relative;
@@ -54,9 +58,6 @@ export class Combobox extends TailwindElement {
   loading = false;
 
   @state()
-  isActive = true;
-
-  @state()
   private inputHasFocus = false;
 
   @query("#dropdown")
@@ -66,7 +67,7 @@ export class Combobox extends TailwindElement {
   private readonly menu?: SlMenu;
 
   @query("sl-popup")
-  private readonly combobox?: SlPopup;
+  private readonly popup?: SlPopup;
 
   @query("sl-input")
   private readonly input?: SlInput;
@@ -77,12 +78,12 @@ export class Combobox extends TailwindElement {
     "menu-item",
   );
 
-  protected willUpdate(changedProperties: PropertyValues<this>) {
+  protected updated(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("open")) {
       if (this.open) {
         void this.openDropdown();
-      } else {
-        this.closeDropdown();
+      } else if (changedProperties.get("open")) {
+        void this.closeDropdown();
       }
     }
   }
@@ -90,8 +91,6 @@ export class Combobox extends TailwindElement {
   render() {
     const hasNew = this.hasSlotController.test("new-menu-item");
     const hasItems = this.hasSlotController.test("menu-item");
-
-    console.log("render");
 
     return html`
       <sl-popup
@@ -102,7 +101,6 @@ export class Combobox extends TailwindElement {
         strategy="fixed"
         auto-size="vertical"
         auto-size-padding="10"
-        ?active=${this.isActive}
         @keyup=${this.handleKeyUp}
       >
         <sl-input
@@ -115,15 +113,16 @@ export class Combobox extends TailwindElement {
           role="combobox"
           aria-autocomplete="list"
           aria-controls="combobox-list"
-          aria-expanded="${this.isActive}"
+          aria-expanded="${this.open}"
           autocomplete="false"
-          @keydown=${this.handleKeyDown}
+          @keydown=${this.open && this.handleKeyDown}
           @click=${this.handleInputClick}
           @focus=${() => {
-            if (hasNew || hasItems) {
+            this.handleInputFocus();
+
+            if (!this.popup?.active && (hasNew || hasItems)) {
               this.show();
             }
-            this.handleInputFocus();
           }}
           @focusout=${this.handleInputFocusOut}
         >
@@ -148,7 +147,10 @@ export class Combobox extends TailwindElement {
             : nothing}
         </sl-input>
 
-        <div id="dropdown" class="dropdown hidden">
+        <div
+          id="dropdown"
+          class="origin-top-left shadow-md contain-[layout_size]"
+        >
           <sl-menu
             id="combobox-list"
             class="max-h-[--auto-size-available-height]"
@@ -266,8 +268,19 @@ export class Combobox extends TailwindElement {
   };
 
   private async openDropdown() {
-    this.isActive = true;
-    await this.combobox?.updateComplete;
+    if (!this.popup) {
+      console.debug("no this.popup");
+      return;
+    }
+
+    if (!this.dropdown) {
+      console.debug("no this.dropdown");
+      return;
+    }
+
+    await stopAnimations(this.dropdown);
+    this.dropdown.hidden = false;
+    this.popup.active = true;
 
     // // Manually sync dropdown width instead of using `sync="width"`
     // // to get around ResizeObserver loop error
@@ -279,45 +292,26 @@ export class Combobox extends TailwindElement {
     //   }
     // }
 
-    this.attachAnimationEvents();
-    this.dropdown?.classList.add("animateShow");
-    this.dropdown?.classList.remove("hidden");
+    return animateTo(this.dropdown, dropdownShow, dropdownTiming);
   }
 
-  private closeDropdown() {
-    this.attachAnimationEvents();
-    this.dropdown?.classList.add("animateHide");
-  }
-
-  private attachAnimationEvents() {
-    this.dropdown?.removeEventListener(
-      "animationcancel",
-      this.handleAnimationEnd,
-    );
-    this.dropdown?.removeEventListener("animationend", this.handleAnimationEnd);
-    this.dropdown?.addEventListener(
-      "animationcancel",
-      this.handleAnimationEnd,
-      {
-        once: true,
-      },
-    );
-    this.dropdown?.addEventListener("animationend", this.handleAnimationEnd, {
-      once: true,
-    });
-  }
-
-  private readonly handleAnimationEnd = (e: AnimationEvent) => {
-    const el = e.target as HTMLDivElement;
-    if (e.animationName === "dropdownShow") {
-      el.classList.remove("animateShow");
+  private async closeDropdown() {
+    if (!this.popup) {
+      console.debug("no this.popup");
+      return;
     }
-    if (e.animationName === "dropdownHide") {
-      el.classList.add("hidden");
-      el.classList.remove("animateHide");
-      this.isActive = false;
+
+    if (!this.dropdown) {
+      console.debug("no this.dropdown");
+      return;
     }
-  };
+
+    await stopAnimations(this.dropdown);
+    await animateTo(this.dropdown, dropdownHide, dropdownTiming);
+
+    this.dropdown.hidden = true;
+    this.popup.active = false;
+  }
 
   public show() {
     this.open = true;
