@@ -220,6 +220,7 @@ Browsertrix provides smart scoping rules for the following sites:
 |-------------------|---------------|----------------------|
 | Facebook          | facebook.com  | Timeline             |
 | Instagram         | instagram.com | Profile              |
+| YouTube           | youtube.com   | Channel, Playlist    |
 
 ##### Custom Scoping Rules
 
