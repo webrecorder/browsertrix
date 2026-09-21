@@ -305,10 +305,15 @@
   }
 
   /* Adjust menu item hover and focus styles */
-  sl-option:not([aria-selected="true"]):not(:disabled),
+  sl-option:not([aria-selected="true"]):not(:disabled):not([tabindex="0"]),
   sl-menu-item:not([disabled]),
   btrix-menu-item-link {
     @apply part-[base]:bg-white part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
+  }
+
+  /* Current option styles */
+  sl-option[tabindex="0"] {
+    @apply part-[base]:bg-cyan-50/50 part-[base]:text-cyan-700;
   }
 
   sl-option[aria-selected="true"],
