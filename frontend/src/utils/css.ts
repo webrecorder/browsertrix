@@ -99,6 +99,9 @@ export const animatePulse = css`
   }
 `;
 
+/**
+ * @deprecated Use web animations API `animations/dropdown.ts`
+ */
 export const dropdown = css`
   .dropdown {
     contain: layout size;
