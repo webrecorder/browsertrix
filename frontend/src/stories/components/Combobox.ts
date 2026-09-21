@@ -10,8 +10,15 @@ export type RenderProps = Combobox & { content?: TemplateResult };
 export const renderComponent = (props: Partial<RenderProps>) => {
   return html`<btrix-combobox
     label=${ifDefined(props.label)}
+    value=${ifDefined(props.value)}
+    displayValue=${ifDefined(props.displayValue)}
     ?open=${props.open}
-    @request-close=${console.debug}
+    ?clearable=${props.clearable}
+    @btrix-select=${console.debug}
+    @btrix-hide=${console.debug}
+    @btrix-after-hide=${console.debug}
+    @btrix-show=${console.debug}
+    @btrix-after-show=${console.debug}
   >
     ${props.content}
   </btrix-combobox>`;

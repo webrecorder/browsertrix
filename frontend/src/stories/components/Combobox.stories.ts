@@ -37,19 +37,9 @@ const data = Array.from({ length: 100 }).map(() => ({
   id: faker.string.nanoid(),
   label: faker.word.words({ count: { min: 1, max: 5 } }),
 }));
-const menuItems = data.slice(0, 10).map(
-  ({ id, label }) =>
-    html`<sl-menu-item
-      slot="menu-item"
-      id=${id}
-      @mouseover=${
-        // HACK Fixes https://github.com/shoelace-style/shoelace/issues/1676
-        (e: Event) => e.stopImmediatePropagation()
-      }
-    >
-      ${label}
-    </sl-menu-item>`,
-);
+const menuItems = data
+  .slice(0, 10)
+  .map(({ id, label }) => html`<sl-option value=${id}>${label}</sl-option>`);
 
 export const WithItems: Story = {
   args: {
@@ -64,17 +54,26 @@ export const WithoutItems: Story = {
   },
 };
 
-export const AddNewWithoutItems: Story = {
-  args: {
-    label: "Label",
-    content: html`<sl-menu-item slot="new-menu-item">Add New</sl-menu-item>`,
-  },
-};
-
 export const AddNewWithItems: Story = {
   args: {
     label: "Label",
-    content: html`<sl-menu-item slot="new-menu-item">Add New</sl-menu-item>
+    content: html`<sl-option slot="new-option">Add New</sl-option>
       ${menuItems}`,
+  },
+};
+
+export const AddNewWithoutItems: Story = {
+  args: {
+    label: "Label",
+    content: html`<sl-option slot="new-option">Add New</sl-option>`,
+  },
+};
+
+export const ValueWithItems: Story = {
+  args: {
+    label: "Label",
+    value: data[1].id,
+    displayValue: data[1].label,
+    content: html`${menuItems}`,
   },
 };

@@ -1,12 +1,17 @@
-import type { SlInput, SlMenu, SlPopup } from "@shoelace-style/shoelace";
+import type {
+  SlInput,
+  SlMenu,
+  SlOption,
+  SlPopup,
+} from "@shoelace-style/shoelace";
 import clsx from "clsx";
 import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { focusable } from "tabbable";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import { HasSlotController } from "@/controllers/slot";
+import { type BtrixSelectEvent } from "@/events/btrix-select";
 import { animateTo, stopAnimations } from "@/utils/animations";
 import {
   dropdownHide,
@@ -15,12 +20,21 @@ import {
 } from "@/utils/animations/dropdown";
 import { tw } from "@/utils/tailwind";
 
+export type ComboboxSelectEvent = BtrixSelectEvent<SlOption>;
+
+const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
+  !!el && "tagName" in el && el.tagName.toLowerCase() === "sl-option";
+
 /**
  * Input that opens a popup of autocomplete options.
  *
- * @slot new-menu-item
- * @slot menu-item
- * @fires btrix-close
+ * @slot new-option
+ *
+ * @fires btrix-select
+ * @fires btrix-hide
+ * @fires btrix-after-hide
+ * @fires btrix-show
+ * @fires btrix-after-show
  */
 @customElement("btrix-combobox")
 export class Combobox extends TailwindElement {
@@ -60,6 +74,9 @@ export class Combobox extends TailwindElement {
   @state()
   private inputHasFocus = false;
 
+  @state()
+  private currentOption?: SlOption;
+
   @query("#dropdown")
   private readonly dropdown?: HTMLDivElement;
 
@@ -74,8 +91,7 @@ export class Combobox extends TailwindElement {
 
   private readonly hasSlotController = new HasSlotController(
     this,
-    "new-menu-item",
-    "menu-item",
+    "new-option",
   );
 
   protected updated(changedProperties: PropertyValues<this>) {
@@ -89,8 +105,8 @@ export class Combobox extends TailwindElement {
   }
 
   render() {
-    const hasNew = this.hasSlotController.test("new-menu-item");
-    const hasItems = this.hasSlotController.test("menu-item");
+    const hasNew = this.hasSlotController.test("new-option");
+    const hasItems = this.hasSlotController.test("[default]");
 
     return html`
       <sl-popup
@@ -107,7 +123,7 @@ export class Combobox extends TailwindElement {
           slot="anchor"
           class="part-[prefix]:pointer-events-none part-[suffix]:pointer-events-none"
           placeholder=${ifDefined(this.placeholder)}
-          value=${this.displayValue || ""}
+          value=${this.displayValue || this.value || ""}
           ?clearable=${this.clearable && !!this.value}
           ?disabled=${this.disabled}
           role="combobox"
@@ -115,15 +131,9 @@ export class Combobox extends TailwindElement {
           aria-controls="combobox-list"
           aria-expanded="${this.open}"
           autocomplete="false"
-          @keydown=${this.open && this.handleKeyDown}
+          @keydown=${this.handleInputKeyDown}
           @click=${this.handleInputClick}
-          @focus=${() => {
-            this.handleInputFocus();
-
-            if (!this.popup?.active && (hasNew || hasItems)) {
-              this.show();
-            }
-          }}
+          @focus=${this.handleInputFocus}
           @focusout=${this.handleInputFocusOut}
         >
           ${this.label
@@ -134,7 +144,7 @@ export class Combobox extends TailwindElement {
           ${this.loading
             ? html`<sl-spinner slot="prefix"></sl-spinner>`
             : nothing}
-          ${hasItems
+          ${hasNew || hasItems
             ? html`<sl-icon
                 slot="suffix"
                 class=${clsx(
@@ -156,19 +166,86 @@ export class Combobox extends TailwindElement {
             class="max-h-[--auto-size-available-height]"
             role="listbox"
             aria-labelledby="combobox-list-label"
-            @sl-select=${this.handleSelect}
             @focusout=${this.handleMenuFocusOut}
+            @keydown=${this.handleMenuKeyDown}
+            @click=${this.handleMenuClick}
           >
-            <slot name="new-menu-item"></slot>
+            <slot name="new-option"></slot>
             ${hasNew && hasItems ? html`<sl-divider></sl-divider>` : nothing}
-            <slot name="menu-item"></slot>
+            <slot @slotchange=${this.handleSlotChange}></slot>
           </sl-menu>
         </div>
       </sl-popup>
     `;
   }
 
-  private readonly handleSelect = () => {
+  private canOpen() {
+    const hasNew = this.hasSlotController.test("new-option");
+    const hasItems = this.hasSlotController.test("[default]");
+
+    return hasNew || hasItems;
+  }
+
+  private getAllOptions() {
+    return Array.from(this.childNodes).filter(
+      (node): node is SlOption =>
+        node.nodeType === node.ELEMENT_NODE && isOption(node as HTMLElement),
+    );
+  }
+
+  private getFirstOption() {
+    const options = this.getAllOptions();
+
+    return options.find((el) => !el.disabled);
+  }
+
+  private getLastOption() {
+    const options = this.getAllOptions();
+
+    return options.findLast((el) => !el.disabled);
+  }
+
+  private setCurrentOption(option: SlOption | null) {
+    const allOptions = this.getAllOptions();
+
+    // Clear selection
+    allOptions.forEach((el) => {
+      el.current = false;
+      el.tabIndex = -1;
+    });
+
+    // Select the target option
+    if (option) {
+      this.currentOption = option;
+      option.current = true;
+      option.tabIndex = 0;
+    }
+  }
+
+  private readonly handleSlotChange = () => {
+    this.getAllOptions().forEach((el) => {
+      if (this.value !== undefined && el.value === this.value) {
+        el.selected = true;
+      }
+      el.addEventListener("mouseover", this.handleOptionMouseOver, {
+        capture: true,
+      });
+    });
+  };
+
+  private readonly handleOptionMouseOver = (e: Event) => {
+    // HACK Fixes https://github.com/shoelace-style/shoelace/issues/1676
+    e.stopImmediatePropagation();
+
+    this.setCurrentOption(e.currentTarget as SlOption);
+  };
+
+  private readonly selectOption = (el: SlOption) => {
+    this.dispatchEvent(
+      new CustomEvent<ComboboxSelectEvent["detail"]>("btrix-select", {
+        detail: { item: el },
+      }),
+    );
     this.hide();
   };
 
@@ -178,79 +255,142 @@ export class Combobox extends TailwindElement {
     }
   };
 
-  // TODO Consolidate with `select-collection-thumbnail`
-  private getFirstFocusable() {
-    if (!this.menu) {
-      console.debug("no this.menu");
-      return false;
-    }
+  private readonly onNavigationKeyDown = (e: KeyboardEvent) => {
+    if (["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
+      const allOptions = this.getAllOptions();
+      const currentIndex = this.currentOption
+        ? allOptions.indexOf(this.currentOption)
+        : -1;
+      let newIndex = Math.max(0, currentIndex);
 
-    const options = focusable(this.menu, { getShadowRoot: true });
+      // Prevent scrolling
+      e.preventDefault();
 
-    if (options.length) {
-      return options[0];
-    }
-  }
+      // Open it
+      if (!this.open) {
+        this.show();
 
-  // TODO Consolidate with `select-collection-thumbnail`
-  private getLastFocusable() {
-    if (!this.menu) {
-      console.debug("no this.menu");
-      return false;
-    }
-
-    const options = focusable(this.menu, { getShadowRoot: true });
-
-    if (options.length) {
-      return options[options.length - 1];
-    }
-  }
-
-  // TODO Consolidate with `select-collection-thumbnail`
-  private readonly handleKeyDown = (e: KeyboardEvent) => {
-    switch (e.key) {
-      case "Tab":
-      case "ArrowDown": {
-        const focusable = this.getFirstFocusable();
-        if (focusable) {
-          e.stopPropagation();
-          focusable.focus();
+        // If an option is already selected, stop here because we want that one to remain highlighted when the listbox
+        // opens for the first time
+        if (this.currentOption) {
+          return;
         }
-        break;
       }
-      case "ArrowUp": {
-        const focusable = this.getLastFocusable();
-        if (focusable) {
-          e.stopPropagation();
-          focusable.focus();
-        }
-        break;
+
+      if (e.key === "ArrowDown") {
+        newIndex = currentIndex + 1;
+        if (newIndex > allOptions.length - 1) newIndex = 0;
+      } else if (e.key === "ArrowUp") {
+        newIndex = currentIndex - 1;
+        if (newIndex < 0) newIndex = allOptions.length - 1;
+      } else if (e.key === "Home") {
+        newIndex = 0;
+      } else if (e.key === "End") {
+        newIndex = allOptions.length - 1;
       }
-      case "Enter":
-      case " ": {
-        // Prevent making selection
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      }
-      default:
-        break;
+
+      const option = allOptions[newIndex];
+      this.setCurrentOption(option);
     }
   };
 
-  private readonly handleKeyUp = async (e: KeyboardEvent) => {
+  private readonly handleMenuKeyDown = (e: KeyboardEvent) => {
+    // Close when pressing escape
+    if (e.key === "Escape" && this.open) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.hide();
+      this.input?.focus({ preventScroll: true });
+    }
+
+    // Handle enter and space
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // If it's not open, open it
+      if (!this.open) {
+        this.show();
+        return;
+      }
+
+      // If it is open, update the value based on the current selection and close it
+      if (this.currentOption && !this.currentOption.disabled) {
+        this.selectOption(this.currentOption);
+      }
+
+      return;
+    }
+
+    // Navigate menu
+    this.onNavigationKeyDown(e);
+
+    // All other "printable" keys trigger type to select
+    if ((e.key && e.key.length === 1) || e.key === "Backspace") {
+      // Don't block important key combos like CMD+R
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      // Open, unless the key that triggered is backspace
+      if (!this.open) {
+        if (e.key === "Backspace") {
+          return;
+        }
+
+        this.show();
+      }
+
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  private readonly handleMenuClick = (e: MouseEvent) => {
+    if (isOption(e.target)) {
+      this.selectOption(e.target);
+    }
+  };
+
+  private readonly handleInputKeyDown = (e: KeyboardEvent) => {
+    if (this.open) {
+      if (e.key === "Enter") {
+        if (this.input?.value) {
+          // TODO Find matching option
+        } else {
+          if (this.currentOption) {
+            this.selectOption(this.currentOption);
+          }
+        }
+      }
+
+      this.onNavigationKeyDown(e);
+    } else {
+      if (e.key !== "Escape" && this.canOpen()) {
+        this.show();
+      }
+    }
+  };
+
+  private readonly handleKeyUp = (e: KeyboardEvent) => {
     if (this.open && e.key === "Escape") {
       this.hide();
-      await this.updateComplete;
-      this.dispatchEvent(new CustomEvent("btrix-close"));
     }
   };
 
   private readonly handleInputClick = (e: MouseEvent) => {
     if (e.target !== e.currentTarget) return;
 
-    if (!this.inputHasFocus && !this.open) {
-      this.input?.focus();
+    if (!this.inputHasFocus) {
+      this.input?.focus({ preventScroll: true });
+    }
+
+    if (this.open) {
+      this.hide();
+    } else {
+      if (this.canOpen()) {
+        this.show();
+      }
     }
   };
 
@@ -259,12 +399,8 @@ export class Combobox extends TailwindElement {
     this.input?.select();
   };
 
-  private readonly handleInputFocusOut = (e: FocusEvent) => {
+  private readonly handleInputFocusOut = () => {
     this.inputHasFocus = false;
-
-    if (!e.relatedTarget) {
-      this.hide();
-    }
   };
 
   private async openDropdown() {
@@ -278,9 +414,23 @@ export class Combobox extends TailwindElement {
       return;
     }
 
+    this.dispatchEvent(new CustomEvent("btrix-show"));
+    this.addOpenListeners();
+
     await stopAnimations(this.dropdown);
+
     this.dropdown.hidden = false;
     this.popup.active = true;
+
+    if (!this.currentOption) {
+      const firstOption = this.getFirstOption();
+
+      if (firstOption) {
+        this.setCurrentOption(firstOption);
+      } else {
+        console.debug("no firstOption");
+      }
+    }
 
     // // Manually sync dropdown width instead of using `sync="width"`
     // // to get around ResizeObserver loop error
@@ -292,7 +442,9 @@ export class Combobox extends TailwindElement {
     //   }
     // }
 
-    return animateTo(this.dropdown, dropdownShow, dropdownTiming);
+    await animateTo(this.dropdown, dropdownShow, dropdownTiming);
+
+    this.dispatchEvent(new CustomEvent("btrix-after-show"));
   }
 
   private async closeDropdown() {
@@ -306,12 +458,37 @@ export class Combobox extends TailwindElement {
       return;
     }
 
+    this.dispatchEvent(new CustomEvent("btrix-hide"));
+    this.removeOpenListeners();
+
     await stopAnimations(this.dropdown);
     await animateTo(this.dropdown, dropdownHide, dropdownTiming);
 
+    this.currentOption = undefined;
+
     this.dropdown.hidden = true;
     this.popup.active = false;
+
+    this.dispatchEvent(new CustomEvent("btrix-after-hide"));
   }
+
+  private addOpenListeners() {
+    document.addEventListener("focusin", this.handleOutsideEvent);
+    document.addEventListener("click", this.handleOutsideEvent);
+  }
+
+  private removeOpenListeners() {
+    document.removeEventListener("focusin", this.handleOutsideEvent);
+    document.removeEventListener("click", this.handleOutsideEvent);
+  }
+
+  private readonly handleOutsideEvent = (e: Event) => {
+    // Close when focusing out of the select
+    const path = e.composedPath();
+    if ((this as unknown) && !path.includes(this)) {
+      this.hide();
+    }
+  };
 
   public show() {
     this.open = true;
