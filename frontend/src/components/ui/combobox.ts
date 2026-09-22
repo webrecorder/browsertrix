@@ -26,7 +26,9 @@ const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
   !!el && "tagName" in el && el.tagName.toLowerCase() === "sl-option";
 
 /**
- * Input that opens a popup of autocomplete options.
+ * A combobox is a form input that combines text input with a popup of predefined options.
+ * Typing into the text input narrows down the options, or optionally allows users to add
+ * a new option.
  *
  * @slot new-option
  *

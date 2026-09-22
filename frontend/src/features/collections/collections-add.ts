@@ -63,7 +63,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @query("#search-input")
   private readonly input?: SlInput | null;
 
-  @query("btrix-combobox")
+  @query("btrix-autocomplete")
   private readonly combobox?: Combobox | null;
 
   // Map collection names to ID for managing search options
@@ -152,7 +152,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
     const disabled = !collections?.length;
 
     return html`
-      <btrix-combobox
+      <btrix-autocomplete
         @request-close=${() => {
           this.combobox?.hide();
           if (this.input) this.input.value = "";
@@ -214,7 +214,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
           )}
         </sl-input>
         ${this.renderSearchResults()}
-      </btrix-combobox>
+      </btrix-autocomplete>
     `;
   }
 
