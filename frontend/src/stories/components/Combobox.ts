@@ -19,7 +19,8 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     ?disabled=${props.disabled}
     ?open=${props.open}
     ?clearable=${props.clearable}
-    @btrix-select=${console.debug}
+    @btrix-select-new=${console.debug}
+    @btrix-change=${console.debug}
     @btrix-hide=${console.debug}
     @btrix-after-hide=${console.debug}
     @btrix-show=${console.debug}
