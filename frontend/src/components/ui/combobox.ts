@@ -9,12 +9,18 @@ import type {
 import clsx from "clsx";
 import Fuse from "fuse.js";
 import { css, html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { FormControlController } from "@/controllers/formControl";
 import { HasSlotController } from "@/controllers/slot";
+import { type BtrixChangeEvent } from "@/events/btrix-change";
 import { type BtrixSelectEvent } from "@/events/btrix-select";
 import { FormControl } from "@/mixins/FormControl";
 import { validationMessageFor } from "@/strings/validation";
@@ -26,7 +32,8 @@ import {
 } from "@/utils/animations/dropdown";
 import { tw } from "@/utils/tailwind";
 
-export type ComboboxSelectEvent = BtrixSelectEvent<SlOption>;
+export type ComboboxChangeEvent = BtrixChangeEvent<string>;
+export type ComboboxSelectNewEvent = BtrixSelectEvent<SlOption>;
 
 const SEARCH_KEY = "_searchValue";
 
@@ -41,7 +48,8 @@ const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
  * @slot new-option
  * @slot help-text
  *
- * @fires btrix-select
+ * @fires btrix-change
+ * @fires btrix-select-new
  * @fires btrix-clear
  * @fires btrix-hide
  * @fires btrix-after-hide
@@ -121,6 +129,9 @@ export class Combobox extends FormControl(TailwindElement) {
   @query("sl-input")
   private readonly input?: SlInput;
 
+  @queryAssignedElements({ selector: "sl-option" })
+  private readonly options?: SlOption[];
+
   readonly #fuse = new Fuse<SlOption>([], {
     threshold: 0.2, // stricter; default is 0.6
     keys: [SEARCH_KEY],
@@ -130,7 +141,6 @@ export class Combobox extends FormControl(TailwindElement) {
     "help-text",
     "new-option",
   );
-  readonly #formControl = new FormControlController(this);
 
   public setCustomValidity(message: string) {
     if (message) {
@@ -264,7 +274,7 @@ export class Combobox extends FormControl(TailwindElement) {
             ${hasNew && hasOptions
               ? html`<sl-divider ?hidden=${noResults}></sl-divider>`
               : nothing}
-            <slot @slotchange=${this.handleSlotChange}></slot>
+            <slot @slotchange=${this.handleOptionsSlotChange}></slot>
           </sl-menu>
         </div>
       </sl-popup>
@@ -278,6 +288,7 @@ export class Combobox extends FormControl(TailwindElement) {
     return hasNew || hasOptions;
   }
 
+  // All options, including new
   private getAllOptions() {
     return Array.from(this.childNodes).filter(
       (node): node is SlOption =>
@@ -296,18 +307,18 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private getFirstOption() {
-    const options = this.getAllOptions();
+    const options = this.options;
     const results = this.getSearchResults();
 
     if (results.size) {
-      return options.find((el) => !el.disabled && results.has(el));
+      return options?.find((el) => !el.disabled && results.has(el));
     }
 
-    return options.find((el) => !el.disabled);
+    return options?.find((el) => !el.disabled);
   }
 
   private getOptionByValue(value: string) {
-    return this.getAllOptions().find((el) => el.value === value);
+    return this.options?.find((el) => el.value === value);
   }
 
   private setCurrentOption(option: SlOption | null) {
@@ -328,7 +339,7 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private setSelectedOption(option: SlOption | null) {
-    if (option) {
+    if (option && !option.disabled) {
       option.selected = true;
       this.value = option.value;
       this.displayValue = option.getTextLabel() || "";
@@ -354,14 +365,16 @@ export class Combobox extends FormControl(TailwindElement) {
       el.selected = false;
     });
 
-    this.setSelectedOption(option?.value ? option : null);
+    this.setSelectedOption(option);
   }
 
-  private readonly handleSlotChange = () => {
-    const options = this.getAllOptions();
+  private readonly handleOptionsSlotChange = (e: Event) => {
+    const options = (e.target as HTMLSlotElement)
+      .assignedElements()
+      .filter(isOption);
 
     options.forEach((el) => {
-      if (this.value && el.value === this.value) {
+      if (el.value === this.value) {
         this.setSelectedOption(el);
       }
 
@@ -389,13 +402,27 @@ export class Combobox extends FormControl(TailwindElement) {
   };
 
   private readonly selectOption = (el: SlOption) => {
-    this.selectedChanged(el);
+    if (el.slot === "new-option") {
+      this.dispatchEvent(
+        new CustomEvent<ComboboxSelectNewEvent["detail"]>("btrix-select-new", {
+          detail: { item: el },
+        }),
+      );
+    } else {
+      const nextValue = el.value;
+      const hasChange = nextValue !== this.value;
 
-    this.dispatchEvent(
-      new CustomEvent<ComboboxSelectEvent["detail"]>("btrix-select", {
-        detail: { item: el },
-      }),
-    );
+      this.selectedChanged(el);
+
+      if (hasChange) {
+        this.dispatchEvent(
+          new CustomEvent<ComboboxChangeEvent["detail"]>("btrix-change", {
+            detail: { value: nextValue },
+          }),
+        );
+      }
+    }
+
     this.hide();
   };
 
@@ -641,15 +668,13 @@ export class Combobox extends FormControl(TailwindElement) {
 
   private readonly handleInput = (e: SlInputEvent) => {
     const value = (e.target as SlInput).value;
-    const options = this.getAllOptions();
+    const options = this.options;
 
     if (value) {
       this.filteredOptions = this.getSearchResults();
       let firstOption: SlOption | null = null;
 
-      options.forEach((el) => {
-        if (!el.value) return;
-
+      options?.forEach((el) => {
         el.hidden = !this.filteredOptions.has(el);
 
         if (!firstOption && !el.hidden && !el.disabled) {
@@ -675,13 +700,10 @@ export class Combobox extends FormControl(TailwindElement) {
       if (this.filteredOptions.size === 1) {
         const [option] = this.filteredOptions;
         this.selectedChanged(option);
+      } else if (this.selectedOption) {
+        this.resetInputDisplayValue();
       } else {
-        if (this.selectedOption) {
-          // this.resetValue();
-          this.resetInputDisplayValue();
-        } else {
-          this.selectedChanged(null);
-        }
+        this.selectedChanged(null);
       }
     }
   };
