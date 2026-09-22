@@ -39,6 +39,7 @@ const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
  * a new option.
  *
  * @slot new-option
+ * @slot help-text
  *
  * @fires btrix-select
  * @fires btrix-clear
