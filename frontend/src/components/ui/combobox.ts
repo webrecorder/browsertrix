@@ -9,13 +9,7 @@ import type {
 import clsx from "clsx";
 import Fuse from "fuse.js";
 import { css, html, nothing, type PropertyValues } from "lit";
-import {
-  customElement,
-  property,
-  query,
-  queryAssignedElements,
-  state,
-} from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
@@ -37,8 +31,26 @@ export type ComboboxSelectNewEvent = BtrixSelectEvent<SlOption>;
 
 const SEARCH_KEY = "_searchValue";
 
-const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
-  !!el && "tagName" in el && el.tagName.toLowerCase() === "sl-option";
+const isOption = (el: null | EventTarget | HTMLElement): el is SlOption => {
+  if (!el || !("tagName" in el)) return false;
+
+  return el.tagName.toLowerCase() === "sl-option";
+};
+
+const getOption = (el: ChildNode | HTMLElement): null | SlOption => {
+  if (!("tagName" in el)) return null;
+
+  if (isOption(el)) {
+    return el;
+  }
+
+  // Check if option is wrapped in a tooltip/popover
+  if (["sl-tooltip", "btrix-popover"].includes(el.tagName.toLowerCase())) {
+    return [...el.childNodes].find(isOption) || null;
+  }
+
+  return null;
+};
 
 /**
  * A combobox is a form input that combines text input with a popup of predefined options.
@@ -65,6 +77,10 @@ export class Combobox extends FormControl(TailwindElement) {
       :host {
         position: relative;
         z-index: 3;
+      }
+
+      ::slotted(btrix-popover) {
+        --show-delay: 300;
       }
     `,
   ];
@@ -128,9 +144,6 @@ export class Combobox extends FormControl(TailwindElement) {
 
   @query("sl-input")
   private readonly input?: SlInput;
-
-  @queryAssignedElements({ selector: "sl-option" })
-  private readonly options?: SlOption[];
 
   readonly #fuse = new Fuse<SlOption>([], {
     threshold: 0.2, // stricter; default is 0.6
@@ -290,10 +303,12 @@ export class Combobox extends FormControl(TailwindElement) {
 
   // All options, including new
   private getAllOptions() {
-    return Array.from(this.childNodes).filter(
-      (node): node is SlOption =>
-        node.nodeType === node.ELEMENT_NODE && isOption(node as HTMLElement),
-    );
+    return Array.from(this.childNodes).map(getOption).filter(isOption);
+  }
+
+  // Get options except new
+  private getOptions() {
+    return Array.from(this.childNodes).map(getOption).filter(isOption);
   }
 
   private getSearchResults() {
@@ -307,18 +322,18 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private getFirstOption() {
-    const options = this.options;
+    const options = this.getOptions();
     const results = this.getSearchResults();
 
     if (results.size) {
-      return options?.find((el) => !el.disabled && results.has(el));
+      return options.find((el) => !el.disabled && results.has(el));
     }
 
-    return options?.find((el) => !el.disabled);
+    return options.find((el) => !el.disabled);
   }
 
   private getOptionByValue(value: string) {
-    return this.options?.find((el) => el.value === value);
+    return this.getOptions().find((el) => el.value === value);
   }
 
   private setCurrentOption(option: SlOption | null) {
@@ -371,11 +386,14 @@ export class Combobox extends FormControl(TailwindElement) {
   private readonly handleOptionsSlotChange = (e: Event) => {
     const options = (e.target as HTMLSlotElement)
       .assignedElements()
+      .map(getOption)
       .filter(isOption);
 
     options.forEach((el) => {
       if (el.value === this.value) {
         this.setSelectedOption(el);
+      } else {
+        el.selected = false;
       }
 
       if (!el.disabled) {
@@ -383,9 +401,12 @@ export class Combobox extends FormControl(TailwindElement) {
           el.getTextLabel();
       }
 
-      el.addEventListener("mouseover", this.handleOptionMouseOver, {
-        capture: true,
-      });
+      // Prevent option hover from changing input focus
+      if (el.parentElement === this) {
+        el.addEventListener("mouseover", this.handleOptionMouseOver, {
+          capture: true,
+        });
+      }
     });
 
     if (!this.selectedOption) {
@@ -668,13 +689,13 @@ export class Combobox extends FormControl(TailwindElement) {
 
   private readonly handleInput = (e: SlInputEvent) => {
     const value = (e.target as SlInput).value;
-    const options = this.options;
+    const options = this.getOptions();
 
     if (value) {
       this.filteredOptions = this.getSearchResults();
       let firstOption: SlOption | null = null;
 
-      options?.forEach((el) => {
+      options.forEach((el) => {
         el.hidden = !this.filteredOptions.has(el);
 
         if (!firstOption && !el.hidden && !el.disabled) {
