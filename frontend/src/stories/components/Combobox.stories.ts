@@ -40,19 +40,38 @@ type Story = StoryObj<RenderProps>;
 const data = Array.from({ length: 100 }).map(() => ({
   id: faker.string.nanoid(),
   label: faker.word.words({ count: { min: 1, max: 5 } }),
-  suffix: faker.word.words({ count: 1 }),
+  detail: faker.word.words({ count: 1 }),
 }));
-const menuItems = data.slice(0, 10).map(
-  ({ id, label, suffix }) =>
-    html`<sl-option value=${id}
-      >${label}
-      <btrix-badge slot="suffix">${suffix}</btrix-badge>
-    </sl-option>`,
-);
+const menuItems = data
+  .slice(0, 10)
+  .map(({ id, label }) => html`<sl-option value=${id}>${label}</sl-option>`);
 
 export const WithItems: Story = {
   args: {
     content: html`${menuItems}`,
+  },
+};
+
+export const OptionsWithSuffix: Story = {
+  args: {
+    content: html`${data.slice(0, 10).map(
+      ({ id, label, detail }) =>
+        html`<sl-option value=${id}
+          >${label}
+          <btrix-badge slot="suffix">${detail}</btrix-badge>
+        </sl-option>`,
+    )}`,
+  },
+};
+
+export const OptionsWithPopover: Story = {
+  args: {
+    content: html`${data.slice(0, 10).map(
+      ({ id, label, detail }) =>
+        html`<btrix-popover content=${detail} placement="right">
+          <sl-option value=${id}>${label}</sl-option>
+        </btrix-popover>`,
+    )}`,
   },
 };
 
