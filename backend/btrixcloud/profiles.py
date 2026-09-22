@@ -616,6 +616,8 @@ class ProfileOps:
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
+        await self.orgs.remove_profile_from_crawling_defaults(profileid, org)
+
         return {"success": True, "storageQuotaReached": quota_reached}
 
     async def delete_profile_browser(self, browserid: str) -> dict[str, bool]:

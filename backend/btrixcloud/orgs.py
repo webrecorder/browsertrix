@@ -1755,6 +1755,23 @@ class OrgOps(BaseOrgs):
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
             )
 
+    async def remove_profile_from_crawling_defaults(
+        self, profileid: UUID, org: Organization
+    ):
+        """Remove profile from crawling defaults"""
+        try:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id, "crawlingDefaults.profileid": profileid},
+                {"$set": {"crawlingDefaults.profileid": None}},
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            logger.exception(
+                "org_profile_defaults_remove_error",
+                profileid=profileid,
+                oid=org.id,
+            )
+
     async def update_org_note(
         self,
         org: Organization,
