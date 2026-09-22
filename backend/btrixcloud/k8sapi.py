@@ -4,6 +4,7 @@ import os
 from typing import Any
 
 import structlog
+import jinja2
 import yaml
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
@@ -37,7 +38,10 @@ class K8sAPI:
         self.custom_resources = {}
 
         self.templates = Jinja2Templates(
-            directory=get_templates_dir(), autoescape=False
+            env=jinja2.Environment(
+                autoescape=False,
+                loader=jinja2.FileSystemLoader(get_templates_dir()),
+            ),
         )
 
         config.load_incluster_config()
