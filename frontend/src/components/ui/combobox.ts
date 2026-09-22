@@ -166,13 +166,20 @@ export class Combobox extends FormControl(TailwindElement) {
   formResetCallback() {
     super.formResetCallback();
 
-    this.resetValue();
+    this.resetToDefault();
     this.resetInputDisplayValue();
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeOpenListeners();
+  }
+
+  protected willUpdate(changedProperties: PropertyValues): void {
+    if (changedProperties.has("selectedOption")) {
+      this.value = this.selectedOption?.value || "";
+      this.displayValue = this.selectedOption?.getTextLabel() || "";
+    }
   }
 
   protected updated(changedProperties: PropertyValues<this>) {
@@ -362,8 +369,6 @@ export class Combobox extends FormControl(TailwindElement) {
   private setSelectedOption(option: SlOption | null) {
     if (option && !option.disabled) {
       option.selected = true;
-      this.value = option.value;
-      this.displayValue = option.getTextLabel() || "";
       this.selectedOption = option;
     } else {
       this.selectedOption = undefined;
@@ -416,7 +421,7 @@ export class Combobox extends FormControl(TailwindElement) {
     });
 
     if (!this.selectedOption) {
-      this.resetValue();
+      this.resetToDefault();
     }
 
     this.filteredOptions = new Set();
@@ -672,12 +677,10 @@ export class Combobox extends FormControl(TailwindElement) {
     this.dispatchEvent(new CustomEvent("btrix-after-hide"));
   }
 
-  private resetValue() {
-    this.value = this.defaultValue || "";
-    this.displayValue =
-      (this.defaultValue &&
-        this.getOptionByValue(this.defaultValue)?.getTextLabel()) ||
-      "";
+  private resetToDefault() {
+    this.selectedOption =
+      (this.defaultValue && this.getOptionByValue(this.defaultValue)) ||
+      undefined;
   }
 
   private resetInputDisplayValue() {
