@@ -125,7 +125,11 @@ export class Combobox extends FormControl(TailwindElement) {
     threshold: 0.2, // stricter; default is 0.6
     keys: [SEARCH_KEY],
   });
-  readonly #hasSlotController = new HasSlotController(this, "new-option");
+  readonly #hasSlotController = new HasSlotController(
+    this,
+    "help-text",
+    "new-option",
+  );
   readonly #formControl = new FormControlController(this);
 
   public setCustomValidity(message: string) {
@@ -175,12 +179,64 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   render() {
+    const hasHelpText =
+      !!this.helpText || this.#hasSlotController.test("help-text");
     const hasNew = this.#hasSlotController.test("new-option");
     const hasOptions = this.#hasSlotController.test("[default]");
     const noResults = Boolean(this.input?.value && !this.filteredOptions.size);
 
     return html`
+      <sl-input
+        id="input"
+        class="part-[prefix]:pointer-events-none part-[suffix]:pointer-events-none"
+        placeholder=${ifDefined(this.placeholder)}
+        value=${this.displayValue}
+        ?clearable=${this.clearable}
+        ?required=${this.required}
+        ?disabled=${this.disabled || !(hasNew || hasOptions)}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="combobox-list"
+        aria-expanded="${this.open}"
+        autocomplete="false"
+        @keydown=${this.handleInputKeyDown}
+        @click=${this.handleInputClick}
+        @focus=${this.handleInputFocus}
+        @focusout=${this.handleInputFocusOut}
+        @sl-input=${this.handleInput}
+        @sl-change=${this.handleChange}
+        @sl-clear=${this.handleClear}
+      >
+        ${this.label
+          ? html`<span id="combobox-list-label" slot="label"
+              >${this.label}</span
+            >`
+          : html`<slot name="label" slot="label"></slot>`}
+        ${this.loading
+          ? html`<sl-spinner slot="prefix"></sl-spinner>`
+          : nothing}
+        ${hasNew || hasOptions
+          ? html`<sl-icon
+              slot="suffix"
+              class=${clsx(
+                tw`flex items-center transition-transform`,
+                this.open ? tw`-rotate-180` : tw`rotate-0`,
+              )}
+              library="system"
+              name="chevron-down"
+            ></sl-icon>`
+          : nothing}
+      </sl-input>
+
+      <div class="form-help-text" ?hidden=${!hasHelpText}>
+        <slot name="help-text">${this.helpText}</slot>
+      </div>
+
       <sl-popup
+        anchor=${
+          // An ID is used as the popup anchor to correct positioning when there is help text
+          "input"
+        }
         placement="bottom-start"
         flip
         shift
@@ -190,49 +246,6 @@ export class Combobox extends FormControl(TailwindElement) {
         auto-size-padding="10"
         @keyup=${this.handleKeyUp}
       >
-        <sl-input
-          slot="anchor"
-          class="part-[prefix]:pointer-events-none part-[suffix]:pointer-events-none"
-          placeholder=${ifDefined(this.placeholder)}
-          value=${this.displayValue}
-          ?clearable=${this.clearable}
-          ?required=${this.required}
-          ?disabled=${this.disabled || !(hasNew || hasOptions)}
-          role="combobox"
-          aria-autocomplete="list"
-          aria-controls="combobox-list"
-          aria-expanded="${this.open}"
-          autocomplete="false"
-          @keydown=${this.handleInputKeyDown}
-          @click=${this.handleInputClick}
-          @focus=${this.handleInputFocus}
-          @focusout=${this.handleInputFocusOut}
-          @sl-input=${this.handleInput}
-          @sl-change=${this.handleChange}
-          @sl-clear=${this.handleClear}
-        >
-          ${this.label
-            ? html`<span id="combobox-list-label" slot="label"
-                >${this.label}</span
-              >`
-            : html`<slot name="label" slot="label"></slot>`}
-          ${this.loading
-            ? html`<sl-spinner slot="prefix"></sl-spinner>`
-            : nothing}
-          ${hasNew || hasOptions
-            ? html`<sl-icon
-                slot="suffix"
-                class=${clsx(
-                  tw`flex items-center transition-transform`,
-                  this.open ? tw`-rotate-180` : tw`rotate-0`,
-                )}
-                library="system"
-                name="chevron-down"
-              ></sl-icon>`
-            : nothing}
-          <slot name="help-text" slot="help-text">${this.helpText}</slot>
-        </sl-input>
-
         <div
           id="dropdown"
           class="origin-top-left shadow-md contain-[layout_size]"
