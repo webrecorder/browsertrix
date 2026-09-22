@@ -206,6 +206,7 @@ export class Combobox extends FormControl(TailwindElement) {
       !!this.helpText || this.#hasSlotController.test("help-text");
     const hasNew = this.#hasSlotController.test("new-option");
     const hasOptions = this.#hasSlotController.test("[default]");
+    const emptySelected = this.selectedOption && !this.selectedOption.value;
     const noResults = Boolean(this.input?.value && !this.filteredOptions.size);
 
     return html`
@@ -213,8 +214,8 @@ export class Combobox extends FormControl(TailwindElement) {
         id="input"
         class="part-[prefix]:pointer-events-none part-[suffix]:pointer-events-none"
         placeholder=${ifDefined(this.placeholder)}
-        value=${this.displayValue}
-        ?clearable=${this.clearable}
+        value=${emptySelected ? "" : this.displayValue}
+        ?clearable=${this.clearable && !emptySelected}
         ?required=${this.required}
         ?disabled=${this.disabled || !(hasNew || hasOptions)}
         role="combobox"
@@ -333,7 +334,7 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private getOptionByValue(value: string) {
-    return this.getOptions().find((el) => el.value === value);
+    return this.getOptions().find((el) => el.value === value) || null;
   }
 
   private setCurrentOption(option: SlOption | null) {
@@ -713,7 +714,8 @@ export class Combobox extends FormControl(TailwindElement) {
     const value = (e.target as SlInput).value;
 
     if (!value && this.value) {
-      this.selectedChanged(null);
+      // Check if there's an option with empty value
+      this.selectedChanged(this.getOptionByValue(""));
       this.filteredOptions = new Set();
     } else {
       this.filteredOptions = this.getSearchResults();
@@ -730,7 +732,7 @@ export class Combobox extends FormControl(TailwindElement) {
   };
 
   private readonly handleClear = () => {
-    this.selectedChanged(null);
+    this.selectedChanged(this.getOptionByValue(""));
 
     this.dispatchEvent(new CustomEvent("btrix-clear"));
   };
