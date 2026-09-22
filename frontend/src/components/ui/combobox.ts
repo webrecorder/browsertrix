@@ -1,17 +1,23 @@
 import type {
+  SlChangeEvent,
   SlInput,
+  SlInputEvent,
   SlMenu,
   SlOption,
   SlPopup,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
+import Fuse from "fuse.js";
 import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
+import { FormControlController } from "@/controllers/formControl";
 import { HasSlotController } from "@/controllers/slot";
 import { type BtrixSelectEvent } from "@/events/btrix-select";
+import { FormControl } from "@/mixins/FormControl";
+import { validationMessageFor } from "@/strings/validation";
 import { animateTo, stopAnimations } from "@/utils/animations";
 import {
   dropdownHide,
@@ -21,6 +27,8 @@ import {
 import { tw } from "@/utils/tailwind";
 
 export type ComboboxSelectEvent = BtrixSelectEvent<SlOption>;
+
+const SEARCH_KEY = "_searchValue";
 
 const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
   !!el && "tagName" in el && el.tagName.toLowerCase() === "sl-option";
@@ -33,13 +41,16 @@ const isOption = (el: null | EventTarget | HTMLElement): el is SlOption =>
  * @slot new-option
  *
  * @fires btrix-select
+ * @fires btrix-clear
  * @fires btrix-hide
  * @fires btrix-after-hide
  * @fires btrix-show
  * @fires btrix-after-show
+ *
+ * @TODO Support multiple values, to replace `<btrix-tag-input>`
  */
 @customElement("btrix-combobox")
-export class Combobox extends TailwindElement {
+export class Combobox extends FormControl(TailwindElement) {
   static styles = [
     css`
       :host {
@@ -49,35 +60,53 @@ export class Combobox extends TailwindElement {
     `,
   ];
 
-  @property({ type: Boolean })
+  @property({ type: Boolean, useDefault: true })
   open = false;
 
-  @property({ type: String })
+  @property({ type: String, useDefault: true })
+  name?: string;
+
+  @property({ type: String, useDefault: true })
   label?: string;
 
-  @property({ type: String })
-  value?: string;
+  @property({ type: String, useDefault: true })
+  value = "";
 
-  @property({ type: String })
-  displayValue?: string;
+  @property({ type: String, useDefault: true })
+  defaultValue?: string;
 
-  @property({ type: String })
+  @property({ type: String, useDefault: true })
   placeholder?: string;
 
-  @property({ type: Boolean })
+  @property({ type: String, useDefault: true })
+  helpText?: string;
+
+  @property({ type: Boolean, useDefault: true })
   clearable = false;
 
-  @property({ type: Boolean })
+  @property({ type: Boolean, useDefault: true })
   disabled = false;
 
-  @property({ type: Boolean })
+  @property({ type: Boolean, useDefault: true })
+  required = false;
+
+  @property({ type: Boolean, useDefault: true })
   loading = false;
+
+  @state()
+  private displayValue = "";
 
   @state()
   private inputHasFocus = false;
 
   @state()
   private currentOption?: SlOption;
+
+  @state()
+  private selectedOption?: SlOption;
+
+  @state()
+  private filteredOptions = new Set<SlOption>();
 
   @query("#dropdown")
   private readonly dropdown?: HTMLDivElement;
@@ -91,24 +120,63 @@ export class Combobox extends TailwindElement {
   @query("sl-input")
   private readonly input?: SlInput;
 
-  private readonly hasSlotController = new HasSlotController(
-    this,
-    "new-option",
-  );
+  readonly #fuse = new Fuse<SlOption>([], {
+    threshold: 0.2, // stricter; default is 0.6
+    keys: [SEARCH_KEY],
+  });
+  readonly #hasSlotController = new HasSlotController(this, "new-option");
+  readonly #formControl = new FormControlController(this);
+
+  public setCustomValidity(message: string) {
+    if (message) {
+      this.setValidity({ customError: true }, message);
+    } else {
+      this.setValidity({});
+    }
+  }
+
+  formResetCallback() {
+    super.formResetCallback();
+
+    this.resetValue();
+    this.resetInputDisplayValue();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeOpenListeners();
+  }
 
   protected updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has("value")) {
+      this.setSelectedByValue(this.value);
+      this.setFormValue(this.value);
+    }
+
+    if (changedProperties.has("value") || changedProperties.has("required")) {
+      if (this.required && !this.value) {
+        this.setValidity(
+          { valueMissing: true },
+          validationMessageFor.valueMissing,
+        );
+      } else {
+        this.setValidity({ valueMissing: false });
+      }
+    }
+
     if (changedProperties.has("open")) {
       if (this.open) {
-        void this.openDropdown();
-      } else if (changedProperties.get("open")) {
-        void this.closeDropdown();
+        void this.handleOpen();
+      } else {
+        void this.handleClose();
       }
     }
   }
 
   render() {
-    const hasNew = this.hasSlotController.test("new-option");
-    const hasItems = this.hasSlotController.test("[default]");
+    const hasNew = this.#hasSlotController.test("new-option");
+    const hasOptions = this.#hasSlotController.test("[default]");
+    const noResults = Boolean(this.input?.value && !this.filteredOptions.size);
 
     return html`
       <sl-popup
@@ -125,9 +193,10 @@ export class Combobox extends TailwindElement {
           slot="anchor"
           class="part-[prefix]:pointer-events-none part-[suffix]:pointer-events-none"
           placeholder=${ifDefined(this.placeholder)}
-          value=${this.displayValue || this.value || ""}
-          ?clearable=${this.clearable && !!this.value}
-          ?disabled=${this.disabled}
+          value=${this.displayValue}
+          ?clearable=${this.clearable}
+          ?required=${this.required}
+          ?disabled=${this.disabled || !(hasNew || hasOptions)}
           role="combobox"
           aria-autocomplete="list"
           aria-controls="combobox-list"
@@ -137,16 +206,19 @@ export class Combobox extends TailwindElement {
           @click=${this.handleInputClick}
           @focus=${this.handleInputFocus}
           @focusout=${this.handleInputFocusOut}
+          @sl-input=${this.handleInput}
+          @sl-change=${this.handleChange}
+          @sl-clear=${this.handleClear}
         >
           ${this.label
             ? html`<span id="combobox-list-label" slot="label"
                 >${this.label}</span
               >`
-            : nothing}
+            : html`<slot name="label" slot="label"></slot>`}
           ${this.loading
             ? html`<sl-spinner slot="prefix"></sl-spinner>`
             : nothing}
-          ${hasNew || hasItems
+          ${hasNew || hasOptions
             ? html`<sl-icon
                 slot="suffix"
                 class=${clsx(
@@ -157,11 +229,13 @@ export class Combobox extends TailwindElement {
                 name="chevron-down"
               ></sl-icon>`
             : nothing}
+          <slot name="help-text" slot="help-text">${this.helpText}</slot>
         </sl-input>
 
         <div
           id="dropdown"
           class="origin-top-left shadow-md contain-[layout_size]"
+          ?hidden=${!hasNew && noResults}
         >
           <sl-menu
             id="combobox-list"
@@ -173,7 +247,9 @@ export class Combobox extends TailwindElement {
             @click=${this.handleMenuClick}
           >
             <slot name="new-option"></slot>
-            ${hasNew && hasItems ? html`<sl-divider></sl-divider>` : nothing}
+            ${hasNew && hasOptions
+              ? html`<sl-divider ?hidden=${noResults}></sl-divider>`
+              : nothing}
             <slot @slotchange=${this.handleSlotChange}></slot>
           </sl-menu>
         </div>
@@ -182,10 +258,10 @@ export class Combobox extends TailwindElement {
   }
 
   private canOpen() {
-    const hasNew = this.hasSlotController.test("new-option");
-    const hasItems = this.hasSlotController.test("[default]");
+    const hasNew = this.#hasSlotController.test("new-option");
+    const hasOptions = this.#hasSlotController.test("[default]");
 
-    return hasNew || hasItems;
+    return hasNew || hasOptions;
   }
 
   private getAllOptions() {
@@ -195,16 +271,29 @@ export class Combobox extends TailwindElement {
     );
   }
 
+  private getSearchResults() {
+    const value = this.input?.value;
+
+    if (value) {
+      return new Set(this.#fuse.search(value).map(({ item }) => item));
+    }
+
+    return new Set<SlOption>();
+  }
+
   private getFirstOption() {
     const options = this.getAllOptions();
+    const results = this.getSearchResults();
+
+    if (results.size) {
+      return options.find((el) => !el.disabled && results.has(el));
+    }
 
     return options.find((el) => !el.disabled);
   }
 
-  private getLastOption() {
-    const options = this.getAllOptions();
-
-    return options.findLast((el) => !el.disabled);
+  private getOptionByValue(value: string) {
+    return this.getAllOptions().find((el) => el.value === value);
   }
 
   private setCurrentOption(option: SlOption | null) {
@@ -224,25 +313,70 @@ export class Combobox extends TailwindElement {
     }
   }
 
+  private setSelectedOption(option: SlOption | null) {
+    if (option) {
+      option.selected = true;
+      this.value = option.value;
+      this.displayValue = option.getTextLabel() || "";
+      this.selectedOption = option;
+    } else {
+      this.selectedOption = undefined;
+    }
+
+    this.setCurrentOption(option);
+  }
+
+  private setSelectedByValue(value?: string) {
+    const el = (value !== undefined && this.getOptionByValue(value)) || null;
+
+    this.selectedChanged(el);
+  }
+
+  private selectedChanged(option: SlOption | null) {
+    const allOptions = this.getAllOptions();
+
+    // Clear selection
+    allOptions.forEach((el) => {
+      el.selected = false;
+    });
+
+    this.setSelectedOption(option?.value ? option : null);
+  }
+
   private readonly handleSlotChange = () => {
-    this.getAllOptions().forEach((el) => {
-      if (this.value !== undefined && el.value === this.value) {
-        el.selected = true;
+    const options = this.getAllOptions();
+
+    options.forEach((el) => {
+      if (this.value && el.value === this.value) {
+        this.setSelectedOption(el);
       }
+
+      if (!el.disabled) {
+        (el as SlOption & { [SEARCH_KEY]: string })[SEARCH_KEY] =
+          el.getTextLabel();
+      }
+
       el.addEventListener("mouseover", this.handleOptionMouseOver, {
         capture: true,
       });
     });
+
+    if (!this.selectedOption) {
+      this.resetValue();
+    }
+
+    this.filteredOptions = new Set();
+    this.#fuse.setCollection(options);
   };
 
   private readonly handleOptionMouseOver = (e: Event) => {
     // HACK Fixes https://github.com/shoelace-style/shoelace/issues/1676
     e.stopImmediatePropagation();
-
-    this.setCurrentOption(e.currentTarget as SlOption);
   };
 
   private readonly selectOption = (el: SlOption) => {
+    this.selectedChanged(el);
+
     this.dispatchEvent(
       new CustomEvent<ComboboxSelectEvent["detail"]>("btrix-select", {
         detail: { item: el },
@@ -357,12 +491,8 @@ export class Combobox extends TailwindElement {
   private readonly handleInputKeyDown = (e: KeyboardEvent) => {
     if (this.open) {
       if (e.key === "Enter") {
-        if (this.input?.value) {
-          // TODO Find matching option
-        } else {
-          if (this.currentOption) {
-            this.selectOption(this.currentOption);
-          }
+        if (this.currentOption) {
+          this.selectOption(this.currentOption);
         }
       }
 
@@ -405,7 +535,7 @@ export class Combobox extends TailwindElement {
     this.inputHasFocus = false;
   };
 
-  private async openDropdown() {
+  private async handleOpen() {
     if (!this.popup) {
       console.debug("no this.popup");
       return;
@@ -424,14 +554,10 @@ export class Combobox extends TailwindElement {
     this.dropdown.hidden = false;
     this.popup.active = true;
 
-    if (!this.currentOption) {
-      const firstOption = this.getFirstOption();
-
-      if (firstOption) {
-        this.setCurrentOption(firstOption);
-      } else {
-        console.debug("no firstOption");
-      }
+    if (!this.currentOption || this.currentOption !== this.selectedOption) {
+      this.setCurrentOption(
+        this.selectedOption || this.getFirstOption() || null,
+      );
     }
 
     // // Manually sync dropdown width instead of using `sync="width"`
@@ -449,7 +575,7 @@ export class Combobox extends TailwindElement {
     this.dispatchEvent(new CustomEvent("btrix-after-show"));
   }
 
-  private async closeDropdown() {
+  private async handleClose() {
     if (!this.popup) {
       console.debug("no this.popup");
       return;
@@ -466,13 +592,91 @@ export class Combobox extends TailwindElement {
     await stopAnimations(this.dropdown);
     await animateTo(this.dropdown, dropdownHide, dropdownTiming);
 
-    this.currentOption = undefined;
-
     this.dropdown.hidden = true;
     this.popup.active = false;
 
+    this.resetFilteredItems();
+
+    if (!this.displayValue) {
+      this.resetInputDisplayValue();
+    }
+
     this.dispatchEvent(new CustomEvent("btrix-after-hide"));
   }
+
+  private resetValue() {
+    this.value = this.defaultValue || "";
+    this.displayValue =
+      (this.defaultValue &&
+        this.getOptionByValue(this.defaultValue)?.getTextLabel()) ||
+      "";
+  }
+
+  private resetInputDisplayValue() {
+    if (this.input) {
+      this.input.value = this.displayValue;
+    }
+  }
+
+  private resetFilteredItems(options = this.getAllOptions()) {
+    options.forEach((el) => {
+      el.hidden = false;
+    });
+    this.filteredOptions = new Set();
+  }
+
+  private readonly handleInput = (e: SlInputEvent) => {
+    const value = (e.target as SlInput).value;
+    const options = this.getAllOptions();
+
+    if (value) {
+      this.filteredOptions = this.getSearchResults();
+      let firstOption: SlOption | null = null;
+
+      options.forEach((el) => {
+        if (!el.value) return;
+
+        el.hidden = !this.filteredOptions.has(el);
+
+        if (!firstOption && !el.hidden && !el.disabled) {
+          firstOption = el;
+        }
+
+        this.setCurrentOption(firstOption);
+      });
+    } else {
+      this.resetFilteredItems(options);
+    }
+  };
+
+  private readonly handleChange = (e: SlChangeEvent) => {
+    const value = (e.target as SlInput).value;
+
+    if (!value && this.value) {
+      this.selectedChanged(null);
+      this.filteredOptions = new Set();
+    } else {
+      this.filteredOptions = this.getSearchResults();
+
+      if (this.filteredOptions.size === 1) {
+        const [option] = this.filteredOptions;
+        this.selectedChanged(option);
+      } else {
+        if (this.selectedOption) {
+          // this.resetValue();
+          this.resetInputDisplayValue();
+        } else {
+          this.selectedChanged(null);
+        }
+      }
+    }
+  };
+
+  private readonly handleClear = () => {
+    this.selectedChanged(null);
+
+    this.dispatchEvent(new CustomEvent("btrix-clear"));
+  };
 
   private addOpenListeners() {
     document.addEventListener("focusin", this.handleOutsideEvent);

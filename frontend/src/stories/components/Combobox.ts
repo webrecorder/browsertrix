@@ -9,9 +9,14 @@ export type RenderProps = Combobox & { content?: TemplateResult };
 
 export const renderComponent = (props: Partial<RenderProps>) => {
   return html`<btrix-combobox
+    name="storybook--combobox-form-example"
     label=${ifDefined(props.label)}
+    placeholder=${ifDefined(props.placeholder)}
+    helpText=${ifDefined(props.helpText)}
     value=${ifDefined(props.value)}
-    displayValue=${ifDefined(props.displayValue)}
+    defaultValue=${ifDefined(props.defaultValue)}
+    ?required=${props.required}
+    ?disabled=${props.disabled}
     ?open=${props.open}
     ?clearable=${props.clearable}
     @btrix-select=${console.debug}
