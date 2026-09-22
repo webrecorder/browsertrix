@@ -37,7 +37,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
-const data = Array.from({ length: 100 }).map(() => ({
+const data = Array.from({ length: 50 }).map(() => ({
   id: faker.string.nanoid(),
   label: faker.word.words({ count: { min: 1, max: 5 } }),
   detail: faker.word.words({ count: 1 }),
@@ -75,6 +75,20 @@ export const OptionsWithPopover: Story = {
   },
 };
 
+export const EmptyOption: Story = {
+  args: {
+    content: html`${[
+      {
+        id: "",
+        label: "None",
+      },
+      ...data.slice(0, 9),
+    ].map(
+      ({ id, label }) => html`<sl-option value=${id}>${label}</sl-option>`,
+    )}`,
+  },
+};
+
 export const WithoutItems: Story = {
   args: {},
 };
@@ -105,9 +119,25 @@ export const WithHelpText: Story = {
     helpText: "This is help text.",
   },
 };
+
 export const Clearable: Story = {
   args: {
     ...ValueWithItems.args,
+    clearable: true,
+  },
+};
+
+export const ClearableWithEmptyOption: Story = {
+  args: {
+    content: html`${[
+      {
+        id: "",
+        label: "None",
+      },
+      ...data.slice(0, 9),
+    ].map(
+      ({ id, label }) => html`<sl-option value=${id}>${label}</sl-option>`,
+    )}`,
     clearable: true,
   },
 };
