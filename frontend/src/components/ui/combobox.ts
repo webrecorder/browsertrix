@@ -285,9 +285,7 @@ export class Combobox extends FormControl(TailwindElement) {
             @click=${this.handleMenuClick}
           >
             <slot name="new-option"></slot>
-            ${hasNew && hasOptions
-              ? html`<sl-divider ?hidden=${noResults}></sl-divider>`
-              : nothing}
+            ${hasNew && hasOptions ? html`<sl-divider></sl-divider>` : nothing}
             <slot @slotchange=${this.handleOptionsSlotChange}></slot>
           </sl-menu>
         </div>
@@ -300,6 +298,13 @@ export class Combobox extends FormControl(TailwindElement) {
     const hasOptions = this.#hasSlotController.test("[default]");
 
     return hasNew || hasOptions;
+  }
+
+  // Get all menu items
+  private getMenuChildren() {
+    return Array.from(this.childNodes).filter(
+      (node): node is HTMLElement => node.nodeType === Node.ELEMENT_NODE,
+    );
   }
 
   // All options, including new
@@ -681,7 +686,7 @@ export class Combobox extends FormControl(TailwindElement) {
     }
   }
 
-  private resetFilteredItems(options = this.getAllOptions()) {
+  private resetFilteredItems(options: HTMLElement[] = this.getAllOptions()) {
     options.forEach((el) => {
       el.hidden = false;
     });
@@ -690,23 +695,29 @@ export class Combobox extends FormControl(TailwindElement) {
 
   private readonly handleInput = (e: SlInputEvent) => {
     const value = (e.target as SlInput).value;
-    const options = this.getOptions();
+    const children = this.getMenuChildren();
 
     if (value) {
       this.filteredOptions = this.getSearchResults();
       let firstOption: SlOption | null = null;
 
-      options.forEach((el) => {
-        el.hidden = !this.filteredOptions.has(el);
+      children.forEach((el) => {
+        const opt = getOption(el);
 
-        if (!firstOption && !el.hidden && !el.disabled) {
-          firstOption = el;
+        if (isOption(opt)) {
+          el.hidden = !this.filteredOptions.has(opt);
+          if (!firstOption && !opt.hidden && !opt.disabled) {
+            firstOption = opt;
+          }
+        } else {
+          // Hide all menu children, including labels and dividers
+          el.hidden = true;
         }
-
-        this.setCurrentOption(firstOption);
       });
+
+      this.setCurrentOption(firstOption);
     } else {
-      this.resetFilteredItems(options);
+      this.resetFilteredItems(children);
     }
   };
 
