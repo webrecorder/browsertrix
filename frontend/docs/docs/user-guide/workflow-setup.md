@@ -216,11 +216,12 @@ We recommend keeping this setting enabled to ensure that pages from social media
 
 Browsertrix provides smart scoping rules for the following sites:
 
-| **Platform Name** | **Page Host** | **Applicable Pages** |
-|-------------------|---------------|----------------------|
-| Facebook          | facebook.com  | Timeline             |
-| Instagram         | instagram.com | Profile              |
-| YouTube           | youtube.com   | Channel, Playlist    |
+| **Platform Name** | **Page Host**     | **Applicable Pages** |
+|-------------------|-------------------|----------------------|
+| Facebook          | facebook.com      | Timeline             |
+| Instagram         | instagram.com     | Profile              |
+| X/Twitter         | x.com/twitter.com | Profile, Posts       |
+| YouTube           | youtube.com       | Channel, Playlist    |
 
 ##### Custom Scoping Rules
 
