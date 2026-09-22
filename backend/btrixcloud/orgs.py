@@ -1770,8 +1770,6 @@ class OrgOps(BaseOrgs):
                 "org_profile_defaults_remove_error",
                 profileid=profileid,
                 oid=org.id,
-                unstructured_message=f"Error removing profile {profileid} "
-                + "from org {org.id} defaults",
             )
 
     async def update_org_note(
