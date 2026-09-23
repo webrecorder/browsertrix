@@ -1,4 +1,5 @@
 import time
+from urllib.parse import urlencode
 from uuid import UUID
 
 import pytest
@@ -19,9 +20,16 @@ from .conftest import (
     prepare_browser_for_profile_commit,
 )
 
+PROFILE_ID = None
+PROFILE_2_ID = None
+
 
 def test_commit_browser_to_new_profile(admin_auth_headers, default_org_id, profile_id):
     assert profile_id
+
+    # Save id as global so we can use it in test parametrization
+    global PROFILE_ID
+    PROFILE_ID = profile_id
 
 
 def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_config_id):
@@ -75,6 +83,10 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
 
 def test_commit_second_profile(profile_2_id):
     assert profile_2_id
+
+    # Save id as global so we can use it in test parametrization
+    global PROFILE_2_ID
+    PROFILE_2_ID = profile_2_id
 
 
 def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2_id):
@@ -356,6 +368,68 @@ def test_commit_browser_to_existing_profile(
         "https://old.webrecorder.net",
         "https://example-com.webrecorder.net",
     ]
+
+
+@pytest.mark.parametrize(
+    "origins,origin_match,expected_profile_ids",
+    [
+        # Origin in one profile, default filter match (AND)
+        (["https://example-com.webrecorder.net"], None, [PROFILE_ID]),
+        # Origin in both profiles, default filter match (AND)
+        (["https://old.webrecorder.net"], None, [PROFILE_ID]),
+        # Origin in both profiles, explicit filter match (AND)
+        (["https://old.webrecorder.net"], "AND", [PROFILE_ID]),
+        # Origin in both profiles, explicit filter match (OR)
+        (["https://old.webrecorder.net"], "OR", [PROFILE_ID, PROFILE_2_ID]),
+        # Two origins, default filter match (AND)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            None,
+            [PROFILE_ID],
+        ),
+        # Two origins, explicit filter match (AND)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            "AND",
+            [PROFILE_ID],
+        ),
+        # Two origins, explicit filter match (OR)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            "OR",
+            [PROFILE_ID, PROFILE_2_ID],
+        ),
+        # No match (added www. prefix, which endpoint is not yet agnostic to)
+        (["https://www.example-com.webrecorder.net"], None, []),
+        # No match (origin not visited in any profiles)
+        (["https://webrecorder.net"], None, []),
+    ],
+)
+def test_list_profiles_filter_by_origins(
+    admin_auth_headers,
+    default_org_id,
+    profile_id,
+    profile_2_id,
+    origins,
+    origin_match,
+    expected_profile_ids,
+):
+    base_url = f"{API_PREFIX}/orgs/{default_org_id}/profiles"
+    params = {"origins": origins}
+    request_url = f"{base_url}?{urlencode(params, doseq=True)}"
+    if origin_match is not None:
+        request_url = f"{request_url}&originMatch={origin_match}"
+
+    r = requests.get(
+        request_url,
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == len(expected_profile_ids)
+
+    actual_ids = [profile["id"] for profile in data.get("items", [])]
+    assert sorted(actual_ids) == sorted(expected_profile_ids)
 
 
 def test_commit_reset_browser_to_existing_profile(
