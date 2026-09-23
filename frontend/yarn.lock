@@ -6409,7 +6409,7 @@ __metadata:
     regex-colorizer: "npm:^1.0.2"
     remark-gfm: "npm:^4.0.1"
     replaywebpage: "npm:^2.5.3"
-    rollup-plugin-typescript-paths: "npm:^1.5.0"
+    rollup-plugin-typescript-paths: "patch:rollup-plugin-typescript-paths@npm%3A1.5.0#~/.yarn/patches/rollup-plugin-typescript-paths-npm-1.5.0-2c800f2560.patch"
     sinon: "npm:^22.0.0"
     slugify: "npm:^1.6.9"
     storybook: "npm:^8.6.14"
@@ -14310,12 +14310,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup-plugin-typescript-paths@npm:^1.5.0":
+"rollup-plugin-typescript-paths@npm:1.5.0":
   version: 1.5.0
   resolution: "rollup-plugin-typescript-paths@npm:1.5.0"
   peerDependencies:
     typescript: ">=3.4"
   checksum: 10c0/fcdd028ab965f2e76f100ae70554409527c3047ee4a4d1de17008baec491f3f2e93143a7f604e8bd818bb0b59f9c7d2460056549767969b95129fc3c12a0afc1
+  languageName: node
+  linkType: hard
+
+"rollup-plugin-typescript-paths@patch:rollup-plugin-typescript-paths@npm%3A1.5.0#~/.yarn/patches/rollup-plugin-typescript-paths-npm-1.5.0-2c800f2560.patch":
+  version: 1.5.0
+  resolution: "rollup-plugin-typescript-paths@patch:rollup-plugin-typescript-paths@npm%3A1.5.0#~/.yarn/patches/rollup-plugin-typescript-paths-npm-1.5.0-2c800f2560.patch::version=1.5.0&hash=37bb9a"
+  peerDependencies:
+    typescript: ">=3.4"
+  checksum: 10c0/8ae24f30839bef9d1fcce8db8369ee630a44d6df0501377186503d28d33ef946490971f99b75e18cc3e5e44385f939939a668a2b114873a877b630c794b647d2
   languageName: node
   linkType: hard
 
