@@ -30,6 +30,10 @@ import { tw } from "@/utils/tailwind";
 
 export type ComboboxChangeEvent = BtrixChangeEvent<string>;
 export type ComboboxSelectNewEvent = BtrixSelectEvent<SlOption>;
+export type ComboboxSearchEvent = CustomEvent<{
+  text: string;
+  matches: { value: string; text: string }[];
+}>;
 
 const SEARCH_KEY = "_searchValue";
 
@@ -74,6 +78,7 @@ const getOption = (el: ChildNode | HTMLElement): null | SlOption => {
  *
  * @fires btrix-change
  * @fires btrix-select-new
+ * @fires btrix-search
  * @fires btrix-clear
  * @fires btrix-hide
  * @fires btrix-after-hide
@@ -799,6 +804,18 @@ export class Combobox extends FormControl(TailwindElement) {
     } else {
       this.resetFilteredItems();
     }
+
+    this.dispatchEvent(
+      new CustomEvent<ComboboxSearchEvent["detail"]>("btrix-search", {
+        detail: {
+          text: value,
+          matches: [...this.filteredOptions].map((el) => ({
+            value: el.value,
+            text: (el as SlOption & { [SEARCH_KEY]: string })[SEARCH_KEY],
+          })),
+        },
+      }),
+    );
   };
 
   private readonly handleChange = (e: SlChangeEvent) => {
