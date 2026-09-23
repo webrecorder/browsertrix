@@ -62,7 +62,7 @@ export class ArchivedItemList extends TailwindElement {
     const headerCols: { cssCol: string; cell: TemplateResult<1> | symbol }[] = [
       {
         cssCol: "min-content",
-        cell: html`<btrix-table-header-cell>
+        cell: html`<btrix-table-header-cell class="pr-1.5">
           ${msg("Status")}
         </btrix-table-header-cell>`,
       },
