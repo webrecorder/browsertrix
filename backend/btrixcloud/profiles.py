@@ -707,9 +707,11 @@ class ProfileOps:
     async def get_profile_search_values(self, org: Organization):
         """Return profile names for use in search"""
         names = await self.profiles.distinct("name", {"oid": org.id})
+        origins = await self.profiles.distinct("origins", {"oid": org.id})
         # Remove empty strings
         names = [name for name in names if name]
-        return {"names": names}
+        origins = [origin for origin in origins if origin]
+        return {"names": names, "origins": origins}
 
 
 # ============================================================================
