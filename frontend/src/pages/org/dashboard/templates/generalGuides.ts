@@ -104,7 +104,7 @@ export function generalGuides({
   return html`
     <div
       class=${clsx(
-        tw`-mx-3 @lg/card:mx-0 @lg/card:overflow-hidden @lg/card:rounded-lg @lg/card:border`,
+        tw`-mx-3 @lg/card:overflow-hidden @lg/card:rounded-lg @lg/card:border @4xl/org:mx-0`,
         classes,
       )}
     >
