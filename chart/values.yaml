@@ -68,9 +68,6 @@ name: browsertrix-cloud
 # keep empty to use hostPath (eg. on minikube)
 volume_storage_class:
 
-# storage class for crawler / redis pods, defaults to volume_storage_class
-crawler_volume_storage_class:
-
 # if set, set the node selector 'nodeType' for deployment pods
 # main_node_type:
 
