@@ -469,8 +469,13 @@ export class Combobox extends FormControl(TailwindElement) {
       this.resetToDefault();
     }
 
-    this.filteredOptions = new Set();
     this.#fuse.setCollection(options);
+
+    if (this.input?.value) {
+      this.filterOptionsByLabel(this.input.value);
+    } else {
+      this.filteredOptions = new Set();
+    }
   };
 
   private readonly handleOptionMouseOver = (e: Event) => {
@@ -747,10 +752,8 @@ export class Combobox extends FormControl(TailwindElement) {
     this.filteredOptions = new Set();
   }
 
-  private readonly handleInput = (e: SlInputEvent) => {
-    const value = (e.target as SlInput).value;
-
-    if (value) {
+  private filterOptionsByLabel(searchText: string) {
+    if (searchText) {
       this.filteredOptions = this.getSearchResults();
 
       const children = this.getMenuChildren();
@@ -802,6 +805,12 @@ export class Combobox extends FormControl(TailwindElement) {
     } else {
       this.resetFilteredItems();
     }
+  }
+
+  private readonly handleInput = (e: SlInputEvent) => {
+    const value = (e.target as SlInput).value;
+
+    this.filterOptionsByLabel(value);
 
     this.dispatchEvent(
       new CustomEvent<ComboboxSearchEvent["detail"]>("btrix-search", {
