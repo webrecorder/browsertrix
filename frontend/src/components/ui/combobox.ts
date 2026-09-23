@@ -309,7 +309,7 @@ export class Combobox extends FormControl(TailwindElement) {
             @click=${this.handleMenuClick}
           >
             <slot name="new-option"></slot>
-            ${hasNew && !this.input?.value && hasOptions
+            ${hasNew && hasOptions && !this.filteredOptions.size
               ? html`<sl-divider></sl-divider>`
               : nothing}
             <slot @slotchange=${this.handleOptionsSlotChange}></slot>
