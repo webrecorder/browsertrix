@@ -297,12 +297,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-btrix-frontend-build-
 
-      - name: Install dependencies
-        working-directory: frontend
-        env:
-          HUSKY: 0
-        run: yarn install --immutable
-
       # Check build:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
