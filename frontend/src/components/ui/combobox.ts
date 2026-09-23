@@ -29,7 +29,7 @@ import {
 import { tw } from "@/utils/tailwind";
 
 export type ComboboxChangeEvent = BtrixChangeEvent<string>;
-export type ComboboxSelectNewEvent = BtrixSelectEvent<SlOption>;
+export type ComboboxSelectEvent = BtrixSelectEvent<SlOption>;
 export type ComboboxSearchEvent = CustomEvent<{
   text: string;
   matches: { value: string; text: string }[];
@@ -77,7 +77,7 @@ const getOption = (el: ChildNode | HTMLElement): null | SlOption => {
  * @slot help-text
  *
  * @fires btrix-change
- * @fires btrix-select-new
+ * @fires btrix-select
  * @fires btrix-search
  * @fires btrix-clear
  * @fires btrix-hide
@@ -479,25 +479,23 @@ export class Combobox extends FormControl(TailwindElement) {
   };
 
   private readonly selectOption = (el: SlOption) => {
-    if (el.slot === "new-option") {
+    this.dispatchEvent(
+      new CustomEvent<ComboboxSelectEvent["detail"]>("btrix-select", {
+        detail: { item: el },
+      }),
+    );
+
+    const nextValue = el.value;
+    const hasChange = nextValue !== this.value;
+
+    this.selectedChanged(el);
+
+    if (hasChange) {
       this.dispatchEvent(
-        new CustomEvent<ComboboxSelectNewEvent["detail"]>("btrix-select-new", {
-          detail: { item: el },
+        new CustomEvent<ComboboxChangeEvent["detail"]>("btrix-change", {
+          detail: { value: nextValue },
         }),
       );
-    } else {
-      const nextValue = el.value;
-      const hasChange = nextValue !== this.value;
-
-      this.selectedChanged(el);
-
-      if (hasChange) {
-        this.dispatchEvent(
-          new CustomEvent<ComboboxChangeEvent["detail"]>("btrix-change", {
-            detail: { value: nextValue },
-          }),
-        );
-      }
     }
 
     this.hide();

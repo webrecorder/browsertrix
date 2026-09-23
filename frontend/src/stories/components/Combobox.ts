@@ -20,7 +20,7 @@ export const renderComponent = (props: Partial<RenderProps>) => {
     ?open=${props.open}
     ?clearable=${props.clearable}
     @btrix-change=${console.log}
-    @btrix-select-new=${console.log}
+    @btrix-select=${console.log}
     @btrix-search=${console.log}
     @btrix-hide=${console.debug}
     @btrix-after-hide=${console.debug}
