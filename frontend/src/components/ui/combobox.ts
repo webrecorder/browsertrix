@@ -296,7 +296,7 @@ export class Combobox extends FormControl(TailwindElement) {
       >
         <div
           id="dropdown"
-          class="origin-top-left shadow-md contain-[layout_size]"
+          class="origin-top-left shadow-md contain-layout"
           ?hidden=${!hasNew && noResults}
         >
           <sl-menu
