@@ -565,6 +565,10 @@ def test_profile_search_values(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["names"]) == sorted([PROFILE_NAME_UPDATED, PROFILE_2_NAME])
+    assert sorted(data["origins"]) == [
+        "https://example-com.webrecorder.net",
+        "https://old.webrecorder.net",
+    ]
 
 
 def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):
