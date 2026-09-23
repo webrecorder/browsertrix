@@ -167,6 +167,8 @@ data:
     namespace: {{ .Values.crawler_namespace }}
     termination_grace_secs: "{{ .Values.grace_period_secs | default 600 }}"
 
+    volume_storage_class: "{{ .Values.volume_storage_class }}"
+
     # redis
     redis_image: {{ .Values.redis_image }}
     redis_image_pull_policy: {{ .Values.redis_pull_policy }}
@@ -211,7 +213,7 @@ data:
 
     crawler_storage: "{{ .Values.crawler_storage }}"
 
-    volume_storage_class: "{{ .Values.crawler_volume_storage_class | default .Values.volume_storage_class }}"
+    volume_storage_class: "{{ .Values.volume_storage_class }}"
 
     profile_browser_cpu: "{{ .Values.profile_browser_cpu }}"
     profile_browser_memory: "{{ .Values.profile_browser_memory }}"
