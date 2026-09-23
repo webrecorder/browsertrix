@@ -309,7 +309,9 @@ export class Combobox extends FormControl(TailwindElement) {
             @click=${this.handleMenuClick}
           >
             <slot name="new-option"></slot>
-            ${hasNew && hasOptions ? html`<sl-divider></sl-divider>` : nothing}
+            ${hasNew && !this.input?.value && hasOptions
+              ? html`<sl-divider></sl-divider>`
+              : nothing}
             <slot @slotchange=${this.handleOptionsSlotChange}></slot>
           </sl-menu>
         </div>
@@ -483,7 +485,7 @@ export class Combobox extends FormControl(TailwindElement) {
     e.stopImmediatePropagation();
   };
 
-  private readonly selectOption = (el: SlOption) => {
+  private readonly selectOption = async (el: SlOption) => {
     this.dispatchEvent(
       new CustomEvent<ComboboxSelectEvent["detail"]>("btrix-select", {
         detail: { item: el },
@@ -496,6 +498,8 @@ export class Combobox extends FormControl(TailwindElement) {
     this.selectedChanged(el);
 
     if (hasChange) {
+      await this.updateComplete;
+
       this.dispatchEvent(
         new CustomEvent<ComboboxChangeEvent["detail"]>("btrix-change", {
           detail: { value: nextValue },
@@ -573,7 +577,7 @@ export class Combobox extends FormControl(TailwindElement) {
 
       // If it is open, update the value based on the current selection and close it
       if (this.currentOption && !this.currentOption.disabled) {
-        this.selectOption(this.currentOption);
+        void this.selectOption(this.currentOption);
       }
 
       return;
@@ -604,8 +608,24 @@ export class Combobox extends FormControl(TailwindElement) {
   };
 
   private readonly handleMenuClick = (e: MouseEvent) => {
-    if (isOption(e.target)) {
-      this.selectOption(e.target);
+    let el = e.target as HTMLElement;
+
+    if (!isOption(el)) {
+      // Try getting closest option
+      const parent = el.closest<HTMLElement>("btrix-combobox, sl-option");
+
+      if (parent) {
+        el = parent;
+      } else {
+        console.debug("no valid parent for el", e.target);
+        return;
+      }
+    }
+
+    if (isOption(el)) {
+      void this.selectOption(el);
+    } else {
+      console.debug("no valid el", e.target);
     }
   };
 
@@ -613,7 +633,7 @@ export class Combobox extends FormControl(TailwindElement) {
     if (this.open) {
       if (e.key === "Enter") {
         if (this.currentOption) {
-          this.selectOption(this.currentOption);
+          void this.selectOption(this.currentOption);
         }
       }
 
