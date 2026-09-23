@@ -1,0 +1,13 @@
+diff --git a/node_modules/rollup-plugin-typescript-paths/dist/index.js b/node_modules/rollup-plugin-typescript-paths/dist/index.js
+index c5ea1f9..e0e3431 100644
+--- a/node_modules/rollup-plugin-typescript-paths/dist/index.js
++++ b/node_modules/rollup-plugin-typescript-paths/dist/index.js
+@@ -41,7 +41,7 @@ var typescriptPaths = function (_a) {
+                 return null;
+             }
+             var resolvedFileName = resolvedModule.resolvedFileName;
+-            if (!resolvedFileName || resolvedFileName.endsWith('.d.ts')) {
++            if (!resolvedFileName || /\.d\.[cm]?ts$/i.test(resolvedFileName)) {
+                 return null;
+             }
+             var targetFileName = (0, path_1.join)(outDir, preserveExtensions
