@@ -151,13 +151,10 @@ export type Profile = {
   modifiedCrawlId: string | null;
   modifiedCrawlCid: string | null;
   origins: string[];
-  profileId: string;
-  baseProfileName: string;
   oid: string;
   inUse: boolean;
   resource?: {
-    name: string;
-    path: string;
+    filename: string;
     hash: string;
     size: number;
     replicas: ProfileReplica[] | null;
