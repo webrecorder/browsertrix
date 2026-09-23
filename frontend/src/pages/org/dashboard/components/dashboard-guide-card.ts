@@ -7,6 +7,7 @@ import { customElement, property } from "lit/decorators.js";
 import { TailwindElement } from "@/classes/TailwindElement";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
+import { isNewTabClick } from "@/utils/mouseEvents";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -120,7 +121,7 @@ export class DashboardGuideCard extends TailwindElement {
   }
 
   private readonly onClick = (e: MouseEvent) => {
-    if (e.metaKey) return;
+    if (isNewTabClick(e)) return;
 
     e.preventDefault();
 

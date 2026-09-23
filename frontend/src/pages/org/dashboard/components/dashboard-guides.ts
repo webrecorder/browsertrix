@@ -11,6 +11,7 @@ import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
+import { isNewTabClick } from "@/utils/mouseEvents";
 import { hasUsage } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -287,20 +288,20 @@ export class DashboardGuides extends BtrixElement {
         class="max-w-[30ch] leading-4 text-primary-700 hover:underline"
         href=${link}
         @click=${(e: MouseEvent) => {
-          if (!e.metaKey) {
-            e.preventDefault();
+          if (isNewTabClick(e)) return;
 
-            this.dispatchEvent(
-              new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
-                "btrix-user-guide-show",
-                {
-                  detail: { path },
-                  bubbles: true,
-                  composed: true,
-                },
-              ),
-            );
-          }
+          e.preventDefault();
+
+          this.dispatchEvent(
+            new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+              "btrix-user-guide-show",
+              {
+                detail: { path },
+                bubbles: true,
+                composed: true,
+              },
+            ),
+          );
         }}
         >${label}</a
       >
