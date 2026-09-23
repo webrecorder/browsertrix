@@ -787,7 +787,7 @@ export class Combobox extends FormControl(TailwindElement) {
         if (opt) {
           hidden = !this.filteredOptions.has(opt);
 
-          if (!firstOption && !opt.hidden && !opt.disabled) {
+          if (!firstOption && !hidden && !opt.disabled) {
             firstOption = opt;
           }
         } else {
