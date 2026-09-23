@@ -919,6 +919,13 @@ class CrawlOps(BaseCrawlOps):
             {"$set": {"rateLimitedAt": dt}},
         )
 
+    async def mark_crawl_stopping(self, crawl_id: str, oid: UUID):
+        """mark crawl as being stopped"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl", "oid": oid},
+            {"$set": {"stopping": True}},
+        )
+
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
     ) -> dict[str, bool]:
@@ -935,10 +942,7 @@ class CrawlOps(BaseCrawlOps):
 
             if result.get("success"):
                 if graceful:
-                    await self.crawls.find_one_and_update(
-                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                        {"$set": {"stopping": True}},
-                    )
+                    await self.mark_crawl_stopping(crawl_id, org.id)
                 return result
 
         except Exception as exc:

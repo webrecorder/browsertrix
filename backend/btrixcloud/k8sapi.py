@@ -348,9 +348,13 @@ class K8sAPI:
                 name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
             )
             return {"success": True}
-        # pylint: disable=broad-except
-        except Exception as exc:
-            logger.exception(
+
+        except ApiException as exc:
+            # ignore 404, job already finished
+            if exc.status != 404:
+                raise
+
+            logger.warning(
                 "unsuspend_k8s_job_failed",
                 name=name,
                 unstructured_message="Unsuspend k8s job failed",
@@ -419,7 +423,7 @@ class K8sAPI:
             return True
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            logger.warning(
                 "pod_metrics_check_failed",
                 namespace=self.namespace,
             )
@@ -473,7 +477,7 @@ class K8sAPI:
 
         # pylint: disable=broad-except
         except Exception:
-            signal_logger.exception(
+            signal_logger.warning(
                 "send_signal_error",
                 unstructured_message="Send Signal Error",
             )

@@ -7,10 +7,16 @@ import yaml
 
 from btrixcloud.utils import date_to_str, dt_now, run_async_task
 
-from ..models import CrawlConfig
+from ..models import TYPE_ALL_CRAWL_STATES, CrawlConfig
 from ..utils import scale_from_browser_windows
 from .baseoperator import BaseOperator
-from .models import CJS, MCDecoratorSyncData, MCDecoratorSyncResponse
+from .models import (
+    CJS,
+    JOB,
+    MCBaseRequest,
+    MCDecoratorSyncData,
+    MCDecoratorSyncResponse,
+)
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -29,6 +35,10 @@ class CronJobOperator(BaseOperator):
         ) -> MCDecoratorSyncResponse:
             return await self.sync_cronjob_crawl(data)
 
+        @app.post("/op/cronjob/customize")
+        def mc_related(data: MCBaseRequest):
+            return self.get_related(data)
+
     def get_finished_response(
         self, metadata: dict[str, str], set_status=True, finished: str | None = None
     ) -> MCDecoratorSyncResponse:
@@ -38,20 +48,30 @@ class CronJobOperator(BaseOperator):
             finished = date_to_str(dt_now())
 
         status = None
+        annotations = None
+
         # set status on decorated job to indicate that its finished
         if set_status:
             status = {
                 "succeeded": 1,
                 "startTime": metadata.get("creationTimestamp"),
                 "completionTime": finished,
+                "conditions": [
+                    {
+                        "type": "Complete",
+                        "status": "True",
+                        "lastTransitionTime": finished,
+                    }
+                ],
             }
+            annotations = {"finished": finished}
 
         run_async_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
 
         return MCDecoratorSyncResponse(
             attachments=[],
             # set on job to match default behavior when job finishes
-            annotations={"finished": finished},
+            annotations=annotations,
             status=status,
         )
 
@@ -250,8 +270,57 @@ class CronJobOperator(BaseOperator):
 
         crawljob_id = f"crawljob-{crawl_id}"
 
+        all_jobs = data.related[JOB]
+
         if crawljob_id not in crawljobs:
-            response = await self.make_new_crawljob(
+            # if more than one job, it should either be stopped
+            # or should pause existing job
+            if len(all_jobs) > 1:
+                all_paused_or_stopping = True
+                other_states = []
+                has_next_job = False
+                for key, job in all_jobs.items():
+                    if key == crawl_id:
+                        continue
+
+                    annotations = job["metadata"]["annotations"]
+                    state = annotations.get("btrix.crawlState")
+                    stopping = annotations.get("btrix.stopping") == "1"
+
+                    # placeholder for next job, not actual running crawl
+                    if state == "next-job":
+                        has_next_job = True
+                        continue
+
+                    # not processed yet, skip
+                    if not state:
+                        continue
+
+                    other_states.append(state)
+
+                    # determine if crawl is paused or is stopping
+                    all_paused_or_stopping = all_paused_or_stopping and (
+                        stopping or self.is_preempt_state(state)
+                    )
+
+                # if not all paused or stopping and if already has a placeholder
+                # 'next-job', then finish job without starting crawl
+                if not all_paused_or_stopping and has_next_job:
+                    cj_sync_logger.info(
+                        "cronjob_skip_new_job_already_running",
+                        other_states=other_states,
+                    )
+                    return self.get_finished_response(metadata)
+
+                # don't mark as finished, wait for jobs to be stopped
+                cj_sync_logger.info(
+                    "cronjob_wait_stopping_paused_jobs", other_states=other_states
+                )
+                return MCDecoratorSyncResponse(
+                    attachments=[], annotations={"btrix.crawlState": "next-job"}
+                )
+
+            return await self.make_new_crawljob(
                 UUID(cid),
                 UUID(oid) if oid else None,
                 UUID(userid) if userid else None,
@@ -259,15 +328,52 @@ class CronJobOperator(BaseOperator):
                 metadata,
                 actual_state,
             )
-        else:
-            # just return existing crawljob, filter metadata, remove status and annotations
-            crawljob = crawljobs[crawljob_id]
-            crawljob["metadata"] = {
-                "name": crawljob["metadata"]["name"],
-                "labels": crawljob["metadata"].get("labels"),
+
+        # just return existing crawljob, filter metadata, remove status and annotations
+        crawljob = crawljobs[crawljob_id]
+        name = crawljob["metadata"]["name"]
+
+        status = crawljob.pop("status", {})
+        state = status.get("state", "unknown")
+
+        crawljob["metadata"] = {"name": name}
+
+        if len(all_jobs) > 1 and self.is_preempt_state(actual_state):
+            await self.crawl_ops.mark_crawl_stopping(crawl_id, UUID(cid))
+            crawljob["spec"]["stopping"] = True
+
+        return MCDecoratorSyncResponse(
+            attachments=[crawljob],
+            annotations={
+                "btrix.crawlState": state,
+                "btrix.stopping": "1" if crawljob["spec"].get("stopping") else "0",
+            },
+        )
+
+    def is_preempt_state(self, state: TYPE_ALL_CRAWL_STATES | None):
+        """should the crawl be preempted (stopped)
+        to start a new scheduled crawl"""
+        return state == "paused_rate_limit_time_reached"
+
+    def get_related(self, data: MCBaseRequest):
+        """return other crawljobs that are scheduled for this config"""
+
+        labels = data.parent["metadata"]["labels"]
+        cid = labels.get("btrix.crawlconfig")
+
+        # also the crawlId, exclude our current crawljob
+
+        related_resources = [
+            {
+                "apiVersion": "batch/v1",
+                "resource": "jobs",
+                "labelSelector": {
+                    "matchLabels": {
+                        "btrix.crawlconfig": cid,
+                        "role": "scheduled-crawljob",
+                    },
+                },
             }
-            crawljob.pop("status", "")
+        ]
 
-            response = MCDecoratorSyncResponse(attachments=[crawljob])
-
-        return response
+        return {"relatedResources": related_resources}
