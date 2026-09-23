@@ -35,6 +35,7 @@ import("./markdown-viewer");
 import("./menu-item-link");
 import("./meter");
 import("./numbered-list");
+import("./option-group");
 import("./overflow-dropdown");
 import("./pagination");
 import("./popover");

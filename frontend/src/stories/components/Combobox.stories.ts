@@ -106,6 +106,28 @@ export const AddNewWithoutItems: Story = {
   },
 };
 
+export const GroupedOptions: Story = {
+  args: {
+    content: html`<btrix-option-group label="Group 1">
+        ${data.slice(0, 3).map(
+          ({ id, label, detail }) =>
+            html`<btrix-popover content=${detail} placement="right">
+              <sl-option value=${id}>${label}</sl-option>
+            </btrix-popover> `,
+        )}
+      </btrix-option-group>
+      <sl-divider></sl-divider>
+      <btrix-option-group label="Group 2">
+        ${data.slice(3, 10).map(
+          ({ id, label, detail }) =>
+            html`<btrix-popover content=${detail} placement="right">
+              <sl-option value=${id}>${label}</sl-option>
+            </btrix-popover> `,
+        )}
+      </btrix-option-group>`,
+  },
+};
+
 export const ValueWithItems: Story = {
   args: {
     value: data[1].id,
