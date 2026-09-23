@@ -1,7 +1,7 @@
-diff --git a/node_modules/rollup-plugin-typescript-paths/dist/index.js b/node_modules/rollup-plugin-typescript-paths/dist/index.js
-index c5ea1f9..e0e3431 100644
---- a/node_modules/rollup-plugin-typescript-paths/dist/index.js
-+++ b/node_modules/rollup-plugin-typescript-paths/dist/index.js
+diff --git a/dist/index.js b/dist/index.js
+index c5ea1f91cdbaca6bc8bc14adb595ea8407322f13..e0e3431a8160c021b9339c1cd780b27086e23089 100644
+--- a/dist/index.js
++++ b/dist/index.js
 @@ -41,7 +41,7 @@ var typescriptPaths = function (_a) {
                  return null;
              }
