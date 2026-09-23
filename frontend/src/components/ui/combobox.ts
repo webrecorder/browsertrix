@@ -12,6 +12,8 @@ import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { OptionGroup } from "./option-group";
+
 import { TailwindElement } from "@/classes/TailwindElement";
 import { HasSlotController } from "@/controllers/slot";
 import { type BtrixChangeEvent } from "@/events/btrix-change";
@@ -31,6 +33,16 @@ export type ComboboxSelectNewEvent = BtrixSelectEvent<SlOption>;
 
 const SEARCH_KEY = "_searchValue";
 
+const isElement = (node: ChildNode): node is HTMLElement => {
+  return node.nodeType === Node.ELEMENT_NODE;
+};
+
+const isOptionGroup = (el: null | HTMLElement): el is OptionGroup => {
+  if (!el || !("tagName" in el)) return false;
+
+  return el.tagName.toLowerCase() === customElements.getName(OptionGroup);
+};
+
 const isOption = (el: null | EventTarget | HTMLElement): el is SlOption => {
   if (!el || !("tagName" in el)) return false;
 
@@ -38,7 +50,7 @@ const isOption = (el: null | EventTarget | HTMLElement): el is SlOption => {
 };
 
 const getOption = (el: ChildNode | HTMLElement): null | SlOption => {
-  if (!("tagName" in el)) return null;
+  if (!isElement(el) || !("tagName" in el)) return null;
 
   if (isOption(el)) {
     return el;
@@ -307,21 +319,48 @@ export class Combobox extends FormControl(TailwindElement) {
     return hasNew || hasOptions;
   }
 
+  private flattenChildren(nodes: ChildNode[]) {
+    const elems: HTMLElement[] = [];
+
+    nodes.forEach((node) => {
+      if (!isElement(node)) return;
+
+      if (isOptionGroup(node)) {
+        node.childNodes.forEach((n) => {
+          if (isElement(n)) {
+            elems.push(n);
+          }
+        });
+
+        return;
+      }
+
+      elems.push(node);
+    });
+
+    return elems;
+  }
+
   // Get all menu items
   private getMenuChildren() {
-    return Array.from(this.childNodes).filter(
-      (node): node is HTMLElement => node.nodeType === Node.ELEMENT_NODE,
-    );
+    return Array.from(this.childNodes).filter(isElement);
+  }
+
+  // Get ungrouped options and other menu items
+  private getFlattenedMenuChildren() {
+    return this.flattenChildren(this.getMenuChildren());
   }
 
   // All options, including new
   private getAllOptions() {
-    return Array.from(this.childNodes).map(getOption).filter(isOption);
+    return this.getFlattenedMenuChildren().map(getOption).filter(isOption);
   }
 
   // Get options except new
   private getOptions() {
-    return Array.from(this.childNodes).map(getOption).filter(isOption);
+    return this.getFlattenedMenuChildren()
+      .map(getOption)
+      .filter((el): el is SlOption => isOption(el) && !el.slot);
   }
 
   private getSearchResults() {
@@ -395,8 +434,9 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private readonly handleOptionsSlotChange = (e: Event) => {
-    const options = (e.target as HTMLSlotElement)
-      .assignedElements()
+    const options = this.flattenChildren(
+      (e.target as HTMLSlotElement).assignedElements(),
+    )
       .map(getOption)
       .filter(isOption);
 
@@ -689,38 +729,75 @@ export class Combobox extends FormControl(TailwindElement) {
     }
   }
 
-  private resetFilteredItems(options: HTMLElement[] = this.getAllOptions()) {
-    options.forEach((el) => {
+  private resetFilteredItems() {
+    this.getMenuChildren().forEach((el) => {
       el.hidden = false;
+
+      if (isOptionGroup(el)) {
+        el.childNodes.forEach((node) => {
+          if (isElement(node)) {
+            node.hidden = false;
+          }
+        });
+      }
     });
     this.filteredOptions = new Set();
   }
 
   private readonly handleInput = (e: SlInputEvent) => {
     const value = (e.target as SlInput).value;
-    const children = this.getMenuChildren();
 
     if (value) {
       this.filteredOptions = this.getSearchResults();
+
+      const children = this.getMenuChildren();
+
       let firstOption: SlOption | null = null;
 
-      children.forEach((el) => {
+      const setHidden = (el: HTMLElement) => {
         const opt = getOption(el);
+        let hidden = false;
 
-        if (isOption(opt)) {
-          el.hidden = !this.filteredOptions.has(opt);
+        if (opt) {
+          hidden = !this.filteredOptions.has(opt);
+
           if (!firstOption && !opt.hidden && !opt.disabled) {
             firstOption = opt;
           }
         } else {
-          // Hide all menu children, including labels and dividers
-          el.hidden = true;
+          // TODO Handle dividers
+          hidden = true;
+        }
+
+        el.hidden = hidden;
+
+        return hidden;
+      };
+
+      children.forEach((el) => {
+        if (isOptionGroup(el)) {
+          const options = el.childNodes;
+          let someVisible = false;
+
+          options.forEach((node) => {
+            if (isElement(node)) {
+              const hidden = setHidden(node);
+
+              if (!hidden) {
+                someVisible = true;
+              }
+            }
+          });
+
+          el.hidden = !(someVisible as boolean);
+        } else {
+          setHidden(el);
         }
       });
 
       this.setCurrentOption(firstOption);
     } else {
-      this.resetFilteredItems(children);
+      this.resetFilteredItems();
     }
   };
 
