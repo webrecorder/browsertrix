@@ -1,5 +1,6 @@
 import type {
   SlChangeEvent,
+  SlDivider,
   SlInput,
   SlInputEvent,
   SlMenu,
@@ -9,7 +10,13 @@ import type {
 import clsx from "clsx";
 import Fuse from "fuse.js";
 import { css, html, nothing, type PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAssignedElements,
+  state,
+} from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { OptionGroup } from "./option-group";
@@ -67,6 +74,8 @@ const getOption = (el: ChildNode | HTMLElement): null | SlOption => {
 
   return null;
 };
+
+const isOptionNew = (el: SlOption) => el.slot === "new-option";
 
 /**
  * A combobox is a form input that combines text input with a popup of predefined options.
@@ -162,6 +171,12 @@ export class Combobox extends FormControl(TailwindElement) {
   @query("sl-input")
   private readonly input?: SlInput;
 
+  @queryAssignedElements({ slot: "new-option", selector: "sl-option" })
+  private readonly newOption?: SlOption[];
+
+  @query("#new-option-divider")
+  private readonly newOptionDivider?: SlDivider;
+
   readonly #fuse = new Fuse<SlOption>([], {
     threshold: 0.2, // stricter; default is 0.6
     keys: [SEARCH_KEY],
@@ -194,8 +209,13 @@ export class Combobox extends FormControl(TailwindElement) {
 
   protected willUpdate(changedProperties: PropertyValues): void {
     if (changedProperties.has("selectedOption")) {
-      this.value = this.selectedOption?.value || "";
-      this.displayValue = this.selectedOption?.getTextLabel() || "";
+      if (this.selectedOption && isOptionNew(this.selectedOption)) {
+        this.value = "";
+        this.displayValue = "";
+      } else {
+        this.value = this.selectedOption?.value || "";
+        this.displayValue = this.selectedOption?.getTextLabel() || "";
+      }
     }
   }
 
@@ -309,8 +329,8 @@ export class Combobox extends FormControl(TailwindElement) {
             @click=${this.handleMenuClick}
           >
             <slot name="new-option"></slot>
-            ${hasNew && hasOptions && !this.filteredOptions.size
-              ? html`<sl-divider></sl-divider>`
+            ${hasNew && hasOptions
+              ? html`<sl-divider id="new-option-divider"></sl-divider>`
               : nothing}
             <slot @slotchange=${this.handleOptionsSlotChange}></slot>
           </sl-menu>
@@ -350,7 +370,7 @@ export class Combobox extends FormControl(TailwindElement) {
 
   // Get all menu items
   private getMenuChildren() {
-    return Array.from(this.childNodes).filter(isElement);
+    return [...this.childNodes].filter(isElement);
   }
 
   // Get ungrouped options and other menu items
@@ -414,7 +434,9 @@ export class Combobox extends FormControl(TailwindElement) {
 
   private setSelectedOption(option: SlOption | null) {
     if (option && !option.disabled) {
-      option.selected = true;
+      if (!isOptionNew(option)) {
+        option.selected = true;
+      }
       this.selectedOption = option;
     } else {
       this.selectedOption = undefined;
@@ -758,6 +780,10 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private resetFilteredItems() {
+    if (this.newOptionDivider) {
+      this.newOptionDivider.hidden = false;
+    }
+
     this.getMenuChildren().forEach((el) => {
       el.hidden = false;
 
@@ -821,9 +847,22 @@ export class Combobox extends FormControl(TailwindElement) {
         }
       });
 
+      if (!this.filteredOptions.size) {
+        const newOption = this.newOption?.[0];
+
+        if (newOption) {
+          newOption.hidden = false;
+          firstOption = newOption;
+        }
+      }
+
       this.setCurrentOption(firstOption);
     } else {
       this.resetFilteredItems();
+    }
+
+    if (this.newOptionDivider) {
+      this.newOptionDivider.hidden = !!searchText;
     }
   }
 
