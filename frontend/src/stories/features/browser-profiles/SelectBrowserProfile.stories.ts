@@ -21,6 +21,7 @@ import {
 } from "@/stories/decorators/userDecorator";
 import { type APIPaginatedList } from "@/types/api";
 import { type Profile } from "@/types/crawler";
+import { type SearchValues } from "@/utils/searchValues";
 
 const profiles = profilesMock as APIPaginatedList<Profile>;
 
@@ -50,10 +51,30 @@ const meta = {
 export default meta;
 type Story = StoryObj<RenderProps>;
 
-const getProfiles = () =>
-  http.get(/\/profiles$/, async () => {
+const getProfiles = (data = profiles) =>
+  http.get(/\/profiles$/, async ({ request }) => {
     await delay(500);
-    return HttpResponse.json<APIPaginatedList<Profile>>(profiles);
+
+    const url = new URL(request.url);
+    const params = url.searchParams;
+    const pageSize = params.get("pageSize")
+      ? +params.get("pageSize")!
+      : data.pageSize;
+
+    const resp = { ...data };
+
+    resp.pageSize = pageSize;
+    resp.items = data.items.slice(0, pageSize);
+
+    return HttpResponse.json<APIPaginatedList<Profile>>(resp);
+  });
+
+const getSearchValues = (data = profiles) =>
+  http.get(/\/profiles\/search-values/, async () => {
+    await delay(500);
+    return HttpResponse.json<SearchValues>({
+      names: data.items.map(({ name }) => name),
+    });
   });
 
 export const WithoutProfiles: Story = {
@@ -61,14 +82,17 @@ export const WithoutProfiles: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>({
-            total: 0,
-            items: [],
-            page: 1,
-            pageSize: 1000,
-          });
+        getProfiles({
+          total: 0,
+          items: [],
+          page: 1,
+          pageSize: 1000,
+        }),
+        getSearchValues({
+          total: 0,
+          items: [],
+          page: 1,
+          pageSize: 1000,
         }),
       ],
     },
@@ -82,14 +106,17 @@ export const WithoutProfilesAllowNew: Story = {
   parameters: {
     msw: {
       handlers: [
-        http.get(/\/profiles$/, async () => {
-          await delay(500);
-          return HttpResponse.json<APIPaginatedList<Profile>>({
-            total: 0,
-            items: [],
-            page: 1,
-            pageSize: 1000,
-          });
+        getProfiles({
+          total: 0,
+          items: [],
+          page: 1,
+          pageSize: 1000,
+        }),
+        getSearchValues({
+          total: 0,
+          items: [],
+          page: 1,
+          pageSize: 1000,
         }),
       ],
     },
@@ -100,7 +127,7 @@ export const WithProfiles: Story = {
   args: {},
   parameters: {
     msw: {
-      handlers: [getProfiles()],
+      handlers: [getProfiles(), getSearchValues()],
     },
   },
 };
@@ -111,7 +138,7 @@ export const WithProfilesAllowNew: Story = {
   },
   parameters: {
     msw: {
-      handlers: [getProfiles()],
+      handlers: [getProfiles(), getSearchValues()],
     },
   },
 };
@@ -122,7 +149,7 @@ export const WithValue: Story = {
   },
   parameters: {
     msw: {
-      handlers: [getProfiles()],
+      handlers: [getProfiles(), getSearchValues()],
     },
   },
 };
@@ -133,7 +160,7 @@ export const SuggestedOrigins: Story = {
   },
   parameters: {
     msw: {
-      handlers: [getProfiles()],
+      handlers: [getProfiles(), getSearchValues()],
     },
   },
 };

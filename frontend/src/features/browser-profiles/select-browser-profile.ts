@@ -3,10 +3,12 @@ import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlDrawer, SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
+import Fuse from "fuse.js";
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
+import { nanoid } from "nanoid";
 import queryString from "query-string";
 
 import type { NewBrowserProfileDialog } from "./new-browser-profile-dialog";
@@ -17,6 +19,8 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import {
   type Combobox,
   type ComboboxChangeEvent,
+  type ComboboxSearchEvent,
+  type ComboboxSelectEvent,
 } from "@/components/ui/combobox";
 import {
   orgCrawlerChannelsContext,
@@ -39,6 +43,7 @@ import type {
 import { SortDirection } from "@/types/utils";
 import { getDefaultProxyId } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
+import { type SearchValues } from "@/utils/searchValues";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
@@ -52,8 +57,15 @@ const isFullProfile = (
   profile: SelectedProfile | Profile,
 ): profile is Profile => "modified" in profile || "created" in profile;
 
-// TODO Paginate results
-const INITIAL_PAGE_SIZE = 1000;
+enum SearchStrategy {
+  // Search using `search-values` API
+  SearchValues,
+  // Client-side search
+  Client,
+}
+
+const TEMP_ID_PREFIX = "#temp";
+const CLIENT_SEARCH_MAX_PAGE_SIZE = 50;
 
 export type SelectBrowserProfileChangeEvent =
   CustomEvent<SelectBrowserProfileChangeDetail>;
@@ -99,6 +111,9 @@ export class SelectBrowserProfile extends BtrixElement {
   @property({ type: Boolean })
   allowNew = false;
 
+  @state()
+  searchText?: string;
+
   @query("btrix-combobox")
   private readonly select?: Combobox | null;
 
@@ -108,22 +123,77 @@ export class SelectBrowserProfile extends BtrixElement {
   @query("btrix-new-browser-profile-dialog")
   private readonly newBrowserProfileDialog?: NewBrowserProfileDialog | null;
 
+  // Assign temporary IDs when searching by name
+  #searchValuesMap = new Map</* ID: */ string, /* name: */ string>();
+
   public get value() {
     return this.select?.value;
+  }
+
+  private get searchStrategy() {
+    if (!this.profilesTask.value) return;
+
+    if (this.profilesTask.value.total > CLIENT_SEARCH_MAX_PAGE_SIZE) {
+      return SearchStrategy.SearchValues;
+    }
+
+    return SearchStrategy.Client;
   }
 
   private readonly profilesTask = new Task(this, {
     task: async (_args, { signal }) => {
       return this.getProfiles(
         {
-          sortBy: "name",
-          sortDirection: SortDirection.Ascending,
-          pageSize: INITIAL_PAGE_SIZE,
+          sortBy: "modified",
+          sortDirection: SortDirection.Descending,
+          pageSize: CLIENT_SEARCH_MAX_PAGE_SIZE,
         },
         signal,
       );
     },
     args: () => [] as const,
+  });
+
+  private readonly searchValuesTask = new Task(this, {
+    task: async (_args, { signal }) => {
+      if (this.searchStrategy !== SearchStrategy.SearchValues) return;
+
+      const { names } = await this.getSearchValues(signal);
+      const values: { value: string; label: string }[] = [];
+
+      this.#searchValuesMap = new Map();
+
+      names.forEach((name) => {
+        const tempId = `${TEMP_ID_PREFIX}${nanoid()}`;
+
+        this.#searchValuesMap.set(tempId, name);
+        values.push({ value: tempId, label: name });
+      });
+
+      return values;
+    },
+    args: () => [this.profilesTask.value?.total] as const,
+  });
+
+  private readonly searchDbTask = new Task(this, {
+    task: async ([values]) => {
+      if (!values) return;
+
+      return new Fuse<{ value: string; label: string }>(values, {
+        threshold: 0.2, // stricter; default is 0.6,
+        keys: ["label"],
+      });
+    },
+    args: () => [this.searchValuesTask.value] as const,
+  });
+
+  private readonly searchResultsTask = new Task(this, {
+    task: async ([fuse, text]) => {
+      if (!fuse || !text) return [];
+
+      return fuse.search(text).map(({ item }) => item);
+    },
+    args: () => [this.searchDbTask.value, this.searchText] as const,
   });
 
   private readonly selectedProfileTask = new Task(this, {
@@ -169,9 +239,10 @@ export class SelectBrowserProfile extends BtrixElement {
         placeholder=${browserProfiles ? stringFor.none : msg("Loading")}
         clearable
         ?loading=${loading}
+        @btrix-clear=${this.handleClear}
+        @btrix-search=${this.handleSearch}
         @btrix-change=${this.handleChange}
-        @btrix-search=${console.log}
-        @btrix-select-new=${this.handleSelectNew}
+        @btrix-select=${this.handleSelect}
       >
         ${this.renderProfileOptions()}
         <div slot="help-text" class="flex justify-between">
@@ -267,6 +338,7 @@ export class SelectBrowserProfile extends BtrixElement {
         <sl-option
           value=${profile.id}
           class=${clsx(
+            tw`content-auto`,
             tw`part-[base]:flex-wrap`,
             tw`part-[label]:basis-1/2 part-[label]:overflow-hidden`,
             tw`part-[suffix]:basis-full part-[suffix]:overflow-hidden`,
@@ -284,27 +356,64 @@ export class SelectBrowserProfile extends BtrixElement {
     `;
 
     const profiles = browserProfiles.items;
-    const priorityOrigins = this.suggestOrigins;
-    const suggestions: Profile[] = [];
-    let rest: Profile[] = [];
 
-    if (priorityOrigins?.length) {
-      profiles.forEach((profile) => {
-        const { origins } = profile;
-        if (
-          origins.some((origin) =>
-            priorityOrigins.includes(
-              new URL(origin).hostname.replace(/^www\./, ""),
-            ),
-          )
-        ) {
-          suggestions.push(profile);
-        } else {
-          rest.push(profile);
-        }
-      });
+    let options: TemplateResult | undefined;
+
+    if (
+      this.searchStrategy === SearchStrategy.SearchValues &&
+      this.searchText
+    ) {
+      options = html`${this.searchResultsTask.value?.map(
+        ({ value, label }) =>
+          html`<sl-option value=${value}>${label}</sl-option>`,
+      )}`;
     } else {
-      rest = profiles;
+      const priorityOrigins = this.suggestOrigins;
+      const suggestions: Profile[] = [];
+      let rest: Profile[] = [];
+
+      if (priorityOrigins?.length) {
+        profiles.forEach((profile) => {
+          const { origins } = profile;
+          if (
+            origins.some((origin) =>
+              priorityOrigins.includes(
+                new URL(origin).hostname.replace(/^www\./, ""),
+              ),
+            )
+          ) {
+            suggestions.push(profile);
+          } else {
+            rest.push(profile);
+          }
+        });
+      } else {
+        rest = profiles;
+      }
+
+      options = html` ${suggestions.length
+        ? html`<sl-divider class="first:hidden"></sl-divider>
+            <btrix-option-group
+              class="peer"
+              label=${msg("Suggested Profiles")}
+              ?hidden=${!!this.searchText}
+            >
+              ${suggestions.map(option)}
+            </btrix-option-group> `
+        : nothing}
+      ${rest.length
+        ? html`<sl-divider
+              class="first:hidden peer-[hidden]:hidden"
+            ></sl-divider>
+            <btrix-option-group
+              label=${suggestions.length
+                ? msg("Other Saved Profiles")
+                : msg("Saved Profiles")}
+              ?hidden=${!!this.searchText}
+            >
+              ${rest.map(option)}
+            </btrix-option-group> `
+        : nothing}`;
     }
 
     return html`
@@ -319,26 +428,9 @@ export class SelectBrowserProfile extends BtrixElement {
       ${profiles.length
         ? html`<sl-option value="">${stringFor.none}</sl-option>`
         : nothing}
-      ${suggestions.length
-        ? html`<sl-divider class="first:hidden"></sl-divider>
-            <btrix-option-group class="peer" label=${msg("Suggested Profiles")}>
-              ${suggestions.map(option)}
-            </btrix-option-group> `
-        : nothing}
-      ${rest.length
-        ? html`<sl-divider
-              class="first:hidden peer-[hidden]:hidden"
-            ></sl-divider>
-            <btrix-option-group
-              label=${suggestions.length
-                ? msg("Other Saved Profiles")
-                : msg("Saved Profiles")}
-            >
-              ${rest.map(option)}
-            </btrix-option-group> `
-        : nothing}
+      ${options}
       ${when(
-        !this.allowNew && !profiles.length,
+        !this.allowNew && !browserProfiles.total,
         () =>
           html`<div
             class="flex flex-wrap items-center justify-between gap-3 px-4 py-2 text-neutral-500"
@@ -462,58 +554,89 @@ export class SelectBrowserProfile extends BtrixElement {
     </btrix-desc-list>`;
   };
 
-  private handleSelectNew() {
-    if (this.newBrowserProfileDialog) {
-      this.newBrowserProfileDialog.show();
-    } else {
-      console.debug("no <btrix-new-browser-profile-dialog>");
+  private handleClear() {
+    this.searchText = "";
+    this.selectedProfile = undefined;
+  }
+
+  // Since the menu is not paginated, switch search strategy to use search-values API
+  // if there are more profiles than shown in the menu
+  private async handleSearch(e: ComboboxSearchEvent) {
+    if (this.searchStrategy !== SearchStrategy.SearchValues) {
+      return;
+    }
+
+    this.searchText = e.detail.text;
+  }
+
+  private async handleSelect(e: ComboboxSelectEvent) {
+    const option = e.detail.item;
+
+    this.searchText = "";
+
+    if (option.slot === "new-option") {
+      if (this.newBrowserProfileDialog) {
+        this.newBrowserProfileDialog.show();
+      } else {
+        console.debug("no <btrix-new-browser-profile-dialog>");
+      }
     }
   }
 
   private async handleChange(e: ComboboxChangeEvent) {
-    const el = e.currentTarget as SlSelect;
-    const profileId = el.value as string;
+    const prevProfileId = this.selectedProfile?.id || this.profileId;
+    const profileId = e.detail.value;
 
-    if (!profileId) {
-      e.preventDefault();
+    if (profileId) {
+      if (profileId.startsWith(TEMP_ID_PREFIX)) {
+        const name = this.#searchValuesMap.get(profileId);
 
-      // Revert value
-      el.value = this.profileId || "";
+        if (name) {
+          const profile = await this.getProfileByName(name);
 
-      console.debug("no e.value");
-      return;
+          if (profile) {
+            this.selectedProfile = profile;
+          } else {
+            console.debug("no profile with name", name);
+          }
+
+          return;
+        } else {
+          console.debug("no name for profile with ID", profileId);
+          return;
+        }
+      } else {
+        this.selectedProfile = this.findProfileById(profileId);
+      }
+    } else {
+      if (this.select) {
+        // Revert value
+        this.select.value = this.profileId || "";
+      }
+
+      this.selectedProfile = undefined;
     }
-
-    this.selectedProfile = this.findProfileById(profileId);
 
     await this.updateComplete;
 
-    this.dispatchEvent(
-      new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
-        detail: {
-          value: this.selectedProfile,
-        },
-      }),
-    );
+    if (profileId !== prevProfileId) {
+      this.dispatchEvent(
+        new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
+          detail: {
+            value: this.selectedProfile,
+          },
+        }),
+      );
+    }
   }
 
   private async getProfiles(
-    params: {
-      userid?: string;
-      tags?: string[];
-      tagMatch?: string;
-    } & APIPaginationQuery &
-      APISortQuery,
+    params: APIPaginationQuery & APISortQuery,
     signal: AbortSignal,
   ) {
-    const query = queryString.stringify(
-      {
-        ...params,
-      },
-      {
-        arrayFormat: "none", // For tags
-      },
-    );
+    const query = queryString.stringify({
+      ...params,
+    });
 
     const data = await this.api.fetch<APIPaginatedList<Profile>>(
       `/orgs/${this.orgId}/profiles?${query}`,
@@ -523,6 +646,15 @@ export class SelectBrowserProfile extends BtrixElement {
     return data;
   }
 
+  private async getSearchValues(signal: AbortSignal) {
+    return this.api.fetch<SearchValues>(
+      `/orgs/${this.orgId}/profiles/search-values`,
+      {
+        signal,
+      },
+    );
+  }
+
   private async getProfile(id: string, signal: AbortSignal) {
     const data = await this.api.fetch<Profile>(
       `/orgs/${this.orgId}/profiles/${id}`,
@@ -530,5 +662,19 @@ export class SelectBrowserProfile extends BtrixElement {
     );
 
     return data;
+  }
+
+  private async getProfileByName(name: string, signal?: AbortSignal) {
+    const query = queryString.stringify({
+      name,
+      pageSize: 1,
+    });
+
+    const data = await this.api.fetch<APIPaginatedList<Profile>>(
+      `/orgs/${this.orgId}/profiles?${query}`,
+      { signal },
+    );
+
+    return (data.items[0] as Profile | undefined) || null;
   }
 }
