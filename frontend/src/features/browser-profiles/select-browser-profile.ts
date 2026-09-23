@@ -1,13 +1,9 @@
 import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
-import type {
-  SlChangeEvent,
-  SlDrawer,
-  SlSelect,
-} from "@shoelace-style/shoelace";
+import type { SlDrawer, SlSelect } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
@@ -18,6 +14,10 @@ import { originsWithRemainder } from "./templates/origins-with-remainder";
 import { type ProfileUpdatedEvent } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  type Combobox,
+  type ComboboxChangeEvent,
+} from "@/components/ui/combobox";
 import {
   orgCrawlerChannelsContext,
   type OrgCrawlerChannelsContext,
@@ -54,7 +54,6 @@ const isFullProfile = (
 
 // TODO Paginate results
 const INITIAL_PAGE_SIZE = 1000;
-const NEW_PROFILE_KEY = "_new";
 
 export type SelectBrowserProfileChangeEvent =
   CustomEvent<SelectBrowserProfileChangeDetail>;
@@ -100,8 +99,8 @@ export class SelectBrowserProfile extends BtrixElement {
   @property({ type: Boolean })
   allowNew = false;
 
-  @query("sl-select")
-  private readonly select?: SlSelect | null;
+  @query("btrix-combobox")
+  private readonly select?: Combobox | null;
 
   @query("sl-drawer")
   private readonly drawer?: SlDrawer | null;
@@ -110,7 +109,7 @@ export class SelectBrowserProfile extends BtrixElement {
   private readonly newBrowserProfileDialog?: NewBrowserProfileDialog | null;
 
   public get value() {
-    return this.select?.value as string;
+    return this.select?.value;
   }
 
   private readonly profilesTask = new Task(this, {
@@ -164,18 +163,16 @@ export class SelectBrowserProfile extends BtrixElement {
     const loading = !browserProfiles && !this.profileName;
 
     return html`
-      <sl-select
+      <btrix-combobox
         label=${msg("Browser Profile")}
         value=${this.profileId || selectedProfile?.id || ""}
         placeholder=${browserProfiles ? stringFor.none : msg("Loading")}
-        size=${ifDefined(this.size)}
-        hoist
         clearable
-        @sl-change=${this.onChange}
-        @sl-hide=${this.stopProp}
-        @sl-after-hide=${this.stopProp}
+        ?loading=${loading}
+        @btrix-change=${this.handleChange}
+        @btrix-search=${console.log}
+        @btrix-select-new=${this.handleSelectNew}
       >
-        ${loading ? html`<sl-spinner slot="prefix"></sl-spinner>` : nothing}
         ${this.renderProfileOptions()}
         <div slot="help-text" class="flex justify-between">
           ${selectedProfile && isFullProfile(selectedProfile)
@@ -196,7 +193,7 @@ export class SelectBrowserProfile extends BtrixElement {
               `
             : nothing}
         </div>
-      </sl-select>
+      </btrix-combobox>
 
       ${browserProfiles || selectedProfile
         ? this.renderSelectedProfileInfo()
@@ -277,7 +274,7 @@ export class SelectBrowserProfile extends BtrixElement {
           )}
         >
           <span class="font-medium">${profile.name}</span>
-          <div slot="suffix" class="w-full pl-2.5 pt-0.5">
+          <div slot="suffix" class="pointer-events-none w-full pl-2.5 pt-0.5">
             ${originsWithRemainder(profile.origins, {
               disablePopover: true,
             })}
@@ -311,51 +308,49 @@ export class SelectBrowserProfile extends BtrixElement {
     }
 
     return html`
-      ${profiles.length
-        ? html`<sl-option value="">${stringFor.none}</sl-option>`
-        : nothing}
       ${when(
         this.allowNew,
         () =>
-          html`${profiles.length ? html`<sl-divider></sl-divider>` : nothing}
-            <sl-option value=${NEW_PROFILE_KEY}>
-              <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("New Browser Profile")}
-            </sl-option>`,
+          html`<sl-option slot="new-option">
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("New Browser Profile")}
+          </sl-option>`,
       )}
+      ${profiles.length
+        ? html`<sl-option value="">${stringFor.none}</sl-option>`
+        : nothing}
       ${suggestions.length
-        ? html`
-            <sl-divider></sl-divider>
-            <sl-menu-label> ${msg("Suggested Profiles")} </sl-menu-label>
-            ${suggestions.map(option)}
-          `
+        ? html`<sl-divider class="first:hidden"></sl-divider>
+            <btrix-option-group class="peer" label=${msg("Suggested Profiles")}>
+              ${suggestions.map(option)}
+            </btrix-option-group> `
         : nothing}
       ${rest.length
-        ? html`
-            <sl-divider></sl-divider>
-            <sl-menu-label
-              >${suggestions.length
+        ? html`<sl-divider
+              class="first:hidden peer-[hidden]:hidden"
+            ></sl-divider>
+            <btrix-option-group
+              label=${suggestions.length
                 ? msg("Other Saved Profiles")
-                : msg("Saved Profiles")}</sl-menu-label
+                : msg("Saved Profiles")}
             >
-            ${rest.map(option)}
-          `
+              ${rest.map(option)}
+            </btrix-option-group> `
         : nothing}
       ${when(
         !this.allowNew && !profiles.length,
         () =>
-          html`<sl-menu-label
-            class="part-[base]:flex part-[base]:items-center part-[base]:justify-between"
+          html`<div
+            class="flex flex-wrap items-center justify-between gap-3 px-4 py-2 text-neutral-500"
           >
             <span>${msg("No browser profiles found.")}</span>
             <btrix-link
-              class="ml-auto"
               href="${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}"
               target="_blank"
             >
               ${msg("Manage Profiles")}
             </btrix-link>
-          </sl-menu-label>`,
+          </div>`,
       )}
     `;
   }
@@ -467,21 +462,25 @@ export class SelectBrowserProfile extends BtrixElement {
     </btrix-desc-list>`;
   };
 
-  private async onChange(e: SlChangeEvent) {
+  private handleSelectNew() {
+    if (this.newBrowserProfileDialog) {
+      this.newBrowserProfileDialog.show();
+    } else {
+      console.debug("no <btrix-new-browser-profile-dialog>");
+    }
+  }
+
+  private async handleChange(e: ComboboxChangeEvent) {
     const el = e.currentTarget as SlSelect;
     const profileId = el.value as string;
 
-    if (profileId === NEW_PROFILE_KEY) {
+    if (!profileId) {
       e.preventDefault();
 
       // Revert value
       el.value = this.profileId || "";
 
-      if (this.newBrowserProfileDialog) {
-        this.newBrowserProfileDialog.show();
-      } else {
-        console.debug("no <btrix-new-browser-profile-dialog>");
-      }
+      console.debug("no e.value");
       return;
     }
 
@@ -531,14 +530,5 @@ export class SelectBrowserProfile extends BtrixElement {
     );
 
     return data;
-  }
-
-  /**
-   * Stop propagation of sl-select events.
-   * Prevents bug where sl-dialog closes when dropdown closes
-   * https://github.com/shoelace-style/shoelace/issues/170
-   */
-  private stopProp(e: CustomEvent) {
-    e.stopPropagation();
   }
 }
