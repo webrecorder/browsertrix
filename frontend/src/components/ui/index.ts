@@ -1,7 +1,9 @@
 import "./alert";
+import "./autocomplete";
 import "./badge";
 import "./button";
 import "./card";
+import "./combobox";
 import "./data-table";
 import "./desc-list";
 import "./dialog";
@@ -13,7 +15,6 @@ import "./tab-list";
 import "./url-input";
 
 import("./code");
-import("./combobox");
 import("./config-details");
 import("./copy-button");
 import("./copy-field");
@@ -34,6 +35,7 @@ import("./markdown-viewer");
 import("./menu-item-link");
 import("./meter");
 import("./numbered-list");
+import("./option-group");
 import("./overflow-dropdown");
 import("./pagination");
 import("./popover");

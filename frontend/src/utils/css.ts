@@ -99,9 +99,12 @@ export const animatePulse = css`
   }
 `;
 
+/**
+ * @deprecated Use web animations API `animations/dropdown.ts`
+ */
 export const dropdown = css`
   .dropdown {
-    contain: content;
+    contain: layout size;
     transform-origin: top left;
     box-shadow: var(--sl-shadow-medium);
   }
