@@ -172,7 +172,11 @@ export class SelectBrowserProfile extends BtrixElement {
 
       return values;
     },
-    args: () => [this.profilesTask.value?.total] as const,
+    args: () =>
+      [
+        this.profilesTask.value?.total,
+        this.profilesTask.value?.pageSize,
+      ] as const,
   });
 
   private readonly searchDbTask = new Task(this, {
@@ -393,11 +397,7 @@ export class SelectBrowserProfile extends BtrixElement {
 
       options = html` ${suggestions.length
         ? html`<sl-divider class="first:hidden"></sl-divider>
-            <btrix-option-group
-              class="peer"
-              label=${msg("Suggested Profiles")}
-              ?hidden=${!!this.searchText}
-            >
+            <btrix-option-group class="peer" label=${msg("Suggested Profiles")}>
               ${suggestions.map(option)}
             </btrix-option-group> `
         : nothing}
@@ -409,7 +409,6 @@ export class SelectBrowserProfile extends BtrixElement {
               label=${suggestions.length
                 ? msg("Other Saved Profiles")
                 : msg("Saved Profiles")}
-              ?hidden=${!!this.searchText}
             >
               ${rest.map(option)}
             </btrix-option-group> `
@@ -559,28 +558,26 @@ export class SelectBrowserProfile extends BtrixElement {
     this.selectedProfile = undefined;
   }
 
-  // Since the menu is not paginated, switch search strategy to use search-values API
-  // if there are more profiles than shown in the menu
   private async handleSearch(e: ComboboxSearchEvent) {
-    if (this.searchStrategy !== SearchStrategy.SearchValues) {
-      return;
-    }
-
     this.searchText = e.detail.text;
   }
 
   private async handleSelect(e: ComboboxSelectEvent) {
     const option = e.detail.item;
 
-    this.searchText = "";
-
     if (option.slot === "new-option") {
       if (this.newBrowserProfileDialog) {
+        if (this.searchText) {
+          this.newBrowserProfileDialog.defaultName = this.searchText;
+        }
+
         this.newBrowserProfileDialog.show();
       } else {
         console.debug("no <btrix-new-browser-profile-dialog>");
       }
     }
+
+    this.searchText = "";
   }
 
   private async handleChange(e: ComboboxChangeEvent) {
