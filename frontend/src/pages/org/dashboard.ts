@@ -43,7 +43,7 @@ import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
-import { track } from "@/utils/analytics";
+import { track, type AnalyticsTrackProps } from "@/utils/analytics";
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
 import { hasUsage } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
@@ -360,6 +360,12 @@ export class Dashboard extends BtrixElement {
               },
             ),
           );
+
+          const trackProps = {
+            trialing: this.appState.isTrialing,
+            has_usage: hasUsage(this.org),
+          } satisfies AnalyticsTrackProps;
+          track(AnalyticsTrackEvent.ClickSearchGuides, trackProps);
         }}
       >
         <sl-icon slot="prefix" name="search"></sl-icon>
