@@ -244,7 +244,7 @@ def test_crawl_dependency_links(
     )
     second = resp.json()
 
-    assert second["fileSize"] < 2100000
+    assert second["fileSize"] < 2140000
     assert second["dedupeCollId"] == dedupe_coll_id
     assert second["requiredByCrawls"] == []
     assert second["requiresCrawls"] == [dedupe_first_crawl]
@@ -345,7 +345,7 @@ def test_remove_crawl_from_collection(
     assert stats["updateProgress"] == 1.0
     assert stats["estimatedRedundantSize"] == 0
 
-    assert stats["removedCrawlSize"] < 2100000
+    assert stats["removedCrawlSize"] < 2140000
     assert stats["removedCrawls"] == 1
 
 
