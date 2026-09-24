@@ -65,7 +65,7 @@ export function listControls({
             ${renderBulkActionsControl
               ? html`<div
                   class=${clsx(
-                    tw`peer hidden items-center gap-2 text-neutral-500 @3xl/controls:absolute @3xl/controls:flex @3xl/controls:h-full @3xl/controls:translate-y-full @3xl/controls:opacity-0 @3xl/controls:transition-all @3xl/controls:delay-75`,
+                    tw`peer hidden items-center gap-2 text-neutral-500 @3xl/controls:absolute @3xl/controls:flex @3xl/controls:h-full @3xl/controls:translate-y-full @3xl/controls:opacity-0 @3xl/controls:delay-75 @3xl/controls:motion-safe:transition-all`,
                     tw`@3xl/controls:hover:translate-y-0 @3xl/controls:hover:opacity-100`,
                     tw`@3xl/controls:has-[sl-checkbox[checked]]:translate-y-0 @3xl/controls:has-[sl-checkbox[checked]]:opacity-100`,
                     tw`@3xl/controls:has-[sl-checkbox[indeterminate]]:translate-y-0 @3xl/controls:has-[sl-checkbox[indeterminate]]:opacity-100`,
@@ -79,7 +79,7 @@ export function listControls({
                   class=${clsx(
                     tw`flex flex-wrap items-center gap-2`,
                     renderBulkActionsControl && [
-                      tw`order-first @3xl/controls:transition-all @3xl/controls:delay-75`,
+                      tw`order-first @3xl/controls:delay-75 @3xl/controls:motion-safe:transition-all`,
                       tw`@3xl/controls:peer-hover:-translate-y-full @3xl/controls:peer-hover:opacity-0 @3xl/controls:peer-hover:delay-0`,
                       tw`@3xl/controls:peer-has-[sl-checkbox[checked]]:-translate-y-full @3xl/controls:peer-has-[sl-checkbox[checked]]:opacity-0 @3xl/controls:peer-has-[sl-checkbox[checked]]:delay-0`,
                       tw`@3xl/controls:peer-has-[sl-checkbox[indeterminate]]:-translate-y-full @3xl/controls:peer-has-[sl-checkbox[indeterminate]]:opacity-0 @3xl/controls:peer-has-[sl-checkbox[indeterminate]]:delay-75`,
