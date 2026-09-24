@@ -271,6 +271,11 @@ export class APIController implements ReactiveController {
         break;
       }
       case 404: {
+        if (typeof errorDetail === "string") {
+          errorDetails = [errorDetail];
+        } else if (Array.isArray(errorDetail) && errorDetail.length) {
+          errorDetails = errorDetail;
+        }
         errorMessage = msg("Not found");
         break;
       }
