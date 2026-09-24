@@ -692,17 +692,18 @@ export class CrawlsList extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<ArchivedItem>) => html`
-    <section class="lg:mx-1">
+    <section class="group lg:mx-1">
       ${items.length
         ? html`
             <btrix-archived-item-list .listType=${this.itemType}>
               ${when(
                 this.isCrawler && this.bulkActions,
                 () => html`
-                  <btrix-table-header-cell slot="checkboxCell" class="p-0">
+                  <btrix-table-header-cell slot="checkboxCell" class="pl-3">
                     <span class="sr-only"
                       >${msg("Selected for bulk actions")}</span
                     >
+                    ${this.renderSelectAll()}
                   </btrix-table-header-cell>
                 `,
               )}
@@ -894,6 +895,27 @@ export class CrawlsList extends BtrixElement {
       )}`;
   };
 
+  private renderSelectAll() {
+    const selected = this.selectedItemIds;
+    const selectedCount = selected.size;
+    const anySelected = selectedCount > 0;
+
+    return html`<sl-tooltip
+      content=${msg("Select All")}
+      hoist
+      ?disabled=${anySelected}
+    >
+      <sl-icon-button
+        class="${tw`group-hover:[&:not([disabled])]:opacity-100`} text-base opacity-0 transition-opacity part-[base]:p-0"
+        name="check2-all"
+        ?disabled=${anySelected}
+        @click=${() => {
+          this.selectAll();
+        }}
+      ></sl-icon-button>
+    </sl-tooltip>`;
+  }
+
   private readonly renderBulkActionsControl = () => {
     const visibleCount = this.visibleItems.size;
     const selected = this.selectedItemIds;
@@ -911,9 +933,9 @@ export class CrawlsList extends BtrixElement {
             const checked = (e.target as SlCheckbox).checked;
 
             if (checked) {
-              this.selectedItemIds = new Set(this.visibleItems.keys());
+              this.selectAll();
             } else {
-              this.selectedItemIds = new Set();
+              this.clearSelection();
             }
           }}
         >
@@ -1220,6 +1242,14 @@ export class CrawlsList extends BtrixElement {
       message,
       actions: guideButton,
     });
+  }
+
+  private selectAll() {
+    this.selectedItemIds = new Set(this.visibleItems.keys());
+  }
+
+  private clearSelection() {
+    this.selectedItemIds = new Set();
   }
 
   private async getArchivedItems(
