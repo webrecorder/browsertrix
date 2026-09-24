@@ -902,7 +902,7 @@ export class CrawlsList extends BtrixElement {
     const anySelected = selectedCount > 0;
 
     return html`<sl-tooltip
-      content=${msg("Select All")}
+      content=${msg("Select All Visible")}
       hoist
       ?disabled=${anySelected}
     >
