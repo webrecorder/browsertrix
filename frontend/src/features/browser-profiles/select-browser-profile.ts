@@ -559,7 +559,7 @@ export class SelectBrowserProfile extends BtrixElement {
   }
 
   private async handleSearch(e: ComboboxSearchEvent) {
-    this.searchText = e.detail.text;
+    this.searchText = e.detail.text.trim();
   }
 
   private async handleSelect(e: ComboboxSelectEvent) {
