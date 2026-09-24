@@ -43,6 +43,7 @@ from .baseoperator import BaseOperator, Redis
 from .models import (
     BTRIX_API,
     CMAP,
+    JOB,
     POD,
     PVC,
     CrawlSpec,
@@ -331,6 +332,14 @@ class CrawlOperator(BaseOperator):
         ):
             status.rateLimitedAtTime = ""
             await self.crawl_ops.set_rate_limited_at(crawl.id, crawl.oid, None)
+
+        # should preempt paused crawl
+        if self.is_preempt_state(status.state):
+            scheduled_jobs = data.related.get(JOB, {})
+            for key in scheduled_jobs.keys():
+                if key != str(crawl.id):
+                    self.request_stop_crawl(crawl)
+                    break
 
         # setup scale
         status.scale = len(pods)
@@ -904,17 +913,29 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
+        spec = data.parent.get("spec", {})
+        coll_id = spec.get("dedupeCollId")
+        oid = spec.get("oid")
+        cid = spec.get("cid")
+        crawl_id = spec["id"]
+
         related_resources = [
             {
                 "apiVersion": "v1",
                 "resource": "configmaps",
                 "labelSelector": {"matchLabels": {"role": "has-proxy-match-hosts"}},
-            }
+            },
+            {
+                "apiVersion": "batch/v1",
+                "resource": "jobs",
+                "labelSelector": {
+                    "matchLabels": {
+                        "btrix.crawlconfig": cid,
+                        "role": "scheduled-crawljob",
+                    },
+                },
+            },
         ]
-        spec = data.parent.get("spec", {})
-        coll_id = spec.get("dedupeCollId")
-        oid = spec.get("oid")
-        crawl_id = spec["id"]
 
         if coll_id:
             related_resources.append(
@@ -1823,6 +1844,13 @@ class CrawlOperator(BaseOperator):
         )
         run_async_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
+
+    def request_stop_crawl(self, crawl: CrawlSpec):
+        """Request a crawl to be stopped, equivalent to use clicking 'stop' button"""
+        logger.info("crawl_stop_requested", craw_id=crawl.id)
+        run_async_task(
+            self.crawl_ops.shutdown_crawl(crawl.id, crawl.org, graceful=True)
+        )
 
     async def get_redis_crawl_stats(
         self, redis: Redis, crawl_id: str, status: CrawlStatus

@@ -7,10 +7,11 @@ import yaml
 
 from btrixcloud.utils import date_to_str, dt_now, run_async_task
 
-from ..models import TYPE_ALL_CRAWL_STATES, CrawlConfig
+from ..models import CrawlConfig
 from ..utils import scale_from_browser_windows
 from .baseoperator import BaseOperator
 from .models import (
+    BTRIX_API,
     CJS,
     JOB,
     MCBaseRequest,
@@ -21,7 +22,7 @@ from .models import (
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,duplicate-code
 # ============================================================================
 class CronJobOperator(BaseOperator):
     """CronJob Operator"""
@@ -233,6 +234,7 @@ class CronJobOperator(BaseOperator):
 
         metadata = data.object["metadata"]
         labels = metadata.get("labels", {})
+        annotations = metadata.get("annotations", {})
         cid: str = labels.get("btrix.crawlconfig", "")
         oid: str = labels.get("btrix.org", "")
         userid: str = labels.get("btrix.userid", "")
@@ -270,44 +272,41 @@ class CronJobOperator(BaseOperator):
 
         crawljob_id = f"crawljob-{crawl_id}"
 
-        all_jobs = data.related[JOB]
+        other_crawls = data.related.get(CJS, {})
+        all_jobs = data.related.get(JOB, {})
 
         if crawljob_id not in crawljobs:
-            # if more than one job, it should either be stopped
-            # or should pause existing job
-            if len(all_jobs) > 1:
-                all_paused_or_stopping = True
+            # if other crawls already running
+            if len(other_crawls):
+                all_preemptable = True
                 other_states = []
-                has_next_job = False
-                for key, job in all_jobs.items():
-                    if key == crawl_id:
-                        continue
-
-                    annotations = job["metadata"]["annotations"]
-                    state = annotations.get("btrix.crawlState")
-                    stopping = annotations.get("btrix.stopping") == "1"
-
-                    # placeholder for next job, not actual running crawl
-                    if state == "next-job":
-                        has_next_job = True
-                        continue
-
-                    # not processed yet, skip
-                    if not state:
-                        continue
-
+                for crawljob in other_crawls.values():
+                    state = crawljob.get("status", {}).get("state")
                     other_states.append(state)
 
-                    # determine if crawl is paused or is stopping
-                    all_paused_or_stopping = all_paused_or_stopping and (
-                        stopping or self.is_preempt_state(state)
+                    # determine if crawl can be preempted
+                    all_preemptable = all_preemptable and (
+                        self.is_preempt_state(state) or state == "stopped_by_user"
                     )
 
                 # if not all paused or stopping and if already has a placeholder
-                # 'next-job', then finish job without starting crawl
-                if not all_paused_or_stopping and has_next_job:
+                # then finish job without starting crawl
+
+                # ensure it's not this job
+                has_placeholder_job = False
+                for job in all_jobs.values():
+                    if (
+                        job["metadata"]["name"] != crawl_id
+                        and job["metadata"]["annotations"].get("btrix.crawlState")
+                        == "placeholder"
+                    ):
+                        has_placeholder_job = True
+                        break
+
+                # skip this job immediately
+                if not all_preemptable or has_placeholder_job:
                     cj_sync_logger.info(
-                        "cronjob_skip_new_job_already_running",
+                        "cronjob_skip_new_job",
                         other_states=other_states,
                     )
                     return self.get_finished_response(metadata)
@@ -317,8 +316,18 @@ class CronJobOperator(BaseOperator):
                     "cronjob_wait_stopping_paused_jobs", other_states=other_states
                 )
                 return MCDecoratorSyncResponse(
-                    attachments=[], annotations={"btrix.crawlState": "next-job"}
+                    attachments=[], annotations={"btrix.crawlState": "placeholder"}
                 )
+
+            if (
+                len(all_jobs) > 1
+                and annotations.get("btrix.crawlState") != "placeholder"
+            ):
+                cj_sync_logger.info(
+                    "cronjob_skip_new_job_extra",
+                    other_states=other_states,
+                )
+                return self.get_finished_response(metadata)
 
             return await self.make_new_crawljob(
                 UUID(cid),
@@ -336,24 +345,15 @@ class CronJobOperator(BaseOperator):
         status = crawljob.pop("status", {})
         state = status.get("state", "unknown")
 
-        crawljob["metadata"] = {"name": name}
-
-        if len(all_jobs) > 1 and self.is_preempt_state(actual_state):
-            await self.crawl_ops.mark_crawl_stopping(crawl_id, UUID(cid))
-            crawljob["spec"]["stopping"] = True
+        crawljob["metadata"] = {
+            "name": name,
+            "labels": crawljob["metadata"].get("labels", {}),
+        }
 
         return MCDecoratorSyncResponse(
             attachments=[crawljob],
-            annotations={
-                "btrix.crawlState": state,
-                "btrix.stopping": "1" if crawljob["spec"].get("stopping") else "0",
-            },
+            annotations={"btrix.crawlState": state},
         )
-
-    def is_preempt_state(self, state: TYPE_ALL_CRAWL_STATES | None):
-        """should the crawl be preempted (stopped)
-        to start a new scheduled crawl"""
-        return state == "paused_rate_limit_time_reached"
 
     def get_related(self, data: MCBaseRequest):
         """return other crawljobs that are scheduled for this config"""
@@ -361,7 +361,7 @@ class CronJobOperator(BaseOperator):
         labels = data.parent["metadata"]["labels"]
         cid = labels.get("btrix.crawlconfig")
 
-        # also the crawlId, exclude our current crawljob
+        crawl_id = data.parent["metadata"]["name"]
 
         related_resources = [
             {
@@ -373,7 +373,19 @@ class CronJobOperator(BaseOperator):
                         "role": "scheduled-crawljob",
                     },
                 },
-            }
+            },
+            {
+                "apiVersion": BTRIX_API,
+                "resource": "crawljobs",
+                "labelSelector": {
+                    "matchLabels": {
+                        "btrix.crawlconfig": cid,
+                    },
+                    "matchExpressions": [
+                        {"key": "crawl", "operator": "NotIn", "values": [crawl_id]}
+                    ],
+                },
+            },
         ]
 
         return {"relatedResources": related_resources}

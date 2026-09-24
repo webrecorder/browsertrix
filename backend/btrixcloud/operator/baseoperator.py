@@ -298,3 +298,8 @@ class BaseOperator:
                 self.k8s.templates.env.get_template(filename).render(params)
             )
         )
+
+    def is_preempt_state(self, state: str | None):
+        """should the crawl be preempted (stopped)
+        to start a new scheduled crawl"""
+        return state == "paused_rate_limit_time_reached"

@@ -10,6 +10,7 @@ metadata:
     btrix.org: "{{ oid }}"
     btrix.user: "{{ userid }}"
     btrix.storage: "{{ storage_name }}"
+    btrix.crawlconfig: "{{ cid }}"
     dedupe_coll_id: "{{ dedupe_coll_id }}"
 
 spec:
