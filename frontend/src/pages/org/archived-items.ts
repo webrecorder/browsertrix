@@ -906,7 +906,7 @@ export class CrawlsList extends BtrixElement {
       ?disabled=${anySelected}
     >
       <sl-icon-button
-        class="${tw`group-hover:[&:not([disabled])]:opacity-100`} text-base opacity-0 transition-opacity part-[base]:p-0"
+        class="${tw`focus:[&:not([disabled])]:opacity-100 group-hover:[&:not([disabled])]:opacity-100`} text-base opacity-0 transition-opacity part-[base]:p-0"
         name="check2-all"
         ?disabled=${anySelected}
         @click=${() => {
