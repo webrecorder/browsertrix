@@ -97,7 +97,7 @@ export function listControls({
       ${renderBulkActionsControl
         ? html`<div
             class=${clsx(
-              tw`fixed inset-x-2 bottom-3 z-10 hidden min-h-10 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 px-3 shadow`,
+              tw`fixed inset-x-2 bottom-3 z-10 hidden min-h-10 items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 px-3.5 shadow`,
               tw`has-[sl-checkbox[checked]]:flex @3xl/controls:has-[sl-checkbox[checked]]:hidden`,
               tw`has-[sl-checkbox[indeterminate]]:flex @3xl/controls:has-[sl-checkbox[indeterminate]]:hidden`,
             )}
