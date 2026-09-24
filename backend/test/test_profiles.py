@@ -378,9 +378,9 @@ def test_commit_browser_to_existing_profile(
         # Origin in both profiles, default filter match (AND)
         (["https://old.webrecorder.net"], None, [PROFILE_ID]),
         # Origin in both profiles, explicit filter match (AND)
-        (["https://old.webrecorder.net"], "AND", [PROFILE_ID]),
+        (["https://old.webrecorder.net"], "and", [PROFILE_ID]),
         # Origin in both profiles, explicit filter match (OR)
-        (["https://old.webrecorder.net"], "OR", [PROFILE_ID, PROFILE_2_ID]),
+        (["https://old.webrecorder.net"], "or", [PROFILE_ID, PROFILE_2_ID]),
         # Two origins, default filter match (AND)
         (
             ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
@@ -390,13 +390,13 @@ def test_commit_browser_to_existing_profile(
         # Two origins, explicit filter match (AND)
         (
             ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
-            "AND",
+            "and",
             [PROFILE_ID],
         ),
         # Two origins, explicit filter match (OR)
         (
             ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
-            "OR",
+            "or",
             [PROFILE_ID, PROFILE_2_ID],
         ),
         # No match (added www. prefix, which endpoint is not yet agnostic to)
