@@ -391,7 +391,7 @@ export class Combobox extends FormControl(TailwindElement) {
   }
 
   private getSearchResults() {
-    const value = this.input?.value;
+    const value = this.input?.value.trim();
 
     if (value) {
       return new Set(this.#fuse.search(value).map(({ item }) => item));
