@@ -699,10 +699,11 @@ export class CrawlsList extends BtrixElement {
               ${when(
                 this.isCrawler && this.bulkActions,
                 () => html`
-                  <btrix-table-header-cell slot="checkboxCell" class="p-0">
-                    <span class="sr-only"
-                      >${msg("Selected for bulk actions")}</span
-                    >
+                  <btrix-table-header-cell
+                    slot="checkboxCell"
+                    class="items-center pl-2.5 pr-1"
+                  >
+                    <div class="ml-px">${this.renderSelectAll()}</div>
                   </btrix-table-header-cell>
                 `,
               )}
@@ -894,7 +895,7 @@ export class CrawlsList extends BtrixElement {
       )}`;
   };
 
-  private readonly renderBulkActionsControl = () => {
+  private renderSelectAll() {
     const visibleCount = this.visibleItems.size;
     const selected = this.selectedItemIds;
     const selectedCount = selected.size;
@@ -902,34 +903,41 @@ export class CrawlsList extends BtrixElement {
     const allSelected = anySelected && selectedCount === visibleCount;
     const someSelected = anySelected && selectedCount !== visibleCount;
 
-    return html`<div class="flex min-h-8 items-center gap-4">
-        <sl-checkbox
-          class="leading-none part-[label]:sr-only"
-          ?checked=${allSelected}
-          ?indeterminate=${someSelected}
-          @sl-change=${(e: SlChangeEvent) => {
-            const checked = (e.target as SlCheckbox).checked;
+    return html`<sl-checkbox
+      class="leading-none part-[label]:sr-only"
+      ?checked=${allSelected}
+      ?indeterminate=${someSelected}
+      @sl-change=${(e: SlChangeEvent) => {
+        const checked = (e.target as SlCheckbox).checked;
 
-            if (checked) {
-              this.selectedItemIds = new Set(this.visibleItems.keys());
-            } else {
-              this.selectedItemIds = new Set();
-            }
-          }}
-        >
-          ${msg("Select Visible")}
-        </sl-checkbox>
+        if (checked) {
+          this.selectAll();
+        } else {
+          this.clearSelection();
+        }
+      }}
+    >
+      ${msg("Select Visible")}
+    </sl-checkbox>`;
+  }
 
+  private readonly renderBulkActionsControl = () => {
+    const selected = this.selectedItemIds;
+    const selectedCount = selected.size;
+    const anySelected = selectedCount > 0;
+
+    return html`
+      <div class="flex min-h-8 items-center gap-3">
+        <sl-icon name="ui-checks" class="text-base"></sl-icon>
         ${pluralOfItemsSelected(selectedCount)}
       </div>
-
-      ${anySelected
-        ? html`<sl-icon-button
-            class="text-base hover:text-danger focus:text-danger"
-            name="trash3"
-            @click=${() => (this.openDialog = "bulkDelete")}
-          ></sl-icon-button>`
-        : nothing} `;
+      <sl-icon-button
+        class="text-base hover:text-danger focus:text-danger"
+        name="trash3"
+        ?disabled=${!anySelected}
+        @click=${() => (this.openDialog = "bulkDelete")}
+      ></sl-icon-button>
+    `;
   };
 
   private readonly renderSearch = () => {
@@ -1220,6 +1228,14 @@ export class CrawlsList extends BtrixElement {
       message,
       actions: guideButton,
     });
+  }
+
+  private selectAll() {
+    this.selectedItemIds = new Set(this.visibleItems.keys());
+  }
+
+  private clearSelection() {
+    this.selectedItemIds = new Set();
   }
 
   private async getArchivedItems(
