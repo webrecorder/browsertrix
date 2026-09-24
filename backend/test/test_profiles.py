@@ -416,9 +416,10 @@ def test_list_profiles_filter_by_origins(
 ):
     base_url = f"{API_PREFIX}/orgs/{default_org_id}/profiles"
     params = {"origins": origins}
-    request_url = f"{base_url}?{urlencode(params, doseq=True)}"
     if origin_match is not None:
-        request_url = f"{request_url}&originMatch={origin_match}"
+        params["originMatch"] = origin_match
+
+    request_url = f"{base_url}?{urlencode(params, doseq=True)}"
 
     r = requests.get(
         request_url,
