@@ -7,6 +7,7 @@ import type {
   SlCheckbox,
   SlSelect,
 } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
@@ -906,7 +907,10 @@ export class CrawlsList extends BtrixElement {
       ?disabled=${anySelected}
     >
       <sl-icon-button
-        class="${tw`focus:[&:not([disabled])]:opacity-100 group-hover:[&:not([disabled])]:opacity-100`} text-base opacity-0 transition-opacity part-[base]:p-0"
+        class=${clsx(
+          tw`text-base opacity-0 transition-opacity part-[base]:p-0 group-hover:[&:not([disabled])]:opacity-100`,
+          anySelected ? tw`pointer-events-none` : tw`focus:opacity-100`,
+        )}
         name="check2-all"
         ?disabled=${anySelected}
         @click=${() => {
