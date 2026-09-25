@@ -1390,19 +1390,30 @@ class UserFile(BaseFile):
     created: datetime
 
     async def get_absolute_presigned_url(
-        self, org, storage_ops, headers: dict | None
-    ) -> str:
+        self, org, storage_ops, headers: dict | None, force_update: bool = False
+    ) -> tuple[str, datetime]:
         """Get presigned URL as absolute URL"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        return storage_ops.resolve_relative_access_path(presigned_url, headers) or ""
+        presigned_url, expire_at = await storage_ops.get_presigned_url(
+            org, self, force_update
+        )
+        return storage_ops.resolve_relative_access_path(
+            presigned_url, headers
+        ) or "", expire_at
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
-    ) -> UserFileOut:
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
+    ) -> tuple[UserFileOut, datetime]:
         """Get UserFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers, force_update_presigned
+        )
         return UserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1410,19 +1421,22 @@ class UserFile(BaseFile):
             userid=self.userid,
             userName=self.userName,
             created=self.created,
-        )
+        ), expire_at
 
     async def get_public_file_out(
         self, org, storage_ops, headers: dict | None = None
-    ) -> PublicUserFileOut:
+    ) -> tuple[PublicUserFileOut, datetime]:
         """Get PublicUserFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers
+        )
         return PublicUserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             mime=self.mime,
-        )
+        ), expire_at
 
 
 # ============================================================================
@@ -1492,12 +1506,19 @@ class SeedFile(UserFile, BaseMongoModel):
     seedCount: int | None = None
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
-    ) -> SeedFileOut:
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
+    ) -> tuple[SeedFileOut, datetime]:
         """Get SeedFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers, force_update_presigned
+        )
         return SeedFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1510,7 +1531,7 @@ class SeedFile(UserFile, BaseMongoModel):
             type=self.type,
             firstSeed=self.firstSeed,
             seedCount=self.seedCount,
-        )
+        ), expire_at
 
 
 # ============================================================================

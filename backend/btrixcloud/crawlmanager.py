@@ -423,7 +423,7 @@ class CrawlManager(K8sAPI):
         profile_filename: str,
         profileid: str,
         is_single_page: bool,
-        seed_file_url: str,
+        seed_file_id: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -453,7 +453,7 @@ class CrawlManager(K8sAPI):
                 str(crawlconfig.dedupeCollId) if crawlconfig.dedupeCollId else ""
             ),
             is_single_page=is_single_page,
-            seed_file_url=seed_file_url,
+            seed_file_id=seed_file_id,
         )
 
     async def reload_running_crawl_config(self, crawl_id: str):
