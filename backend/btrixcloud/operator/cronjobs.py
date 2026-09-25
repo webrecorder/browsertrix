@@ -272,26 +272,12 @@ class CronJobOperator(BaseOperator):
 
         crawljob_id = f"crawljob-{crawl_id}"
 
-        other_crawls = data.related.get(CJS, {})
         all_jobs = data.related.get(JOB, {})
 
         if crawljob_id not in crawljobs:
             # if other crawls already running
+            other_crawls = data.related.get(CJS, {})
             if len(other_crawls):
-                all_preemptable = True
-                other_states = []
-                for crawljob in other_crawls.values():
-                    state = crawljob.get("status", {}).get("state")
-                    other_states.append(state)
-
-                    # determine if crawl can be preempted
-                    all_preemptable = all_preemptable and (
-                        self.is_preempt_state(state) or state == "stopped_by_user"
-                    )
-
-                # if not all paused or stopping and if already has a placeholder
-                # then finish job without starting crawl
-
                 # ensure it's not this job
                 has_placeholder_job = False
                 for job in all_jobs.values():
@@ -303,18 +289,15 @@ class CronJobOperator(BaseOperator):
                         has_placeholder_job = True
                         break
 
-                # skip this job immediately
-                if not all_preemptable or has_placeholder_job:
+                # if already have a placeholder job, skip this job immediately
+                if has_placeholder_job:
                     cj_sync_logger.info(
-                        "cronjob_skip_new_job",
-                        other_states=other_states,
+                        "cronjob_skip_already_have_placeholder_job",
                     )
                     return self.get_finished_response(metadata)
 
                 # don't mark as finished, wait for jobs to be stopped
-                cj_sync_logger.info(
-                    "cronjob_wait_stopping_paused_jobs", other_states=other_states
-                )
+                cj_sync_logger.info("cronjob_wait_with_placeholder_job")
                 return MCDecoratorSyncResponse(
                     attachments=[], annotations={"btrix.crawlState": "placeholder"}
                 )
@@ -323,10 +306,7 @@ class CronJobOperator(BaseOperator):
                 len(all_jobs) > 1
                 and annotations.get("btrix.crawlState") != "placeholder"
             ):
-                cj_sync_logger.info(
-                    "cronjob_skip_new_job_extra",
-                    other_states=other_states,
-                )
+                cj_sync_logger.info("cronjob_skip_new_extra_placeholder_job")
                 return self.get_finished_response(metadata)
 
             return await self.make_new_crawljob(
