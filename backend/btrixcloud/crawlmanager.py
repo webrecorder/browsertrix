@@ -675,7 +675,9 @@ class CrawlManager(K8sAPI):
         if not crawlconfig.schedule:
             if cron_job:
                 await self.batch_api.delete_namespaced_cron_job(
-                    name=cron_job.metadata.name, namespace=self.namespace
+                    name=cron_job.metadata.name,
+                    namespace=self.namespace,
+                    propagation_policy="Orphan",
                 )
             return None
 
