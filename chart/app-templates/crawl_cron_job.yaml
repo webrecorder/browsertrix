@@ -11,7 +11,7 @@ metadata:
     role: "cron-job"
 
 spec:
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Allow
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 2
 
