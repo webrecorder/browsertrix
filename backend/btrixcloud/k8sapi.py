@@ -341,25 +341,18 @@ class K8sAPI:
             )
             return {"error": str(exc)}
 
-    async def unsuspend_k8s_job(self, name) -> dict:
-        """unsuspend k8s Job"""
+    async def unsuspend_k8s_job_if_exists(self, name) -> None:
+        """unsuspend k8s job, if it exists, allowing it to complete.
+        if job doesn't exist/already gone, ignore"""
         try:
             await self.batch_api.patch_namespaced_job(
                 name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
             )
-            return {"success": True}
 
         except ApiException as exc:
             # ignore 404, job already finished
             if exc.status != 404:
                 raise
-
-            logger.warning(
-                "unsuspend_k8s_job_failed",
-                name=name,
-                unstructured_message="Unsuspend k8s job failed",
-            )
-            return {"error": str(exc)}
 
     async def has_job(self, name) -> bool:
         """return true/false if job exists"""

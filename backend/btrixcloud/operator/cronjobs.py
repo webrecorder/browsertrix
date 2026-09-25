@@ -67,7 +67,7 @@ class CronJobOperator(BaseOperator):
             }
             annotations = {"finished": finished}
 
-        run_async_task(self.k8s.unsuspend_k8s_job(metadata.get("name")))
+        run_async_task(self.k8s.unsuspend_k8s_job_if_exists(metadata.get("name")))
 
         return MCDecoratorSyncResponse(
             attachments=[],
