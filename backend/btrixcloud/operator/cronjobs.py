@@ -67,7 +67,13 @@ class CronJobOperator(BaseOperator):
             }
             annotations = {"finished": finished}
 
-        run_async_task(self.k8s.unsuspend_k8s_job_if_exists(metadata.get("name")))
+        # this is true if controlled by cronjob:
+        # if so, unsuspend so cronjob can gracefully cleanup successful job
+        if metadata.get("ownerReferences"):
+            run_async_task(self.k8s.unsuspend_k8s_job_if_exists(metadata.get("name")))
+        else:
+            # otherwise, manually delete the job
+            run_async_task(self.k8s.delete_job(metadata.get("name")))
 
         return MCDecoratorSyncResponse(
             attachments=[],
@@ -275,17 +281,25 @@ class CronJobOperator(BaseOperator):
         all_jobs = data.related.get(JOB, {})
 
         if crawljob_id not in crawljobs:
+            # if an orphan job that hasn't been started yet, just remove
+            if not metadata.get("ownerReferences"):
+                cj_sync_logger.info("cronjob_removed_cancelling_placeholder")
+                return self.get_finished_response(metadata)
+
             # if other crawls already running
             other_crawls = data.related.get(CJS, {})
             if len(other_crawls):
                 # ensure it's not this job
                 has_placeholder_job = False
                 for job in all_jobs.values():
+                    job_metadata = job["metadata"]
                     if (
-                        job["metadata"]["name"] != crawl_id
-                        and job["metadata"]["annotations"].get("btrix.crawlState")
+                        job_metadata["name"] != crawl_id
+                        and job_metadata["annotations"].get("btrix.crawlState")
                         == "placeholder"
+                        and job_metadata.get("ownerReferences")
                     ):
+                        # placeholder job must have placeholder and not be orphaned
                         has_placeholder_job = True
                         break
 
