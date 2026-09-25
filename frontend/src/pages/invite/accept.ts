@@ -236,6 +236,10 @@ export class AcceptInvite extends BtrixElement {
       } else {
         const user = await this._getCurrentUser();
 
+        AppStateService.partialUpdateOnboarding({
+          orgId: org.id,
+          showOnboarding: true,
+        });
         AppStateService.updateUser(formatAPIUser(user), org.slug);
 
         await this.updateComplete;

@@ -73,7 +73,6 @@ export default {
         "node_modules/slugify/**/*",
         "node_modules/parse-ms/**/*",
         "node_modules/regex-colorize/**/*",
-        "node_modules/@floating-ui/**/*",
       ],
     }),
     importMapsPlugin({

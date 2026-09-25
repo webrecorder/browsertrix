@@ -77,8 +77,8 @@ The user guide documents features, terminology, and settings in the Browsertrix 
       - [Change your email](user-settings.md)
       - [Change your password](change-password.md#change-password)
       - [Reset your password](change-password.md#reset-password)
-      - [Choose your preferred language](user-settings.md)
-      - [Change how your name appears to team members](user-settings.md)
+      - [Choose your preferred language](user-settings.md#language)
+      - [Change how your name appears to team members](user-settings.md#display-name)
 
 </div>
 
