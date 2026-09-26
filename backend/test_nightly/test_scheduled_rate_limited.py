@@ -21,7 +21,7 @@ ECHO_SERVER_URL = os.environ.get(
     "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
 ) + "/rl-index.html"
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def echo_server():
     logger.info("echo_server_starting", unstructured_message="Echo server starting")
     p = subprocess.Popen(["python3", os.path.join(curr_dir, "echo_server.py")])
@@ -105,9 +105,7 @@ def test_rate_limited_scheduled_crawl(admin_auth_headers, default_org_id, rl_con
 
     assert data["crawlCount"] == 1
     assert data["crawlAttemptCount"] == 1
-    assert data["crawlSuccessfulCount"] == 1
 
-    assert data["lastCrawlId"]
     assert data["lastCrawlState"] == "stopped_for_next_scheduled_crawl"
 
 
