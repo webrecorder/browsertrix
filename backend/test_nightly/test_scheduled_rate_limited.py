@@ -19,7 +19,7 @@ SCHEDULE = "*/2 * * * *"
 # Docker Desktop).
 ECHO_SERVER_URL = os.environ.get(
     "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
-) + "/index.html"
+) + "/rl-index.html"
 
 @pytest.fixture(scope="function")
 def echo_server():
