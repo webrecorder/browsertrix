@@ -338,7 +338,7 @@ class CrawlOperator(BaseOperator):
             scheduled_jobs = data.related.get(JOB, {})
             for key in scheduled_jobs.keys():
                 if key != str(crawl.id):
-                    self.request_stop_crawl(crawl)
+                    self.request_stop_crawl(crawl, status)
                     break
 
         # setup scale
@@ -401,6 +401,15 @@ class CrawlOperator(BaseOperator):
                 )
                 stop_reason = "stopped_pause_expired"
                 state = "stopped_pause_expired"
+
+            # stopping for next crawl
+            elif crawl.stopping and status.stopForNextCrawl:
+                logger.info(
+                    "paused_crawl_stopped_for_next_scheduled_crawl",
+                    crawl_id=crawl.id,
+                )
+                state = "stopped_for_next_scheduled_crawl"
+                stop_reason = "stopped_for_next_scheduled_crawl"
 
             # Check if paused crawl was stopped manually
             elif crawl.stopping:
@@ -1845,9 +1854,16 @@ class CrawlOperator(BaseOperator):
         run_async_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
 
-    def request_stop_crawl(self, crawl: CrawlSpec):
+    def request_stop_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
         """Request a crawl to be stopped, equivalent to use clicking 'stop' button"""
         logger.info("crawl_stop_requested", craw_id=crawl.id)
+        # need new field here as stopReason may already be used
+        status.stopForNextCrawl = True
+
+        # already marked as stopping
+        if crawl.stopping:
+            return
+
         run_async_task(
             self.crawl_ops.shutdown_crawl(crawl.id, crawl.org, graceful=True)
         )
@@ -2083,6 +2099,8 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
+            elif status.stopReason == "stopped_for_scheduled_next_crawl":
+                state = "stopped_for_scheduled_next_crawl"
             elif status.stopReason == "stopped_storage_quota_reached":
                 state = "stopped_storage_quota_reached"
             elif status.stopReason == "stopped_time_quota_reached":
