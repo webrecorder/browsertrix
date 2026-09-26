@@ -2,6 +2,11 @@
 
 invite_expire_seconds: "10"
 
+rate_limit_max_duration_minutes: 1
+rate_limit_threshold: 1
+
+
+
 max_pages_per_crawl: 300
 
 # max crawl queue size x concurrent crawls

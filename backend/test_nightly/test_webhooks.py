@@ -17,14 +17,14 @@ _webhook_event_id = None
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-ECHO_SERVER_URL = "http://localhost:18080"
+ECHO_SERVER_URL = "http://localhost:18080/webhooks"
 
 # Pull address to echo server running on host from CI env var.
 # If not set, default to host.docker.internal (for local testing with
 # Docker Desktop).
 ECHO_SERVER_URL_FROM_K8S = os.environ.get(
     "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
-)
+) + "/webhooks"
 
 FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
 
