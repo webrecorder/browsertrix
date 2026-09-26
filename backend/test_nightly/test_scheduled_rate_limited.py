@@ -93,8 +93,6 @@ def test_rate_limited_scheduled_crawl(admin_auth_headers, default_org_id, rl_con
         if not last_crawl_id or last_crawl_state not in ("failed", "stopped_for_next_scheduled_crawl"):
             time.sleep(10)
 
-        print(last_crawl_state, flush=True)
-
     # Recheck workflow stats
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{rl_config_id}",
@@ -105,9 +103,45 @@ def test_rate_limited_scheduled_crawl(admin_auth_headers, default_org_id, rl_con
 
     assert data["schedule"] == SCHEDULE
 
-    assert data["crawlCount"] >= 1
-    assert data["crawlAttemptCount"] >= 1
-    assert data["crawlSuccessfulCount"] >= 1
+    assert data["crawlCount"] == 1
+    assert data["crawlAttemptCount"] == 1
+    assert data["crawlSuccessfulCount"] == 1
 
     assert data["lastCrawlId"]
     assert data["lastCrawlState"] == "stopped_for_next_scheduled_crawl"
+
+
+def test_ensure_crawl_started(admin_auth_headers, default_org_id, rl_config_id):
+    # Wait until a crawl completes (up to 20 minutes)
+    attempts = 0
+    max_attempts = 120
+
+    while True:
+        attempts += 1
+
+        if attempts > max_attempts:
+            break
+
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{rl_config_id}",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        data = r.json()
+
+        last_crawl_state = data.get("lastCrawlState")
+
+        if last_crawl_state in ("failed", "stopped_for_next_scheduled_crawl"):
+            time.sleep(10)
+        else:
+            break
+
+    # Recheck workflow stats
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{rl_config_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["crawlAttemptCount"] == 2
