@@ -1857,10 +1857,10 @@ class CrawlOperator(BaseOperator):
     def request_stop_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
         """Request a crawl to be stopped, equivalent to use clicking 'stop' button"""
         logger.info(
-            "crawl_stop_requested", craw_id=crawl.id, stopReason=status.stopReason
+            "crawl_stop_requested", craw_id=crawl.id
         )
+        # need new field here as stopReason may already be used
         status.stopForNextCrawl = True
-        # status.stopReason = "stopped_for_next_scheduled_crawl"
 
         # already marked as stopping
         if crawl.stopping:
