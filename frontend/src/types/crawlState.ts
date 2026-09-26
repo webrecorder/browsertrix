@@ -38,6 +38,7 @@ export const SUCCESSFUL_STATES = [
   "stopped_storage_quota_reached",
   "stopped_time_quota_reached",
   "stopped_org_readonly",
+  "stopped_for_next_scheduled_crawl",
 ] as const;
 
 // Match backend TYPE_FAILED_STATES in models.py

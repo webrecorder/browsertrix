@@ -33,6 +33,7 @@ StopReason = Literal[
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
     "stopped_org_readonly",
+    "stopped_for_next_scheduled_crawl",
     "paused_storage_quota_reached",
     "paused_time_quota_reached",
     "paused_rate_limit_time_reached",
@@ -293,3 +294,6 @@ class CrawlStatus(BaseModel):
 
     # expiry time for seed file presigned url
     seed_file_presigned_expiry: datetime | None = None
+
+    # stop for next scheduled crawl
+    stopForNextCrawl: bool | None = None

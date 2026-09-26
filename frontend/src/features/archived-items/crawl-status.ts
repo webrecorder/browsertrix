@@ -318,6 +318,7 @@ export class CrawlStatus extends TailwindElement {
       case "stopped_pause_expired":
       case "stopped_storage_quota_reached":
       case "stopped_time_quota_reached":
+      case "stopped_for_next_scheduled_crawl":
       case "stopped_org_readonly": {
         color = "var(--warning)";
         icon = html`<sl-icon
@@ -326,10 +327,11 @@ export class CrawlStatus extends TailwindElement {
           style="color: ${color}"
         ></sl-icon>`;
         label = msg("Stopped");
-        reason =
-          originalState === "stopped_pause_expired"
-            ? msg("Paused Too Long")
-            : reason;
+        if (originalState === "stopped_pause_expired") {
+          reason = msg("Paused Too Long");
+        } else if (originalState === "stopped_for_next_scheduled_crawl") {
+          reason = msg("Next Scheduled Crawl Started");
+        }
         break;
       }
 
