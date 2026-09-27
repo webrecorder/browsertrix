@@ -108,9 +108,11 @@ jobs:
 
       - name: "Import Images"
         run: |
-          k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-nightly --verbose
-          k3d image import webrecorder/browsertrix-emails:latest -m direct -c btrix-nightly --verbose
-          k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-nightly --verbose
+          k3d image import \
+          webrecorder/browsertrix-backend:latest \
+          webrecorder/browsertrix-emails:latest \
+          webrecorder/browsertrix-frontend:latest \
+          -m tools -c btrix-nightly --verbose
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
