@@ -3,3 +3,5 @@ rate_limit_threshold: 1
 
 crawler_browser_instances: 1
 
+crawler_enable_network_policy: false
+

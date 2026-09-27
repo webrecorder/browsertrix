@@ -153,7 +153,7 @@ jobs:
         run: kubectl exec -i deployment/local-minio -c minio -- mkdir /data/replica-0
 
       - name: Run Tests
-        run: cd backend && uv run pytest -s -vv ./test_nightly/${{ matrix.module }}
+        run: cd backend && uv run pytest -vv ./test_nightly/${{ matrix.module }}
 
       - name: Print Backend Logs (API)
         if: ${{ always() }}
