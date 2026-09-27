@@ -54,8 +54,15 @@ def rl_config_id(admin_auth_headers, default_org_id):
         json=crawl_data,
     )
     data = r.json()
-    print(data, flush=True)
     return data["id"]
+
+
+def test_server(echo_server):
+    r = requests.get("http://localhost:18080/rl-index.html")
+    assert r.status_code == 200
+
+    r = requests.get("http://localhost:18080/rl.html")
+    assert r.status_code == 429
 
 
 @pytest.mark.timeout(600)
