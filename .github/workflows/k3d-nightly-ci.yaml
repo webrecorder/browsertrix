@@ -112,7 +112,7 @@ jobs:
           webrecorder/browsertrix-backend:latest \
           webrecorder/browsertrix-emails:latest \
           webrecorder/browsertrix-frontend:latest \
-          -m tools -c btrix-nightly --verbose
+          -m tools-node -c btrix-nightly --verbose
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
