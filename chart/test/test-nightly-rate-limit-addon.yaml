@@ -1,2 +1,5 @@
 rate_limit_max_duration_minutes: 1
 rate_limit_threshold: 1
+
+crawler_browser_instances: 1
+
