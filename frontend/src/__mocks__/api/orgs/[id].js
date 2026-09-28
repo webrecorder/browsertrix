@@ -154,4 +154,5 @@ export default {
   publicDescription: "This is an example org.",
   publicUrl: "https://example.com",
   featureFlags: {},
+  note: "",
 };

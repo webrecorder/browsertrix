@@ -1,6 +1,7 @@
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
+import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -39,6 +40,10 @@ import type { QuotaUpdateDetail } from "@/controllers/api";
 import needLogin from "@/decorators/needLogin";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import type { SelectJobTypeEvent } from "@/features/crawl-workflows/new-workflow-dialog";
+import {
+  OrgStatusBanner,
+  OrgStatusName,
+} from "@/features/org/org-status-banner";
 import { CommonTab, OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import type {
   CrawlerChannelsAPIResponse,
@@ -51,6 +56,7 @@ import type { DuplicateWorkflowSettings } from "@/utils/crawl-workflows/settings
 import { DEFAULT_MAX_SCALE, getDefaultProxyId } from "@/utils/crawler";
 import { type OrgData } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
+import { tw } from "@/utils/tailwind";
 import type { FormState as WorkflowFormState } from "@/utils/workflow";
 
 import "./crawling";
@@ -145,6 +151,9 @@ export class Org extends BtrixElement {
 
   @state()
   private isCreateDialogVisible = false;
+
+  @state()
+  private showOrgStatusBanner = false;
 
   private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
   private readonly [orgUploadsContextKey] = new OrgUploadsContextController(
@@ -257,6 +266,22 @@ export class Org extends BtrixElement {
         this.openDialog(dialogName);
       }
     }
+
+    if (
+      (changedProperties.has("orgTab") ||
+        changedProperties.has("appState.org")) &&
+      this.org
+    ) {
+      // Hide banner if on dashboard and actively trialing
+      if (this.orgTab === OrgTab.Dashboard) {
+        const alerts = OrgStatusBanner.alerts(this.org);
+        const trialStatus = alerts.find(({ test }) => test());
+
+        this.showOrgStatusBanner = trialStatus?.name !== OrgStatusName.Trialing;
+      } else {
+        this.showOrgStatusBanner = true;
+      }
+    }
   }
 
   private readonly onRequestUpdateOrg = (e: BtrixRequestOrgUpdate) => {
@@ -344,12 +369,20 @@ export class Org extends BtrixElement {
       ></btrix-document-title>
 
       <div class="flex min-h-full flex-col">
-        <btrix-org-status-banner></btrix-org-status-banner>
+        ${when(
+          this.showOrgStatusBanner,
+          () => html`<btrix-org-status-banner></btrix-org-status-banner>`,
+        )}
         ${this.renderOrgNavBar()}
         <main
-          class="${noMaxWidth
-            ? "w-full"
-            : "w-full max-w-screen-desktop"} mx-auto box-border flex flex-1 flex-col p-3 lg:px-10 lg:pb-10"
+          class=${clsx(
+            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-10 lg:pb-10`,
+            !noMaxWidth && [
+              this.appState.userGuideOpen
+                ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
+                : tw`mx-auto max-w-screen-desktop`,
+            ],
+          )}
           aria-labelledby="${this.orgTab}-tab"
         >
           ${when(this.userOrg, (userOrg) =>
@@ -549,8 +582,6 @@ export class Org extends BtrixElement {
   private readonly renderDashboard = () => {
     return html`
       <btrix-dashboard
-        ?isCrawler=${this.appState.isCrawler}
-        ?isAdmin=${this.appState.isAdmin}
         @select-new-dialog=${this.onSelectNewDialog}
       ></btrix-dashboard>
     `;

@@ -27,6 +27,8 @@ const mockAppState = ({ role }: { role: AccessCode }) => {
       role,
     },
     orgId: workflowMock.oid,
+    isTrialing: false,
+    hasUsage: false,
   };
 };
 

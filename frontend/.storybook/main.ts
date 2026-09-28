@@ -100,6 +100,12 @@ const config: StorybookConfig = {
       }),
     );
 
+    // Add support for additional media types
+    config.module?.rules?.push({
+      test: /\.(webp|avif)(\?v=\d+\.\d+\.\d+)?$/,
+      type: "asset/resource",
+    });
+
     // Watch for changes to custom-elements.json to re-render element
     // attributes whenever the custom elements manifest is generated
     (config as WebpackConfiguration).devServer = {

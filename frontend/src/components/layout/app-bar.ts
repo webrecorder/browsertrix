@@ -16,6 +16,10 @@ import {
 import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { type UserOrg } from "@/types/user";
 import { type RouteName, type ViewState } from "@/utils/APIRouter";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -273,6 +277,9 @@ export class AppBar extends BtrixElement {
         <btrix-menu-item-link
           href="${this.docsUrl}user-guide/${userGuidePath}"
           target="_blank"
+          @click=${() => {
+            completeOnboardingStep(OnboardingStep.OpenUserGuide);
+          }}
         >
           ${msg("Open in New Tab")}
           <sl-icon slot="suffix" name="arrow-up-right"></sl-icon>
@@ -292,6 +299,8 @@ export class AppBar extends BtrixElement {
   }
 
   private readonly showUserGuide = () => {
+    completeOnboardingStep(OnboardingStep.OpenUserGuide);
+
     this.dispatchEvent(
       new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
         "btrix-user-guide-show",
