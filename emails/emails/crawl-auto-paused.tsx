@@ -102,7 +102,7 @@ export const CrawlAutoPausedEmail = ({
       </Text>
 
       <Text className="text-base text-stone-700">
-        The crawl will be stopped gracefully if it is not resumed{" "}
+        The crawl will be stopped if it is not resumed{" "}
         {relativeParts.map((part, index) =>
           part.value !== "in " ? (
             <strong key={part.value + index} className="text-stone-900">
@@ -112,24 +112,36 @@ export const CrawlAutoPausedEmail = ({
             part.value
           ),
         )}
+        , at which point only the pages crawled so far will be saved.{" "}
+        <Link
+          className="text-cyan-600 font-bold"
+          href="https://docs.browsertrix.com/user-guide/running-crawl/#stopping"
+          style={{ textDecoration: "underline" }}
+        >
+          Learn more
+        </Link>
         .
       </Text>
 
       {paused_reason === "paused_storage_quota_reached" ? (
         additional_storage_available ? (
-          <Tip>
-            You can upgrade your subscription or add additional storage from
-            your organization’s{" "}
-            <Link
-              className="text-cyan-600 font-bold"
-              href={`${org_url}/settings/billing`}
-              style={{ textDecoration: "underline" }}
-            >
-              billing settings
-            </Link>
-            . You can also delete archived items you no longer need to reduce
-            your storage usage.
-          </Tip>
+          <>
+            <Tip>
+              Upgrade your subscription or add additional storage from{" "}
+              <Link
+                className="text-cyan-600 font-bold"
+                href={`${org_url}/settings/billing`}
+                style={{ textDecoration: "underline" }}
+              >
+                your organization’s billing settings
+              </Link>{" "}
+              to continue crawling.
+            </Tip>
+            <Text className="text-base text-stone-700">
+              You can also delete archived items you no longer need to reduce
+              your storage usage.
+            </Text>
+          </>
         ) : (
           <Tip>
             In order to resume your crawl, you will need to free up storage
@@ -148,18 +160,23 @@ export const CrawlAutoPausedEmail = ({
         )
       ) : paused_reason === "paused_time_quota_reached" ? (
         additional_minutes_available ? (
-          <Tip>
-            You can upgrade your subscription or purchase additional execution
-            time from your organization’s{" "}
-            <Link
-              className="text-cyan-600 font-bold"
-              href={`${org_url}/settings/billing`}
-              style={{ textDecoration: "underline" }}
-            >
-              billing settings
-            </Link>
-            .
-          </Tip>
+          <>
+            <Tip>
+              Upgrade your subscription or purchase additional execution time
+              from{" "}
+              <Link
+                className="text-cyan-600 font-bold"
+                href={`${org_url}/settings/billing`}
+                style={{ textDecoration: "underline" }}
+              >
+                your organization’s billing settings
+              </Link>{" "}
+              to continue crawling.
+            </Tip>
+            <Text className="text-base text-stone-700">
+              You can also wait until your execution time quota resets.
+            </Text>
+          </>
         ) : (
           <Tip>
             In order to resume your crawl, you will need to either wait until
