@@ -260,6 +260,9 @@ export class AppBar extends BtrixElement {
   }
 
   private renderOrgUserActions() {
+    const userGuidePath =
+      (this.viewState?.route && mapToUserGuide[this.viewState.route]) ?? "";
+
     return html`<btrix-popover-menu>
       ${this.renderUserGuideButton()}
       <sl-menu @sl-select=${this.showUserGuide}>
@@ -267,7 +270,10 @@ export class AppBar extends BtrixElement {
           ${msg("Open to Side")}
           <sl-icon slot="suffix" name="layout-sidebar-inset-reverse"></sl-icon>
         </sl-menu-item>
-        <btrix-menu-item-link href="${this.docsUrl}user-guide" target="_blank">
+        <btrix-menu-item-link
+          href="${this.docsUrl}user-guide/${userGuidePath}"
+          target="_blank"
+        >
           ${msg("Open in New Tab")}
           <sl-icon slot="suffix" name="arrow-up-right"></sl-icon>
         </btrix-menu-item-link>
