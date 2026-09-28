@@ -2133,7 +2133,8 @@ class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
     storageQuota: int = 0
-    maxExecMinutesPerMonth: int = 0
+    maxExecMinutesPerMonth: Annotated[int, Field(deprecated=True)] = 0
+    """Deprecated: will be removed in favor of `planExecMinutes`"""
 
     maxConcurrentCrawls: int = 0
     maxPagesPerCrawl: int = 0
@@ -2148,7 +2149,8 @@ class OrgQuotasIn(BaseModel):
     """Update for existing OrgQuotas"""
 
     storageQuota: int | None = None
-    maxExecMinutesPerMonth: int | None = None
+    maxExecMinutesPerMonth: Annotated[int | None, Field(deprecated=True)] = None
+    """Deprecated: will be removed in favor of `planExecMinutes`"""
 
     maxConcurrentCrawls: int | None = None
     maxPagesPerCrawl: int | None = None
