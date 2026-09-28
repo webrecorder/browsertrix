@@ -24,6 +24,7 @@ export const defaultPlan: Plan = {
     extraExecMinutes: 0,
     giftedExecMinutes: 0,
     maxConcurrentCrawls: 0,
+    // Deprecated: will be removed in favor of `planExecMinutes`
     maxExecMinutesPerMonth: 0,
     maxPagesPerCrawl: 0,
     planExecMinutes: 0,
