@@ -970,7 +970,7 @@ class CollectionOps:
     async def get_missing_dependencies(
         self, coll_id: UUID, org: Organization
     ) -> list[str]:
-        """Return crawl ids required as dependencies by deduped crawls in this
+        """Return crawl ids required as dependencies by crawls in this
         collection that are no longer present in the collection (deleted or
         removed from the collection)."""
         # 404 if collection doesn't exist or belongs to another org
@@ -979,11 +979,7 @@ class CollectionOps:
         required: set[str] = set(
             await self.crawls.distinct(
                 "requiresCrawls",
-                {
-                    "oid": org.id,
-                    "dedupeCollId": coll_id,
-                    "collectionIds": coll_id,
-                },
+                {"oid": org.id, "collectionIds": coll_id},
             )
         )
         required.discard(None)
