@@ -493,7 +493,7 @@ export class Combobox extends FormControl(TailwindElement) {
       this.resetToDefault();
     }
 
-    this.#fuse.setCollection(options);
+    this.#fuse.setCollection(options.filter((el) => el.value));
 
     if (this.input?.value) {
       this.filterOptionsByLabel(this.input.value);
