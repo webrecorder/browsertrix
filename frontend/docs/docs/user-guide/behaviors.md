@@ -32,8 +32,8 @@ Browsertrix automatically enables behaviors for popular social media platforms i
 | Instagram         | instagram.com      | Posts, Profiles, Stories       | [Yes](workflow-setup.md#use-smart-scoping-rules) |
 | Telegram          | t.me               | Public Channels                | No                                               |
 | TikTok            | tiktok.com         | Video                          | No                                               |
-| Twitter/X         | x.com, twitter.com | Timeline, Posts                | No                                               |
-| YouTube           | youtube.com        | Video                          | No                                               |
+| Twitter/X         | x.com, twitter.com | Timeline, Posts                | [Yes](workflow-setup.md#use-smart-scoping-rules) |
+| YouTube           | youtube.com        | Video, Channels, Playlists     | [Yes](workflow-setup.md#use-smart-scoping-rules) |
 
 A detailed description of each behavior can be found in [Browser Behavior docs](https://crawler.docs.browsertrix.com/user-guide/behaviors/#site-specific-behaviors).
 
