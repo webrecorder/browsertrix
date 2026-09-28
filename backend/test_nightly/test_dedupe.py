@@ -583,7 +583,7 @@ def test_missing_dependencies_deleted(
     # deleting the dependency outright should also be reported
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
-        json={"crawlIds": [dedupe_first_crawl]},
+        json={"crawl_ids": [dedupe_first_crawl]},
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
