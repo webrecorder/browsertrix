@@ -27,6 +27,7 @@ export const orgQuotasSchema = z.object({
   extraExecMinutes: z.number(),
   giftedExecMinutes: z.number(),
   maxConcurrentCrawls: z.number(),
+  /** @deprecated will be removed in favor of `planExecMinutes` */
   maxExecMinutesPerMonth: z.number(),
   maxPagesPerCrawl: z.number(),
   planExecMinutes: z.number(),
