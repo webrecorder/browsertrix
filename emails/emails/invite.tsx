@@ -94,7 +94,7 @@ export const InviteUserEmail = ({
 
       <Section className="mt-[32px] mb-[32px] text-center">
         <Button href={invite_url}>
-          {is_new ? "Create Your Account" : "Accept this Invitation"}
+          {is_new ? "Create Your Account" : "Accept This Invitation"}
         </Button>
       </Section>
       <Text className="text-sm text-stone-600 text-center">
@@ -135,7 +135,7 @@ export const InviteUserEmail = ({
       <Heading as="h2">How does this work?</Heading>
       <Card
         href={invite_url}
-        title={is_new ? "Create Your Account" : "Accept this Invitation"}
+        title={is_new ? "Create Your Account" : "Accept This Invitation"}
         linkText={
           is_new
             ? "Create your account and get started"
