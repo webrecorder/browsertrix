@@ -126,6 +126,8 @@ export class SelectBrowserProfile extends BtrixElement {
   // Assign temporary IDs when searching by name
   #searchValuesMap = new Map</* ID: */ string, /* name: */ string>();
 
+  private prevValue?: string;
+
   public get value() {
     return this.select?.value;
   }
@@ -553,9 +555,19 @@ export class SelectBrowserProfile extends BtrixElement {
     </btrix-desc-list>`;
   };
 
-  private handleClear() {
+  private async handleClear() {
     this.searchText = "";
     this.selectedProfile = undefined;
+
+    await this.updateComplete;
+
+    this.dispatchEvent(
+      new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
+        detail: {
+          value: this.selectedProfile,
+        },
+      }),
+    );
   }
 
   private async handleSearch(e: ComboboxSearchEvent) {
@@ -581,7 +593,6 @@ export class SelectBrowserProfile extends BtrixElement {
   }
 
   private async handleChange(e: ComboboxChangeEvent) {
-    const prevProfileId = this.selectedProfile?.id || this.profileId;
     const profileId = e.detail.value;
 
     if (profileId) {
@@ -616,7 +627,7 @@ export class SelectBrowserProfile extends BtrixElement {
 
     await this.updateComplete;
 
-    if (profileId !== prevProfileId) {
+    if (profileId !== this.prevValue) {
       this.dispatchEvent(
         new CustomEvent<SelectBrowserProfileChangeDetail>("on-change", {
           detail: {
@@ -625,6 +636,8 @@ export class SelectBrowserProfile extends BtrixElement {
         }),
       );
     }
+
+    this.prevValue = profileId;
   }
 
   private async getProfiles(
