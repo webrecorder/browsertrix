@@ -24,6 +24,9 @@ export const schema = z.object({
 
 export type InviteUserEmailProps = z.infer<typeof schema>;
 
+// From https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email)
+const isEmailAddress = (sender: string) => /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(sender)
+
 export const InviteUserEmail = ({
   is_new,
   sender,
@@ -44,12 +47,12 @@ export const InviteUserEmail = ({
       preview={previewText}
       title={
         <>
-          {sender || org_name ? (
+          {(sender) || org_name ? (
             <>
               {" "}
               Join{" "}
               <strong className="text-stone-900">
-                {sender || org_name}
+                {sender ? isEmailAddress(sender) ? <a href={`mailto:${sender}`} rel="nofollow" className="text-stone-900 no-underline">{sender}</a> : sender : org_name}
               </strong>{" "}
               on
             </>
@@ -75,7 +78,7 @@ export const InviteUserEmail = ({
       </Text>
       {sender && org_name ? (
         <Text className="text-base text-center text-stone-700">
-          <strong className="text-stone-900">{sender}</strong> has invited you
+          {isEmailAddress(sender) ? <a href={`mailto:${sender}`} rel="nofollow" className="text-cyan-600">{sender}</a> : <strong className="text-stone-900">sender</strong>} has invited you
           to join the <strong className="text-stone-900">{org_name}</strong>{" "}
           organization.
         </Text>
@@ -349,7 +352,7 @@ export const InviteUserEmail = ({
 
 InviteUserEmail.PreviewProps = {
   is_new: true,
-  // sender: "Emma",
+  // sender: "emma@webrecorder.net",
   // org_name: "Emma’s Test Org",
   invite_url: "https://app.browsertrix.com/invite-url-123-demo",
   support_email: "support@webrecorder.net",
