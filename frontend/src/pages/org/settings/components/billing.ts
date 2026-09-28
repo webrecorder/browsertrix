@@ -236,8 +236,7 @@ export class OrgSettingsBilling extends BtrixElement {
                         ${when(
                           this.org!.quotas.planExecMinutes > 0,
                           () =>
-                            html`&mdash;
-                            ${msg("execution minutes reset to full")}`,
+                            html`&mdash; ${msg("resets when your plan renews")}`,
                         )}
                       </div>
                     </div>
