@@ -481,10 +481,10 @@ class CrawlOperator(BaseOperator):
         )
 
         # Update config to refresh seed file presigned url if it has
-        # already expired or will within the next hour
+        # already expired or will within the next few minutes
         seed_file_presigned_update_needed = bool(crawl.seed_file_id) and (
             status.seed_file_presigned_expiry is None
-            or (status.seed_file_presigned_expiry <= (dt_now() + timedelta(hours=1)))
+            or (status.seed_file_presigned_expiry <= (dt_now() + timedelta(minutes=5)))
         )
         if seed_file_presigned_update_needed:
             logger.debug(
