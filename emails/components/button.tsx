@@ -9,7 +9,7 @@ export const Button = ({
 }) => {
   return (
     <EmailButton
-      className="rounded-full px-6 text-base py-4 shadow bg-cyan-400 font-semibold text-white border border-cyan-600 hover:bg-cyan-500 dark:border-cyan-300 shadow-cyan-700/25 hover:shadow-cyan-800/25 text-center transition"
+      className="rounded-full px-6 text-base py-4 shadow bg-cyan-400 font-semibold text-white border border-cyan-600 hover:bg-cyan-500 dark:border-cyan-300 shadow-cyan-700/25 hover:shadow-cyan-800/25 text-center"
       href={href}
       style={{
         boxShadow:
