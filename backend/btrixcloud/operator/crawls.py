@@ -2129,8 +2129,8 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
-            elif status.stopReason == "stopped_for_scheduled_next_crawl":
-                state = "stopped_for_scheduled_next_crawl"
+            elif status.stopReason == "stopped_for_next_scheduled_crawl":
+                state = "stopped_for_next_scheduled_crawl"
             elif status.stopReason == "stopped_storage_quota_reached":
                 state = "stopped_storage_quota_reached"
             elif status.stopReason == "stopped_time_quota_reached":
