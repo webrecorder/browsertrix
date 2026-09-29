@@ -67,7 +67,7 @@ If the crawl remains rate limited for an extended period of time (12 hours by de
 
 ### Interrupting Rate Limited Crawls for New Scheduled Crawls
 
-If a new crawl is scheduled to start while a previous crawl has been automatically set to <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>, that crawl will then be interrupted (automatically stopped) to allow the new crawl to start.
+If a workflow run is scheduled to start and the previous crawl run had been paused due to rate limiting (<span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>), the paused crawl will stop automatically to allow the next scheduled crawl to start.
 This way, even if the new crawl is also rate limited eventually, some pages can still be crawled on schedule.
 The status of the previous stopped crawl will be set to: <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Scheduled Crawl Started</span>.
 
