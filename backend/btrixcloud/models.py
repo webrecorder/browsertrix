@@ -327,6 +327,7 @@ FAILED_STATES = get_args(TYPE_FAILED_STATES)
 TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
+    "stopped_for_next_scheduled_crawl",
     "stopped_pause_expired",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",

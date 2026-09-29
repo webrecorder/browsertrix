@@ -65,6 +65,13 @@ If the crawler can no longer continue by skipping error pages while being rate l
 
 If the crawl remains rate limited for an extended period of time (12 hours by default), the crawl may be automatically paused to avoid retrying indefinitely. The workflow status will then be <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>.
 
+### Interrupting Rate Limited Crawls for New Scheduled Crawls
+
+If a workflow run is scheduled to start and the previous crawl run had been paused due to rate limiting (<span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>), the paused crawl will stop automatically to allow the next scheduled crawl to start.
+This way, even if the new crawl is also rate limited eventually, some pages can still be crawled on schedule.
+The status of the previous stopped crawl will be set to: <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Crawl Started</span>.
+
+
 ## End a Crawl
 
 If a crawl workflow is not crawling websites as intended it may be preferable to end crawling operations and update the crawl workflow's settings before trying again. There are two operations to end crawls, available both on the workflow's details page, or as part of the actions menu in the workflow list.
