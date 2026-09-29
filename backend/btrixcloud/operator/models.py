@@ -101,7 +101,7 @@ class CrawlSpec(BaseModel):
     profileid: str | None = None
     dedupe_coll_id: str | None = None
     is_single_page: bool = False
-    seed_file_url: str | None = ""
+    seed_file_id: str | None = ""
 
     @property
     def db_crawl_id(self) -> str:
@@ -290,3 +290,6 @@ class CrawlStatus(BaseModel):
 
     # last state
     last_state: TYPE_ALL_CRAWL_STATES = Field(default="starting", exclude=True)
+
+    # expiry time for seed file presigned url
+    seed_file_presigned_expiry: datetime | None = None
