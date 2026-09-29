@@ -108,9 +108,11 @@ jobs:
 
       - name: "Import Images"
         run: |
-          k3d image import webrecorder/browsertrix-backend:latest -m direct -c btrix-nightly --verbose
-          k3d image import webrecorder/browsertrix-emails:latest -m direct -c btrix-nightly --verbose
-          k3d image import webrecorder/browsertrix-frontend:latest -m direct -c btrix-nightly --verbose
+          k3d image import \
+          webrecorder/browsertrix-backend:latest \
+          webrecorder/browsertrix-emails:latest \
+          webrecorder/browsertrix-frontend:latest \
+          -m tools-node -c btrix-nightly --verbose
 
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
@@ -129,7 +131,9 @@ jobs:
       - name: Start Cluster with Helm
         run: |
           helm upgrade --install -f ./chart/values.yaml -f ./chart/test/test.yaml -f ./chart/test/test-nightly-addons.yaml \
-          ${{ matrix.module == 'test_cleanup_seed_files.py' && '-f ./chart/test/test-nightly-cleanup-seeds-addon.yaml' || '' }} btrix ./chart/
+          ${{ matrix.module == 'test_cleanup_seed_files.py' && '-f ./chart/test/test-nightly-cleanup-seeds-addon.yaml' || '' }} \
+          ${{ matrix.module == 'test_scheduled_rate_limited.py' && '-f ./chart/test/test-nightly-rate-limit-addon.yaml' || '' }} \
+          btrix ./chart/
 
       - name: Install Python
         uses: actions/setup-python@v6
