@@ -74,7 +74,7 @@ Statuses may be displayed with a reason that details how the current status came
 | <span class="status-green-600">:bootstrap-check-circle-fill: Complete</span> | All pages within the workflow's scope and limits have been crawled and saved as WACZ, resulting in an [archived item](archived-items.md). |
 | <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped</span> | The workflow run was stopped by a user and allowed to finish gracefully, resulting in an archived item. |
 | <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Paused Too Long</span> | The workflow run was stopped automatically because it was not resumed within the given time limit. |
-| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Crawl Scheduled</span> | The workflow run was being [rate limited](running-crawl.md#rate-limited-workflow-status) and was stopped automatically to allow the next scheduled crawl to start. |
+| <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Crawl Started</span> | The workflow run was being [rate limited](running-crawl.md#rate-limited-workflow-status) and was stopped automatically to allow the next scheduled crawl to start. |
 | <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: _Reason_</span> | The workflow run was stopped automatically due to an enforced limit, as specified in the reason. |
 | <span class="status-neutral-600">:bootstrap-x-octagon: Canceled</span> | The workflow run was canceled by a user; crawled content is discarded. |
 | <span class="status-red-600">:bootstrap-exclamation-triangle-fill: Skipped: _Reason_</span> | The workflow run was skipped due to an enforced limit, as specified in the reason. |
