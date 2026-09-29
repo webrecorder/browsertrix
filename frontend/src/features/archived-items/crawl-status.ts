@@ -330,7 +330,7 @@ export class CrawlStatus extends TailwindElement {
         if (originalState === "stopped_pause_expired") {
           reason = msg("Paused Too Long");
         } else if (originalState === "stopped_for_next_scheduled_crawl") {
-          reason = msg("Next Scheduled Crawl Started");
+          reason = msg("Next Crawl Scheduled");
         }
         break;
       }
