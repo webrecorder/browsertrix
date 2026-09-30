@@ -36,7 +36,7 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     VERSION=${VERSION}
 
 # Prevent Docker image including node_modules to save space
-RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn build && \
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn build-dev && \
     rm -rf ./node_modules
 
 FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
