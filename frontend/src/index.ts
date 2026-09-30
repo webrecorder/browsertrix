@@ -377,6 +377,7 @@ export class App extends BtrixElement {
     if (!this.docsUrl) return;
 
     const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
+    console.log("IFRAME URL", url);
 
     return html`
       <sl-drawer
@@ -697,6 +698,8 @@ export class App extends BtrixElement {
 
     if (iframe) {
       const url = `${this.docsUrl}user-guide/${pathName}`;
+
+      console.log("PATH URL", this.docsUrl, url, pathName);
 
       if (url !== iframe.src) {
         this.userGuidePath = pathName;
