@@ -505,3 +505,98 @@ def test_removed_from_workflow(
         headers=crawler_auth_headers,
     )
     assert res.json()["dedupeCollId"] == None
+
+
+# ---------------------------------------------------------------------------
+# Missing dependencies
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def missing_deps_coll_id(crawler_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections",
+        headers=crawler_auth_headers,
+        json={"name": "Missing Deps Collection " + suffix},
+    )
+    assert r.status_code == 200
+    return r.json()["id"]
+
+
+def get_missing_dependencies(org_id, coll_id, headers):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{org_id}/collections/{coll_id}/dedupeIndex/missingDependencies",
+        headers=headers,
+    )
+    assert r.status_code == 200
+    return r.json()["missingDependencies"]
+
+
+def test_missing_dependencies_none(
+    default_org_id,
+    missing_deps_coll_id,
+    dedupe_first_crawl,
+    dedupe_second_crawl,
+    crawler_auth_headers,
+):
+    # dedupe_second_crawl depends on dedupe_first_crawl; add both to the collection
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{missing_deps_coll_id}/add",
+        json={"crawlIds": [dedupe_first_crawl, dedupe_second_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert (
+        get_missing_dependencies(
+            default_org_id, missing_deps_coll_id, crawler_auth_headers
+        )
+        == []
+    )
+
+
+def test_missing_dependencies_removed_from_collection(
+    default_org_id,
+    missing_deps_coll_id,
+    dedupe_first_crawl,
+    crawler_auth_headers,
+):
+    # removing the dependency from the collection should be reported
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{missing_deps_coll_id}/remove",
+        json={"crawlIds": [dedupe_first_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert get_missing_dependencies(
+        default_org_id, missing_deps_coll_id, crawler_auth_headers
+    ) == [dedupe_first_crawl]
+
+
+def test_missing_dependencies_deleted(
+    default_org_id,
+    missing_deps_coll_id,
+    dedupe_first_crawl,
+    crawler_auth_headers,
+):
+    # deleting the dependency outright should also be reported
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+        json={"crawl_ids": [dedupe_first_crawl]},
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+
+    assert get_missing_dependencies(
+        default_org_id, missing_deps_coll_id, crawler_auth_headers
+    ) == [dedupe_first_crawl]
+
+
+def test_missing_dependencies_no_collection(default_org_id, crawler_auth_headers):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/"
+        "00000000-0000-0000-0000-000000000000/dedupeIndex/missingDependencies",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
