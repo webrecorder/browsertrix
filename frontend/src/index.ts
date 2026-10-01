@@ -576,7 +576,9 @@ export class App extends BtrixElement {
             return this.renderSpinner();
           }
 
-          return this.renderNotFoundPage();
+          if (this.userInfo) {
+            return this.renderNotFoundPage();
+          }
         }
 
         const slug = this.viewState.params.slug;
