@@ -136,8 +136,23 @@ export class App extends BtrixElement {
     return Boolean(this.userInfo.orgs.some((org) => org.slug === slug));
   }
 
+  #prevVisibilityState?: DocumentVisibilityState;
+
   constructor() {
     super();
+
+    document.addEventListener("visibilitychange", () => {
+      if (
+        this.authState &&
+        this.#prevVisibilityState &&
+        document.visibilityState === "visible"
+      ) {
+        // Reset to current org if a new org was selected in a different tab
+        this.updateOrgSlugIfNeeded();
+      }
+
+      this.#prevVisibilityState = document.visibilityState;
+    });
 
     this.addEventListener("btrix-navigate", this.onNavigateTo);
     this.addEventListener("btrix-need-login", this.onNeedLogin);
