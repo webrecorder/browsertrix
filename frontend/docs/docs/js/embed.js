@@ -3,6 +3,9 @@ if (window.self !== window.top) {
   window.document.documentElement.classList.add("btrix-app-embed");
 
   replaceDocsTitle();
+
+  // TODO Detect Browsertrix color scheme
+  setColorScheme("webrecorder-light");
 }
 
 /**
@@ -34,4 +37,11 @@ function replaceDocsTitle() {
   if (pageTitle.textContent) {
     docsTitle.textContent = pageTitle.textContent.trim();
   }
+}
+
+/**
+ * Override theme preference to match Browsertrix
+ */
+function setColorScheme(scheme) {
+  window.document.body.setAttribute("data-md-color-scheme", scheme);
 }
