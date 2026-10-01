@@ -1,4 +1,5 @@
 import "./alert";
+import "./autocomplete";
 import "./badge";
 import "./button";
 import "./card";
@@ -37,6 +38,7 @@ import("./markdown-viewer");
 import("./menu-item-link");
 import("./meter");
 import("./numbered-list");
+import("./option-group");
 import("./overflow-dropdown");
 import("./pagination");
 import("./pw-strength-alert");

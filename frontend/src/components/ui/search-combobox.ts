@@ -127,7 +127,7 @@ export class SearchCombobox<T> extends TailwindElement {
 
   render() {
     return html`
-      <btrix-combobox
+      <btrix-autocomplete
         ?open=${this.searchResultsOpen}
         @request-close=${() => {
           this.searchResultsOpen = false;
@@ -187,7 +187,7 @@ export class SearchCombobox<T> extends TailwindElement {
           )}
         </sl-input>
         ${this.renderSearchResults()}
-      </btrix-combobox>
+      </btrix-autocomplete>
     `;
   }
 

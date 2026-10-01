@@ -381,7 +381,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private renderSearch() {
     return html`
-      <btrix-combobox
+      <btrix-autocomplete
         ?open=${this.searchResultsOpen}
         @request-close=${() => {
           this.searchResultsOpen = false;
@@ -421,7 +421,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           ></sl-icon>
         </sl-input>
         ${this.renderSearchResults()}
-      </btrix-combobox>
+      </btrix-autocomplete>
     `;
   }
 
