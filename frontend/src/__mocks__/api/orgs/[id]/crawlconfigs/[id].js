@@ -15,7 +15,7 @@ export default {
   crawlCount: 3,
   crawlSuccessfulCount: 3,
   totalSize: 61275,
-  lastCrawlId: "manual-20250205210838-a5e3cf23-f3c",
+  lastCrawlId: "fake-manual-20250205210838",
   lastCrawlStartTime: "2025-02-05T21:08:38Z",
   lastStartedBy: user.id,
   lastCrawlTime: "2025-02-05T21:09:20Z",
