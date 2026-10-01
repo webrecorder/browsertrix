@@ -394,6 +394,7 @@ export class Dashboard extends BtrixElement {
       <btrix-popover
         content=${msg(str`Your free trial ends on ${trialEndDate}.`)}
         placement="bottom-start"
+        distance="12"
         hoist
       >
         ${warning
