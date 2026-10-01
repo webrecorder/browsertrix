@@ -47,6 +47,7 @@
         ) /
         2
     );
+    --btrix-name-max-width: 30ch;
 
     /*
      * Shoelace Theme Tokens

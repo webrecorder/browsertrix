@@ -61,7 +61,7 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
               ${i !== 0 ? breadcrumbSeparator : nothing}
-              ${breadcrumbLink(breadcrumb, tw`max-w-[30ch]`)}
+              ${breadcrumbLink(breadcrumb, tw`max-w-[--btrix-name-max-width]`)}
             `,
           )
         : html`${skeleton} ${breadcrumbSeparator} ${skeleton}`}
