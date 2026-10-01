@@ -3030,6 +3030,7 @@ class ProfileSearchValuesResponse(BaseModel):
     """Response model for profiles search values"""
 
     names: list[str]
+    origins: list[str]
 
 
 # ============================================================================

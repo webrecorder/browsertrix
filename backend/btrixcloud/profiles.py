@@ -472,6 +472,8 @@ class ProfileOps:
         userid: UUID | None = None,
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
+        origins: list[str] | None = None,
+        origin_match: ListFilterType | None = ListFilterType.AND,
         name: str | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -491,6 +493,9 @@ class ProfileOps:
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             match_query["tags"] = {query_type: tags}
+        if origins:
+            query_type = "$all" if origin_match == ListFilterType.AND else "$in"
+            match_query["origins"] = {query_type: origins}
         if name:
             match_query["name"] = name
 
@@ -702,9 +707,11 @@ class ProfileOps:
     async def get_profile_search_values(self, org: Organization):
         """Return profile names for use in search"""
         names = await self.profiles.distinct("name", {"oid": org.id})
+        origins = await self.profiles.distinct("origins", {"oid": org.id})
         # Remove empty strings
         names = [name for name in names if name]
-        return {"names": names}
+        origins = [origin for origin in origins if origin]
+        return {"names": names, "origins": origins}
 
 
 # ============================================================================
@@ -768,6 +775,15 @@ def init_profiles_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        origins: Annotated[list[str] | None, Query(title="Origins")] = None,
+        origin_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="originMatch",
+                title="Origin Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         name: str | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -779,6 +795,8 @@ def init_profiles_api(
             userid,
             tags=tags,
             tag_match=tag_match,
+            origins=origins,
+            origin_match=origin_match,
             name=name,
             page_size=pageSize,
             page=page,
