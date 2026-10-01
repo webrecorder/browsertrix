@@ -128,6 +128,15 @@ export class AcceptInvite extends BtrixElement {
                           e: CustomEvent<OrgUpdatedDetail>,
                         ) => {
                           e.stopPropagation();
+
+                          this.notify.toast({
+                            title: msg("Joined new org"),
+                            message: msg("Welcome to your new org dashboard."),
+                            variant: "success",
+                            icon: "check2-circle",
+                            id: "org-update-status",
+                          });
+
                           this.navigate.to(
                             `/${RouteNamespace.PrivateOrgs}/${e.detail.data.slug}/${OrgTab.Dashboard}`,
                           );

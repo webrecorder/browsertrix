@@ -149,12 +149,6 @@ export class OrgForm extends BtrixElement {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      this.notify.toast({
-        message: msg("Org successfully updated."),
-        variant: "success",
-        icon: "check2-circle",
-        id: "org-update-status",
-      });
 
       await this.onRenameSuccess(payload);
     } catch (e) {
