@@ -701,7 +701,7 @@ export class Dashboard extends BtrixElement {
           </sl-radio-group>
         </div>
       </header>
-      <div class=${clsx(tw`relative`, noCollections && tw`border-b`)}>
+      <div class=${clsx(tw`relative`, noCollections && tw`pt-10`)}>
         <btrix-collections-grid-with-edit-dialog
           .collections=${this.collections.value?.items}
           .collectionRefreshing=${this.collectionRefreshing}
