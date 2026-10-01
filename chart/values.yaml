@@ -55,7 +55,11 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 # advanced: additional args to be passed to the crawler
 # this is mostly for testing of new/experimental crawler flags
 # standard crawler options are covered with other options above
+# included in both crawler and QA runs
 crawler_extra_args: ""
+
+# advanced: additional flags to be passed to the crawler, included only in QA runs
+qa_crawler_extra_args: ""
 
 # max allowed browser windows per crawl
 max_browser_windows: 8
