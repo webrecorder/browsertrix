@@ -30,10 +30,12 @@ COPY --link src ./src/
 ARG GIT_COMMIT_HASH
 ARG GIT_BRANCH_NAME
 ARG VERSION
+ARG DOCS_URL
 
 ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
-    VERSION=${VERSION}
+    VERSION=${VERSION} \
+    DOCS_URL=${DOCS_URL}
 
 # Prevent Docker image including node_modules to save space
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn build && \
