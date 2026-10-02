@@ -69,6 +69,7 @@ jobs:
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+            DOCS_URL=https://docs.browsertrix.com/
 
           tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend

@@ -90,6 +90,7 @@ jobs:
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+            DOCS_URL=https://dev.browsertrix.com/docs/
 
           tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-frontend:latest
           cache-from: type=gha,scope=frontend
