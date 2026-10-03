@@ -110,7 +110,7 @@ spec:
       nodeAffinityPolicy: "Honor"
       labelSelector:
         matchLabels:
-          role: "crawler"
+          role: "redis"
 
   containers:
     - name: redis
