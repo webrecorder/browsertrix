@@ -101,15 +101,19 @@ spec:
 
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 10
+        - weight: 50
           podAffinityTerm:
             topologyKey: "kubernetes.io/hostname"
             labelSelector:
-              matchExpressions:
-              - key: crawl
-                operator: In
-                values:
-                - {{ id }}
+              matchLabels:
+                crawl: "{{ id }}"
+
+        - weight: 20
+          podAffinityTerm:
+            topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                role: "crawler"
 
   tolerations:
     - key: nodeType

@@ -81,12 +81,19 @@ spec:
 
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 2
+        - weight: 50
           podAffinityTerm:
-            topologyKey: "failure-domain.beta.kubernetes.io/zone"
+            topologyKey: "kubernetes.io/hostname"
             labelSelector:
               matchLabels:
-                {{ obj_type }}: {{ id }}
+                crawl: "{{ id }}"
+
+        - weight: 20
+          podAffinityTerm:
+            topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                role: "redis"
 
   tolerations:
     - key: nodeType
