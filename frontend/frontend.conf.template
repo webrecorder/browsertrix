@@ -48,7 +48,7 @@ server {
       set $docs_url "${DOCS_URL}";
 
       if ($docs_url != "") {
-        rewrite ^/docs/(.*)$ $docs_url$1 redirect;
+        return 307 $docs_url$1$is_args$args;
       }
 
       root   /usr/share/nginx/html;
