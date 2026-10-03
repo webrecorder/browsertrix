@@ -81,14 +81,14 @@ spec:
 
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
+        - weight: 100
           podAffinityTerm:
             topologyKey: "kubernetes.io/hostname"
             labelSelector:
               matchLabels:
                 crawl: "{{ id }}"
 
-        - weight: 20
+        - weight: 50
           podAffinityTerm:
             topologyKey: "kubernetes.io/hostname"
             labelSelector:
@@ -108,16 +108,6 @@ spec:
       operator: Exists
       effect: NoExecute
       tolerationSeconds: 300
-
-  topologySpreadConstraints:
-    - maxSkew: 100
-      topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: "ScheduleAnyway"
-      nodeTaintsPolicy: "Honor"
-      nodeAffinityPolicy: "Honor"
-      labelSelector:
-        matchLabels:
-          role: "redis"
 
   containers:
     - name: redis
