@@ -125,6 +125,16 @@ spec:
       effect: NoExecute
       tolerationSeconds: 300
 
+  topologySpreadConstraints:
+    - maxSkew: 100
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: "ScheduleAnyway"
+      nodeTaintsPolicy: "Honor"
+      nodeAffinityPolicy: "Honor"
+      labelSelector:
+        matchLabels:
+          role: "crawler"
+
   containers:
     - name: crawler
       image: {{ crawler_image }}
