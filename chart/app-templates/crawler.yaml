@@ -107,12 +107,6 @@ spec:
             labelSelector:
               matchLabels:
                 crawl: "{{ id }}"
-
-        - weight: 50
-          podAffinityTerm:
-            topologyKey: "kubernetes.io/hostname"
-            labelSelector:
-              matchLabels:
                 role: "crawler"
 
   tolerations:
