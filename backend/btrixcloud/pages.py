@@ -827,7 +827,7 @@ class PageOps:
             if skip:
                 aggregate.extend([{"$skip": skip}])
 
-            aggregate.extend([{"$limit": page_size}])
+            aggregate.extend([{"$limit": 25}])
             print("list pages", aggregate, flush=True)
             cursor = self.pages.aggregate(aggregate)
             items = await cursor.to_list(page_size)
