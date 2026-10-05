@@ -202,9 +202,6 @@ export class App extends BtrixElement {
 
   willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has("settings")) {
-      if (this.settings?.docsUrl) {
-        this.docsUrl = this.settings.docsUrl;
-      }
       AppStateService.updateSettings(this.settings || null);
     }
     if (changedProperties.has("viewState")) {

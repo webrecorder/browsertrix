@@ -49,6 +49,10 @@
 
         if (app && settings) {
           app.settings = settings;
+
+          if (settings.docsUrl) {
+            app.docsUrl = settings.docsUrl;
+          }
         }
       })
       .catch(console.debug);
