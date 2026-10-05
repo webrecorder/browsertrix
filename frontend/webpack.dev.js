@@ -95,7 +95,6 @@ module.exports = [
       proxy: [
         {
           context: "/api",
-
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
@@ -103,18 +102,22 @@ module.exports = [
           ws: true,
         },
         {
-          context: "/docs",
-          target: devDocsUrl.href,
-          headers: {
-            Host: devDocsUrl.host,
-          },
-        },
-        {
           context: "/data",
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
           },
+        },
+        {
+          context: "/docs",
+          target: devDocsUrl.href,
+          pathRewrite: { "^/docs": "" },
+        },
+        {
+          // Needed to prevent infinite reload when running docs with `mkdocs serve`:
+          context: "/livereload",
+          target: devDocsUrl.href,
+          changeOrigin: true,
         },
       ],
       setupMiddlewares: (middlewares, server) => {
