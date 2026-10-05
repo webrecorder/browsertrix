@@ -155,9 +155,6 @@ profile_browser_idle_seconds: 60
 # set to true to enable subscriptions API and Billing tab
 billing_enabled: false
 
-# set URL if docs site is hosted externally
-docs_url: ""
-
 # set URL to external sign-up page
 # the internal sign-up page will take precedence if
 # `registration_enabled` is set to `"1"``
