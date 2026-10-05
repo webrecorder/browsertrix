@@ -11,6 +11,7 @@ export type AppSettings = {
   numBrowsersPerInstance: number;
   maxBrowserWindows: number;
   billingEnabled: boolean;
+  docsUrl: string;
   signUpUrl: string;
   salesEmail: string;
   supportEmail: string;
@@ -42,6 +43,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       numBrowsersPerInstance: 1,
       maxBrowserWindows: 4,
       billingEnabled: false,
+      docsUrl: "",
       signUpUrl: "",
       salesEmail: "",
       supportEmail: "",
