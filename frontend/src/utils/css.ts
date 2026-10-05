@@ -104,7 +104,7 @@ export const animatePulse = css`
  */
 export const dropdown = css`
   .dropdown {
-    contain: layout size;
+    contain: layout;
     transform-origin: top left;
     box-shadow: var(--sl-shadow-medium);
   }
