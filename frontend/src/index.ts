@@ -19,7 +19,7 @@ import {
   type ActiveCrawlsCountContext,
 } from "./context/active-crawls-count/active-crawls-count";
 import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
-import { docsUrlContext } from "./context/docs-url";
+import { docsUrlContext, type DocsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
 import { viewStateContext } from "./context/view-state";
@@ -67,20 +67,20 @@ export class App extends BtrixElement {
   /**
    * Browsertrix app version to display in the UI
    */
-  @property({ type: String })
+  @property({ type: String, useDefault: true })
   version?: string;
 
   /**
    * Base URL for user guide documentation
    */
   @provide({ context: docsUrlContext })
-  @property({ type: String })
-  docsUrl = "/docs/";
+  @property({ type: String, useDefault: true })
+  docsUrl: DocsUrlContext = null;
 
   /**
    * App settings from `/api/settings`
    */
-  @property({ type: Object })
+  @property({ type: Object, useDefault: true })
   settings?: AppSettings;
 
   // TODO Refactor into context
@@ -360,7 +360,7 @@ export class App extends BtrixElement {
       <div class="min-w-screen relative flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()}
         <btrix-app-bar
-          .docsUrl=${this.docsUrl}
+          docsUrl=${ifDefined(this.docsUrl ?? undefined)}
           .viewState=${this.viewState}
           .orgSlugInPath=${this.orgSlugInPath}
           @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}

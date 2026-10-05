@@ -52,6 +52,9 @@
 
           if (settings.docsUrl) {
             app.docsUrl = settings.docsUrl;
+          } else {
+            // Default value for local deployments
+            app.docsUrl = "/docs/";
           }
         }
       })
