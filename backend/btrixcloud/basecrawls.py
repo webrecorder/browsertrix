@@ -240,7 +240,7 @@ class BaseCrawlOps:
 
     async def get_internal_crawl_out(
         self, crawl_id: str, with_dependencies: bool = False
-    ):
+    ) -> CrawlOutWithResources:
         """add internal prefix for relative paths"""
         crawl_out = await self.get_crawl_out(
             crawl_id, with_dependencies=with_dependencies

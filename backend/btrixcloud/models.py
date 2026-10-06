@@ -1157,7 +1157,27 @@ class CrawlScale(BaseModel):
 
 
 # ============================================================================
-class QARun(CoreCrawlable, BaseModel):
+class QARunOpts(BaseModel):
+    """Options for starting QARun"""
+
+    randomizePages: bool | None = None
+    numPages: int | None = None
+
+    include: list[str] | None = None
+    exclude: list[str] | None = None
+
+
+# ============================================================================
+class QARunOptsIn(QARunOpts):
+    """input opts for starting QA run"""
+
+    # randomizePages: bool | None = True
+    # percentPages: float | None = 0.25
+    percentPages: float | None = None
+
+
+# ============================================================================
+class QARun(QARunOpts, CoreCrawlable, BaseModel):
     """Subdocument to track QA runs for given crawl"""
 
 
@@ -1169,7 +1189,7 @@ class QARunWithResources(QARun):
 
 
 # ============================================================================
-class QARunOut(BaseModel):
+class QARunOut(QARunOpts, BaseModel):
     """QA Run Output"""
 
     id: str

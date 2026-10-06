@@ -54,6 +54,7 @@ from .models import (
     PaginatedSeedResponse,
     QARun,
     QARunAggregateStatsOut,
+    QARunOptsIn,
     QARunOut,
     QARunWithResources,
     Seed,
@@ -972,7 +973,7 @@ class CrawlOps(BaseCrawlOps):
         raise HTTPException(status_code=400, detail=result)
 
     async def start_crawl_qa_run(
-        self, crawl_id: str, org: Organization, user: User
+        self, crawl_id: str, opts: QARunOptsIn, org: Organization, user: User
     ) -> str:
         """Start crawl QA run"""
 
@@ -1010,6 +1011,16 @@ class CrawlOps(BaseCrawlOps):
 
         crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
 
+        # if percentPages set (between 0 and 1) compute numPages from number of HTML pages
+        # in the crawl
+        if opts.percentPages:
+            html_pages = (
+                (crawl.pageCount or 0)
+                - (crawl.filePageCount or 0)
+                - (crawl.errorPageCount or 0)
+            )
+            opts.numPages = max(0, round(opts.percentPages * html_pages))
+
         try:
             qa_run_id = await self.crawl_manager.create_qa_crawl_job(
                 crawlconfig,
@@ -1025,6 +1036,10 @@ class CrawlOps(BaseCrawlOps):
 
             qa_run = QARun(
                 id=qa_run_id,
+                randomizePages=opts.randomizePages,
+                numPages=opts.numPages,
+                include=opts.include,
+                exclude=opts.exclude,
                 started=dt_now(),
                 userid=user.id,
                 userName=user.name,
@@ -1728,10 +1743,11 @@ def init_crawls_api(
     )
     async def start_crawl_qa_run(
         crawl_id: str,
+        qa_opts: QARunOptsIn = QARunOptsIn(),
         org: Organization = Depends(org_crawl_dep),
         user: User = Depends(user_dep),
     ):
-        qa_run_id = await ops.start_crawl_qa_run(crawl_id, org, user)
+        qa_run_id = await ops.start_crawl_qa_run(crawl_id, qa_opts, org, user)
         return {"started": qa_run_id}
 
     @app.post(

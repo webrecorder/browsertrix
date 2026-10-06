@@ -227,7 +227,7 @@ class CrawlOperator(BaseOperator):
             paused_at=str_to_date(spec.get("pausedAt") or ""),
             timeout=spec.get("timeout") or 0,
             max_crawl_size=int(spec.get("maxCrawlSize") or 0),
-            scheduled=spec.get("manual") != "1",
+            scheduled=spec.get("manual") != 1,
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
             seed_file_id=spec.get("seedFileId", ""),
@@ -642,6 +642,21 @@ class CrawlOperator(BaseOperator):
             )
             raw_config["seedFile"] = seed_file_out.path
         raw_config.pop("seedFileId", None)
+
+        if crawl.qa_source_crawl_id:
+            qa = await self.crawl_ops.get_active_qa(crawl.qa_source_crawl_id, crawl.org)
+            if qa:
+                if qa.randomizePages:
+                    raw_config["qaRandom"] = qa.randomizePages
+
+                if qa.numPages:
+                    raw_config["limit"] = qa.numPages
+
+                if qa.include:
+                    raw_config["include"] = qa.include
+
+                if qa.exclude:
+                    raw_config["exclude"] = qa.exclude
 
         params["config"] = json.dumps(raw_config)
 
