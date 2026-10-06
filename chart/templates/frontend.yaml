@@ -51,7 +51,7 @@ spec:
 
             {{- if .Values.registration_enabled }}
             - name: REGISTRATION_ENABLED
-              value: {{ .Values.registration_enabled | default 0 }}
+              value: {{ .Values.registration_enabled }}
             {{- end }}
 
             {{- if .Values.billing_enabled }}
