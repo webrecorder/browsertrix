@@ -99,6 +99,8 @@ data:
 
   BILLING_ENABLED: "{{ .Values.billing_enabled }}"
 
+  DOCS_URL: "{{ .Values.docs_url }}"
+
   SIGN_UP_URL: "{{ .Values.sign_up_url }}"
 
   SALES_EMAIL: "{{ .Values.sales_email }}"

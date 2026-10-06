@@ -26,12 +26,6 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
-const DOCS_URL = process.env.DOCS_URL
-  ? new URL(process.env.DOCS_URL)
-  : isDevServer
-    ? "https://docs.browsertrix.com/"
-    : "/docs/";
-
 const OPENGRAPH_BASE_URL = process.env.OPENGRAPH_BASE_URL
   ? new URL(process.env.OPENGRAPH_BASE_URL)
   : "https://app.browsertrix.com/";
@@ -218,7 +212,6 @@ const main = {
       templateParameters: {
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
-        docsUrl: DOCS_URL,
         openGraphBaseUrl: OPENGRAPH_BASE_URL,
         version,
         gitBranch,

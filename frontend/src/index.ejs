@@ -49,12 +49,19 @@
 
         if (app && settings) {
           app.settings = settings;
+
+          if (settings.docsUrl) {
+            app.docsUrl = settings.docsUrl;
+          } else {
+            // Default value for local deployments
+            app.docsUrl = "/docs/";
+          }
         }
       })
       .catch(console.debug);
   </script>
 
-  <browsertrix-app version="v<%= version %>-<%= commitHash %>" docsUrl="<%= docsUrl %>"></browsertrix-app>
+  <browsertrix-app version="v<%= version %>-<%= commitHash %>"></browsertrix-app>
 
   <script>
     const isDev = "<%= environment %>" === "development";
