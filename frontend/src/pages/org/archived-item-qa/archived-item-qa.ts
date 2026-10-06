@@ -13,6 +13,8 @@ import { when } from "lit/directives/when.js";
 import throttle from "lodash/fp/throttle";
 import queryString from "query-string";
 
+import { runAnalysisButton } from "../archived-item-detail/templates/run-analysis-button";
+
 import stylesheet from "./archived-item-qa.stylesheet.css";
 import type * as QATypes from "./types";
 import { renderResourceDiff, renderResources } from "./ui/resources";
@@ -54,7 +56,6 @@ import {
   type finishedCrawlStates,
 } from "@/utils/crawler";
 import { maxLengthValidator } from "@/utils/form";
-import { isArchivingDisabled } from "@/utils/orgs";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { tw } from "@/utils/tailwind";
 
@@ -633,21 +634,13 @@ export class ArchivedItemQA extends BtrixElement {
               )}
               ${when(
                 this.noRuns,
-                () => html`
-                  <sl-button
-                    size="small"
-                    variant="primary"
-                    @click=${() => void this.startQARun()}
-                    ?disabled=${isArchivingDisabled(this.org, true)}
-                  >
-                    <sl-icon
-                      slot="prefix"
-                      name="microscope"
-                      library="app"
-                    ></sl-icon>
-                    ${msg("Run Analysis")}
-                  </sl-button>
-                `,
+                () =>
+                  runAnalysisButton({
+                    org: this.org ?? undefined,
+                    item: this.item,
+                    runCount: 0,
+                    runCallback: () => void this.startQARun(),
+                  }),
                 () =>
                   when(
                     this.notFailedQaRuns,
