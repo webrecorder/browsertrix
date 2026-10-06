@@ -112,6 +112,7 @@ module.exports = [
           context: "/docs",
           target: devDocsUrl.href,
           pathRewrite: { "^/docs": "" },
+          changeOrigin: true,
         },
         {
           // Needed to prevent infinite reload when running docs with `mkdocs serve`:
