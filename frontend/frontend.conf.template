@@ -42,9 +42,6 @@ server {
       try_files $uri /index.html;
 
       add_header Content-Security-Policy "frame-ancestors 'self'";
-
-      sub_filter '</head>' '<script>window.BTRIX_ENV = { REGISTRATION_ENABLED: "${REGISTRATION_ENABLED}", JWT_TOKEN_LIFETIME_MINUTES: "${JWT_TOKEN_LIFETIME_MINUTES}", BILLING_ENABLED: "${BILLING_ENABLED}", DOCS_URL: "${DOCS_URL}", SIGN_UP_URL: "${SIGN_UP_URL}", SALES_EMAIL: "${SALES_EMAIL}", EMAIL_SUPPORT: "${EMAIL_SUPPORT}" };</script></head>';
-      sub_filter_once on;
     }
 
     location ~* /docs/(.*)$ {
