@@ -9,8 +9,10 @@ on:
 
 env:
   BROWSERTRIX_HOST: "https://dev.browsertrix.com"
-  DEV_DAILY_TEST_USER: ${{ secrets.DEV_DAILY_TEST_USER }}
-  DEV_DAILY_TEST_PASSWORD: ${{ secrets.DEV_DAILY_TEST_PASSWORD }}
+  BROWSERTRIX_USER: ${{ secrets.DEV_DAILY_TEST_USER }}
+  BROWSERTRIX_PASSWORD: ${{ secrets.DEV_DAILY_TEST_PASSWORD }}
+  DAILY_TEST_ORG: "85449160-6632-419a-a9fc-bac35a3d6d73"
+  DAILY_TEST_CRAWLCONFIG: "a1d07112-85f2-4182-aa69-fdf597c4c0cc"
 
 jobs:
   daily-scheduled-crawl-test:
@@ -32,7 +34,22 @@ jobs:
           cd backend/
           uv sync --group test --python 3.14
           # We need this extra package to validate it
-          uv pip install py-wacz[signing]
+          uv pip install wacz[signing]
 
       - name: Run tests
-        run: cd backend && uv run test_daily/test_daily.py
+        run: |
+          set -euo pipefail
+
+          cd backend
+          crawl="$(uv run ../scripts/btrix-cli.py crawls list-from-crawlconfig --org-id $DAILY_TEST_ORG --crawl-config-id a1d07112-85f2-4182-aa69-fdf597c4c0cc | head -2 | tail -1)"
+          crawl_id=$(echo "$crawl" | awk -F'\t' '{ print $1 }')
+          finished=$(echo "$crawl" | awk -F'\t' '{ print $4 }')
+
+          if [ $(($EPOCHSECONDS - $(gdate -d 2026-10-06T14:03:29Z +%s))) -ge 86400 ]; then
+            echo "Scheduled crawl didn't run within the past 24 hours!"
+            exit 1
+          fi
+
+          uv run ../scripts/btrix-cli.py crawls download --org-id $DAILY_TEST_ORG --crawl-id $crawl_id --download-path /tmp/daily-test.wacz
+
+          uv run wacz validate --verify-auth -f /tmp/daily-test.wacz
