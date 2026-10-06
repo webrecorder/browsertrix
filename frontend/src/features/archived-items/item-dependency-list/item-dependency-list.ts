@@ -13,10 +13,11 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import { dedupeStatusText } from "@/features/collections/templates/dedupe-status-text";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
+import { pluralOfDependencies } from "@/plurals/dependencies";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { ArchivedItem } from "@/types/crawler";
 import { isCrawl, renderName } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize } from "@/utils/pluralize";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -106,14 +107,39 @@ export class ItemDependencyList extends BtrixElement {
         minute: "2-digit",
       });
 
+    console.log(item);
+
     const missingDeps = (ids: string[]) => {
-      const dependencies_count = this.localize.number(ids.length);
-      const plural_of_dependencies = pluralOf("dependencies", ids.length);
+      const count = this.localize.number(ids.length);
+      const content = pluralize(ids.length, {
+        zero: msg("Includes 0 missing dependencies", {
+          desc: "plural form of 'Includes X missing dependencies' for zero dependencies",
+          id: "includes_x_missing_dependencies.plural.zero",
+        }),
+        one: msg("Includes 1 missing dependency", {
+          desc: "plural form of 'Includes X missing dependencies' for one dependency",
+          id: "includes_x_missing_dependencies.plural.one",
+        }),
+        two: msg("Includes 2 missing dependencies", {
+          desc: "plural form of 'Includes X missing dependencies' for two dependencies",
+          id: "includes_x_missing_dependencies.plural.two",
+        }),
+        few: msg(str`Includes ${count} missing dependencies`, {
+          desc: "plural form of 'Includes X missing dependencies' for few dependencies",
+          id: "includes_x_missing_dependencies.plural.few",
+        }),
+        many: msg(str`Includes ${count} missing dependencies`, {
+          desc: "plural form of 'Includes X missing dependencies' for many dependencies",
+          id: "includes_x_missing_dependencies.plural.many",
+        }),
+        other: msg(str`Includes ${count} missing dependencies`, {
+          desc: "plural form of 'Includes X missing dependencies' for other dependencies",
+          id: "includes_x_missing_dependencies.plural.other",
+        }),
+      });
 
       return html`<btrix-popover
-        content=${msg(
-          str`Includes ${dependencies_count} ${msg("missing")} ${plural_of_dependencies}`,
-        )}
+        content=${content}
         placement="bottom-start"
         hoist
       >
@@ -156,8 +182,7 @@ export class ItemDependencyList extends BtrixElement {
                   hasDependencies: true,
                   hasDependents: !!item.requiredByCrawls.length,
                 })}
-                ${this.localize.number(numDependencies)}
-                ${pluralOf("dependencies", numDependencies)}
+                ${pluralOfDependencies(numDependencies)}
               `
             : nothing
         }
