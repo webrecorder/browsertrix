@@ -49,9 +49,34 @@ spec:
             - name: RWP_BASE_URL
               value: {{ .Values.rwp_base_url }}
 
+            {{- if .Values.registration_enabled | default 0 }}
+            - name: REGISTRATION_ENABLED
+              value: {{ .Values.registration_enabled }}
+            {{- end }}
+
+            {{- if .Values.billing_enabled }}
+            - name: BILLING_ENABLED
+              value: {{ .Values.billing_enabled }}
+            {{- end }}
+
             {{- if .Values.docs_url }}
             - name: DOCS_URL
               value: {{ .Values.docs_url }}
+            {{- end }}
+
+            {{- if .Values.sign_up_url }}
+            - name: SIGN_UP_URL
+              value: {{ .Values.sign_up_url }}
+            {{- end }}
+
+            {{- if .Values.sales_email }}
+            - name: SALES_EMAIL
+              value: {{ .Values.sales_email }}
+            {{- end }}
+
+            {{- if .Values.email.support_email }}
+            - name: EMAIL_SUPPORT
+              value: {{ .Values.email.support_email }}
             {{- end }}
 
             {{- if .Values.minio_local }}
