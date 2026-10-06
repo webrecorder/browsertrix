@@ -20,7 +20,8 @@ Here are some environment specific instructions for setting up a local cluster f
 
     1. [Install Docker Desktop](https://www.docker.com/products/docker-desktop/) if not already installed.
 
-    2. Under Settings > Kubernetes, ensure _Enable Kubernetes_ is checked.
+    2. Under Settings > Kubernetes, ensure _Enable Kubernetes_ is checked.  
+        **Recommended**: Choose _Kubeadm_ as the cluster provisioning method.
 
     3. Restart Docker Desktop if asked, and wait for it to fully restart.
 
@@ -44,7 +45,6 @@ Here are some environment specific instructions for setting up a local cluster f
        Note that Minikube also requires Docker or another container management system to be installed as well.
 
     2. Install [Helm](https://helm.sh/), with `!sh brew install helm` (macOS) or `#!powershell choco install kubernetes-helm` (Windows) or following some of the [other install options](https://helm.sh/docs/intro/install/)
-
 
 ??? info "K3S (recommended for non-Ubuntu Linux)"
 
@@ -86,14 +86,12 @@ don't wish to add the Helm repository
 
 <insert-version></insert-version>
 
-
 ```sh
 helm upgrade --install btrix \
 https://github.com/webrecorder/browsertrix/releases/download/VERSION/browsertrix-VERSION.tgz
 ```
 
 However, the Helm repository option is recommended as it makes upgrading to the latest version easier.
-
 
 ??? info "MicroK8S"
 
@@ -114,7 +112,6 @@ However, the Helm repository option is recommended as it makes upgrading to the 
     ```
 
     **Note:** Subsequent commands will also use `microk8s helm3` instead of `helm`.
-
 
 The default setup includes the full Browsertrix system, with frontend, backend api, db (via MongoDB), and storage (via Minio)
 
@@ -138,7 +135,6 @@ helm upgrade --install btrix https://github.com/webrecorder/browsertrix/releases
 
 The above examples assumes running from a cloned Browsertrix repo, however the config file can be saved anywhere and specified with `-f <extra-config.yaml>`.
 
-
 ## Waiting for Cluster to Start
 
 After running the helm command, you should see something like:
@@ -155,7 +151,7 @@ TEST SUITE: None
 
 After that, especially on first run, it may take a few minutes for the Browsertrix cluster to start, as all images need to be downloaded locally.
 
-You can try running the following command to wait for all pods to be initialized: 
+You can try running the following command to wait for all pods to be initialized:
 
 ```shell
 kubectl wait --for=condition=ready pod --all --timeout=300s
@@ -170,7 +166,6 @@ If the command succeeds, you should be able to access Browsertrix by loading: [h
     When using Minikube on a macOS, the port will not be 30870. Instead, Minikube opens a tunnel to a random port,
     obtained by running `minikube service browsertrix-cloud-frontend --url` in a separate terminal.
     Use the provided URL (in the format `http://127.0.0.1:<TUNNEL_PORT>`) instead.
-
 
 ### Debugging Pod Issues
 
