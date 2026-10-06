@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import requests  # ty: ignore[unresolved-import]
 import os
 import sys
