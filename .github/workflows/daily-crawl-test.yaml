@@ -1,0 +1,38 @@
+name: Scheduled Crawl Test (Dev)
+
+on:
+  schedule:
+    # Run daily at 14:00 UTC
+    - cron: "0 14 * * *"
+
+  workflow_dispatch:
+
+env:
+  BROWSERTRIX_HOST: "https://dev.browsertrix.com"
+  DEV_DAILY_TEST_USER: ${{ secrets.DEV_DAILY_TEST_USER }}
+  DEV_DAILY_TEST_PASSWORD: ${{ secrets.DEV_DAILY_TEST_PASSWORD }}
+
+jobs:
+  daily-scheduled-crawl-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Install dependencies
+        run: |
+          cd backend/
+          uv sync --group test --python 3.14
+          # We need this extra package to validate it
+          uv pip install py-wacz[signing]
+
+      - name: Run tests
+        run: cd backend && uv run test_daily/test_daily.py
