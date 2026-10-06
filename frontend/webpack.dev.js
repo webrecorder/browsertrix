@@ -145,7 +145,7 @@ module.exports = [
           res
             .status(200)
             .send(
-              `window.BTRIX_ENV = { REGISTRATION_ENABLED: "${process.env.REGISTRATION_ENABLED}", BILLING_ENABLED: "${process.env.BILLING_ENABLED}", DOCS_URL: "${process.env.DOCS_URL}", SIGN_UP_URL: "${process.env.SIGN_UP_URL}", SALES_EMAIL: "${process.env.SALES_EMAIL}", EMAIL_SUPPORT: "${process.env.EMAIL_SUPPORT}" };`,
+              `window.BTRIX_ENV = { REGISTRATION_ENABLED: "${process.env.REGISTRATION_ENABLED}", BILLING_ENABLED: "${process.env.BILLING_ENABLED}", DOCS_URL: "${process.env.DOCS_URL}", SIGN_UP_URL: "${process.env.SIGN_UP_URL}" };`,
             );
         });
 
