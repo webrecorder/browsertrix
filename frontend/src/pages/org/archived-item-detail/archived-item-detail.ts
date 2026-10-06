@@ -1398,6 +1398,23 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const analyzing = this.isRunActive;
+    const fileCount = this.item?.filePageCount || 0;
+    const errorCount = this.item?.errorPageCount || 0;
+    const doneCount = this.item?.stats?.done
+      ? parseInt(this.item.stats.done)
+      : 0;
+    const htmlCount = doneCount - fileCount - errorCount;
+    const archivingDisabled = isArchivingDisabled(this.org, true);
+    const noPagesToAnalyze = !htmlCount;
+    let disabledReason = "";
+
+    if (noPagesToAnalyze) {
+      disabledReason = msg("There are no HTML pages to analyze.");
+    }
+
+    if (archivingDisabled) {
+      disabledReason = msg("Archiving is currently disabled.");
+    }
 
     return html`
       ${analyzing
@@ -1424,18 +1441,27 @@ export class ArchivedItemDetail extends BtrixElement {
             </sl-button-group>
           `
         : html`
-            <sl-button
-              size="small"
-              variant="${
-                // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-                qaRuns.length === 0 ? "primary" : "default"
-              }"
-              @click=${() => void this.startQARun()}
-              ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
+            <btrix-popover
+              content=${disabledReason}
+              ?disabled=${!disabledReason}
             >
-              <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
-              ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
-            </sl-button>
+              <sl-button
+                size="small"
+                variant="${
+                  // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
+                  qaRuns.length === 0 ? "primary" : "default"
+                }"
+                @click=${() => void this.startQARun()}
+                ?disabled=${archivingDisabled || noPagesToAnalyze}
+              >
+                <sl-icon
+                  slot="prefix"
+                  name="microscope"
+                  library="app"
+                ></sl-icon>
+                ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
+              </sl-button>
+            </btrix-popover>
           `}
 
       <sl-button
