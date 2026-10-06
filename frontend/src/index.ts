@@ -80,7 +80,7 @@ export class App extends BtrixElement {
   /**
    * App settings from `/api/settings`
    */
-  @property({ type: Object, useDefault: true })
+  @property({ type: Object })
   settings?: AppSettings;
 
   // TODO Refactor into context
