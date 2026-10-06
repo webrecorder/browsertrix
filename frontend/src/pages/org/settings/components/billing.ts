@@ -229,15 +229,8 @@ export class OrgSettingsBilling extends BtrixElement {
                         name="arrow-repeat"
                         class="size-4 flex-shrink-0"
                       ></sl-icon>
-                      <div>
-                        <span class="font-medium text-neutral-700">
-                          ${msg(str`Your plan renews on ${renewalDate}`)}
-                        </span>
-                        ${when(
-                          this.org!.quotas.planExecMinutes > 0,
-                          () =>
-                            html`&mdash; ${msg("resets when your plan renews")}`,
-                        )}
+                      <div class="font-medium text-neutral-700">
+                        ${msg(str`Your plan renews on ${renewalDate}`)}
                       </div>
                     </div>
                   `;
