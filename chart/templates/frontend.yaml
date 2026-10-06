@@ -78,7 +78,7 @@ spec:
 
             - name: LOCAL_ACCESS_PATH
               value: "{{ .Values.minio_access_path }}"
-             {{- end }}
+            {{- end }}
 
             {{- if .Values.inject_extra }}
             - name: INJECT_EXTRA
