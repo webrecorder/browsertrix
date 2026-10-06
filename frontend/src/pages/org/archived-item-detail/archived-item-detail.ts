@@ -11,6 +11,7 @@ import queryString from "query-string";
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
 import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
+import { runAnalysisButton } from "./templates/run-analysis-button";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
@@ -57,7 +58,6 @@ import {
   completeOnboardingStep,
   OnboardingStep,
 } from "@/utils/onboarding/onboardingEvents";
-import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
@@ -1398,23 +1398,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private readonly renderQAHeader = (qaRuns: QARun[]) => {
     const analyzing = this.isRunActive;
-    const fileCount = this.item?.filePageCount || 0;
-    const errorCount = this.item?.errorPageCount || 0;
-    const doneCount = this.item?.stats?.done
-      ? parseInt(this.item.stats.done)
-      : 0;
-    const htmlCount = doneCount - fileCount - errorCount;
-    const archivingDisabled = isArchivingDisabled(this.org, true);
-    const noPagesToAnalyze = !htmlCount;
-    let disabledReason = "";
-
-    if (noPagesToAnalyze) {
-      disabledReason = msg("There are no HTML pages to analyze.");
-    }
-
-    if (archivingDisabled) {
-      disabledReason = msg("Archiving is currently disabled.");
-    }
 
     return html`
       ${analyzing
@@ -1440,29 +1423,12 @@ export class ArchivedItemDetail extends BtrixElement {
               </sl-button>
             </sl-button-group>
           `
-        : html`
-            <btrix-popover
-              content=${disabledReason}
-              ?disabled=${!disabledReason}
-            >
-              <sl-button
-                size="small"
-                variant="${
-                  // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-                  qaRuns.length === 0 ? "primary" : "default"
-                }"
-                @click=${() => void this.startQARun()}
-                ?disabled=${archivingDisabled || noPagesToAnalyze}
-              >
-                <sl-icon
-                  slot="prefix"
-                  name="microscope"
-                  library="app"
-                ></sl-icon>
-                ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
-              </sl-button>
-            </btrix-popover>
-          `}
+        : runAnalysisButton({
+            org: this.org ?? undefined,
+            item: this.item,
+            runCount: qaRuns.length,
+            runCallback: () => void this.startQARun(),
+          })}
 
       <sl-button
         size="small"
