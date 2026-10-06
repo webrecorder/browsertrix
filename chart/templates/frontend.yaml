@@ -49,7 +49,7 @@ spec:
             - name: RWP_BASE_URL
               value: {{ .Values.rwp_base_url }}
 
-            {{- if .Values.registration_enabled | default 0 }}
+            {{- if .Values.registration_enabled }}
             - name: REGISTRATION_ENABLED
               value: {{ .Values.registration_enabled }}
             {{- end }}
