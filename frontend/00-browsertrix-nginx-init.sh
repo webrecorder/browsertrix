@@ -24,7 +24,7 @@ else
 fi
 
 # Save environment-specific settings as JS file
-echo "window.BTRIX_ENV = { REGISTRATION_ENABLED: \"$REGISTRATION_ENABLED\", JWT_TOKEN_LIFETIME_MINUTES: \"$JWT_TOKEN_LIFETIME_MINUTES\", BILLING_ENABLED: \"$BILLING_ENABLED\", DOCS_URL: \"$DOCS_URL\", SIGN_UP_URL: \"$SIGN_UP_URL\", SALES_EMAIL: \"$SALES_EMAIL\", EMAIL_SUPPORT: \"$EMAIL_SUPPORT\" };" >/usr/share/nginx/html/env.js
+echo "window.BTRIX_ENV = { REGISTRATION_ENABLED: \"$REGISTRATION_ENABLED\", BILLING_ENABLED: \"$BILLING_ENABLED\", DOCS_URL: \"$DOCS_URL\", SIGN_UP_URL: \"$SIGN_UP_URL\", SALES_EMAIL: \"$SALES_EMAIL\", EMAIL_SUPPORT: \"$EMAIL_SUPPORT\" };" >/usr/share/nginx/html/env.js
 
 mkdir -p /etc/nginx/resolvers/
 echo resolver $(grep -oP '(?<=nameserver\s)[^\s]+' /etc/resolv.conf | awk '{ if ($1 ~ /:/) { printf "[" $1 "] "; } else { printf $1 " "; } }') valid=10s ipv6=off";" >/etc/nginx/resolvers/resolvers.conf
