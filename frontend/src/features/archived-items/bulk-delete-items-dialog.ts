@@ -13,6 +13,7 @@ import { deleteConfirmation } from "@/strings/ui";
 import type { ListArchivedItem } from "@/types/crawler";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -22,11 +23,14 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-bulk-delete-items-dialog")
 @localized()
 export class BulkDeleteItemsDialog extends BtrixElement {
-  @property({ type: Array })
+  @property({ type: Array, hasChanged: isNotEqual })
   items?: ListArchivedItem[];
 
   @property({ type: Boolean })
   open = false;
+
+  @property({ type: Boolean })
+  inProgress = false;
 
   @query("btrix-dialog")
   readonly dialog?: Dialog | null;
@@ -95,6 +99,11 @@ export class BulkDeleteItemsDialog extends BtrixElement {
       class="[--width:36rem]"
       .label=${msg("Delete Archived Items?")}
       .open=${this.open}
+      @sl-request-close=${(e: CustomEvent) => {
+        if (this.inProgress) {
+          e.preventDefault();
+        }
+      }}
     >
       ${when(this.items, this.renderContent)}
     </btrix-dialog>`;
@@ -116,6 +125,13 @@ export class BulkDeleteItemsDialog extends BtrixElement {
             html`<div>
               <p class="max-w-prose text-pretty">
                 ${deleteConfirmation(pluralOfItems(items.length))}
+                ${when(
+                  items.some((item) => item.type === "crawl"),
+                  () =>
+                    msg(
+                      "Crawl runs associated with crawled items will also be deleted.",
+                    ),
+                )}
               </p>
               <btrix-data-grid
                 class="part-[body]:text-xs"
@@ -156,7 +172,8 @@ export class BulkDeleteItemsDialog extends BtrixElement {
         <sl-button
           size="small"
           variant="danger"
-          ?disabled=${!deleteable}
+          ?disabled=${!deleteable || this.inProgress}
+          ?loading=${this.inProgress}
           @click=${() => {
             this.dispatchEvent(new CustomEvent("btrix-confirm"));
           }}
