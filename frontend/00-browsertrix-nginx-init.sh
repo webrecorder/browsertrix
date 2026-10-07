@@ -23,8 +23,11 @@ else
   echo "$INJECT_EXTRA" >/usr/share/nginx/html/extra.js
 fi
 
-# Save environment-specific settings as JS file
-echo "window.BTRIX_ENV = { REGISTRATION_ENABLED: \"$REGISTRATION_ENABLED\", BILLING_ENABLED: \"$BILLING_ENABLED\", DOCS_URL: \"$DOCS_URL\", SIGN_UP_URL: \"$SIGN_UP_URL\" };" >/usr/share/nginx/html/env.js
+# Replace environment-specific settings in index.html
+sed -i '' -r "s#registration-enabled=[\"][\"]#registration-enabled=\"$REGISTRATION_ENABLED\"#g
+              s#billing-enabled=[\"][\"]#billing-enabled=\"$BILLING_ENABLED\"#g
+              s#docs-url=[\"][\"]#docs-url=\"$DOCS_URL\"#g
+              s#sign-up-url=[\"][\"]#sign-up-url=\"$SIGN_UP_URL\"#g" /usr/share/nginx/html/index.html
 
 mkdir -p /etc/nginx/resolvers/
 echo resolver $(grep -oP '(?<=nameserver\s)[^\s]+' /etc/resolv.conf | awk '{ if ($1 ~ /:/) { printf "[" $1 "] "; } else { printf $1 " "; } }') valid=10s ipv6=off";" >/etc/nginx/resolvers/resolvers.conf

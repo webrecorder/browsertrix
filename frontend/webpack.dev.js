@@ -139,16 +139,6 @@ module.exports = [
           res.status(404).send(`{"error": "placeholder_for_replay"}`);
         });
 
-        // Serve static settings, which is set in prod as an env variable by the Helm chart
-        server.app?.get("/env.js", (req, res) => {
-          res.set("Content-Type", "application/javascript");
-          res
-            .status(200)
-            .send(
-              `window.BTRIX_ENV = { REGISTRATION_ENABLED: "${process.env.REGISTRATION_ENABLED || 0}", BILLING_ENABLED: "${process.env.BILLING_ENABLED || 0}", DOCS_URL: "${DOCS_URL}", SIGN_UP_URL: "${process.env.SIGN_UP_URL || ""}" };`,
-            );
-        });
-
         // Serve analytics script, which is set in prod as an env variable by the Helm chart
         server.app?.get("/extra.js", (req, res) => {
           res.set("Content-Type", "application/javascript");

@@ -216,6 +216,15 @@ const main = {
         version,
         gitBranch,
         commitHash,
+        // In production, these values are provided by the nginx-init bash script during the Docker build:
+        registrationEnabled: isDevServer
+          ? process.env.REGISTRATION_ENABLED === "1"
+          : "",
+        billingEnabled: isDevServer ? process.env.BILLING_ENABLED === "1" : "",
+        docsUrl: isDevServer
+          ? process.env.DOCS_URL || "https://docs.browsertrix.com/"
+          : "",
+        signUpUrl: isDevServer ? process.env.SIGN_UP_URL : "",
       },
       // TODO this breaks shoelace forms, but seems HMR is broken anyway?
       // // Need to block during local development for HMR:

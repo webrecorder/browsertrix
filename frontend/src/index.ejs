@@ -51,7 +51,6 @@
       content="A simple graphic with the words “Archive, Curate and Share the Web.”, the Browsertrix logo, and “Powered by Webrecorder”"
     />
 
-    <script src="/env.js"></script>
     <script src="/extra.js"></script>
     <%if (environment==="development" ) { %>
     <script defer src="/vendor/dll.lit.js"></script>
@@ -83,8 +82,13 @@
         .catch(console.debug);
     </script>
 
+    <!-- Attribute values are provided by Webpack dev server when running in local development or by nginx-init bash script during the Docker build. -->
     <browsertrix-app
       version="v<%= version %>-<%= commitHash %>"
+      registration-enabled="<%= registrationEnabled %>"
+      billing-enabled="test<%= billingEnabled %>"
+      docs-url="<%= docsUrl %>"
+      sign-up-url="<%= signUpUrl %>"
     ></browsertrix-app>
 
     <script>
