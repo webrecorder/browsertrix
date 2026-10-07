@@ -102,14 +102,13 @@
   },
   "scripts": {
     "prepare": "cd .. && husky install frontend/.husky",
-    "postinstall": "del-cli ./node_modules/.cache/webpack",
     "test": "web-test-runner \"src/**/*.test.{ts,js}\"",
-    "prebuild": "del-cli ./dist",
-    "build": "webpack --config webpack.prod.js",
+    "clean-for-build": "del-cli ./node_modules/.cache/webpack && del-cli ./dist",
+    "build": "yarn clean-for-build && webpack --config webpack.prod.js",
     "build-dev": "webpack --mode development",
     "build:analyze": "BUNDLE_ANALYZER=true webpack --config webpack.prod.js",
-    "prestart": "webpack --mode development --config vendor.webpack.config.js",
-    "start": "webpack serve --mode=development --config webpack.dev.js",
+    "build-dev:vendor": "webpack --mode development --config vendor.webpack.config.js",
+    "start": "yarn build-dev:vendor && webpack serve --mode=development --config webpack.dev.js",
     "start-with-docs": "concurrently 'cd docs; mkdocs serve' 'DOCS_URL=http://localhost:8000/ yarn start'",
     "serve": "yarn node scripts/serve.js",
     "lint": "eslint --fix .",
@@ -120,10 +119,9 @@
     "localize:extract": "lit-localize extract && prettier --write xliff/*.xlf",
     "localize:build": "lit-localize build",
     "cem": "custom-elements-manifest analyze",
-    "prestorybook:build": "yarn cem",
     "storybook": "storybook dev -p 6006",
     "storybook:watch": "concurrently 'yarn cem --watch' 'yarn storybook'",
-    "storybook:build": "storybook build"
+    "storybook:build": "yarn cem && storybook build"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
