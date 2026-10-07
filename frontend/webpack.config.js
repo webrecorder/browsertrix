@@ -218,9 +218,9 @@ const main = {
         commitHash,
         // In production, these values are provided by the nginx-init bash script during the Docker build:
         registrationEnabled: isDevServer
-          ? process.env.REGISTRATION_ENABLED === "1"
+          ? process.env.REGISTRATION_ENABLED
           : "",
-        billingEnabled: isDevServer ? process.env.BILLING_ENABLED === "1" : "",
+        billingEnabled: isDevServer ? process.env.BILLING_ENABLED : "",
         docsUrl: isDevServer
           ? process.env.DOCS_URL || "https://docs.browsertrix.com/"
           : "",
