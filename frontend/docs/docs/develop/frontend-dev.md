@@ -26,7 +26,7 @@ You should see a version number like `v24.17.0`. If you see a command line error
 
     You can use [Node Version Manager](https://nodejs.org/en/download/package-manager#nvm) to install multiple Node.js versions and switch versions between projects.
 
-### 3. Yarn 1 (Classic)
+### 3. Yarn >=2
 
 To verify your Yarn installation:
 
@@ -34,19 +34,9 @@ To verify your Yarn installation:
 yarn --version
 ```
 
-If your Yarn version starts with `1` (e.g. `1.22.22`) you're good to go.
+You should see a number like `4.17.1`.
 
-If Yarn isn't installed, install [Yarn 1 (Classic)](https://classic.yarnpkg.com/en/docs/install#mac-stable).
-
-If your Yarn version is `2.0` or greater, run the following from your Browsertrix project directory to enable Yarn 1:
-
-```sh
-cd frontend
-corepack enable
-corepack install
-```
-
-Check out the full [Yarn + Corepack installation guide](https://yarnpkg.com/corepack) for more details.
+If Yarn isn't installed, or the version number starts with `1`, [install Corepack + Yarn](https://yarnpkg.com/getting-started/install).
 
 ## Quickstart
 
@@ -60,10 +50,16 @@ cd frontend
 
     From this point on, all commands in this guide should be run from the `frontend` directory.
 
-Install UI dependencies:
+Install dependencies:
 
 ```sh
 yarn install
+```
+
+Set up development dependencies:
+
+```sh
+yarn prepare
 ```
 
 Copy environment variables from the sample file:
