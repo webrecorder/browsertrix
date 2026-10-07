@@ -51,12 +51,12 @@ spec:
 
             {{- if .Values.registration_enabled }}
             - name: REGISTRATION_ENABLED
-              value: {{ .Values.registration_enabled }}
+              value: {{ .Values.registration_enabled | quote }}
             {{- end }}
 
             {{- if .Values.billing_enabled }}
             - name: BILLING_ENABLED
-              value: {{ .Values.billing_enabled }}
+              value: {{ .Values.billing_enabled | quote }}
             {{- end }}
 
             {{- if .Values.docs_url }}
