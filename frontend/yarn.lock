@@ -6403,6 +6403,7 @@ __metadata:
     postcss-loader: "npm:^6.1.1"
     postinstall-postinstall: "npm:^2.1.0"
     prettier: "npm:3.8.4"
+    prettier-plugin-ejs: "npm:^1.0.3"
     prettier-plugin-tailwindcss: "npm:^0.8.0"
     pretty-ms: "npm:^7.0.1"
     query-string: "npm:^8.1.0"
@@ -13508,6 +13509,15 @@ __metadata:
   version: 1.2.1
   resolution: "prelude-ls@npm:1.2.1"
   checksum: 10c0/b00d617431e7886c520a6f498a2e14c75ec58f6d93ba48c3b639cf241b54232d90daa05d83a9e9b9fef6baa63cb7e1e4602c2372fea5bc169668401eb127d0cd
+  languageName: node
+  linkType: hard
+
+"prettier-plugin-ejs@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "prettier-plugin-ejs@npm:1.0.3"
+  peerDependencies:
+    prettier: 2.x - 3.x
+  checksum: 10c0/f43b222257933caa2bbc8870c1ffeca2c406b17326d40527c5f2b58fd780c3d2a08eef2a048971c68806ae00d4e47eab1e4542614e92e68a340160add95aa0d8
   languageName: node
   linkType: hard
 
