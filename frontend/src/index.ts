@@ -19,9 +19,18 @@ import {
   type ActiveCrawlsCountContext,
 } from "./context/active-crawls-count/active-crawls-count";
 import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "./context/billing-enabled";
 import { docsUrlContext, type DocsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
+import {
+  registrationEnabledContext,
+  type RegistrationEnabledContext,
+} from "./context/registration-enabled";
+import { signUpUrlContext, type SignUpUrlContext } from "./context/sign-up-url";
 import { viewStateContext } from "./context/view-state";
 import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
@@ -37,7 +46,6 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
-import { type AppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
@@ -45,6 +53,8 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "@/components/layout/app-bar";
+
+import { getAppSettings } from "./utils/app";
 
 type DialogContent = {
   label?: TemplateResult | string;
@@ -61,6 +71,10 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
+// Server will pass true as "1"
+const numberToBoolean = (value: string | null) =>
+  value === "1" || value === "true";
+
 @customElement("browsertrix-app")
 @localized()
 export class App extends BtrixElement {
@@ -71,17 +85,32 @@ export class App extends BtrixElement {
   version?: string;
 
   /**
+   * Enable user registration UI
+   */
+  @provide({ context: registrationEnabledContext })
+  @property({ type: Boolean, converter: numberToBoolean, useDefault: true })
+  registrationEnabled?: RegistrationEnabledContext;
+
+  /**
+   * Enable user billing UI
+   */
+  @provide({ context: billingEnabledContext })
+  @property({ type: Boolean, converter: numberToBoolean, useDefault: true })
+  billingEnabled?: BillingEnabledContext;
+
+  /**
    * Base URL for user guide documentation
    */
   @provide({ context: docsUrlContext })
   @property({ type: String, useDefault: true })
-  docsUrl: DocsUrlContext = null;
+  docsUrl?: DocsUrlContext;
 
   /**
-   * App settings from `/api/settings`
+   * External URL for user sign up
    */
-  @property({ type: Object })
-  settings?: AppSettings;
+  @provide({ context: signUpUrlContext })
+  @property({ type: String, useDefault: true })
+  signUpUrl?: SignUpUrlContext;
 
   // TODO Refactor into context
   private readonly router = router;
@@ -178,6 +207,8 @@ export class App extends BtrixElement {
 
     super.connectedCallback();
 
+    void getAppSettings();
+
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -201,9 +232,6 @@ export class App extends BtrixElement {
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has("settings")) {
-      AppStateService.updateSettings(this.settings || null);
-    }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
         changedProperties.get("viewState") as undefined | ViewState,
@@ -522,10 +550,7 @@ export class App extends BtrixElement {
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
-        if (!this.appState.settings) {
-          return nothing;
-        }
-        if (this.appState.settings.registrationEnabled) {
+        if (this.registrationEnabled) {
           return html`<btrix-sign-up
             class="flex w-full items-center justify-center md:bg-neutral-50"
           ></btrix-sign-up>`;

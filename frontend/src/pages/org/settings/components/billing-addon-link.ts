@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import { type SlSelectEvent } from "@shoelace-style/shoelace";
@@ -5,8 +6,11 @@ import { html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "@/context/billing-enabled";
 import { type BillingAddonCheckout } from "@/types/billing";
-import appState from "@/utils/state";
 
 const PRESET_MINUTES = [100, 600, 1500, 3000];
 
@@ -19,6 +23,9 @@ type Price = {
 @localized()
 export class OrgSettingsBillingAddonLink extends BtrixElement {
   static _price: Price | undefined;
+
+  @consume({ context: billingEnabledContext })
+  private readonly billingEnabled?: BillingEnabledContext;
 
   @state()
   private lastClickedMinutesPreset: number | undefined = undefined;
@@ -43,7 +50,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
 
   private readonly checkoutUrl = new Task(this, {
     task: async ([minutes]) => {
-      if (!appState.settings?.billingEnabled) return;
+      if (!this.billingEnabled) return;
 
       try {
         const { checkoutUrl } = await this.getCheckoutUrl(minutes);

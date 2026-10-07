@@ -1,4 +1,4 @@
-import { provide } from "@lit/context";
+import { consume, provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
@@ -21,6 +21,10 @@ import type {
 } from "./settings/settings";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "@/context/billing-enabled";
 import {
   orgCrawlerChannelsContext,
   type OrgCrawlerChannelsContext,
@@ -155,6 +159,9 @@ export class Org extends BtrixElement {
   @state()
   private showOrgStatusBanner = false;
 
+  @consume({ context: billingEnabledContext })
+  private readonly billingEnabled?: BillingEnabledContext;
+
   private readonly [searchOrgContextKey] = new SearchOrgContextController(this);
   private readonly [orgUploadsContextKey] = new OrgUploadsContextController(
     this,
@@ -274,7 +281,10 @@ export class Org extends BtrixElement {
     ) {
       // Hide banner if on dashboard and actively trialing
       if (this.orgTab === OrgTab.Dashboard) {
-        const alerts = OrgStatusBanner.alerts(this.org);
+        const alerts = OrgStatusBanner.alerts(
+          this.org,
+          this.billingEnabled ?? false,
+        );
         const trialStatus = alerts.find(({ test }) => test());
 
         this.showOrgStatusBanner = trialStatus?.name !== OrgStatusName.Trialing;

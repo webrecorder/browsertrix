@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import clsx from "clsx";
@@ -9,6 +10,10 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "@/context/billing-enabled";
 import {
   hasExecutionMinuteQuota,
   hasStorageQuota,
@@ -38,6 +43,9 @@ export class OrgSettingsBilling extends BtrixElement {
       font-size: var(--sl-input-label-font-size-small);
     }
   `;
+
+  @consume({ context: billingEnabledContext })
+  private readonly billingEnabled?: BillingEnabledContext;
 
   @property({ type: String, noAccessor: true })
   salesEmail?: string;
@@ -71,8 +79,7 @@ export class OrgSettingsBilling extends BtrixElement {
 
   private readonly portalUrl = new Task(this, {
     task: async ([appState]) => {
-      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
-        return;
+      if (!this.billingEnabled || !appState.org?.subscription) return;
 
       try {
         const { portalUrl } = await this.getPortalUrl();
@@ -240,7 +247,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
-                  this.appState.settings?.billingEnabled,
+                  this.billingEnabled,
                   () =>
                     html`<btrix-org-settings-billing-addon-link
                       class="mt-3 flex items-center border-t py-2"

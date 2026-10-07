@@ -82,15 +82,11 @@ export class StorybookOrg extends TailwindElement {
 
     // TODO Allow editing settings
     AppStateService.updateSettings({
-      registrationEnabled: false,
-      jwtTokenLifetime: 0,
       defaultBehaviorTimeSeconds: 0,
       defaultPageLoadTimeSeconds: 0,
       maxPagesPerCrawl: 0,
       numBrowsersPerInstance: 0,
       maxBrowserWindows: 0,
-      billingEnabled: true,
-      signUpUrl: "",
       salesEmail: "",
       supportEmail: "",
     });

@@ -1,10 +1,16 @@
 // cSpell:words xstate
+import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { assign, createMachine, interpret } from "@xstate/fsm";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  registrationEnabledContext,
+  type RegistrationEnabledContext,
+} from "@/context/registration-enabled";
+import { signUpUrlContext, type SignUpUrlContext } from "@/context/sign-up-url";
 import { isApiError } from "@/utils/api";
 import type { ViewState } from "@/utils/APIRouter";
 import AuthService from "@/utils/AuthService";
@@ -148,6 +154,12 @@ export class LogInPage extends BtrixElement {
   @property({ type: String })
   redirectUrl?: string;
 
+  @consume({ context: registrationEnabledContext })
+  private readonly registrationEnabled?: RegistrationEnabledContext;
+
+  @consume({ context: signUpUrlContext })
+  private readonly signUpUrl?: SignUpUrlContext;
+
   private readonly formStateService = interpret(machine);
 
   @state()
@@ -215,8 +227,6 @@ export class LogInPage extends BtrixElement {
       `;
     }
 
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
     return html`
       <div class="flex w-full flex-1 items-center justify-center pb-4 pt-16">
         <article class="flex w-full max-w-md flex-col gap-5">
@@ -228,13 +238,16 @@ export class LogInPage extends BtrixElement {
           <footer class="text-center">${link}</footer>
         </article>
       </div>
-      ${registrationEnabled || signUpUrl
+      ${this.registrationEnabled || this.signUpUrl
         ? html`
             <div
               class="w-full gap-4 border-y bg-white/30 p-6 px-3 text-center text-neutral-500"
             >
               <span>${msg("Need an account?")}</span>
-              <btrix-link href=${signUpUrl || "/sign-up"} variant="primary">
+              <btrix-link
+                href=${this.signUpUrl || "/sign-up"}
+                variant="primary"
+              >
                 ${msg("Sign Up")}
               </btrix-link>
             </div>

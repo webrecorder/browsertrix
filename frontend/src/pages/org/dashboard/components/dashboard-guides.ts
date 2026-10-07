@@ -7,6 +7,10 @@ import { dashboardHeading } from "../layouts/dashboardHeading";
 import { generalGuides } from "../templates/generalGuides";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "@/context/billing-enabled";
 import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { AnalyticsTrackEvent } from "@/trackEvents";
@@ -20,6 +24,9 @@ import "./dashboard-guide-card";
 @customElement("btrix-dashboard-guides")
 @localized()
 export class DashboardGuides extends BtrixElement {
+  @consume({ context: billingEnabledContext })
+  private readonly billingEnabled?: BillingEnabledContext;
+
   @consume({ context: docsUrlContext })
   private readonly docsUrl?: DocsUrlContext;
 
@@ -92,7 +99,7 @@ export class DashboardGuides extends BtrixElement {
     return generalGuides({
       onboarding: this.onboarding,
       trialing: this.appState.isTrialing,
-      billing: this.appState.settings?.billingEnabled,
+      billing: this.billingEnabled,
       classes,
     });
   }

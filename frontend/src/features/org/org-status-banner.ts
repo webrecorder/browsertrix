@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { type LocalizeController } from "@shoelace-style/localize";
 import type { SlAlert, SlIcon } from "@shoelace-style/shoelace";
@@ -7,6 +8,10 @@ import { customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import {
+  billingEnabledContext,
+  type BillingEnabledContext,
+} from "@/context/billing-enabled";
 import { type NavigateController } from "@/controllers/navigate";
 import { SubscriptionStatus } from "@/types/billing";
 import { OrgReadOnlyReason, type OrgData } from "@/types/org";
@@ -91,6 +96,9 @@ export class OrgStatusBanner extends BtrixElement {
     };
   }
 
+  @consume({ context: billingEnabledContext })
+  private readonly billingEnabled?: BillingEnabledContext;
+
   render() {
     if (!this.org) return;
 
@@ -117,7 +125,12 @@ export class OrgStatusBanner extends BtrixElement {
   private get alerts(): Alert[] {
     if (!this.org) return [];
 
-    return OrgStatusBanner.alerts(this.org, this.localize, this.navigate);
+    return OrgStatusBanner.alerts(
+      this.org,
+      this.billingEnabled ?? false,
+      this.localize,
+      this.navigate,
+    );
   }
 
   /**
@@ -125,6 +138,7 @@ export class OrgStatusBanner extends BtrixElement {
    */
   static alerts(
     org: OrgData,
+    billingEnabled: boolean,
     localize: LocalizeController | Localize = globalLocalize,
     navigate?: NavigateController,
   ): Alert[] {
@@ -151,8 +165,6 @@ export class OrgStatusBanner extends BtrixElement {
       trialEndDate,
       futureCancelDate,
     } = OrgStatusBanner.trialInfo(org, localize);
-
-    const billingEnabled = !!appState.settings?.billingEnabled;
 
     const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;
