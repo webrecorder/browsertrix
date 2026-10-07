@@ -46,6 +46,7 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
+import { getAppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
@@ -53,8 +54,6 @@ import { AppStateService } from "@/utils/state";
 import { formatAPIUser } from "@/utils/user";
 
 import "@/components/layout/app-bar";
-
-import { getAppSettings } from "./utils/app";
 
 type DialogContent = {
   label?: TemplateResult | string;
