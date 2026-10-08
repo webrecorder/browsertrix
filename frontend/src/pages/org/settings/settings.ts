@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import {
@@ -16,10 +15,6 @@ import { when } from "lit/directives/when.js";
 import stylesheet from "./settings.stylesheet.css";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import {
-  billingEnabledContext,
-  type BillingEnabledContext,
-} from "@/context/billing-enabled";
 import { columns } from "@/layouts/columns";
 import { pageHeader } from "@/layouts/pageHeader";
 import type { APIPaginatedList } from "@/types/api";
@@ -79,9 +74,6 @@ export const UPDATED_STATUS_TOAST_ID = "org-updated-status";
 @localized()
 export class OrgSettings extends BtrixElement {
   static styles = styles;
-
-  @consume({ context: billingEnabledContext })
-  private readonly billingEnabled?: BillingEnabledContext;
 
   @property({ type: String })
   activePanel: Tab = "information";
@@ -167,7 +159,7 @@ export class OrgSettings extends BtrixElement {
       <btrix-tab-group active=${this.activePanel} placement="start">
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
-        ${when(this.billingEnabled, () =>
+        ${when(this.env.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
@@ -535,7 +527,7 @@ export class OrgSettings extends BtrixElement {
               >
                 ${msg("Admin")}
                 <span class="text-xs text-gray-500">
-                  ${this.billingEnabled
+                  ${this.env.billingEnabled
                     ? msg("Manage org and billing settings")
                     : msg("Manage org")}
                 </span>
@@ -550,7 +542,7 @@ export class OrgSettings extends BtrixElement {
                   ${msg("All Crawler permissions, plus:")}
                 </p>
                 <ul class="ms-4 list-disc text-gray-500">
-                  ${this.billingEnabled &&
+                  ${this.env.billingEnabled &&
                   html`<li class="text-warning">
                       ${msg("Manage subscription")}
                     </li>

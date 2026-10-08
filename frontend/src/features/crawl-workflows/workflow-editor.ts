@@ -68,7 +68,6 @@ import {
   SmartScopeSites,
   type SmartScopeSite,
 } from "@/constants/smart-scope-sites";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import {
   orgCrawlerChannelsContext,
   type OrgCrawlerChannelsContext,
@@ -308,9 +307,6 @@ export class WorkflowEditor extends BtrixElement {
 
   @consume({ context: orgCrawlerChannelsContext, subscribe: true })
   private readonly crawlerChannels?: OrgCrawlerChannelsContext;
-
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
 
   @property({ type: String })
   configId?: string;
@@ -2906,7 +2902,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const path = `workflow-setup/#${hash}`;
 
     return html`<a
-      href="${this.docsUrl}user-guide/${path}"
+      href="${this.env.docsUrl}user-guide/${path}"
       class="text-blue-600 hover:text-blue-500"
       target="_blank"
       @click=${(e: MouseEvent) => {

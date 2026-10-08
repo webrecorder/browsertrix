@@ -1,13 +1,12 @@
-import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import type { SlIcon } from "@shoelace-style/shoelace";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { isNewTabClick } from "@/utils/mouseEvents";
+import appState from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 
 /**
@@ -21,9 +20,6 @@ import { tw } from "@/utils/tailwind";
 @customElement("btrix-dashboard-guide-card")
 @localized()
 export class DashboardGuideCard extends TailwindElement {
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
-
   @property({ type: String })
   variant: "button" | "card" = "card";
 
@@ -34,7 +30,7 @@ export class DashboardGuideCard extends TailwindElement {
   path?: string;
 
   render() {
-    const link = `${this.docsUrl}user-guide/${this.path}`;
+    const link = `${appState.env.docsUrl ?? ""}user-guide/${this.path}`;
 
     if (this.variant === "button") {
       return html`<a

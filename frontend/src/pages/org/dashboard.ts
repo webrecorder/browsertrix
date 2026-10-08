@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type {
@@ -27,10 +26,6 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsEmail } from "@/constants/docs-email";
-import {
-  billingEnabledContext,
-  type BillingEnabledContext,
-} from "@/context/billing-enabled";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import {
@@ -68,9 +63,6 @@ const PAGE_SIZE = 12;
 @customElement("btrix-dashboard")
 @localized()
 export class Dashboard extends BtrixElement {
-  @consume({ context: billingEnabledContext })
-  private readonly billingEnabled?: BillingEnabledContext;
-
   @state()
   private metrics?: Metrics;
 
@@ -220,7 +212,7 @@ export class Dashboard extends BtrixElement {
       <div class="@container/card">
         ${generalGuides({
           trialing: this.appState.isTrialing,
-          billing: this.billingEnabled,
+          billing: this.env.billingEnabled,
         })}
       </div>
 
@@ -434,7 +426,7 @@ export class Dashboard extends BtrixElement {
             ? nothing
             : this.guardedRenderTrialInfo()}
           ${when(
-            this.billingEnabled,
+            this.env.billingEnabled,
             () =>
               html`<sl-button
                 size="small"

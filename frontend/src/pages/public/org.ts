@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import { html, nothing } from "lit";
@@ -7,7 +6,6 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import { signUpUrlContext, type SignUpUrlContext } from "@/context/sign-up-url";
 import { page, pageHeading } from "@/layouts/page";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import {
@@ -29,9 +27,6 @@ export class PublicOrg extends BtrixElement {
 
   @state()
   private isPrivatePreview = false;
-
-  @consume({ context: signUpUrlContext })
-  private readonly signUpUrl?: SignUpUrlContext;
 
   get canEditOrg() {
     return this.orgSlug === this.orgSlugState && this.appState.isAdmin;
@@ -233,7 +228,7 @@ export class PublicOrg extends BtrixElement {
   }
 
   private renderSignUpCta(org: PublicOrgCollections["org"]) {
-    if (!this.signUpUrl) return;
+    if (!this.env.signUpUrl) return;
 
     return html`
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
@@ -248,7 +243,7 @@ export class PublicOrg extends BtrixElement {
             `,
           )}
           <span>${msg("Do you have web archives to share?")}</span>
-          <btrix-link href=${this.signUpUrl} variant="primary">
+          <btrix-link href=${this.env.signUpUrl} variant="primary">
             ${msg("Get started with Browsertrix")}
           </btrix-link>
         </p>

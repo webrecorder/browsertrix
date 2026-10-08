@@ -24,7 +24,6 @@ import activeCrawlsCountContext, {
   type ActiveCrawlsCountContext,
 } from "@/context/active-crawls-count";
 import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
@@ -144,9 +143,6 @@ export class WorkflowDetail extends BtrixElement {
       new URLSearchParams(location.search).get(CRAWLS_PAGINATION_NAME),
     ),
   };
-
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
 
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
@@ -1573,8 +1569,8 @@ export class WorkflowDetail extends BtrixElement {
             })}
             <a
               target="_blank"
-              href="${this
-                .docsUrl}user-guide/running-crawl/#rate-limit-detection"
+              href="${this.env.docsUrl ??
+              ""}user-guide/running-crawl/#rate-limit-detection"
             >
               <strong class="font-semibold"
                 >${msg("More Information")}</strong

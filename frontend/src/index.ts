@@ -19,18 +19,8 @@ import {
   type ActiveCrawlsCountContext,
 } from "./context/active-crawls-count/active-crawls-count";
 import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
-import {
-  billingEnabledContext,
-  type BillingEnabledContext,
-} from "./context/billing-enabled";
-import { docsUrlContext, type DocsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
-import {
-  registrationEnabledContext,
-  type RegistrationEnabledContext,
-} from "./context/registration-enabled";
-import { signUpUrlContext, type SignUpUrlContext } from "./context/sign-up-url";
 import { viewStateContext } from "./context/view-state";
 import type { BtrixUserGuideShowEvent } from "./events/btrix-user-guide-show";
 import { OrgTab, RouteNamespace } from "./routes";
@@ -81,35 +71,41 @@ export class App extends BtrixElement {
    * Browsertrix app version to display in the UI
    */
   @property({ type: String, useDefault: true })
-  version?: string;
+  version = "";
 
   /**
    * Enable user registration UI
    */
-  @provide({ context: registrationEnabledContext })
-  @property({ type: Boolean, converter: numberToBoolean, useDefault: true })
-  registrationEnabled?: RegistrationEnabledContext;
+  @property({
+    type: Boolean,
+    converter: numberToBoolean,
+    useDefault: true,
+    noAccessor: true,
+  })
+  registrationEnabled = false;
 
   /**
    * Enable user billing UI
    */
-  @provide({ context: billingEnabledContext })
-  @property({ type: Boolean, converter: numberToBoolean, useDefault: true })
-  billingEnabled?: BillingEnabledContext;
+  @property({
+    type: Boolean,
+    converter: numberToBoolean,
+    useDefault: true,
+    noAccessor: true,
+  })
+  billingEnabled = false;
 
   /**
    * Base URL for user guide documentation
    */
-  @provide({ context: docsUrlContext })
-  @property({ type: String, useDefault: true })
-  docsUrl?: DocsUrlContext;
+  @property({ type: String, useDefault: true, noAccessor: true })
+  docsUrl = "/docs/";
 
   /**
    * External URL for user sign up
    */
-  @provide({ context: signUpUrlContext })
-  @property({ type: String, useDefault: true })
-  signUpUrl?: SignUpUrlContext;
+  @property({ type: String, useDefault: true, noAccessor: true })
+  signUpUrl = "";
 
   // TODO Refactor into context
   private readonly router = router;
@@ -206,6 +202,13 @@ export class App extends BtrixElement {
 
     super.connectedCallback();
 
+    AppStateService.updateEnv({
+      version: this.version,
+      registrationEnabled: this.registrationEnabled,
+      billingEnabled: this.billingEnabled,
+      docsUrl: this.docsUrl,
+      signUpUrl: this.signUpUrl,
+    });
     void getAppSettings();
 
     window.addEventListener("popstate", () => {
@@ -387,7 +390,6 @@ export class App extends BtrixElement {
       <div class="min-w-screen relative flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()}
         <btrix-app-bar
-          docsUrl=${ifDefined(this.docsUrl ?? undefined)}
           .viewState=${this.viewState}
           .orgSlugInPath=${this.orgSlugInPath}
           @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}

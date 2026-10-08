@@ -1,4 +1,3 @@
-import { consume } from "@lit/context";
 import { localized, msg } from "@lit/localize";
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -7,11 +6,6 @@ import { dashboardHeading } from "../layouts/dashboardHeading";
 import { generalGuides } from "../templates/generalGuides";
 
 import { BtrixElement } from "@/classes/BtrixElement";
-import {
-  billingEnabledContext,
-  type BillingEnabledContext,
-} from "@/context/billing-enabled";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
@@ -24,12 +18,6 @@ import "./dashboard-guide-card";
 @customElement("btrix-dashboard-guides")
 @localized()
 export class DashboardGuides extends BtrixElement {
-  @consume({ context: billingEnabledContext })
-  private readonly billingEnabled?: BillingEnabledContext;
-
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
-
   @property({ type: Boolean })
   onboarding = false;
 
@@ -99,7 +87,7 @@ export class DashboardGuides extends BtrixElement {
     return generalGuides({
       onboarding: this.onboarding,
       trialing: this.appState.isTrialing,
-      billing: this.billingEnabled,
+      billing: this.env.billingEnabled,
       classes,
     });
   }
@@ -285,7 +273,7 @@ export class DashboardGuides extends BtrixElement {
     icon: string;
     path: string;
   }) => {
-    const link = `${this.docsUrl}user-guide/${path}`;
+    const link = `${this.env.docsUrl}user-guide/${path}`;
 
     return html`<div class="flex gap-2">
       <div class="flex h-4 shrink-0 grow-0 items-center">
