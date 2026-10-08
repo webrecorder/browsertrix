@@ -70,20 +70,22 @@
 
           if (app && settings) {
             app.settings = settings;
-
-            if (settings.docsUrl) {
-              app.docsUrl = settings.docsUrl;
-            } else {
-              // Default value for local deployments
-              app.docsUrl = "/docs/";
-            }
           }
         })
         .catch(console.debug);
     </script>
 
+    <!-- 
+      Attribute values are provided by Webpack dev server when running in local development or by the
+      nginx-init bash script during the Docker build.
+      Attribute names are lowercased in production builds but kept camel case in source for readability.
+    -->
     <browsertrix-app
       version="v<%= version %>-<%= commitHash %>"
+      registrationEnabled="<%= registrationEnabled %>"
+      billingEnabled="<%= billingEnabled %>"
+      docsUrl="<%= docsUrl %>"
+      signUpUrl="<%= signUpUrl %>"
     ></browsertrix-app>
 
     <script>
