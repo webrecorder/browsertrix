@@ -6,15 +6,54 @@ from zipfile import ZIP_STORED, ZipFile
 import pytest
 import requests
 
-from .conftest import API_PREFIX, HOST_PREFIX
+from .conftest import API_PREFIX, FINISHED_STATES, HOST_PREFIX
 
 MAX_ATTEMPTS = 24
+
+
+@pytest.fixture(scope="session")
+def qa_crawl_id(crawler_auth_headers, default_org_id):
+    # Start crawl.
+    crawl_data = {
+        "runNow": True,
+        "name": "Crawler User Crawl for Testing QA",
+        "description": "crawler test crawl for qa",
+        "tags": ["qa", "wr-test-1"],
+        "config": {
+            "seeds": [
+                {"url": "https://old.webrecorder.net/"},
+                {"url": "https://old.webrecorder.net/about"},
+                {"url": "https://old.webrecorder.net/contact"},
+            ],
+            "scopeType": "page",
+        },
+        "crawlerChannel": "test",
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=crawler_auth_headers,
+        json=crawl_data,
+    )
+    data = r.json()
+
+    crawl_id = data["run_now_job"]
+    # Wait for it to complete and then return crawl ID
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=crawler_auth_headers,
+        )
+        data = r.json()
+        if data["state"] in FINISHED_STATES:
+            return crawl_id
+        time.sleep(5)
 
 
 @pytest.fixture(scope="module")
 def qa_run_id(qa_crawl_id, crawler_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/start",
+        json={"include": ["https://old.webrecorder.net/$"]},
         headers=crawler_auth_headers,
     )
 
@@ -27,7 +66,25 @@ def qa_run_id(qa_crawl_id, crawler_auth_headers, default_org_id):
 
 
 @pytest.fixture(scope="module")
-def qa_run_pages_ready(qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id):
+def qa_run_id_2(qa_crawl_id, crawler_auth_headers, default_org_id):
+    # tests 66% of 3 pages, percent takes precedence over numPages
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/start",
+        json={"randomizePages": True, "percentPages": 0.66, "numPages": 1},
+        headers=crawler_auth_headers,
+    )
+
+    assert r.status_code == 200
+
+    data = r.json()
+    qa_run_id = data["started"]
+    assert qa_run_id
+    return qa_run_id
+
+
+def wait_for_qa_run_pages_ready(
+    qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
+):
     # Wait until activeQA is finished
     count = 0
     while count < MAX_ATTEMPTS:
@@ -61,6 +118,13 @@ def qa_run_pages_ready(qa_crawl_id, crawler_auth_headers, default_org_id, qa_run
 
         time.sleep(5)
         count += 1
+
+
+@pytest.fixture(scope="module")
+def qa_run_pages_ready(qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id):
+    wait_for_qa_run_pages_ready(
+        qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id
+    )
 
 
 @pytest.fixture(scope="module")
@@ -568,6 +632,25 @@ def test_download_wacz_crawls(
             for filename in contents:
                 assert filename.endswith(".wacz") or filename == "datapackage.json"
                 assert zip_file.getinfo(filename).compress_type == ZIP_STORED
+
+
+def test_qa_run_random_pages(
+    qa_crawl_id,
+    crawler_auth_headers,
+    default_org_id,
+    qa_run_id_2,
+):
+    wait_for_qa_run_pages_ready(
+        qa_crawl_id, crawler_auth_headers, default_org_id, qa_run_id_2
+    )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/{qa_run_id_2}/pages",
+        headers=crawler_auth_headers,
+    )
+    data = r.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
 
 
 def test_delete_qa_runs(
