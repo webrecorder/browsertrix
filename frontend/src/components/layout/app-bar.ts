@@ -25,7 +25,7 @@ import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
 
-// TODO Validate against mkdocs paths
+// TODO Validate against zensical paths
 const mapToUserGuide: Partial<Record<RouteName, string>> = {
   home: "",
   org: "#quick-links",
