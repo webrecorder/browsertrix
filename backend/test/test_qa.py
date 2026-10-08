@@ -395,11 +395,13 @@ def test_qa_stats(
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
+        {"lowerBoundary": "No data", "count": 2},
     ]
     assert data["textMatch"] == [
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
+        {"lowerBoundary": "No data", "count": 2},
     ]
 
     # Test we get expected results with explicit 0 boundary
