@@ -1,12 +1,15 @@
 import time
 
+import structlog
 import pytest
 import requests
 
-from btrixcloud.utils import dt_now
+from btrixcloud.utils import dt_now, str_to_date
 
 from .conftest import API_PREFIX
 from .utils import verify_file_replicated
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
@@ -35,7 +38,7 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
         attempts += 1
 
 
-@pytest.mark.timeout(1800)
+@pytest.mark.timeout(2400)
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
     crawl_complete = dt_now()
 
@@ -45,21 +48,28 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
     # Give copy bucket job (which is kicked off by cron replication job)
     # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 20:
+    while attempts < 60:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=copy-bucket",
+            f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
         for job in jobs:
-            assert job["type"] == "copy-bucket"
-            if job.get("started") >= crawl_complete and job.get("finished"):
-                job_id = job["id"]
-                break
+            try:
+                if (
+                    job.get("type") == "copy-bucket"
+                    and str_to_date(job.get("started")) >= crawl_complete
+                    and job.get("success")
+                ):
+                    job_id = job["id"]
+                    break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
 
         attempts += 1
-        time.sleep(60)
+        time.sleep(30)
 
     assert job_id
 

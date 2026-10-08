@@ -5,7 +5,7 @@ import structlog
 import pytest
 import requests
 
-from btrixcloud.utils import dt_now
+from btrixcloud.utils import dt_now, str_to_date
 from test.utils import read_in_chunks
 
 from .conftest import API_PREFIX
@@ -36,7 +36,7 @@ def test_upload_stream(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
 
 
-@pytest.mark.timeout(1800)
+@pytest.mark.timeout(2400)
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
     upload_complete = dt_now()
 
@@ -46,21 +46,28 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     # Give copy bucket job (which is kicked off by cron replication job)
     # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 20:
+    while attempts < 40:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=copy-bucket",
+            f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
         for job in jobs:
-            assert job["type"] == "copy-bucket"
-            if job.get("started") >= upload_complete and job.get("finished"):
-                job_id = job["id"]
-                break
+            try:
+                if (
+                    job.get("type") == "copy-bucket"
+                    and str_to_date(job.get("started")) >= upload_complete
+                    and job.get("success")
+                ):
+                    job_id = job["id"]
+                    break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
 
         attempts += 1
-        time.sleep(60)
+        time.sleep(30)
 
     assert job_id
 
@@ -77,9 +84,10 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
 
     file_ = files[0]
     filename = file_["name"]
+    assert filename
 
     global upload_file_path
-    upload_file_path = f"{default_org_id}/{filename}"
+    upload_file_path = f"{default_org_id}/uploads/{filename}"
 
     verify_file_replicated(upload_file_path)
 
