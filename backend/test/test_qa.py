@@ -77,9 +77,9 @@ def qa_run_id_2(qa_crawl_id, crawler_auth_headers, default_org_id):
     assert r.status_code == 200
 
     data = r.json()
-    qa_run_id = data["started"]
-    assert qa_run_id
-    return qa_run_id
+    qa_run_id_2 = data["started"]
+    assert qa_run_id_2
+    return qa_run_id_2
 
 
 def wait_for_qa_run_pages_ready(
@@ -662,6 +662,7 @@ def test_delete_qa_runs(
     crawler_auth_headers,
     default_org_id,
     qa_run_id,
+    qa_run_id_2,
     qa_run_pages_ready,
     failed_qa_run_id,
 ):
