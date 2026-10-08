@@ -107,6 +107,7 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(),
             "replica_file_path": replica_bucket_suffix,
             "replica_endpoint": replica_endpoint,
+            "job_type": job_type,
             "BgJobType": BgJobType,
         }
 
