@@ -38,7 +38,7 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
         attempts += 1
 
 
-@pytest.mark.timeout(1800)
+@pytest.mark.timeout(2400)
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
     crawl_complete = dt_now()
 
@@ -48,7 +48,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
     # Give copy bucket job (which is kicked off by cron replication job)
     # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 30:
+    while attempts < 60:
         r = requests.get(
             f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
@@ -72,7 +72,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
                 pass
 
         attempts += 1
-        time.sleep(60)
+        time.sleep(30)
 
     assert job_id
 

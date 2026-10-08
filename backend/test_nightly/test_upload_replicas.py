@@ -46,7 +46,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     # Give copy bucket job (which is kicked off by cron replication job)
     # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 20:
+    while attempts < 40:
         r = requests.get(
             f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
@@ -70,11 +70,9 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
                 pass
 
         attempts += 1
-        time.sleep(60)
+        time.sleep(30)
 
     assert job_id
-
-    time.sleep(20)
 
     # Verify upload file is stored
     r = requests.get(
@@ -92,7 +90,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     assert filename
 
     global upload_file_path
-    upload_file_path = f"{default_org_id}/{filename}"
+    upload_file_path = f"{default_org_id}/uploads/{filename}"
 
     verify_file_replicated(upload_file_path)
 
