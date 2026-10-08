@@ -1,0 +1,2 @@
+# Every 2 minutes, for use in testing file replication
+replication_job_cron_schedule: "*/2 * * * *"
