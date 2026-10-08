@@ -677,12 +677,12 @@ def test_delete_qa_runs(
     # Delete QA runs
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/qa/delete",
-        json={"qa_run_ids": [qa_run_id, failed_qa_run_id]},
+        json={"qa_run_ids": [qa_run_id, qa_run_id_2, failed_qa_run_id]},
         headers=crawler_auth_headers,
     )
 
     assert r.status_code == 200
-    assert r.json()["deleted"] == 2
+    assert r.json()["deleted"] == 3
 
     # Wait for QA runs to be deleted
     count = 0
