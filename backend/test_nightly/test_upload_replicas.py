@@ -5,7 +5,7 @@ import structlog
 import pytest
 import requests
 
-from btrixcloud.utils import dt_now
+from btrixcloud.utils import dt_now, str_to_date
 from test.utils import read_in_chunks
 
 from .conftest import API_PREFIX
@@ -56,13 +56,18 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         logger.info("BACKGROUND JOBS")
         for job in jobs:
             logger.info("background_job", job=job)
-            if (
-                job.get("type") == "copy-bucket"
-                and job.get("started") >= upload_complete
-                and job.get("success")
-            ):
-                job_id = job["id"]
-                break
+
+            try:
+                if (
+                    job.get("type") == "copy-bucket"
+                    and str_to_date(job.get("started")) >= upload_complete
+                    and job.get("success")
+                ):
+                    job_id = job["id"]
+                    break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
 
         attempts += 1
         time.sleep(60)

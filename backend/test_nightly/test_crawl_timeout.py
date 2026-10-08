@@ -4,7 +4,7 @@ import structlog
 import pytest
 import requests
 
-from btrixcloud.utils import dt_now
+from btrixcloud.utils import dt_now, str_to_date
 
 from .conftest import API_PREFIX
 from .utils import verify_file_replicated
@@ -58,13 +58,18 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
         logger.info("BACKGROUND JOBS")
         for job in jobs:
             logger.info("background_job", job=job)
-            if (
-                job.get("type") == "copy-bucket"
-                and job.get("started") >= crawl_complete
-                and job.get("success")
-            ):
-                job_id = job["id"]
-                break
+
+            try:
+                if (
+                    job.get("type") == "copy-bucket"
+                    and str_to_date(job.get("started")) >= crawl_complete
+                    and job.get("success")
+                ):
+                    job_id = job["id"]
+                    break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
 
         attempts += 1
         time.sleep(60)
