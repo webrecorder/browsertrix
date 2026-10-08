@@ -1,6 +1,6 @@
 # Writing Documentation
 
-Our documentation is built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) and configured via `mkdocs.yml` in the project root.
+Our documentation is built with [Zensical](https://zensical.org/) and configured via `mkdocs.yml` in the project root.
 
 The docs can be found in the `frontend/docs` subdirectory.
 
@@ -10,30 +10,30 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
 
 === "pip"
 
-    Install Material for MkDocs:
+    Install Zensical:
 
     ```sh
-    pip install mkdocs-material
+    pip install zensical
     ```
 
     Start the docs development server:
     
     ```sh
-    mkdocs serve
+    zensical serve
     ```
 
 === "pipx"
 
-    Install Material for MkDocs:
+    Install Zensical:
 
     ```sh
-    pipx install mkdocs-material --include-deps
+    pipx install zensical
     ```
 
     Start the docs development server:
     
     ```sh
-    mkdocs serve
+    zensical serve
     ```
 
 === "uvx"
@@ -41,7 +41,7 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
     Install and start the docs development server:
 
     ```sh
-    uvx --with mkdocs-material --with mkdocs-redirects mkdocs serve
+    uvx zensical serve
     ```
 
 You can now view a local version of the docs at [localhost:8000](http://localhost:8000).
@@ -58,7 +58,7 @@ You can now view a local version of the docs at [localhost:8000](http://localhos
 
 We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects. This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused. If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
 
-Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, MKDocs must be restarted. For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
+Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, Zensical must be restarted. For more information, see the [Zensical page on Changing the logo and icons](https://zensical.org/docs/setup/logo-and-icons/#customization).
 
 ## Docs Style Guide
 
@@ -205,9 +205,9 @@ Some features of Browsertrix only pertain to those paying for the software on a 
 
 ### Admonitions
 
-We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
+We use [Admonitions](https://zensical.org/docs/authoring/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
 
-There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
+There are a lot of different options provided by Zensical — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
     The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.

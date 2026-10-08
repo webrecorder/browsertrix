@@ -51,7 +51,7 @@ RUN pip install -r requirements.txt
 COPY --link ./docs/mkdocs.yml .
 COPY --link ./docs/docs ./docs
 
-RUN API_DOCS_URL=/api/redoc mkdocs build
+RUN API_DOCS_URL=/api/redoc zensical build
 
 FROM docker.io/library/nginx:1.23.2
 
