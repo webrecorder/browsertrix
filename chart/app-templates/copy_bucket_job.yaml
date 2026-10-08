@@ -9,7 +9,7 @@ metadata:
     job_type: "{{ job_type }}"
 
 spec:
-  ttlSecondsAfterFinished: 300
+  ttlSecondsAfterFinished: 0
   backoffLimit: 6
   template:
     spec:
