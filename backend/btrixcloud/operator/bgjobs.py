@@ -94,6 +94,7 @@ class BgJobOperator(BaseOperator):
                 oid=org_id,
             )
             finalized = True
+            bg_logger.debug("background_job_successfully_finalized")
 
         except HTTPException as exc:
             # If job couldn't be found, it's possible the org has been
