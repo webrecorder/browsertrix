@@ -48,7 +48,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     attempts = 0
     while attempts < 20:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=finished&sortDirection=-1",
+            f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200

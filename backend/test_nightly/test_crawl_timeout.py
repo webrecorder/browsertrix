@@ -50,7 +50,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
     attempts = 0
     while attempts < 30:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=finished&sortDirection=-1",
+            f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
