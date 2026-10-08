@@ -53,7 +53,9 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
+        logger.info("BACKGROUND JOBS")
         for job in jobs:
+            logger.info("background_job", job=job)
             if (
                 job.get("type") == "copy-bucket"
                 and job.get("started") >= upload_complete

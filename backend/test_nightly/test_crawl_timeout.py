@@ -1,5 +1,6 @@
 import time
 
+import structlog
 import pytest
 import requests
 
@@ -7,6 +8,8 @@ from btrixcloud.utils import dt_now
 
 from .conftest import API_PREFIX
 from .utils import verify_file_replicated
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
@@ -52,7 +55,9 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
+        logger.info("BACKGROUND JOBS")
         for job in jobs:
+            logger.info("background_job", job=job)
             if (
                 job.get("type") == "copy-bucket"
                 and job.get("started") >= crawl_complete
