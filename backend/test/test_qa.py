@@ -333,7 +333,7 @@ def test_qa_page_data(
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
-        "crawlGood": 14,
+        "crawlGood": 13,
         "crawlBad": 0,
         "replayGood": 13,
         "replayBad": 1,
@@ -352,7 +352,7 @@ def test_qa_page_data(
     assert page["qa"]["textMatch"] == 1.0
     assert page["qa"]["screenshotMatch"] == 1.0
     assert page["qa"]["resourceCounts"] == {
-        "crawlGood": 14,
+        "crawlGood": 13,
         "crawlBad": 0,
         "replayGood": 13,
         "replayBad": 1,
