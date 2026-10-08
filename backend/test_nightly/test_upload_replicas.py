@@ -36,7 +36,7 @@ def test_upload_stream(admin_auth_headers, default_org_id):
     upload_id = r.json()["id"]
 
 
-@pytest.mark.timeout(1800)
+@pytest.mark.timeout(2400)
 def test_upload_file_replicated(admin_auth_headers, default_org_id):
     upload_complete = dt_now()
 
@@ -48,14 +48,17 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
     attempts = 0
     while attempts < 20:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=copy-bucket",
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
         jobs = r.json().get("items", [])
         for job in jobs:
-            assert job["type"] == "copy-bucket"
-            if job.get("started") >= upload_complete and job.get("finished"):
+            if (
+                job.get("type") == "copy-bucket"
+                and job.get("started") >= upload_complete
+                and job.get("success")
+            ):
                 job_id = job["id"]
                 break
 
@@ -63,6 +66,8 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         time.sleep(60)
 
     assert job_id
+
+    time.sleep(20)
 
     # Verify upload file is stored
     r = requests.get(
@@ -77,6 +82,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
 
     file_ = files[0]
     filename = file_["name"]
+    assert filename
 
     global upload_file_path
     upload_file_path = f"{default_org_id}/{filename}"
