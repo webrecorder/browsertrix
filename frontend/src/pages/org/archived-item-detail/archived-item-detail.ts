@@ -11,6 +11,7 @@ import queryString from "query-string";
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
 import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
+import { runAnalysisButton } from "./templates/run-analysis-button";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
@@ -57,7 +58,6 @@ import {
   completeOnboardingStep,
   OnboardingStep,
 } from "@/utils/onboarding/onboardingEvents";
-import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
@@ -1423,20 +1423,12 @@ export class ArchivedItemDetail extends BtrixElement {
               </sl-button>
             </sl-button-group>
           `
-        : html`
-            <sl-button
-              size="small"
-              variant="${
-                // This is checked again being 0 explicitly because while QA state is loading, `this.qaRuns` is undefined, and the content change is less when the rightmost button stays non-primary when a run exists.
-                qaRuns.length === 0 ? "primary" : "default"
-              }"
-              @click=${() => void this.startQARun()}
-              ?disabled=${isArchivingDisabled(this.org, true) || analyzing}
-            >
-              <sl-icon slot="prefix" name="microscope" library="app"></sl-icon>
-              ${qaRuns.length ? msg("Rerun Analysis") : msg("Run Analysis")}
-            </sl-button>
-          `}
+        : runAnalysisButton({
+            org: this.org ?? undefined,
+            item: this.item,
+            runCount: qaRuns.length,
+            runCallback: () => void this.startQARun(),
+          })}
 
       <sl-button
         size="small"

@@ -18,11 +18,26 @@ if (!process.env.API_BASE_URL) {
   );
 }
 
+const isDevServer = process.env.WEBPACK_SERVE === "true";
+
+const dotEnvPath = path.resolve(
+  process.cwd(),
+  `.env${isDevServer ? `.local` : ""}`,
+);
+require("dotenv").config({
+  path: dotEnvPath,
+});
+
+const DOCS_URL = process.env.DOCS_URL
+  ? new URL(process.env.DOCS_URL)
+  : "https://docs.browsertrix.com/";
+
 // for testing: for prod, using the version specified in Helm values.yaml
 const RWP_BASE_URL =
   process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
+const devDocsUrl = new URL(DOCS_URL);
 
 /** @type {import('webpack').Configuration['plugins']} */
 const plugins = [
@@ -80,7 +95,6 @@ module.exports = [
       proxy: [
         {
           context: "/api",
-
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
@@ -93,6 +107,18 @@ module.exports = [
           headers: {
             Host: devBackendUrl.host,
           },
+        },
+        {
+          context: "/docs",
+          target: devDocsUrl.href,
+          pathRewrite: { "^/docs": "" },
+          changeOrigin: true,
+        },
+        {
+          // Needed to prevent infinite reload when running docs with `mkdocs serve`:
+          context: "/livereload",
+          target: devDocsUrl.href,
+          changeOrigin: true,
         },
       ],
       setupMiddlewares: (middlewares, server) => {

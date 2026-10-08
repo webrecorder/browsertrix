@@ -47,6 +47,7 @@ def test_api_settings():
         "numBrowsersPerInstance": 2,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,
+        "docsUrl": "",
         "signUpUrl": "",
         "salesEmail": "",
         "supportEmail": "",

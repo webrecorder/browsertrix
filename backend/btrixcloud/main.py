@@ -123,6 +123,7 @@ class SettingsResponse(BaseModel):
 
     billingEnabled: bool
 
+    docsUrl: str = ""
     signUpUrl: str = ""
 
     salesEmail: str = ""
@@ -163,6 +164,7 @@ def main() -> None:
         numBrowsersPerInstance=int(os.environ.get("NUM_BROWSERS", 1)),
         maxBrowserWindows=int(os.environ.get("MAX_BROWSER_WINDOWS", 8)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
+        docsUrl=os.environ.get("DOCS_URL", ""),
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
