@@ -1,5 +1,7 @@
 """background jobs tests, named to run after everything else has finished"""
 
+import time
+
 import pytest
 import requests
 
@@ -10,12 +12,21 @@ job_id = None
 
 @pytest.mark.timeout(1800)
 def test_background_jobs_list(admin_auth_headers, default_org_id, deleted_crawl_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    items = data["items"]
+    # Wait until at least one delete-replica job is successful
+    attempts = 0
+    while attempts < 20:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/", headers=admin_auth_headers
+        )
+        assert r.status_code == 200
+        data = r.json()
+        items = data.get("items", [])
+        for job in items:
+            if job.get("type") == "delete-replica" and job.get("success"):
+                break
+
+        attempts += 1
+        time.sleep(30)
 
     assert items
     assert len(items) == data["total"]
