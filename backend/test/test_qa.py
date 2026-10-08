@@ -416,11 +416,13 @@ def test_qa_stats(
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
+        {"lowerBoundary": "No data", "count": 2},
     ]
     assert data["textMatch"] == [
         {"lowerBoundary": "0.0", "count": 0},
         {"lowerBoundary": "0.7", "count": 0},
         {"lowerBoundary": "0.9", "count": 1},
+        {"lowerBoundary": "No data", "count": 2},
     ]
 
     # Test that missing threshold values result in 422 HTTPException
@@ -704,7 +706,7 @@ def test_delete_qa_runs(
     assert r.status_code == 404
 
     # Ensure associated qa run information in pages is also deleted
-    for qa_run in (qa_run_id, failed_qa_run_id):
+    for qa_run in (qa_run_id, qa_run_id_2, failed_qa_run_id):
         count = 0
         while count < MAX_ATTEMPTS:
             r = requests.get(
