@@ -75,6 +75,15 @@ class BgJobOperator(BaseOperator):
         except Exception:
             org_id = None
 
+        bg_logger = logger.bind(
+            job_id=job_id,
+            job_type=job_type,
+            success=success,
+            started=started,
+            finished=finished,
+            oid=org_id,
+        )
+
         try:
             await self.background_job_ops.job_finished(
                 job_id,
@@ -95,14 +104,14 @@ class BgJobOperator(BaseOperator):
                     _ = await self.org_ops.get_org_by_id(org_id)
                 except HTTPException:
                     finalized = True
-            logger.exception(
+            bg_logger.exception(
                 "background_job_update_failed",
                 will_retry=not finalized,
                 unstructured_message="Update Background Job Error",
             )
         # pylint: disable=broad-except
         except Exception:
-            logger.exception(
+            bg_logger.exception(
                 "background_job_update_failed",
                 will_retry=True,
                 unstructured_message="Update Background Job Error",
