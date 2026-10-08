@@ -115,7 +115,7 @@ module.exports = [
           changeOrigin: true,
         },
         {
-          // Needed to prevent infinite reload when running docs with `mkdocs serve`:
+          // Needed to prevent infinite reload when running docs with `zensical serve`:
           context: "/livereload",
           target: devDocsUrl.href,
           changeOrigin: true,
