@@ -58,23 +58,6 @@
   </head>
 
   <body>
-    <script>
-      // Fetch API settings in parallel with dynamically loaded components
-      window
-        .fetch("/api/settings", {
-          headers: { "Content-Type": "application/json" },
-        })
-        .then((resp) => resp.json())
-        .then((settings) => {
-          const app = document.querySelector("browsertrix-app");
-
-          if (app && settings) {
-            app.settings = settings;
-          }
-        })
-        .catch(console.debug);
-    </script>
-
     <!-- 
       Attribute values are provided by Webpack dev server when running in local development or by the
       nginx-init bash script during the Docker build.

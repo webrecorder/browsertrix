@@ -71,8 +71,7 @@ export class OrgSettingsBilling extends BtrixElement {
 
   private readonly portalUrl = new Task(this, {
     task: async ([appState]) => {
-      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
-        return;
+      if (!this.env.billingEnabled || !appState.org?.subscription) return;
 
       try {
         const { portalUrl } = await this.getPortalUrl();
@@ -240,7 +239,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
-                  this.appState.settings?.billingEnabled,
+                  this.env.billingEnabled,
                   () =>
                     html`<btrix-org-settings-billing-addon-link
                       class="mt-3 flex items-center border-t py-2"

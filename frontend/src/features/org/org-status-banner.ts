@@ -152,7 +152,7 @@ export class OrgStatusBanner extends BtrixElement {
       futureCancelDate,
     } = OrgStatusBanner.trialInfo(org, localize);
 
-    const billingEnabled = !!appState.settings?.billingEnabled;
+    const billingEnabled = !!appState.env.billingEnabled;
 
     const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;

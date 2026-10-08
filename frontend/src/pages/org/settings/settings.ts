@@ -159,7 +159,7 @@ export class OrgSettings extends BtrixElement {
       <btrix-tab-group active=${this.activePanel} placement="start">
         ${this.renderTab("information", "settings")}
         ${this.renderTab("members", "settings/members")}
-        ${when(this.appState.settings?.billingEnabled, () =>
+        ${when(this.env.billingEnabled, () =>
           this.renderTab("billing", "settings/billing"),
         )}
         ${this.renderTab("crawling-defaults", "settings/crawling-defaults")}
@@ -527,7 +527,7 @@ export class OrgSettings extends BtrixElement {
               >
                 ${msg("Admin")}
                 <span class="text-xs text-gray-500">
-                  ${this.appState.settings?.billingEnabled
+                  ${this.env.billingEnabled
                     ? msg("Manage org and billing settings")
                     : msg("Manage org")}
                 </span>
@@ -542,7 +542,7 @@ export class OrgSettings extends BtrixElement {
                   ${msg("All Crawler permissions, plus:")}
                 </p>
                 <ul class="ms-4 list-disc text-gray-500">
-                  ${this.appState.settings?.billingEnabled &&
+                  ${this.env.billingEnabled &&
                   html`<li class="text-warning">
                       ${msg("Manage subscription")}
                     </li>

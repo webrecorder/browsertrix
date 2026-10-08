@@ -35,14 +35,10 @@ const mockAuth = {
 };
 
 const mockAppSettings: AppSettings = {
-  registrationEnabled: false,
-  jwtTokenLifetime: 86400,
   defaultBehaviorTimeSeconds: 300,
   defaultPageLoadTimeSeconds: 120,
   maxPagesPerCrawl: 50000,
   maxBrowserWindows: 4,
-  billingEnabled: false,
-  signUpUrl: "",
   salesEmail: "",
   supportEmail: "",
   localesEnabled: ["en", "es"],
