@@ -157,6 +157,68 @@ async def test_update_subscription_converges_addon_quota(mocks, requested_gb):
     assert quotas_in.extraStorageQuota == requested_gb * 1_000_000_000
 
 
+def make_create(**extra) -> SubscriptionCreate:
+    """A create event as sent for a plan payment-link checkout."""
+    return SubscriptionCreate(
+        subId="stripe:sub_create",
+        status=SubscriptionStatus.ACTIVE,
+        planId="basic",
+        firstAdminInviteEmail="admin@example.com",
+        **extra,
+    )
+
+
+async def _run_create(ops, mocks, create) -> None:
+    mocks["org_ops"].create_org = AsyncMock(return_value=get_org())
+    mocks["org_ops"].update_quotas = AsyncMock()
+    # `invites` is only an annotation on OrgOps, so the spec'd mock doesn't have
+    # it; attach it manually
+    invites = MagicMock()
+    invites.invite_user = AsyncMock(return_value=(True, "tok"))
+    mocks["org_ops"].invites = invites
+    await ops.create_new_subscription(create, MagicMock(spec=User), MagicMock())
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_applies_storage_and_minutes_addons(mocks):
+    """Both add-ons land in one call: storage in `extraStorageQuota`, minutes in
+    `extraExecMinutes`."""
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+
+    await _run_create(
+        ops, mocks, make_create(storageAddonGB=400, additionalMinutes=600)
+    )
+
+    mocks["org_ops"].update_quotas.assert_awaited_once()
+    quotas_in = mocks["org_ops"].update_quotas.await_args.args[1]
+    assert quotas_in.extraStorageQuota == 400_000_000_000
+    assert quotas_in.extraExecMinutes == 600
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_applies_minutes_without_storage(mocks):
+    """Subscription with add-on minutes: ensure they apply, and the extra
+    storage field stays None so `update_quotas` doesn't write a stray 0."""
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+
+    await _run_create(ops, mocks, make_create(additionalMinutes=600))
+
+    mocks["org_ops"].update_quotas.assert_awaited_once()
+    quotas_in = mocks["org_ops"].update_quotas.await_args.args[1]
+    assert quotas_in.extraStorageQuota is None
+    assert quotas_in.extraExecMinutes == 600
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_without_addons_writes_no_quota(mocks):
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+
+    await _run_create(ops, mocks, make_create())
+
+    mocks["org_ops"].update_quotas.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_update_subscription_unchanged_addon_is_a_noop(mocks):
     """Repeating the current add-on size writes no quota (the app emits the
     field on every event, so this is the common case)."""
