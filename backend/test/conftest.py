@@ -871,7 +871,6 @@ def profile_config_id(admin_auth_headers, default_org_id, profile_id):
     assert resource["size"]
     assert resource["storage"]
     assert resource["storage"]["name"]
-    assert resource.get("replicas") or resource.get("replicas") == []
 
     # Use profile in a workflow
     r = requests.post(

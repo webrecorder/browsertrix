@@ -14,12 +14,12 @@ from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 
 from .crawlmanager import CrawlManager
 from .models import (
-    CRAWL_TYPES,
     AnyJob,
     BackgroundJob,
     BaseFile,
     BgJobType,
     CleanupSeedFilesJob,
+    CopyBucketJob,
     CreateReplicaJob,
     DeleteOrgJob,
     DeleteReplicaJob,
@@ -29,6 +29,7 @@ from .models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    ReplicateFilesCronJob,
     RetryStuckUploadsJob,
     StorageRef,
     SuccessResponse,
@@ -99,136 +100,10 @@ class BackgroundJobOps:
             parts.path[1:], ""
         )
 
-    async def handle_replica_job_succeeded(self, job: CreateReplicaJob) -> None:
-        """Update replicas in corresponding file objects, based on type"""
-        res = None
-        if job.object_type in CRAWL_TYPES:
-            res = await self.base_crawl_ops.add_crawl_file_replica(
-                job.object_id, job.file_path, job.replica_storage
-            )
-        elif job.object_type == "profile":
-            res = await self.profile_ops.add_profile_file_replica(
-                UUID(job.object_id), job.file_path, job.replica_storage
-            )
-        if not res:
-            logger.debug(
-                "file_deleted_before_replication",
-                object_id=job.object_id,
-                file_path=job.file_path,
-                replica_storage=job.replica_storage,
-                oid=job.oid,
-                unstructured_message="File deleted before replication job started, ignoring",
-            )
-
     async def handle_delete_replica_job_finished(self, job: DeleteReplicaJob) -> None:
         """After successful replica deletion, delete cronjob if scheduled"""
         if job.schedule:
             await self.crawl_manager.delete_replica_deletion_scheduled_job(job.id)
-
-    async def create_replica_jobs(
-        self, oid: UUID, file: BaseFile, object_id: str, object_type: str
-    ) -> dict[str, bool | list[str]]:
-        """Create k8s background job to replicate a file to all replica storage locations."""
-        org = await self.org_ops.get_org_by_id(oid)
-
-        primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
-        primary_endpoint, bucket_suffix = self.strip_bucket(
-            primary_storage.endpoint_url
-        )
-
-        primary_file_path = bucket_suffix + file.filename
-
-        ids = []
-
-        for replica_ref in self.storage_ops.get_org_replicas_storage_refs(org):
-            job_id = await self.create_replica_job(
-                org,
-                file,
-                object_id,
-                object_type,
-                replica_ref,
-                primary_file_path,
-                primary_endpoint,
-            )
-            ids.append(job_id)
-
-        return {"added": True, "ids": ids}
-
-    async def create_replica_job(
-        self,
-        org: Organization,
-        file: BaseFile,
-        object_id: str,
-        object_type: str,
-        replica_ref: StorageRef,
-        primary_file_path: str,
-        primary_endpoint: str,
-        existing_job_id: str | None = None,
-    ) -> str:
-        """Create k8s background job to replicate a file to a specific replica storage location."""
-        replica_storage = self.storage_ops.get_org_storage_by_ref(org, replica_ref)
-        replica_endpoint, bucket_suffix = self.strip_bucket(
-            replica_storage.endpoint_url
-        )
-        replica_file_path = bucket_suffix + file.filename
-
-        job_type = BgJobType.CREATE_REPLICA.value
-
-        try:
-            job_id, _ = await self.crawl_manager.run_replica_job(
-                oid=str(org.id),
-                job_type=job_type,
-                primary_storage=file.storage,
-                primary_file_path=primary_file_path,
-                primary_endpoint=primary_endpoint,
-                replica_storage=replica_ref,
-                replica_file_path=replica_file_path,
-                replica_endpoint=replica_endpoint,
-                delay_days=0,
-                existing_job_id=existing_job_id,
-            )
-            if existing_job_id:
-                replication_job = await self.get_background_job(existing_job_id, org.id)
-                previous_attempt = {
-                    "started": replication_job.started,
-                    "finished": replication_job.finished,
-                }
-                if replication_job.previousAttempts:
-                    replication_job.previousAttempts.append(previous_attempt)
-                else:
-                    replication_job.previousAttempts = [previous_attempt]
-                replication_job.started = dt_now()
-                replication_job.finished = None
-                replication_job.success = None
-            else:
-                replication_job = CreateReplicaJob(
-                    id=job_id,
-                    oid=org.id,
-                    started=dt_now(),
-                    file_path=file.filename,
-                    object_type=object_type,
-                    object_id=object_id,
-                    primary=file.storage,
-                    replica_storage=replica_ref,
-                )
-
-            await self.jobs.find_one_and_update(
-                {"_id": job_id}, {"$set": replication_job.to_dict()}, upsert=True
-            )
-
-            return job_id
-        # pylint: disable=broad-exception-caught
-        except Exception as exc:
-            logger.warning(
-                "replica_job_start_failed",
-                object_type=object_type,
-                oid=org.id,
-                file=file,
-                exc_info=True,
-                unstructured_message=f"warning: replica job could not be started "
-                f"for {object_type} {file}: {exc}",
-            )
-            return ""
 
     async def create_delete_replica_jobs(
         self, org: Organization, file: BaseFile, object_id: str, object_type: str
@@ -236,7 +111,7 @@ class BackgroundJobOps:
         """Create a job to delete each replica for the given file"""
         ids = []
 
-        for replica_ref in file.replicas or []:
+        for replica_ref in self.storage_ops.get_org_replicas_storage_refs(org):
             job_id = await self.create_delete_replica_job(
                 org, file, object_id, object_type, replica_ref
             )
@@ -263,15 +138,12 @@ class BackgroundJobOps:
             )
             replica_file_path = bucket_suffix + file.filename
 
-            job_type = BgJobType.DELETE_REPLICA.value
-
             delay_days = int(os.environ.get("REPLICA_DELETION_DELAY_DAYS", 0))
             if force_start_immediately:
                 delay_days = 0
 
-            job_id, schedule = await self.crawl_manager.run_replica_job(
+            job_id, schedule = await self.crawl_manager.run_delete_replica_job(
                 oid=str(org.id),
-                job_type=job_type,
                 replica_storage=replica_ref,
                 replica_file_path=replica_file_path,
                 replica_endpoint=replica_endpoint,
@@ -322,6 +194,95 @@ class BackgroundJobOps:
                 oid=org.id,
                 unstructured_message="warning: replica deletion job could not be "
                 f"started for {object_type} {file}: {exc}",
+            )
+            return ""
+
+    async def create_copy_bucket_jobs(self):
+        """Create background jobs to copy primary storage to each default replica location
+
+        Note that this replicates default storages only, and not any org-specific
+        custom storage, which is not yet fully supported by Browsertrix. When custom
+        storage support is added, we will need to spin up additional copy jobs.
+
+        Because rclone copy is only additive, these copy bucket jobs will ensure
+        that all files in primary storage also exist in the configured replica
+        locations without being able to delete any files from the replica location.
+        """
+        primary_storage_ref = self.storage_ops.get_default_primary()
+        primary_storage = self.storage_ops.get_default_s3_storage(primary_storage_ref)
+        primary_endpoint, primary_bucket_suffix = self.strip_bucket(
+            primary_storage.endpoint_url
+        )
+
+        for default_replica_ref in self.storage_ops.get_default_replicas():
+            await self.create_copy_bucket_job(
+                primary_storage_ref,
+                primary_endpoint,
+                primary_bucket_suffix,
+                default_replica_ref,
+            )
+
+    async def create_copy_bucket_job(
+        self,
+        primary_storage_ref: StorageRef,
+        primary_endpoint: str,
+        primary_bucket_suffix: str,
+        replica_ref: StorageRef,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """Create background job to copy contents of bucket to replica location"""
+        replica_logger = logger.bind(
+            primary_storage=primary_storage_ref, replica_storage=replica_ref
+        )
+
+        try:
+            replica_storage = self.storage_ops.get_default_s3_storage(replica_ref)
+            replica_endpoint, replica_bucket_suffix = self.strip_bucket(
+                replica_storage.endpoint_url
+            )
+
+            job_id = await self.crawl_manager.run_copy_bucket_job(
+                primary_storage=primary_storage_ref,
+                replica_storage=replica_ref,
+                primary_endpoint=primary_endpoint,
+                primary_bucket_suffix=primary_bucket_suffix,
+                replica_endpoint=replica_endpoint,
+                replica_bucket_suffix=replica_bucket_suffix,
+                existing_job_id=existing_job_id,
+            )
+            if existing_job_id:
+                copy_bucket_job = await self.get_background_job(existing_job_id)
+                previous_attempt = {
+                    "started": copy_bucket_job.started,
+                    "finished": copy_bucket_job.finished,
+                }
+                if copy_bucket_job.previousAttempts:
+                    copy_bucket_job.previousAttempts.append(previous_attempt)
+                else:
+                    copy_bucket_job.previousAttempts = [previous_attempt]
+                copy_bucket_job.started = dt_now()
+                copy_bucket_job.finished = None
+                copy_bucket_job.success = None
+            else:
+                copy_bucket_job = CopyBucketJob(
+                    id=job_id,
+                    started=dt_now(),
+                    replica_storage=replica_ref,
+                )
+
+            await self.jobs.find_one_and_update(
+                {"_id": job_id}, {"$set": copy_bucket_job.to_dict()}, upsert=True
+            )
+
+            replica_logger.info("copy_bucket_job_started", job_id=job_id)
+
+            return job_id
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            replica_logger.warning(
+                "copy_bucket_job_start_failed",
+                exc_info=True,
+                existing_job_id=existing_job_id,
             )
             return ""
 
@@ -638,7 +599,12 @@ class BackgroundJobOps:
     async def ensure_cron_jobs_exist(self):
         """Ensure periodic background cron jobs exist"""
         await self.crawl_manager.ensure_cleanup_seed_file_cron_job_exists()
-        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists()
+        await self.crawl_manager.ensure_retry_stuck_uploads_cron_job_exists(
+            bool(os.environ.get("DISABLE_STUCK_UPLOADS_CRON", False))
+        )
+        await self.crawl_manager.ensure_file_replication_cron_job_exists(
+            bool(self.storage_ops.get_default_replicas())
+        )
 
     async def job_finished(
         self,
@@ -654,12 +620,23 @@ class BackgroundJobOps:
 
         # For periodic cron jobs, no database record will exist for each
         # run before this point, so create it here
-        if job_type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.RETRY_STUCK_UPLOADS):
+        if job_type in (
+            BgJobType.CLEANUP_SEED_FILES,
+            BgJobType.RETRY_STUCK_UPLOADS,
+            BgJobType.REPLICATE_FILES_CRON,
+        ):
             if not started:
                 started = finished
             if job_type == BgJobType.CLEANUP_SEED_FILES:
                 cron_job: BackgroundJob = CleanupSeedFilesJob(
                     id=f"seed-files-{secrets.token_hex(5)}",
+                    started=started,
+                    finished=finished,
+                    success=success,
+                )
+            elif job_type == BgJobType.REPLICATE_FILES_CRON:
+                cron_job = ReplicateFilesCronJob(
+                    id=f"replicate-cron-{secrets.token_hex(5)}",
                     started=started,
                     finished=finished,
                     success=success,
@@ -695,9 +672,6 @@ class BackgroundJobOps:
 
         if job.type != job_type:
             raise HTTPException(status_code=400, detail="invalid_job_type")
-
-        if success and job_type == BgJobType.CREATE_REPLICA:
-            await self.handle_replica_job_succeeded(cast(CreateReplicaJob, job))
 
         if job_type == BgJobType.DELETE_REPLICA:
             await self.handle_delete_replica_job_finished(cast(DeleteReplicaJob, job))
@@ -748,6 +722,8 @@ class BackgroundJobOps:
         | UpdateCollStatsJob
         | PostProcessUploadJob
         | RetryStuckUploadsJob
+        | ReplicateFilesCronJob
+        | CopyBucketJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -790,6 +766,12 @@ class BackgroundJobOps:
 
         if data["type"] == BgJobType.RETRY_STUCK_UPLOADS:
             return RetryStuckUploadsJob.from_dict(data)
+
+        if data["type"] == BgJobType.REPLICATE_FILES_CRON:
+            return ReplicateFilesCronJob.from_dict(data)
+
+        if data["type"] == BgJobType.COPY_BUCKET:
+            return CopyBucketJob.from_dict(data)
 
         if data["type"] == BgJobType.DELETE_ORG:
             return DeleteOrgJob.from_dict(data)
@@ -904,6 +886,26 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
+        if job.type == BgJobType.COPY_BUCKET:
+            job = cast(CopyBucketJob, job)
+
+            primary_storage_ref = self.storage_ops.get_default_primary()
+            primary_storage = self.storage_ops.get_default_s3_storage(
+                primary_storage_ref
+            )
+            primary_endpoint, primary_bucket_suffix = self.strip_bucket(
+                primary_storage.endpoint_url
+            )
+
+            await self.create_copy_bucket_job(
+                primary_storage_ref,
+                primary_endpoint,
+                primary_bucket_suffix,
+                job.replica_storage,
+                existing_job_id=job_id,
+            )
+            return {"success": True}
+
         return {"success": False}
 
     async def retry_org_background_job(
@@ -911,24 +913,17 @@ class BackgroundJobOps:
     ) -> dict[str, bool | str | None]:
         """Retry background job specific to one org"""
         if job.type == BgJobType.CREATE_REPLICA:
-            job = cast(CreateReplicaJob, job)
-            file = await self.get_replica_job_file(job, org)
-            primary_storage = self.storage_ops.get_org_storage_by_ref(org, file.storage)
-            primary_endpoint, bucket_suffix = self.strip_bucket(
-                primary_storage.endpoint_url
+            raise HTTPException(
+                status_code=400, detail="create_replica_job_retry_no_longer_supported"
             )
-            primary_file_path = bucket_suffix + file.filename
-            await self.create_replica_job(
-                org,
-                file,
-                job.object_id,
-                job.object_type,
-                job.replica_storage,
-                primary_file_path,
-                primary_endpoint,
-                existing_job_id=job.id,
+
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
+            raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
+
+        if job.type in (BgJobType.COPY_BUCKET, BgJobType.OPTIMIZE_PAGES):
+            raise HTTPException(
+                status_code=400, detail="non_org_specific_job_retry_not_supported"
             )
-            return {"success": True}
 
         if job.type == BgJobType.DELETE_REPLICA:
             job = cast(DeleteReplicaJob, job)
@@ -988,7 +983,7 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
-        if job.type == BgJobType.CLEANUP_SEED_FILES:
+        if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
         return {"success": False}

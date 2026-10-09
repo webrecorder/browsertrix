@@ -1,9 +1,15 @@
 import time
 
+import structlog
+import pytest
 import requests
+
+from btrixcloud.utils import dt_now, str_to_date
 
 from .conftest import API_PREFIX
 from .utils import verify_file_replicated
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
 def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
@@ -32,52 +38,55 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
         attempts += 1
 
 
+@pytest.mark.timeout(2400)
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
-    time.sleep(20)
+    crawl_complete = dt_now()
 
-    # Verify replication job was successful
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=1&jobType=create-replica",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    latest_job = r.json()["items"][0]
-    assert latest_job["type"] == "create-replica"
-    job_id = latest_job["id"]
+    # Verify copy bucket job has run and succeeded since crawl completed
+    job_id = None
 
+    # Give copy bucket job (which is kicked off by cron replication job)
+    # up to 20 minutes to start and then complete
     attempts = 0
-    while attempts < 5:
+    while attempts < 60:
         r = requests.get(
-            f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}",
+            f"{API_PREFIX}/orgs/all/jobs?sortBy=finished&sortDirection=-1",
             headers=admin_auth_headers,
         )
         assert r.status_code == 200
-        job = r.json()
-        finished = latest_job.get("finished")
-        if not finished:
-            attempts += 1
-            time.sleep(10)
-            continue
+        jobs = r.json().get("items", [])
+        for job in jobs:
+            try:
+                if (
+                    job.get("type") == "copy-bucket"
+                    and str_to_date(job.get("started")) >= crawl_complete
+                    and job.get("success")
+                ):
+                    job_id = job["id"]
+                    break
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
 
-        assert job["success"]
-        break
+        attempts += 1
+        time.sleep(30)
 
-    # Assert file was updated
+    assert job_id
+
+    # Verify crawlfiles are stored in replica location
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{timeout_crawl}/replay.json",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
     data = r.json()
+
+    oid = data["oid"]
+    assert oid
+
     files = data.get("resources")
     assert files
     for file_ in files:
-        assert file_["numReplicas"] == 1
-
-    # Verify replica is stored
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/{job_id}", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    verify_file_replicated(data["file_path"])
+        filename = file_["name"]
+        file_path = f"{oid}/{filename}"
+        verify_file_replicated(file_path)

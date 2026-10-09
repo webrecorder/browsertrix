@@ -4,6 +4,9 @@ invite_expire_seconds: "10"
 
 max_pages_per_crawl: 300
 
+# Disable retry uploads cron job to ease resource usage on CI workers
+disable_stuck_uploads_cron: true
+
 # max crawl queue size x concurrent crawls
 crawl_queue_limit_scale: 1
 
