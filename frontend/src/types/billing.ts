@@ -39,3 +39,9 @@ export const billingAddonCheckoutSchema = z.object({
   checkoutUrl: z.string().url(),
 });
 export type BillingAddonCheckout = z.infer<typeof billingAddonCheckoutSchema>;
+
+export const addonStoragePricingSchema = z.object({
+  value: z.number(),
+  currency: z.string(),
+});
+export type AddonStoragePricing = z.infer<typeof addonStoragePricingSchema>;
