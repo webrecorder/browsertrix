@@ -1,6 +1,7 @@
 """
 Subscription API handling
 """
+# pylint: disable=too-many-lines
 
 import asyncio
 import os
@@ -18,6 +19,7 @@ from .models import (
     REASON_CANCELED,
     AddedResponseId,
     AddonMinutesPricing,
+    AddonStoragePricing,
     CheckoutAddonMinutesRequest,
     CheckoutAddonMinutesResponse,
     InviteAddedResponse,
@@ -25,6 +27,8 @@ from .models import (
     Organization,
     OrgQuotasIn,
     PaginatedSubscriptionEventResponse,
+    StorageAddonUpdateRequest,
+    StorageAddonUpdateResponse,
     Subscription,
     SubscriptionAddMinutes,
     SubscriptionAddMinutesOut,
@@ -154,6 +158,20 @@ class SubOps:
                 mode="set",
                 sub_event_id=sub_event_id,
             )
+
+        if update.storageAddonGB is not None:
+            # Copy the add-on size into the org's storage quota when the value
+            # actually changed, since external subscription app sends this field
+            # on every event
+            if org.quotas.extraStorageQuota // 1_000_000_000 != update.storageAddonGB:
+                await self.org_ops.update_quotas(
+                    org,
+                    OrgQuotasIn(
+                        extraStorageQuota=update.storageAddonGB * 1_000_000_000
+                    ),
+                    mode="set",
+                    sub_event_id=sub_event_id,
+                )
 
         if update.futureCancelDate and self.should_send_cancel_email(org, update):
             run_async_task(self.send_cancel_emails(update.futureCancelDate, org))
@@ -533,6 +551,92 @@ class SubOps:
                     status_code=500, detail="Error fetching checkout url"
                 ) from exc
 
+    async def get_storage_price(self, org: Organization):
+        """Fetch price for addon storage from external subscription app"""
+        if not org.subscription:
+            raise HTTPException(
+                status_code=404, detail="Organization has no subscription"
+            )
+        if external_subs_app_api_url:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        "GET",
+                        f"{external_subs_app_api_url}/prices/additionalStorage",
+                        headers={
+                            "Authorization": "bearer " + external_subs_app_api_key,
+                        },
+                        raise_for_status=True,
+                    ) as resp:
+                        json = await resp.json()
+                        return AddonStoragePricing(**json)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                logger.exception(
+                    "storage_price_fetch_failed",
+                    oid=org.id,
+                    unstructured_message="Error fetching storage price",
+                )
+
+    async def update_storage_addon(self, org: Organization, size_gb: int):
+        """Update the storage add-on on the org's subscription via the
+        external subscription app"""
+        if not org.subscription:
+            raise HTTPException(
+                status_code=404, detail="Organization has no subscription"
+            )
+        if not external_subs_app_api_url:
+            raise HTTPException(
+                status_code=500, detail="Storage add-on service not configured"
+            )
+
+        try:
+            req = {
+                "subId": org.subscription.subId,
+                "orgId": str(org.id),
+                "sizeGB": size_gb,
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    "POST",
+                    f"{external_subs_app_api_url}/subscription/additionalStorage",
+                    headers={
+                        "Authorization": "bearer " + external_subs_app_api_key,
+                        "Content-Type": "application/json",
+                    },
+                    json=req,
+                    raise_for_status=True,
+                ) as resp:
+                    json = await resp.json()
+                    return StorageAddonUpdateResponse(**json)
+        # preserve the external subscription app's status/detail for client
+        # errors (e.g. 400/409 for a rejected change) so the UI can show why it
+        # was refused; anything else is an upstream failure
+        except aiohttp.ClientResponseError as exc:
+            logger.warning(
+                "storage_addon_update_rejected",
+                oid=org.id,
+                size_gb=size_gb,
+                status=exc.status,
+                unstructured_message="Storage add-on update rejected",
+            )
+            if 400 <= exc.status < 500:
+                raise HTTPException(status_code=exc.status, detail=exc.message) from exc
+            raise HTTPException(
+                status_code=500, detail="Error updating storage add-on"
+            ) from exc
+        # pylint: disable=broad-exception-caught
+        except Exception as exc:
+            logger.exception(
+                "storage_addon_update_failed",
+                oid=org.id,
+                size_gb=size_gb,
+                unstructured_message="Error updating storage add-on",
+            )
+            raise HTTPException(
+                status_code=500, detail="Error updating storage add-on"
+            ) from exc
+
 
 # pylint: disable=invalid-name,too-many-arguments,too-many-locals
 def init_subs_api(
@@ -697,5 +801,41 @@ def init_subs_api(
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
         return await ops.get_checkout_url(org, dict(request.headers), minutes)
+
+    @org_ops.router.get(
+        "/price/storage",
+        tags=["organizations"],
+        response_model=AddonStoragePricing | None,
+    )
+    async def get_storage_price(
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
+        return await ops.get_storage_price(org)
+
+    @org_ops.router.post(
+        "/subscription/storage-addon",
+        tags=["organizations"],
+        response_model=StorageAddonUpdateResponse,
+    )
+    async def update_storage_addon(
+        req: StorageAddonUpdateRequest,
+        org: Organization = Depends(org_ops.org_owner_dep),
+    ):
+        """Purchase/change/cancel the storage add-on (0 = cancel; current qty
+        = keep/undo pending). Usage gate: reductions below current usage are
+        rejected - the org must free space first."""
+        current_qty = org.quotas.extraStorageQuota // 1_000_000_000
+
+        # Only a reduction (or cancellation) can make the org go over its
+        # storage quota, so only those need the check below.
+        if req.sizeGB < current_qty:
+            target_total = org.quotas.storageQuota + req.sizeGB * 1_000_000_000
+            if org.bytesStored > target_total:
+                raise HTTPException(
+                    status_code=400,
+                    detail="storage_addon_below_usage",
+                )
+
+        return await ops.update_storage_addon(org, req.sizeGB)
 
     return ops
