@@ -181,12 +181,11 @@ class BaseCrawlOps:
                 res["collections"] = await self.colls.get_collection_names(coll_ids)
 
             if res.get("version", 1) == 2:
-                oid = res.get("oid")
                 res["initialPages"], _ = await self.page_ops.list_pages(
                     crawl_ids=[crawlid],
-                    oid=oid,
+                    org=org
                 )
-
+                oid = res.get("oid")
                 if oid:
                     origin = get_origin(headers)
                     # If cid is passed, construct pagesSearch query for public

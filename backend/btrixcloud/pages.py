@@ -102,7 +102,7 @@ class PageOps:
 
         await self.pages.create_index(
             [
-                ("oid", pymongo.ASCEDING),
+                ("oid", pymongo.ASCENDING),
             ]
         )
         await self.pages.create_index(
