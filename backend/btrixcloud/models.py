@@ -2189,6 +2189,13 @@ class SubscriptionEventOut(BaseModel):
 
 
 # ============================================================================
+# A billing cycle is expressed the way Stripe prices express it, minus the
+# intervals we will never sell: "month" or "year", N at a time (so a
+# quarterly plan is month × 3, a 3-year agreement is year × 3).
+BillingInterval = Literal["month", "year"]
+
+
+# ============================================================================
 class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
@@ -2199,6 +2206,11 @@ class SubscriptionCreate(BaseModel):
     firstAdminInviteEmail: EmailStr
     quotas: OrgQuotas | None = None
     renewalDate: datetime | None = None
+
+    billingInterval: BillingInterval | None = None
+    billingIntervalCount: int | None = None
+
+    storageAddonGB: int | None = None
 
 
 # ============================================================================
@@ -2238,6 +2250,19 @@ class SubscriptionUpdate(BaseModel):
     futureCancelDate: datetime | None = None
     renewalDate: datetime | None = None
     quotas: OrgQuotasIn | None = None
+    billingInterval: BillingInterval | None = None
+    billingIntervalCount: int | None = None
+
+    # Storage add-on size in GB. They default to None: `exclude_defaults=True`
+    # in api.py leaves out fields equal to their default, so 0 is sent but an
+    # absent field means "no value".
+    storageAddonGB: int | None = None
+    storageAddonPendingGB: int | None = None
+
+    # Plan scheduled to take effect at the next renewal, when one is waiting.
+    # The external subscription app leaves this out of the JSON when there is
+    # nothing pending, so an absent field means "clear it".
+    pendingPlanId: str | None = None
 
 
 # ============================================================================
@@ -2382,6 +2407,22 @@ class Subscription(BaseModel):
 
     renewalDate: datetime | None = None
     """When the subscription next renews and plan execution minutes refill, if known."""
+
+    billingInterval: BillingInterval | None = None
+    """Subscription billing interval ("month" or "year"), if known."""
+
+    billingIntervalCount: int | None = None
+    """Number of intervals per renewal; together with billingInterval this
+    expresses quarterly (month x 3) or multi-year (year x 3) cycles. None
+    means a single interval."""
+
+    storageAddonPendingGB: int | None = None
+    """Pending storage add-on quantity (GB) scheduled to take effect at the
+    next renewal, if a reduction/cancellation is pending."""
+
+    pendingPlanId: str | None = None
+    """Plan scheduled to take effect at the next renewal, if a plan change is
+    waiting."""
 
     readOnlyOnCancel: bool = False
 
