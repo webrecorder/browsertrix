@@ -2142,6 +2142,7 @@ class OrgQuotas(BaseModel):
     planExecMinutes: int = 0
     extraExecMinutes: int = 0
     giftedExecMinutes: int = 0
+    extraStorageQuota: int = 0
 
 
 # ============================================================================
@@ -2158,6 +2159,7 @@ class OrgQuotasIn(BaseModel):
     planExecMinutes: int | None = None
     extraExecMinutes: int | None = None
     giftedExecMinutes: int | None = None
+    extraStorageQuota: int | None = None
 
 
 # ============================================================================

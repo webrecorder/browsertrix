@@ -524,8 +524,11 @@ class UploadOps(BaseCrawlOps):
                 )
 
                 max_size = MAX_WACZ_FILE_SIZE
-                if org.quotas.storageQuota:
-                    remaining = org.quotas.storageQuota - org.bytesStored
+                storage_quota = (org.quotas.storageQuota or 0) + (
+                    org.quotas.extraStorageQuota or 0
+                )
+                if storage_quota:
+                    remaining = storage_quota - org.bytesStored
                     max_size = min(remaining, max_size)
 
                 if child_wacz.file_size > max_size:
@@ -534,7 +537,7 @@ class UploadOps(BaseCrawlOps):
                         filename=child_wacz.filename,
                         file_size=child_wacz.file_size,
                         max_size=max_size,
-                        storage_quota=org.quotas.storageQuota,
+                        storage_quota=storage_quota,
                         bytes_stored=org.bytesStored,
                         detail="Extracted file exceeds available org size or hard limit. ",
                     )

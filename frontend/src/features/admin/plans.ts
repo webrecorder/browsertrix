@@ -22,6 +22,7 @@ export const defaultPlan: Plan = {
   name: "Unset",
   org_quotas: {
     extraExecMinutes: 0,
+    extraStorageQuota: 0,
     giftedExecMinutes: 0,
     maxConcurrentCrawls: 0,
     // Deprecated: will be removed in favor of `planExecMinutes`
