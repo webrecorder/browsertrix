@@ -90,20 +90,19 @@ class PageOps:
 
     async def init_index(self):
         """init index for pages db collection"""
-        await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+        await self.pages.create_index([("crawl_id", pymongo.ASCENDING)])
 
         await self.pages.create_index(
             [
+                ("oid", pymongo.ASCENDING),
                 ("depth", pymongo.ASCENDING),
-                ("crawl_id", pymongo.ASCENDING),
+                ("ts", pymongo.ASCENDING),
             ]
         )
 
         await self.pages.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
-                ("isSeed", pymongo.DESCENDING),
-                ("ts", pymongo.ASCENDING),
+                ("oid", pymongo.ASCEDING),
             ]
         )
         await self.pages.create_index(

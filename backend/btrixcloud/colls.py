@@ -416,6 +416,7 @@ class CollectionOps:
             ) = await self.get_collection_crawl_resources(coll_id, org)
 
             initial_pages, _ = await self.page_ops.list_pages(
+                oid=org.id,
                 crawl_ids=crawl_ids,
             )
 
