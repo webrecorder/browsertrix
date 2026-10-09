@@ -97,6 +97,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert data["subscription"] == {
         "subId": "123",
@@ -138,6 +139,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert "subscription" in data
 
@@ -257,6 +259,7 @@ def test_login_existing_user_for_invite():
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert "subscription" in org
 
@@ -525,6 +528,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -543,6 +547,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -569,6 +574,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -617,6 +623,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -643,6 +650,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -683,6 +691,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -709,6 +718,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -746,6 +756,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -785,6 +796,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -801,6 +813,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -1041,6 +1054,7 @@ def test_subscription_add_minutes(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 75,  # only this value updated from previous
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
         "maxConcurrentCrawls": 1,
         "maxExecMinutesPerMonth": 1000,
     }
