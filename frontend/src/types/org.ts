@@ -25,6 +25,7 @@ export const accessCodeSchema = z.nativeEnum(AccessCode);
 
 export const orgQuotasSchema = z.object({
   extraExecMinutes: z.number(),
+  extraStorageQuota: z.number(),
   giftedExecMinutes: z.number(),
   maxConcurrentCrawls: z.number(),
   /** @deprecated will be removed in favor of `planExecMinutes` */

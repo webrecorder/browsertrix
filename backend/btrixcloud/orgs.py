@@ -135,10 +135,13 @@ class BaseOrgs:
     # pylint: disable=invalid-name
     def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
-        if not org.quotas.storageQuota:
+        storage_quota = (org.quotas.storageQuota or 0) + (
+            org.quotas.extraStorageQuota or 0
+        )
+        if not storage_quota:
             return False
 
-        if (org.bytesStored + extra_bytes) < org.quotas.storageQuota:
+        if (org.bytesStored + extra_bytes) < storage_quota:
             return False
 
         return True
@@ -1228,7 +1231,9 @@ class OrgOps(BaseOrgs):
     async def get_org_metrics(self, org: Organization) -> dict[str, int]:
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
-        storage_quota = org.quotas.storageQuota or 0
+        storage_quota = (org.quotas.storageQuota or 0) + (
+            org.quotas.extraStorageQuota or 0
+        )
         max_concurrent_crawls = org.quotas.maxConcurrentCrawls or 0
 
         # Calculate these counts in loop to avoid having db iterate through
