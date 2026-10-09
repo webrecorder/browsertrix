@@ -2212,6 +2212,9 @@ class SubscriptionCreate(BaseModel):
 
     storageAddonGB: int | None = None
 
+    # Minutes bought as a one-time add-on at signup.
+    additionalMinutes: int | None = None
+
 
 # ============================================================================
 class SubscriptionCreateOut(SubscriptionCreate, SubscriptionEventOut):

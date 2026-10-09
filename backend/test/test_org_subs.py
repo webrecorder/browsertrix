@@ -1354,3 +1354,56 @@ def test_update_sub_storage_addon_quota(admin_auth_headers):
     assert r.json()["quotas"]["extraStorageQuota"] == 0
 
 
+def test_create_sub_storage_addon_quota(admin_auth_headers):
+    """POST /subscriptions/create with storageAddonGB sets the quota on the new
+    org."""
+    sub_id = f"stripe:sub_create_addon_{str(uuid4())[:8]}"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=admin_auth_headers,
+        json={
+            "subId": sub_id,
+            "status": "active",
+            "planId": "basic",
+            # a fresh email each run: an email that already belongs to the
+            # logged-in admin would be rejected with "Can't invite ourselves!"
+            "firstAdminInviteEmail": f"addon-{uuid4().hex[:8]}@example.com",
+            "storageAddonGB": 400,
+        },
+    )
+    assert r.status_code == 200
+    oid = r.json()["id"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["quotas"]["extraStorageQuota"] == 400_000_000_000
+
+
+def test_create_sub_checkout_addons_quota(admin_auth_headers):
+    """POST /subscriptions/create with both checkout add-ons sets storage in
+    `extraStorageQuota` and minutes in `extraExecMinutes` on the new org."""
+    sub_id = f"stripe:sub_create_checkout_{str(uuid4())[:8]}"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=admin_auth_headers,
+        json={
+            "subId": sub_id,
+            "status": "active",
+            "planId": "basic",
+            # a fresh email each run: an email that already belongs to the
+            # logged-in admin would be rejected with "Can't invite ourselves!"
+            "firstAdminInviteEmail": f"checkout-{uuid4().hex[:8]}@example.com",
+            "storageAddonGB": 400,
+            "additionalMinutes": 600,
+        },
+    )
+    assert r.status_code == 200
+    oid = r.json()["id"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    quotas = r.json()["quotas"]
+    assert quotas["extraStorageQuota"] == 400_000_000_000
+    assert quotas["extraExecMinutes"] == 600
+
+
