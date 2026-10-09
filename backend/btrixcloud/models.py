@@ -2376,6 +2376,29 @@ class AddonMinutesPricing(BaseModel):
 
 
 # ============================================================================
+class AddonStoragePricing(BaseModel):
+    """Addon storage pricing"""
+
+    value: float
+    currency: str
+
+
+# ============================================================================
+class StorageAddonUpdateResponse(BaseModel):
+    """Response for a storage add-on update (mirror of subscription app model)"""
+
+    sizeGB: int
+    pendingGB: int | None = None
+
+
+# ============================================================================
+class StorageAddonUpdateRequest(BaseModel):
+    """Request to purchase/change/cancel the storage add-on"""
+
+    sizeGB: int
+
+
+# ============================================================================
 class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 

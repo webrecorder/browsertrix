@@ -46,6 +46,20 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
                     {"checkoutUrl": "https://checkout.example.com/path/"}
                 ).encode("utf-8")
             )
+        elif self.path.endswith("/prices/additionalStorage"):
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"value": 1.0, "currency": "usd"}).encode("utf-8")
+            )
+        elif self.path.endswith("/subscription/additionalStorage"):
+            # POST body: {"subId": ..., "orgId": ..., "sizeGB": ...}
+            body = json.loads(body.decode("utf-8").replace("'", '"'))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(
+                json.dumps({"sizeGB": body["sizeGB"]}).encode("utf-8")
+            )
         else:
             self.end_headers()
 
