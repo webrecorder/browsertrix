@@ -682,6 +682,11 @@ class OrgOps(BaseOrgs):
         query["subscription.billingInterval"] = update.billingInterval
         query["subscription.billingIntervalCount"] = update.billingIntervalCount
 
+        # Same idea for the "we already emailed about this reduction" marker
+        query["subscription.storageAddonRevertedRequestedGB"] = (
+            update.storageAddonRequestedGB
+        )
+
         if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED

@@ -2262,6 +2262,12 @@ class SubscriptionUpdate(BaseModel):
     storageAddonGB: int | None = None
     storageAddonPendingGB: int | None = None
 
+    # Set when the external subscription app cancelled a reduction made outside
+    # Browsertrix (in the Stripe portal) that would have left the org over its
+    # storage limit. Browsertrix then emails the org admins.
+    storageAddonReverted: bool | None = None
+    storageAddonRequestedGB: int | None = None
+
     # Plan scheduled to take effect at the next renewal, when one is waiting.
     # The external subscription app leaves this out of the JSON when there is
     # nothing pending, so an absent field means "clear it".
@@ -2457,6 +2463,11 @@ class Subscription(BaseModel):
     storageAddonPendingGB: int | None = None
     """Pending storage add-on quantity (GB) scheduled to take effect at the
     next renewal, if a reduction/cancellation is pending."""
+
+    storageAddonRevertedRequestedGB: int | None = None
+    """Add-on size (GB) of the most recent reduction the external subscription
+    app cancelled. Used as the "have we already told them about this one?"
+    marker, so admins get one email per attempt and not one per retry."""
 
     pendingPlanId: str | None = None
     """Plan scheduled to take effect at the next renewal, if a plan change is
