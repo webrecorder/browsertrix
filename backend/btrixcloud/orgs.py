@@ -673,6 +673,15 @@ class OrgOps(BaseOrgs):
         if update.renewalDate is not None:
             query["subscription.renewalDate"] = update.renewalDate
 
+        # Always assign these, including None. External subscription app leaves
+        # None values out of the JSON it sends (`exclude_defaults`), so a
+        # missing field here means "this is cleared now" rather than no change
+        query["subscription.storageAddonPendingGB"] = update.storageAddonPendingGB
+        query["subscription.pendingPlanId"] = update.pendingPlanId
+
+        query["subscription.billingInterval"] = update.billingInterval
+        query["subscription.billingIntervalCount"] = update.billingIntervalCount
+
         if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
@@ -680,6 +689,9 @@ class OrgOps(BaseOrgs):
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 
+        # `ReturnDocument.BEFORE`: callers compare the pre-update state against
+        # stored fields to detect new notifications, the AFTER state would
+        # suppress them.
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
             {"$set": query},

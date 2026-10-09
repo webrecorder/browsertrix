@@ -105,6 +105,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "planId": "basic",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -291,6 +292,7 @@ def test_update_sub(admin_auth_headers):
         "planId": "basic",
         "futureCancelDate": "2028-12-26T01:02:03Z",
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -332,6 +334,7 @@ def test_update_sub_2(admin_auth_headers):
         "planId": "basic2",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -494,6 +497,7 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
         "planId": "basic",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
