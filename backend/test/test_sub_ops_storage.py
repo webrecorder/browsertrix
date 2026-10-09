@@ -94,6 +94,73 @@ def mocks():
     }
 
 
+async def _drain_bg_tasks():
+    """Await every task scheduled via run_async_task.
+
+    `run_async_task` holds each task in `bg_tasks` until it completes, which is
+    the only handle on it (the email fan-out is deliberately fire-and-forget so
+    the webhook response is not blocked).
+    """
+    await asyncio.gather(*bg_tasks)
+
+
+def make_revert_update(requested_gb: int = 50) -> SubscriptionUpdate:
+    return SubscriptionUpdate(
+        subId="stripe:sub_test",
+        status=SubscriptionStatus.ACTIVE,
+        planId="basic",
+        storageAddonGB=200,
+        storageAddonPendingGB=None,
+        storageAddonReverted=True,
+        storageAddonRequestedGB=requested_gb,
+    )
+
+
+@pytest.mark.asyncio
+async def test_update_sub_storage_addon_reverted_emails_admins(mocks):
+    """A first-time revert (no stored marker, and no pending state - the
+    realistic first sight of an out-of-band reduction) emails every owner."""
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+    # org returned is the pre-update image
+    mocks["org_ops"].update_subscription_data = AsyncMock(
+        return_value=get_org(revert_marker=None, pending_gb=None)
+    )
+
+    await ops.update_subscription(make_revert_update(50))
+
+    # the email fires via run_async_task; wait for the background tasks to run
+    await _drain_bg_tasks()
+
+    send = mocks["user_manager"].email.send_storage_addon_change_reverted
+    assert send.await_count == len(mocks["users"])
+    for call, user in zip(send.await_args_list, mocks["users"]):
+        args = call.args
+        assert args[0] == user.name
+        assert args[1] == user.email
+        assert args[2] == 50  # attempted size
+        assert args[3] == 200  # retained size
+
+
+@pytest.mark.asyncio
+async def test_update_sub_storage_addon_reverted_email_idempotent(mocks):
+    """A retry of the same cancellation does not send a second email.
+
+    We already recorded that we told admins about a reduction to 50GB, so the
+    same size again is skipped.
+    """
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+    mocks["org_ops"].update_subscription_data = AsyncMock(
+        return_value=get_org(revert_marker=50)
+    )
+
+    await ops.update_subscription(make_revert_update(50))
+
+    await _drain_bg_tasks()
+
+    send = mocks["user_manager"].email.send_storage_addon_change_reverted
+    assert send.await_count == 0
+
+
 def make_org_ops(org: Organization) -> tuple[OrgOps, MagicMock]:
     """An OrgOps whose collection returns the mongo-shaped `org` document."""
     mock_db_client = AsyncMock(spec=AsyncIOMotorClient)
@@ -118,6 +185,36 @@ def make_org_ops(org: Organization) -> tuple[OrgOps, MagicMock]:
         crawl_manager=MagicMock(),
     )
     return org_ops, mock_collection
+
+
+@pytest.mark.asyncio
+async def test_update_subscription_data_sets_revert_marker():
+    """The size from a cancelled reduction is saved, so the email is not sent
+    twice for the same one."""
+    org_ops, collection = make_org_ops(get_org())
+
+    await org_ops.update_subscription_data(make_revert_update(50))
+
+    set_dict = collection.find_one_and_update.call_args[0][1]["$set"]
+    assert set_dict["subscription.storageAddonRevertedRequestedGB"] == 50
+
+
+@pytest.mark.asyncio
+async def test_update_subscription_data_clears_revert_marker():
+    """An ordinary update with no cancellation clears the saved size, so a
+    later cancellation of the same size emails again."""
+    org_ops, collection = make_org_ops(get_org(revert_marker=50))
+
+    await org_ops.update_subscription_data(
+        SubscriptionUpdate(
+            subId="stripe:sub_test",
+            status=SubscriptionStatus.ACTIVE,
+            planId="basic",
+        )
+    )
+
+    set_dict = collection.find_one_and_update.call_args[0][1]["$set"]
+    assert set_dict["subscription.storageAddonRevertedRequestedGB"] is None
 
 
 @pytest.mark.asyncio
