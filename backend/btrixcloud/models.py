@@ -2402,6 +2402,18 @@ class StorageAddonUpdateRequest(BaseModel):
 
 
 # ============================================================================
+class StorageAddonUsageResponse(BaseModel):
+    """How much storage a subscription's org is using and is allowed to use.
+
+    External subscription app reads this to check a change made externally."""
+
+    bytesStored: int
+    storageQuota: int
+    extraStorageQuota: int
+    storageAddonPendingGB: int | None = None
+
+
+# ============================================================================
 class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 

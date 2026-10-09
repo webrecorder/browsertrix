@@ -29,6 +29,7 @@ from .models import (
     PaginatedSubscriptionEventResponse,
     StorageAddonUpdateRequest,
     StorageAddonUpdateResponse,
+    StorageAddonUsageResponse,
     Subscription,
     SubscriptionAddMinutes,
     SubscriptionAddMinutesOut,
@@ -752,6 +753,35 @@ def init_subs_api(
     ):
         result = await org_ops.is_subscription_activated(sub_id)
         return {"success": result}
+
+    @app.get(
+        "/subscriptions/storage-usage/{sub_id}",
+        tags=["subscriptions"],
+        dependencies=[Depends(superuser_or_shared_secret_dep)],
+        response_model=StorageAddonUsageResponse,
+    )
+    async def get_storage_usage(sub_id: str):
+        """How much storage a subscription's org is using and is allowed to use.
+
+        The external subscription app reads this before letting a reduction
+        through: it needs to check the reduction against the org's real quota,
+        which can be different from the plan's default, and against actual
+        usage.
+        """
+        org = await org_ops.find_org_by_subscription_id(sub_id)
+        if not org:
+            raise HTTPException(
+                status_code=404, detail="org_for_subscription_not_found"
+            )
+
+        return StorageAddonUsageResponse(
+            bytesStored=org.bytesStored,
+            storageQuota=org.quotas.storageQuota,
+            extraStorageQuota=org.quotas.extraStorageQuota,
+            storageAddonPendingGB=(
+                org.subscription.storageAddonPendingGB if org.subscription else None
+            ),
+        )
 
     @app.get(
         "/subscriptions/events",
