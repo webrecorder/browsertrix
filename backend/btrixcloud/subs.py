@@ -104,6 +104,20 @@ class SubOps:
             quotas=create.quotas, subscription=subscription
         )
 
+        if create.storageAddonGB is not None or create.additionalMinutes is not None:
+            await self.org_ops.update_quotas(
+                new_org,
+                OrgQuotasIn(
+                    extraStorageQuota=(
+                        create.storageAddonGB * 1_000_000_000
+                        if create.storageAddonGB is not None
+                        else None
+                    ),
+                    extraExecMinutes=create.additionalMinutes,
+                ),
+                mode="set",
+            )
+
         is_new, token = await self.org_ops.invites.invite_user(
             InviteToOrgRequest(email=create.firstAdminInviteEmail, role=UserRole.OWNER),
             user,
