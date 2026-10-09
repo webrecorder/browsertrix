@@ -1407,3 +1407,35 @@ def test_create_sub_checkout_addons_quota(admin_auth_headers):
     assert quotas["extraExecMinutes"] == 600
 
 
+def test_storage_usage_endpoint(admin_auth_headers, shared_secret_auth_headers):
+    """GET /subscriptions/storage-usage/{sub_id} serves the org's usage state to
+    the external subscription app's add-on revert guard using the
+    pre-shared secret"""
+    oid = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    sub_id = r.json()["subscription"]["subId"]
+
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/{sub_id}",
+        headers=shared_secret_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["bytesStored"] == 400_000_000_000
+    assert data["storageQuota"] == 500_000_000_000
+    assert data["extraStorageQuota"] == 200_000_000_000
+    assert data["storageAddonPendingGB"] is None
+
+    # superuser session also works
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/{sub_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/stripe:sub_does_not_exist",
+        headers=shared_secret_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "org_for_subscription_not_found"
