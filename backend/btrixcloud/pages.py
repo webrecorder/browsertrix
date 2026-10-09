@@ -105,13 +105,21 @@ class PageOps:
                 ("oid", pymongo.ASCENDING),
             ]
         )
+
         await self.pages.create_index(
             [
+                ("oid", pymongo.ASCENDING),
                 ("crawl_id", pymongo.ASCENDING),
                 ("url", pymongo.ASCENDING),
             ]
         )
-        await self.pages.create_index([("title", "text")])
+
+        await self.pages.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("title", pymongo.ASCENDING)
+            ]
+        )
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""
@@ -846,7 +854,7 @@ class PageOps:
         unless prefix is specified"""
         crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id, oid)
 
-        match_q = {"crawl_id": {"$in": crawl_ids}, "oid": oid}
+        match_q = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
         if url_prefix:
             match_q["url"] = {"$gte": urllib.parse.unquote(url_prefix)}
 
