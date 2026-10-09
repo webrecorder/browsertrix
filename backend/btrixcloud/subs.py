@@ -92,6 +92,8 @@ class SubOps:
             status=create.status,
             planId=create.planId,
             renewalDate=create.renewalDate,
+            billingInterval=create.billingInterval,
+            billingIntervalCount=create.billingIntervalCount,
         )
 
         new_org = await self.org_ops.create_org(
