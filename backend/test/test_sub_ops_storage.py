@@ -121,6 +121,62 @@ def make_org_ops(org: Organization) -> tuple[OrgOps, MagicMock]:
 
 
 @pytest.mark.asyncio
+async def test_storage_addon_state_helpers_removed():
+    """AC.9: the dead add-on state-read chain is gone on both surfaces."""
+    import btrixcloud.models as models
+    import btrixcloud.subs as subs
+
+    assert not hasattr(subs.SubOps, "get_storage_addon_state")
+    assert not hasattr(models, "StorageAddonStateResponse")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("requested_gb", [300, 0])
+async def test_update_subscription_converges_addon_quota(mocks, requested_gb):
+    """AC.5 (locally runnable half): `storageAddonGB=N` sets
+    `extraStorageQuota` to N * 1e9, including a genuine 0. The end-to-end
+    version (incl. the OrgQuotaUpdate short-circuit) is in test_org_subs.py,
+    which needs a live backend, so this pins the arithmetic in CI and locally.
+    """
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+    # pre-update image has the add-on at 200GB
+    mocks["org_ops"].update_subscription_data = AsyncMock(return_value=get_org())
+    mocks["org_ops"].update_quotas = AsyncMock()
+
+    await ops.update_subscription(
+        SubscriptionUpdate(
+            subId="stripe:sub_test",
+            status=SubscriptionStatus.ACTIVE,
+            planId="basic",
+            storageAddonGB=requested_gb,
+        )
+    )
+
+    mocks["org_ops"].update_quotas.assert_awaited_once()
+    quotas_in = mocks["org_ops"].update_quotas.await_args.args[1]
+    assert quotas_in.extraStorageQuota == requested_gb * 1_000_000_000
+
+
+async def test_update_subscription_unchanged_addon_is_a_noop(mocks):
+    """Repeating the current add-on size writes no quota (the app emits the
+    field on every event, so this is the common case)."""
+    ops = SubOps(mocks["db"], mocks["org_ops"], mocks["user_manager"])
+    mocks["org_ops"].update_subscription_data = AsyncMock(return_value=get_org())
+    mocks["org_ops"].update_quotas = AsyncMock()
+
+    await ops.update_subscription(
+        SubscriptionUpdate(
+            subId="stripe:sub_test",
+            status=SubscriptionStatus.ACTIVE,
+            planId="basic",
+            storageAddonGB=200,  # already the value on get_org()
+        )
+    )
+
+    mocks["org_ops"].update_quotas.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_update_subscription_data_sets_billing_interval():
     """When the external subscription app sends the billing interval, both
     fields are persisted."""
