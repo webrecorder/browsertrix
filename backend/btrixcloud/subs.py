@@ -188,6 +188,9 @@ class SubOps:
                     sub_event_id=sub_event_id,
                 )
 
+        if update.storageAddonReverted:
+            run_async_task(self.send_storage_addon_reverted_emails(org, update))
+
         if update.futureCancelDate and self.should_send_cancel_email(org, update):
             run_async_task(self.send_cancel_emails(update.futureCancelDate, org))
 
@@ -210,6 +213,47 @@ class SubOps:
             return True
 
         return False
+
+    async def send_storage_addon_reverted_emails(
+        self, org: Organization, update: SubscriptionUpdate
+    ):
+        """Email the org admins to say a storage add-on reduction was cancelled
+        because the org is using more storage than the reduced amount would
+        allow.
+
+        The reduction was made outside Browsertrix (in the Stripe portal), so
+        nothing in the app warned the person who made it.
+
+        The external subscription app retries a failed event up to 3 times, so
+        without a guard admins would get the same email repeatedly. We remember
+        the size from the last cancelled reduction and skip the email if it is
+        the same size again - the same way `send_cancel_email` compares
+        `futureCancelDate`. `org` here is the copy from before this update, so
+        on the first attempt there is no remembered value yet.
+        """
+        requested_gb = update.storageAddonRequestedGB
+        if requested_gb is None:
+            return
+
+        if (
+            org.subscription
+            and org.subscription.storageAddonRevertedRequestedGB == requested_gb
+        ):
+            return
+
+        users = await self.org_ops.get_users_for_org(org, UserRole.OWNER)
+        await asyncio.gather(
+            *[
+                self.user_manager.email.send_storage_addon_change_reverted(
+                    user.name,
+                    user.email,
+                    requested_gb,
+                    update.storageAddonGB or 0,
+                    org,
+                )
+                for user in users
+            ]
+        )
 
     async def send_cancel_emails(self, cancel_date: datetime, org: Organization):
         """Asynchronously send cancellation emails to all org admins"""
