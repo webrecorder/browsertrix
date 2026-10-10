@@ -182,9 +182,8 @@ class BaseCrawlOps:
 
             if res.get("version", 1) == 2:
                 res["initialPages"], _ = await self.page_ops.list_pages(
-                    crawl_ids=[crawlid], page_size=25
+                    crawl_ids=[crawlid], org=org
                 )
-
                 oid = res.get("oid")
                 if oid:
                     origin = get_origin(headers)

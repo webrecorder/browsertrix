@@ -20,7 +20,6 @@ from .models import (
     EmptyResponse,
     Organization,
     Page,
-    PageIdTimestamp,
     PageNote,
     PageNoteAddedResponse,
     PageNoteDelete,
@@ -56,6 +55,10 @@ else:
     CrawlOps = StorageOps = OrgOps = BackgroundJobOps = CollectionOps = object
 
 
+# Initial number of pages to load for replay
+INITIAL_PAGE_SIZE = 25
+
+
 # ============================================================================
 # pylint: disable=too-many-instance-attributes, too-many-arguments,too-many-public-methods
 class PageOps:
@@ -87,21 +90,33 @@ class PageOps:
 
     async def init_index(self):
         """init index for pages db collection"""
-        await self.pages.create_index([("crawl_id", pymongo.HASHED)])
+        await self.pages.create_index([("crawl_id", pymongo.ASCENDING)])
+
         await self.pages.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
-                ("isSeed", pymongo.DESCENDING),
+                ("oid", pymongo.ASCENDING),
+                ("depth", pymongo.ASCENDING),
                 ("ts", pymongo.ASCENDING),
             ]
         )
+
         await self.pages.create_index(
             [
-                ("crawl_id", pymongo.HASHED),
+                ("oid", pymongo.ASCENDING),
+            ]
+        )
+
+        await self.pages.create_index(
+            [
+                ("oid", pymongo.ASCENDING),
+                ("crawl_id", pymongo.ASCENDING),
                 ("url", pymongo.ASCENDING),
             ]
         )
-        await self.pages.create_index([("title", "text")])
+
+        await self.pages.create_index(
+            [("oid", pymongo.ASCENDING), ("title", pymongo.ASCENDING)]
+        )
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""
@@ -627,7 +642,7 @@ class PageOps:
         reviewed: bool | None = None,
         approved: list[bool | None] | None = None,
         has_notes: bool | None = None,
-        page_size: int = DEFAULT_PAGE_SIZE,
+        page_size: int = INITIAL_PAGE_SIZE,
         page: int = 1,
         sort_by: str | None = None,
         sort_direction: int | None = -1,
@@ -783,8 +798,8 @@ class PageOps:
             else:
                 aggregate.extend([{"$sort": {"url": 1}}])
         else:
-            # default sort: seeds first, then by timestamp
-            aggregate.extend([{"$sort": {"isSeed": -1, "ts": 1}}])
+            # default sort: sort by depth (seeds first, other pages after)
+            aggregate.extend([{"$sort": {"depth": 1}}])
 
         if include_total:
             aggregate.extend(
@@ -836,33 +851,37 @@ class PageOps:
         unless prefix is specified"""
         crawl_ids = await self.coll_ops.get_collection_crawl_ids(coll_id, oid)
 
-        pages, _ = await self.list_pages(
-            crawl_ids=crawl_ids,
-            url_prefix=url_prefix,
-            page_size=page_size * len(crawl_ids),
+        match_q = {"oid": oid, "crawl_id": {"$in": crawl_ids}}
+        if url_prefix:
+            match_q["url"] = {"$gte": urllib.parse.unquote(url_prefix)}
+
+        cursor = self.pages.aggregate(
+            [
+                {"$match": match_q},
+                {"$limit": page_size},
+                {
+                    "$group": {
+                        "_id": "$url",
+                        "count": {"$sum": 1},
+                        "snapshots": {
+                            "$push": {
+                                "pageId": "$_id",
+                                "ts": "$ts",
+                                "status": {"$ifNull": ["$status", 200]},
+                            }
+                        },
+                    }
+                },
+                {"$sort": {"count": -1}},
+                #{"$limit": page_size},
+                {"$project": {"_id": 0, "url": "$_id", "count": 1, "snapshots": 1}},
+            ],
+            allowDiskUse=True,
         )
 
-        url_counts: dict[str, PageUrlCount] = {}
+        results = await cursor.to_list(page_size)
 
-        for page in pages:
-            url = page.url
-            count = url_counts.get(url)
-            if not count:
-                # if already at max pages, this would add a new page, so we're done
-                if len(url_counts) >= page_size:
-                    break
-                count = PageUrlCount(url=url, snapshots=[], count=0)
-                url_counts[url] = count
-            count.snapshots.append(
-                PageIdTimestamp(
-                    pageId=page.id,
-                    ts=page.ts,
-                    status=page.status or 200,
-                )
-            )
-            count.count += 1
-
-        return list(url_counts.values())
+        return [PageUrlCount(**entry) for entry in results]
 
     async def re_add_crawl_pages(self, crawl_id: str, oid: UUID | None = None):
         """Delete existing pages for crawl and re-add from WACZs."""
