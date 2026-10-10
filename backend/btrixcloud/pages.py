@@ -858,6 +858,7 @@ class PageOps:
         cursor = self.pages.aggregate(
             [
                 {"$match": match_q},
+                {"$limit": page_size},
                 {
                     "$group": {
                         "_id": "$url",
@@ -872,7 +873,7 @@ class PageOps:
                     }
                 },
                 {"$sort": {"count": -1}},
-                {"$limit": page_size},
+                #{"$limit": page_size},
                 {"$project": {"_id": 0, "url": "$_id", "count": 1, "snapshots": 1}},
             ],
             allowDiskUse=True,
