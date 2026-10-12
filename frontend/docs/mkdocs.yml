@@ -12,6 +12,8 @@ extra_javascript:
   - js/embed.js
 theme:
   name: material
+  # yaml-language-server-disable
+  variant: classic # Zensical-only setting
   custom_dir: docs/overrides
   features:
     - navigation.tabs
