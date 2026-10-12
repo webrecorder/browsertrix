@@ -1,91 +1,113 @@
 <!doctype html>
 <html data-theme="light" class="snap-proximity">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Browsertrix</title>
+    <base href="/" />
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Browsertrix</title>
-  <base href="/" />
+    <script
+      src="https://browser.sentry-cdn.com/5.5.0/bundle.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="description" content="Archive, Curate, and Share the Web." />
+    <!-- OpenGraph Tags -->
+    <meta
+      property="og:image"
+      content="<%= openGraphBaseUrl %>/browsertrix-og.jpg"
+    />
+    <meta
+      property="og:image:alt"
+      content="A simple graphic with the words “Archive, Curate and Share the Web.”, the Browsertrix logo, and “Powered by Webrecorder”"
+    />
+    <meta property="og:title" content="Browsertrix" />
+    <meta
+      property="og:description"
+      content="Archive, Curate, and Share the Web."
+    />
+    <meta property="og:site_name" content="Browsertrix" />
+    <!-- Twitter Tags -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:site" content="@webrecorder_io" />
+    <meta
+      property="twitter:description"
+      content="Archive, Curate, and Share the Web."
+    />
+    <meta property="twitter:title" content="Browsertrix" />
+    <meta
+      property="twitter:image"
+      content="<%= openGraphBaseUrl %>/browsertrix-og.jpg"
+    />
+    <meta
+      property="twitter:image:alt"
+      content="A simple graphic with the words “Archive, Curate and Share the Web.”, the Browsertrix logo, and “Powered by Webrecorder”"
+    />
 
-  <script src="https://browser.sentry-cdn.com/5.5.0/bundle.min.js" crossorigin="anonymous"></script>
-  <meta name="theme-color" content="#ffffff" />
-  <link rel="icon" href="/favicon.ico" sizes="32x32" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="description" content="Archive, Curate, and Share the Web." />
-  <!-- OpenGraph Tags -->
-  <meta property="og:image" content="<%= openGraphBaseUrl %>/browsertrix-og.jpg" />
-  <meta property="og:image:alt"
-    content="A simple graphic with the words “Archive, Curate and Share the Web.”, the Browsertrix logo, and “Powered by Webrecorder”" />
-  <meta property="og:title" content="Browsertrix" />
-  <meta property="og:description" content="Archive, Curate, and Share the Web." />
-  <meta property="og:site_name" content="Browsertrix" />
-  <!-- Twitter Tags -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:site" content="@webrecorder_io" />
-  <meta property="twitter:description" content="Archive, Curate, and Share the Web." />
-  <meta property="twitter:title" content="Browsertrix" />
-  <meta property="twitter:image" content="<%= openGraphBaseUrl %>/browsertrix-og.jpg" />
-  <meta property="twitter:image:alt"
-    content="A simple graphic with the words “Archive, Curate and Share the Web.”, the Browsertrix logo, and “Powered by Webrecorder”" />
-
-  <script src="/extra.js"></script>
-  <%if (environment==="development" ) { %>
+    <script src="/extra.js"></script>
+    <%if (environment==="development" ) { %>
     <script defer src="/vendor/dll.lit.js"></script>
     <% } %>
-</head>
+  </head>
 
-<body>
-  <script>
-    // Fetch API settings in parallel with dynamically loaded components
-    window
-      .fetch("/api/settings", {
-        headers: { "Content-Type": "application/json" },
-      })
-      .then((resp) => resp.json())
-      .then((settings) => {
-        const app = document.querySelector("browsertrix-app");
+  <body>
+    <script>
+      // Fetch API settings in parallel with dynamically loaded components
+      window
+        .fetch("/api/settings", {
+          headers: { "Content-Type": "application/json" },
+        })
+        .then((resp) => resp.json())
+        .then((settings) => {
+          const app = document.querySelector("browsertrix-app");
 
-        if (app && settings) {
-          app.settings = settings;
+          if (app && settings) {
+            app.settings = settings;
 
-          if (settings.docsUrl) {
-            app.docsUrl = settings.docsUrl;
-          } else {
-            // Default value for local deployments
-            app.docsUrl = "/docs/";
+            if (settings.docsUrl) {
+              app.docsUrl = settings.docsUrl;
+            } else {
+              // Default value for local deployments
+              app.docsUrl = "/docs/";
+            }
           }
-        }
-      })
-      .catch(console.debug);
-  </script>
+        })
+        .catch(console.debug);
+    </script>
 
-  <browsertrix-app version="v<%= version %>-<%= commitHash %>"></browsertrix-app>
+    <browsertrix-app
+      version="v<%= version %>-<%= commitHash %>"
+    ></browsertrix-app>
 
-  <script>
-    const isDev = "<%= environment %>" === "development";
-    const dsn = "<%= glitchtip_dsn %>";
+    <script>
+      const isDev = "<%= environment %>" === "development";
+      const dsn = "<%= glitchtip_dsn %>";
 
-    if (isDev && dsn) {
-      Sentry.init({
-        dsn: dsn,
-        release: "<%= gitBranch %> (<%= commitHash %>) v<%= version %>",
-        environment: "<%= environment %>",
-        debug: isDev,
-        autoSessionTracking: false, // Turn off unsupported page/session tracking
+      if (isDev && dsn) {
+        Sentry.init({
+          dsn: dsn,
+          release: "<%= gitBranch %> (<%= commitHash %>) v<%= version %>",
+          environment: "<%= environment %>",
+          debug: isDev,
+          autoSessionTracking: false, // Turn off unsupported page/session tracking
+        });
+      }
+    </script>
+    <script>
+      customElements.whenDefined("browsertrix-app").then(() => {
+        // Load replay UI after browsertrix app is defined to prevent issues
+        // with re-defining shoelace components
+        const script = document.createElement("script");
+        script.src = "/replay/ui.js";
+        document.body.appendChild(script);
       });
-    }
-  </script>
-  <script>
-    customElements.whenDefined("browsertrix-app").then(() => {
-      // Load replay UI after browsertrix app is defined to prevent issues
-      // with re-defining shoelace components
-      const script = document.createElement("script");
-      script.src = "/replay/ui.js";
-      document.body.appendChild(script);
-    });
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>
