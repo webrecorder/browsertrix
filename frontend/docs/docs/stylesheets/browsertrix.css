@@ -100,6 +100,10 @@
   border-bottom: 1px solid var(--wr-border-color);
 }
 
+script[src*="/bundle."] + div[class=""] {
+  outline: 10px solid red;
+}
+
 /* Decrease size of input */
 .btrix-app-embed .md-search__input {
   height: calc(2.4rem - 1px);
