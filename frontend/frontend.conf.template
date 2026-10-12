@@ -47,11 +47,11 @@ server {
     location = /robots.txt {
       set $robots_disallow "${ROBOTS_DISALLOW}";
 
+      add_header Content-Type text/plain;
+
       if ($robots_disallow != "") {
         return 200 "User-agent: *\nDisallow: ${ROBOTS_DISALLOW}\n";
       }
-
-      add_header Content-Type text/plain;
 
       return 200 "";
     }
