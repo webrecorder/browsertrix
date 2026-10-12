@@ -110,7 +110,7 @@
     "build:analyze": "BUNDLE_ANALYZER=true webpack --config webpack.prod.js",
     "build-dev:vendor": "webpack --mode development --config vendor.webpack.config.js",
     "start": "yarn build-dev:vendor && webpack serve --mode=development --config webpack.dev.js",
-    "docs-start": "cd docs; zensical serve",
+    "docs-start": "cd docs; zensical serve --config-file mkdocs.user-guide.yml",
     "start-with-docs": "DOCS_URL=http://localhost:8000/ concurrently 'yarn docs-start' 'yarn start'",
     "serve": "yarn node scripts/serve.js",
     "lint": "eslint --fix .",
