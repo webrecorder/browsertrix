@@ -8,8 +8,9 @@ extra_css:
   - stylesheets/extra.css
   - stylesheets/browsertrix.css
 extra_javascript:
+  - js/embed.js # Must be first for search style customization to work
   - js/insertversion.js
-  - js/embed.js
+  - js/search.js 
 theme:
   name: material
   # yaml-language-server-disable
@@ -181,7 +182,6 @@ extra:
 copyright: "Creative Commons Attribution 4.0 International (CC BY 4.0)"
 
 plugins:
-  - search
   - tags:
       tags_allowed:
         - Social Media
