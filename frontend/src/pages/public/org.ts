@@ -228,9 +228,7 @@ export class PublicOrg extends BtrixElement {
   }
 
   private renderSignUpCta(org: PublicOrgCollections["org"]) {
-    const { signUpUrl } = this.appState.settings || {};
-
-    if (!signUpUrl) return;
+    if (!this.env.signUpUrl) return;
 
     return html`
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
@@ -245,7 +243,7 @@ export class PublicOrg extends BtrixElement {
             `,
           )}
           <span>${msg("Do you have web archives to share?")}</span>
-          <btrix-link href=${signUpUrl} variant="primary">
+          <btrix-link href=${this.env.signUpUrl} variant="primary">
             ${msg("Get started with Browsertrix")}
           </btrix-link>
         </p>

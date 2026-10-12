@@ -212,7 +212,7 @@ export class Dashboard extends BtrixElement {
       <div class="@container/card">
         ${generalGuides({
           trialing: this.appState.isTrialing,
-          billing: this.appState.settings?.billingEnabled,
+          billing: this.env.billingEnabled,
         })}
       </div>
 
@@ -426,7 +426,7 @@ export class Dashboard extends BtrixElement {
             ? nothing
             : this.guardedRenderTrialInfo()}
           ${when(
-            this.appState.settings?.billingEnabled,
+            this.env.billingEnabled,
             () =>
               html`<sl-button
                 size="small"

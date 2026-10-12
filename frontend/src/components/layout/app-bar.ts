@@ -39,9 +39,6 @@ export class AppBar extends BtrixElement {
   viewState?: ViewState;
 
   @property({ type: String })
-  docsUrl = "";
-
-  @property({ type: String })
   homePath = "";
 
   @property({ type: String })
@@ -275,7 +272,7 @@ export class AppBar extends BtrixElement {
           <sl-icon slot="suffix" name="layout-sidebar-inset-reverse"></sl-icon>
         </sl-menu-item>
         <btrix-menu-item-link
-          href="${this.docsUrl}user-guide/${userGuidePath}"
+          href="${this.env.docsUrl}user-guide/${userGuidePath}"
           target="_blank"
           @click=${() => {
             completeOnboardingStep(OnboardingStep.OpenUserGuide);

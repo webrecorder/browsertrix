@@ -6,7 +6,6 @@ import { customElement, state } from "lit/decorators.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type BillingAddonCheckout } from "@/types/billing";
-import appState from "@/utils/state";
 
 const PRESET_MINUTES = [100, 600, 1500, 3000];
 
@@ -43,7 +42,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
 
   private readonly checkoutUrl = new Task(this, {
     task: async ([minutes]) => {
-      if (!appState.settings?.billingEnabled) return;
+      if (!this.env.billingEnabled) return;
 
       try {
         const { checkoutUrl } = await this.getCheckoutUrl(minutes);

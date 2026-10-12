@@ -19,7 +19,6 @@ import {
   type ActiveCrawlsCountContext,
 } from "./context/active-crawls-count/active-crawls-count";
 import { type BtrixUpdateActiveCrawlsCount } from "./context/active-crawls-count/events";
-import { docsUrlContext, type DocsUrlContext } from "./context/docs-url";
 import { NotificationsContextController } from "./context/notifications/NotificationsContextController";
 import { notificationsContextKey } from "./context/notifications/types";
 import { viewStateContext } from "./context/view-state";
@@ -37,7 +36,7 @@ import AuthService, {
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
-import { type AppSettings } from "@/utils/app";
+import { getAppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
@@ -61,6 +60,10 @@ export type APIUser = {
   orgs: UserOrg[];
 };
 
+// Server will pass true as "1"
+const numberToBoolean = (value: string | null) =>
+  value === "1" || value === "true";
+
 @customElement("browsertrix-app")
 @localized()
 export class App extends BtrixElement {
@@ -68,20 +71,41 @@ export class App extends BtrixElement {
    * Browsertrix app version to display in the UI
    */
   @property({ type: String, useDefault: true })
-  version?: string;
+  version = "";
+
+  /**
+   * Enable user registration UI
+   */
+  @property({
+    type: Boolean,
+    converter: numberToBoolean,
+    useDefault: true,
+    noAccessor: true,
+  })
+  registrationEnabled = false;
+
+  /**
+   * Enable user billing UI
+   */
+  @property({
+    type: Boolean,
+    converter: numberToBoolean,
+    useDefault: true,
+    noAccessor: true,
+  })
+  billingEnabled = false;
 
   /**
    * Base URL for user guide documentation
    */
-  @provide({ context: docsUrlContext })
-  @property({ type: String, useDefault: true })
-  docsUrl: DocsUrlContext = null;
+  @property({ type: String, useDefault: true, noAccessor: true })
+  docsUrl = "/docs/";
 
   /**
-   * App settings from `/api/settings`
+   * External URL for user sign up
    */
-  @property({ type: Object })
-  settings?: AppSettings;
+  @property({ type: String, useDefault: true, noAccessor: true })
+  signUpUrl = "";
 
   // TODO Refactor into context
   private readonly router = router;
@@ -178,6 +202,15 @@ export class App extends BtrixElement {
 
     super.connectedCallback();
 
+    AppStateService.updateEnv({
+      version: this.version,
+      registrationEnabled: this.registrationEnabled,
+      billingEnabled: this.billingEnabled,
+      docsUrl: this.docsUrl,
+      signUpUrl: this.signUpUrl,
+    });
+    void getAppSettings();
+
     window.addEventListener("popstate", () => {
       this.syncViewState();
     });
@@ -201,9 +234,6 @@ export class App extends BtrixElement {
   }
 
   willUpdate(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has("settings")) {
-      AppStateService.updateSettings(this.settings || null);
-    }
     if (changedProperties.has("viewState")) {
       this.handleViewStateChange(
         changedProperties.get("viewState") as undefined | ViewState,
@@ -360,7 +390,6 @@ export class App extends BtrixElement {
       <div class="min-w-screen relative flex min-h-screen flex-col">
         ${this.renderSuperadminBanner()}
         <btrix-app-bar
-          docsUrl=${ifDefined(this.docsUrl ?? undefined)}
           .viewState=${this.viewState}
           .orgSlugInPath=${this.orgSlugInPath}
           @btrix-update-active-crawls-count=${this.onUpdateActiveCrawlsCount}
@@ -522,10 +551,7 @@ export class App extends BtrixElement {
   private renderPage() {
     switch (this.viewState.route) {
       case "signUp": {
-        if (!this.appState.settings) {
-          return nothing;
-        }
-        if (this.appState.settings.registrationEnabled) {
+        if (this.registrationEnabled) {
           return html`<btrix-sign-up
             class="flex w-full items-center justify-center md:bg-neutral-50"
           ></btrix-sign-up>`;
