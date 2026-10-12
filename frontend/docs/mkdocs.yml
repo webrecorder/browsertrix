@@ -27,7 +27,6 @@ theme:
     - navigation.footer
     - navigation.prune
     - content.code.copy
-    - content.action.edit
     - content.tooltips
     - content.tabs.link
     - search.suggest
