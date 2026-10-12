@@ -44,6 +44,18 @@ server {
       add_header Content-Security-Policy "frame-ancestors 'self'";
     }
 
+    location = /robots.txt {
+      set $robots_disallow "${ROBOTS_DISALLOW}";
+
+      if ($robots_disallow != "") {
+        return 200 "User-agent: *\nDisallow: ${ROBOTS_DISALLOW}\n";
+      }
+
+      add_header Content-Type text/plain;
+
+      return 200 "";
+    }
+
     location ~* /docs/(.*)$ {
       set $docs_url "${DOCS_URL}";
 
