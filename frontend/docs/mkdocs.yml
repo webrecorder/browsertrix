@@ -2,6 +2,7 @@ site_name: Browsertrix Docs
 repo_url: https://github.com/webrecorder/browsertrix-cloud/
 repo_name: Browsertrix
 edit_uri: edit/main/frontend/docs/docs/
+site_url: !ENV DOCS_URL
 extra_css:
   - stylesheets/theme-light.css
   - stylesheets/theme-dark.css

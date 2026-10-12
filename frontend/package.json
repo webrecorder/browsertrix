@@ -111,7 +111,7 @@
     "build-dev:vendor": "webpack --mode development --config vendor.webpack.config.js",
     "start": "yarn build-dev:vendor && webpack serve --mode=development --config webpack.dev.js",
     "docs-start": "cd docs; zensical serve",
-    "start-with-docs": "concurrently 'yarn docs-start' 'DOCS_URL=http://localhost:8000/ yarn start'",
+    "start-with-docs": "DOCS_URL=http://localhost:8000/ concurrently 'yarn docs-start' 'yarn start'",
     "serve": "yarn node scripts/serve.js",
     "lint": "eslint --fix .",
     "lint:check": "eslint .",
