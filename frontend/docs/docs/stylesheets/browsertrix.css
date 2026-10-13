@@ -32,7 +32,11 @@
 }
 
 /* Hide navigation back to main docs */
-.btrix-app-embed .md-nav__title,
+.btrix-app-embed .md-nav__title[for="__drawer"] {
+  display: none !important;
+}
+
+/* Hide Github link in navigation */
 .btrix-app-embed .md-nav__source {
   display: none !important;
 }
@@ -86,6 +90,11 @@
 }
 .btrix-app-embed .md-nav--primary .md-nav__link {
   padding: 0.55rem 0.8rem;
+}
+
+/* Remove margin from secondary nav */
+.btrix-app-embed .md-nav--secondary {
+  margin-top: 0;
 }
 
 /* Remove background color from search help text */
