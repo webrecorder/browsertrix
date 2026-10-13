@@ -92,28 +92,6 @@
   background-color: transparent;
 }
 
-/* Remove rounded border from search input and use bottom border instead */
-.btrix-app-embed .md-search__input,
-.btrix-app-embed .md-search__input:hover {
-  border-radius: 0;
-  border: 0;
-  border-bottom: 1px solid var(--wr-border-color);
-}
-
-/* Decrease size of input */
-.btrix-app-embed .md-search__input {
-  height: calc(2.4rem - 1px);
-  font-size: 0.8rem;
-}
-
-/* Remove box shadow from search input container */
-.btrix-app-embed
-  [data-md-toggle="search"]:checked
-  ~ .md-header
-  .md-search__form {
-  box-shadow: none;
-}
-
 /* General header styling */
 .btrix-app-embed .md-header__title--active {
   font-family: var(--md-text-font);

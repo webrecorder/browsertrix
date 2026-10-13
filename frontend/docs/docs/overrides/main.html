@@ -36,16 +36,26 @@
           </div>
         </div>
       </div>
-      {% if "material/search" in config.plugins %}
-        {% set search = config.plugins["material/search"] | attr("config") %}
+
+      {# https://github.com/zensical/ui/blob/2f2081795a0e383ac3cc102f56b8d1b4f1d7d996/src/partials/header.html #}
+      {% if "search" in config.plugins %}
+        {% set search = config.plugins["search"] | attr("config") %}
+
+        <!-- Check if search is actually enabled - see https://t.ly/DT_0V -->
         {% if search.enabled %}
-          <label class="md-header__button md-icon" for="__search">
+          <label
+            class="md-header__button md-icon" for="__search"
+            aria-label="{{ lang.t('search') }}"
+          >
             {% set icon = config.theme.icon.search or "material/magnify" %}
             {% include ".icons/" ~ icon ~ ".svg" %}
           </label>
+
+          <!-- Search interface -->
           {% include "partials/search.html" %}
         {% endif %}
       {% endif %}
+
       {% if config.repo_url %}
         <div class="md-header__source">
           {% include "partials/source.html" %}

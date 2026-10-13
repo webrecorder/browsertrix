@@ -114,12 +114,6 @@ module.exports = [
           pathRewrite: { "^/docs": "" },
           changeOrigin: true,
         },
-        {
-          // Needed to prevent infinite reload when running docs with `mkdocs serve`:
-          context: "/livereload",
-          target: devDocsUrl.href,
-          changeOrigin: true,
-        },
       ],
       setupMiddlewares: (middlewares, server) => {
         // Serve replay service worker file
