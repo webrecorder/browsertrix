@@ -418,9 +418,7 @@ export class App extends BtrixElement {
   }
 
   private renderUserGuide() {
-    if (!this.docsUrl) return;
-
-    const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
+    const url = `/docs-embed/user-guide/${this.userGuidePath}`;
 
     return html`
       <sl-drawer
@@ -450,7 +448,7 @@ export class App extends BtrixElement {
         <sl-icon-button
           slot="header-actions"
           name="box-arrow-up-right"
-          href="${url}"
+          href="${this.docsUrl}user-guide/${this.userGuidePath}"
           target="_blank"
           title=${msg("Open in New Tab")}
         ></sl-icon-button>
@@ -739,7 +737,7 @@ export class App extends BtrixElement {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      const url = `${this.docsUrl}user-guide/${pathName}`;
+      const url = `/docs-embed/user-guide/${pathName}`;
 
       if (url !== iframe.src) {
         this.userGuidePath = pathName;

@@ -109,6 +109,14 @@ module.exports = [
           },
         },
         {
+          context: "/docs-embed",
+          target: process.env.DOCS_EMBED_PORT
+            ? new URL(`http://localhost:${process.env.DOCS_EMBED_PORT}`).href
+            : devDocsUrl.href,
+          pathRewrite: { "^/docs-embed": "" },
+          changeOrigin: true,
+        },
+        {
           context: "/docs",
           target: devDocsUrl.href,
           pathRewrite: { "^/docs": "" },
