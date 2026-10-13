@@ -293,8 +293,11 @@ class StorageOps:
     ) -> AsyncIterator[tuple[AIOS3Client, str, str]]:
         """context manager for s3 client"""
         # parse bucket and key from standard endpoint_url
-        endpoint_url = storage.endpoint_url
-
+        if for_presign and storage.access_endpoint_url:
+            endpoint_url = storage.access_endpoint_url
+        else:
+            endpoint_url = storage.endpoint_url
+    
         if not endpoint_url.endswith("/"):
             endpoint_url += "/"
 
