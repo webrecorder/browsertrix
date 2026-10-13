@@ -29,11 +29,14 @@ sed -i "s#registrationenabled=\"\"#registrationenabled=\"$REGISTRATION_ENABLED\"
         s#docsurl=\"\"#docsurl=\"$DOCS_URL\"#g
         s#signupurl=\"\"#signupurl=\"$SIGN_UP_URL\"#g" /usr/share/nginx/html/index.html
 
-# Replace canonical URL in docs
+# Replace canonical URL in standalone docs site and embedded docs site.
+# A canonical URL is required to navigate docs without reloading the entire page.
 if [ -z "$APP_ORIGIN" ]; then
   echo "no app origin, skipping replacing canonical URL in docs"
 else
+  sed -i "s#<loc>/#<loc>$APP_ORIGIN/#g" /usr/share/nginx/html/docs/sitemap.xml
   sed -i "s#rel=\"canonical\" href=\"/#rel=\"canonical\" href=\"$APP_ORIGIN/#g" $(find /usr/share/nginx/html/docs -name '*.html')
+  sed -i "s#<loc>/#<loc>$APP_ORIGIN/#g" /usr/share/nginx/html/docs-embed/sitemap.xml
   sed -i "s#rel=\"canonical\" href=\"/#rel=\"canonical\" href=\"$APP_ORIGIN/#g" $(find /usr/share/nginx/html/docs-embed -name '*.html')
 fi
 
