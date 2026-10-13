@@ -48,16 +48,14 @@ Use your own infrastructure to host Browsertrix.
 <div class="grid cards" markdown>
 
 - **Self-Hosting**
-
-    [Requirements for self-hosting](deploy/index.md)<br/>
-    [Configure deployment](deploy/customization.md)<br/>
-    [Configure proxies](deploy/proxies.md)
+    - [Requirements for self-hosting](deploy/index.md)
+    - [Configure deployment](deploy/customization.md)
+    - [Configure proxies](deploy/proxies.md)
 
 - **Development**
-
-    [Run Browsertrix locally](develop/local-dev-setup.md)<br/>
-    [API reference :octicons-link-external-16:](/api/){ target="_blank" }<br/>
-    [Source code :octicons-link-external-16:](https://github.com/webrecorder/browsertrix){ target="_blank" }<br/>
+    - [Run Browsertrix locally](develop/local-dev-setup.md)
+    - [API reference :octicons-link-external-16:](/api/){ target="_blank" }
+    - [Source code :octicons-link-external-16:](https://github.com/webrecorder/browsertrix){ target="_blank" }
 
 </div>
 
