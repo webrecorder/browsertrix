@@ -3,8 +3,6 @@ const url = new URL(window.location.href);
 if (url.pathname.includes("/docs-embed/")) {
   if (window.self === window.top) {
     // Not within iframe, redirect to docs site instead
-    const url = new URL(window.location.href);
-
     window.location.assign(
       window.location.href.replace("/docs-embed/", "/docs/"),
     );

@@ -64,6 +64,8 @@ export type APIUser = {
 const numberToBoolean = (value: string | null) =>
   value === "1" || value === "true";
 
+const DOCS_EMBED_PATH_PREFIX = "/docs-embed";
+
 @customElement("browsertrix-app")
 @localized()
 export class App extends BtrixElement {
@@ -418,7 +420,7 @@ export class App extends BtrixElement {
   }
 
   private renderUserGuide() {
-    const url = `/docs-embed/user-guide/${this.userGuidePath}`;
+    const url = `${DOCS_EMBED_PATH_PREFIX}/user-guide/${this.userGuidePath}`;
 
     return html`
       <sl-drawer
@@ -737,9 +739,12 @@ export class App extends BtrixElement {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
     if (iframe) {
-      const url = `/docs-embed/user-guide/${pathName}`;
+      const url = `${DOCS_EMBED_PATH_PREFIX}/user-guide/${pathName}`;
 
-      if (url !== iframe.src) {
+      if (
+        url.slice(url.indexOf(DOCS_EMBED_PATH_PREFIX)) !==
+        iframe.src.slice(iframe.src.indexOf(DOCS_EMBED_PATH_PREFIX))
+      ) {
         this.userGuidePath = pathName;
 
         await this.updateComplete;

@@ -90,6 +90,11 @@ module.exports = [
           directory: path.join(__dirname, "dist/vendor"),
           publicPath: "/vendor",
         },
+        {
+          // Must be created with `yarn docs-build` before starting dev server
+          directory: path.join(__dirname, "docs/site-embed"),
+          publicPath: "/docs-embed",
+        },
       ],
       historyApiFallback: true,
       proxy: [
@@ -109,17 +114,9 @@ module.exports = [
           },
         },
         {
-          context: "/docs-embed",
-          target: process.env.DOCS_EMBED_PORT
-            ? new URL(`http://localhost:${process.env.DOCS_EMBED_PORT}`).href
-            : devDocsUrl.href,
-          pathRewrite: { "^/docs-embed": "" },
-          changeOrigin: true,
-        },
-        {
-          context: "/docs",
+          context: "/docs/",
           target: devDocsUrl.href,
-          pathRewrite: { "^/docs": "" },
+          pathRewrite: { "^/docs/": "/" },
           changeOrigin: true,
         },
       ],
