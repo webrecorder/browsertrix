@@ -57,9 +57,7 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
             body = json.loads(body.decode("utf-8").replace("'", '"'))
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(
-                json.dumps({"sizeGB": body["sizeGB"]}).encode("utf-8")
-            )
+            self.wfile.write(json.dumps({"sizeGB": body["sizeGB"]}).encode("utf-8"))
         else:
             self.end_headers()
 
