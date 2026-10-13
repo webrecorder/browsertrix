@@ -48,6 +48,7 @@ COPY --link ./docs/requirements.txt .
 
 RUN pip install -r requirements.txt
 
+COPY --link ./docs/config ./config
 COPY --link ./docs/mkdocs.yml \
   ./docs/mkdocs.embed.yml \
   ./
