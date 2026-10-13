@@ -53,8 +53,8 @@ COPY --link ./docs/mkdocs.yml \
   ./
 COPY --link ./docs/docs ./docs
 
-RUN API_DOCS_URL=/api/redoc zensical build --clean
-RUN API_DOCS_URL=/api/redoc zensical build --clean --config-file mkdocs.embed.yml
+RUN API_DOCS_URL=/api/redoc zensical build
+RUN zensical build --config-file mkdocs.embed.yml
 
 FROM docker.io/library/nginx:1.23.2
 
