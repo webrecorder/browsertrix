@@ -184,9 +184,7 @@ async def test_update_quotas_add_extra_storage(org_ops: OrgOps):
     # first find_one_and_update (the $inc) returns the updated org, as the
     # real update_quotas uses return_document=AFTER with a quotas projection
     updated_org = get_org(
-        base_quotas.model_copy(
-            update={"extraStorageQuota": 100_000_000_000}
-        )
+        base_quotas.model_copy(update={"extraStorageQuota": 100_000_000_000})
     )
     org_ops.orgs.find_one_and_update = AsyncMock(return_value=updated_org.to_dict())
 
