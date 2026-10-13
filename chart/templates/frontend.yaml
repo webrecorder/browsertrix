@@ -89,6 +89,11 @@ spec:
             - name: ROBOTS_DISALLOW
               value: {{ .Values.robots_disallow }}
             {{- end }}
+            
+            {{- if .Values.ingress.host }}
+            - name: APP_ORIGIN
+              value: "{{ .Values.ingress.tls | ternary "https" "http" }}://{{ .Values.ingress.host }}"
+            {{- end }}
 
           resources:
             limits:

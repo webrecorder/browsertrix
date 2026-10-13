@@ -29,6 +29,14 @@ sed -i "s#registrationenabled=\"\"#registrationenabled=\"$REGISTRATION_ENABLED\"
         s#docsurl=\"\"#docsurl=\"$DOCS_URL\"#g
         s#signupurl=\"\"#signupurl=\"$SIGN_UP_URL\"#g" /usr/share/nginx/html/index.html
 
+# Replace canonical URL in docs
+if [ -z "$APP_ORIGIN" ]; then
+  echo "no app origin, skipping replacing canonical URL in docs"
+else
+  sed -i "s#rel=\"canonical\" href=\"/#rel=\"canonical\" href=\"$APP_ORIGIN/#g" $(find /usr/share/nginx/html/docs -name '*.html')
+  sed -i "s#rel=\"canonical\" href=\"/#rel=\"canonical\" href=\"$APP_ORIGIN/#g" $(find /usr/share/nginx/html/docs-embed -name '*.html')
+fi
+
 mkdir -p /etc/nginx/resolvers/
 echo resolver $(grep -oP '(?<=nameserver\s)[^\s]+' /etc/resolv.conf | awk '{ if ($1 ~ /:/) { printf "[" $1 "] "; } else { printf $1 " "; } }') valid=10s ipv6=off";" >/etc/nginx/resolvers/resolvers.conf
 
