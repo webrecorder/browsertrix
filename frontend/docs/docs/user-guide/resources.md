@@ -1,3 +1,8 @@
+---
+hide:
+  - footer
+---
+
 # Resources
 
 Links to additional resources to help you get the most out of Browsertrix

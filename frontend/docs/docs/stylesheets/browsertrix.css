@@ -32,7 +32,8 @@
 }
 
 /* Hide navigation back to main docs */
-.btrix-app-embed .md-nav[data-md-level="1"] .md-nav__title[for="__nav_2"] {
+.btrix-app-embed .md-nav__title,
+.btrix-app-embed .md-nav__source {
   display: none !important;
 }
 

@@ -1,7 +1,10 @@
 ---
 hide:
-    - navigation
-    - toc
+  - navigation
+  - toc
+  - footer
+search:
+  exclude: true
 ---
 
 # Browsertrix Documentation
