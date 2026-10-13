@@ -1166,7 +1166,12 @@ class OrgOps(BaseOrgs):
         ):
             return
 
-        monthly_remaining_time = monthly_quota_secs - monthly_exec_secs_used
+        # Recorded usage can be over quota due to a plan downgrade mid-month;
+        # a negative value would both subtract from `monthlyExecSeconds` and add
+        # the whole difference to `secs_over_quota`, draining the
+        # plan/gifted/extra pools by more than the crawl itself used. Clamping
+        # here prevents this.
+        monthly_remaining_time = max(0, monthly_quota_secs - monthly_exec_secs_used)
 
         # If adding duration won't pass monthly quota, add duration and return
         if duration <= monthly_remaining_time:
