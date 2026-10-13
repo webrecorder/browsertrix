@@ -67,6 +67,8 @@ server {
       index  index.html index.htm;
       gzip   on;
       gzip_types text/html application/javascript text/css image/svg+xml;
+
+      add_header X-Robots-Tag "none" always;
     }
 
     # serve replay service worker, RWP_BASE_URL set in Dockerfile
