@@ -8,8 +8,8 @@ extra_css:
   - stylesheets/theme-dark.css
   - stylesheets/extra.css
 extra_javascript:
-  - js/search.js # Must be first for search style customization to work
   - js/insertversion.js
+  - js/search.js
 theme:
   name: material
   # yaml-language-server-disable
