@@ -48,16 +48,20 @@ COPY --link ./docs/requirements.txt .
 
 RUN pip install -r requirements.txt
 
-COPY --link ./docs/mkdocs.yml .
+COPY --link ./docs/mkdocs.yml \
+  ./docs/mkdocs.embed.yml \
+  ./
 COPY --link ./docs/docs ./docs
 
-RUN API_DOCS_URL=/api/redoc zensical build
+RUN API_DOCS_URL=/api/redoc zensical build --clean
+RUN API_DOCS_URL=/api/redoc zensical build --clean --config-file mkdocs.embed.yml
 
 FROM docker.io/library/nginx:1.23.2
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
 
 COPY --link --from=build_docs /docs/site /usr/share/nginx/html/docs
+COPY --link --from=build_docs /docs/site-embed /usr/share/nginx/html/docs-embed
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/

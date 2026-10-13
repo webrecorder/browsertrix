@@ -1,7 +1,75 @@
-INHERIT: ./config/base.yml
+INHERIT: ./config/mkdocs.site.yml
 
-theme:
-  name: material
-  features:
-    - navigation.tabs
-    - navigation.tabs.sticky
+nav:
+  - Overview: index.md
+  - User Guide:
+      # TODO Find plugin to share nav list
+      - user-guide/index.md
+      - Getting Started:
+          - user-guide/signup.md
+          - user-guide/navigation.md
+          - user-guide/getting-started.md
+          - user-guide/concepts.md
+      - Orgs:
+          - user-guide/org.md
+          - user-guide/overview.md
+          - user-guide/join.md
+      - Crawling:
+          - user-guide/crawl-workflows.md
+          - user-guide/workflow-setup.md
+          - user-guide/running-crawl.md
+          - user-guide/behaviors.md
+      - Archived Items:
+          - user-guide/archived-items.md
+          - user-guide/review.md
+      - Collections:
+          - user-guide/collection.md
+          - user-guide/presentation-sharing.md
+          - user-guide/public-collections-gallery.md
+      - Deduplication:
+          - user-guide/deduplication.md
+      - Quality Assurance:
+          - user-guide/quality-assurance.md
+          - user-guide/qa-review.md
+      - Browser Profiles:
+          - user-guide/browser-profiles/browser-profiles-overview.md
+          - user-guide/browser-profiles/create-browser-profile.md
+          - user-guide/browser-profiles/configure-sites.md
+          - user-guide/browser-profiles/usage-in-crawls.md
+          - user-guide/browser-profiles/edit-browser-profile.md
+      - Org Settings:
+          - user-guide/org-settings.md
+          - user-guide/org-members.md
+      - Account Settings:
+          - user-guide/user-settings.md
+          - user-guide/change-password.md
+      - user-guide/resources.md
+      - user-guide/contribute.md
+  - Self-Hosting:
+      - Overview: deploy/index.md
+      - deploy/local.md
+      - deploy/remote.md
+      - deploy/customization.md
+      - deploy/proxies.md
+      - Ansible:
+          - deploy/ansible/digitalocean.md
+          - deploy/ansible/microk8s.md
+          - deploy/ansible/k3s.md
+      - Administration:
+          - deploy/admin/upgrade-notes.md
+          - deploy/admin/org-import-export.md
+      - deploy/security.md
+  - Development:
+      - develop/index.md
+      - develop/local-dev-setup.md
+      - develop/logging.md
+      - develop/docs.md
+      - develop/emails.md
+      - develop/feature-flags.md
+      - UI Development:
+        - develop/frontend-dev.md
+        - develop/ui/components.md
+        - develop/ui/storybook.md
+        - develop/localization.md
+
+  - API Reference: !ENV [ API_DOCS_URL, "/api/" ]
