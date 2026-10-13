@@ -28,7 +28,7 @@ from btrixcloud.models import (
 )
 from btrixcloud.orgs import BaseOrgs, OrgOps
 from btrixcloud.subs import SubOps
-from btrixcloud.utils import bg_tasks
+from btrixcloud.utils import bg_tasks, dt_now
 
 orgs = BaseOrgs()
 
@@ -176,6 +176,8 @@ def make_org_ops(org: Organization) -> tuple[OrgOps, MagicMock]:
     org_data.pop("id", None)
     org_data["_id"] = org.id
     mock_collection.find_one_and_update = AsyncMock(return_value=org_data)
+    # `inc_org_time_stats` re-fetches the org before applying overage
+    mock_collection.find_one = AsyncMock(return_value=org_data)
 
     org_ops = OrgOps(
         dbclient=mock_db_client,
@@ -392,3 +394,32 @@ async def test_update_subscription_data_clears_pending_plan():
     assert set_dict["subscription.pendingPlanId"] is None
 
 
+@pytest.mark.asyncio
+async def test_overage_does_not_absorb_usage_from_before_a_quota_drop():
+    """A monthly quota that dropped below recorded usage must charge only this
+    crawl's seconds to the pools.
+
+    Regression: `monthly_remaining_time` was previously unclamped, which meant
+    that when a `maxExecMinutesPerMonth` quota was reduced below the month's
+    `monthlyExecSeconds` usage, a crawl would make `monthly_remaining_time`
+    negative, which then drained exec time from extra/gifted pools.
+    """
+    org = get_org()
+    yymm = dt_now().strftime("%Y-%m")
+    org.monthlyExecSeconds = {yymm: 800 * 60}
+    org.quotas.maxExecMinutesPerMonth = 720
+    org.extraExecSecondsAvailable = 100 * 60
+    org_ops, collection = make_org_ops(org)
+
+    await org_ops.inc_org_time_stats(org.id, 60, is_exec_time=True)
+
+    updates = [call[0][1] for call in collection.find_one_and_update.call_args_list]
+    drained = sum(
+        u.get("$inc", {}).get("extraExecSecondsAvailable", 0) for u in updates
+    )
+    monthly = sum(
+        u.get("$inc", {}).get(f"monthlyExecSeconds.{yymm}", 0) for u in updates
+    )
+
+    assert drained == -60
+    assert monthly >= 0, "recorded monthly usage must never be reduced"
