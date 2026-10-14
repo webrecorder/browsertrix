@@ -8,6 +8,7 @@ extra_css:
   - stylesheets/theme-dark.css
   - stylesheets/extra.css
 extra_javascript:
+  - js/links.js
   - js/insertversion.js
   - js/search.js
 theme:
