@@ -85,6 +85,11 @@ spec:
               value: {{ .Values.inject_extra }}
             {{- end }}
 
+            {{- if .Values.robots_disallow }}
+            - name: ROBOTS_DISALLOW
+              value: {{ .Values.robots_disallow }}
+            {{- end }}
+
           resources:
             limits:
               memory: {{ .Values.frontend_memory }}

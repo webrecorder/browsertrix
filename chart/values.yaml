@@ -573,6 +573,9 @@ ingress_class: nginx
 # This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute. Useful for things like analytics and bug tracking.
 # inject_extra: // your front-end injected script
 
+# Optional: Path to disallow in robots.txt
+# robots_disallow: "/"
+
 # Signing Options
 # =========================================
 # optionally enable signer

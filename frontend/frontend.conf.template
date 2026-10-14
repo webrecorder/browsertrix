@@ -44,6 +44,18 @@ server {
       add_header Content-Security-Policy "frame-ancestors 'self'";
     }
 
+    location = /robots.txt {
+      set $robots_disallow "${ROBOTS_DISALLOW}";
+
+      add_header Content-Type text/plain;
+
+      if ($robots_disallow != "") {
+        return 200 "User-agent: *\nDisallow: ${ROBOTS_DISALLOW}\n";
+      }
+
+      return 200 "";
+    }
+
     location ~* /docs/(.*)$ {
       set $docs_url "${DOCS_URL}";
 
@@ -55,6 +67,8 @@ server {
       index  index.html index.htm;
       gzip   on;
       gzip_types text/html application/javascript text/css image/svg+xml;
+
+      add_header X-Robots-Tag "none" always;
     }
 
     # serve replay service worker, RWP_BASE_URL set in Dockerfile

@@ -107,6 +107,8 @@ data:
 
   USER_SURVEY_URL: "{{ .Values.user_survey_url }}"
 
+  ROBOTS_DISALLOW: "{{ .Values.robots_disallow }}"
+
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
   EMAIL_TEMPLATE_ENDPOINT: "{{ .Values.email.template_endpoint }}"
