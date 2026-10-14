@@ -18,7 +18,7 @@ import { APIErrorDetail } from "@/types/api";
 import type { AddonStoragePricing } from "@/types/billing";
 import type { OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
-import appState, { AppStateService } from "@/utils/state";
+import { AppStateService } from "@/utils/state";
 
 const PRESET_GB = [100, 500, 1000];
 
@@ -46,7 +46,7 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
 
   private readonly priceTask = new Task(this, {
     task: async () => {
-      if (!appState.settings?.billingEnabled) return;
+      if (!this.env.billingEnabled) return;
       return this.fetchPrice();
     },
     args: () => [] as const,
@@ -54,7 +54,7 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
 
   private readonly updateTask = new Task(this, {
     task: async ([sizeGB]) => {
-      if (!appState.settings?.billingEnabled || sizeGB === undefined) return;
+      if (!this.env.billingEnabled || sizeGB === undefined) return;
       try {
         await this.api.fetch<Record<string, number | null>>(
           `/orgs/${this.orgId}/subscription/storage-addon`,
