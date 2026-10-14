@@ -1,16 +1,22 @@
-const url = new URL(window.location.href);
+setupEmbed();
 
-if (url.pathname.includes("/docs-embed") && window.self === window.top) {
-  // Not within iframe, redirect to docs site instead
-  window.location.assign(window.location.href.replace("/docs-embed", "/docs"));
-} else {
-  // Assume this is an iframe embedded in the Browsertrix app.
-  window.document.documentElement.classList.add("btrix-app-embed");
+function setupEmbed() {
+  const url = new URL(window.location.href);
 
-  try {
-    styleSearchComponent();
-  } catch (err) {
-    console.error(err);
+  if (url.pathname.includes("/docs-embed") && window.self === window.top) {
+    // Not within iframe, redirect to docs site instead
+    window.location.assign(
+      window.location.href.replace("/docs-embed", "/docs"),
+    );
+  } else {
+    // Assume this is an iframe embedded in the Browsertrix app.
+    window.document.documentElement.classList.add("btrix-app-embed");
+
+    try {
+      styleSearchComponent();
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
