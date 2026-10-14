@@ -1,7 +1,7 @@
 # Configuration for Browsertrix embed
 INHERIT: ./config/mkdocs.base.yml
 
-site_url: /docs-embed/ # Relative path should be replaced with correct URL in nginx script
+site_url: !ENV [DOCS_URL, "/docs-embed/"] # Relative path should be replaced with correct URL in nginx script
 site_dir: site-embed
 
 extra_css:

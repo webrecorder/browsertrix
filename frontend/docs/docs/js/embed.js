@@ -1,10 +1,8 @@
 const url = new URL(window.location.href);
 
-if (url.pathname.includes("/docs-embed/") && window.self === window.top) {
+if (url.pathname.includes("/docs-embed") && window.self === window.top) {
   // Not within iframe, redirect to docs site instead
-  window.location.assign(
-    window.location.href.replace("/docs-embed/", "/docs/"),
-  );
+  window.location.assign(window.location.href.replace("/docs-embed", "/docs"));
 } else {
   // Assume this is an iframe embedded in the Browsertrix app.
   window.document.documentElement.classList.add("btrix-app-embed");
