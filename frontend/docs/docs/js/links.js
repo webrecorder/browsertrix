@@ -14,10 +14,15 @@ function setupLinks() {
 }
 
 function updateLinks() {
-  document.querySelectorAll('a[href^="http"]').forEach((el) => {
+  // Open external links in a new tab
+  document.querySelectorAll(`a[href^="http"]`).forEach((el) => {
     if (el.host !== window.location.host) {
-      el.target = "_blank";
-      el.rel = "noopener";
+      if (!el.target) {
+        el.target = "_blank";
+      }
+      if (el.target === "_blank") {
+        el.rel = "noopener";
+      }
     }
   });
 }
