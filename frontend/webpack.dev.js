@@ -119,6 +119,9 @@ module.exports = [
           target: process.env.DOCS_DEV_ADDR
             ? `http://${process.env.DOCS_DEV_ADDR}/`
             : `${devDocsUrl.href.replace(/\/$/, "")}/`,
+          pathRewrite: process.env.DOCS_DEV_ADDR
+            ? undefined
+            : { "^/docs-embed/": "/" },
           changeOrigin: true,
           secure: false,
         },

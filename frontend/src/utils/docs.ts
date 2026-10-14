@@ -3,11 +3,6 @@
  * Based on https://github.com/zensical/ui/blob/87eaf380f83c2dd581e23ed15a5eca5020a37e49/src/assets/javascripts/browser/location/_/index.ts
  */
 export function navigateEmbeddedDocs(iframe: HTMLIFrameElement, docsPath = "") {
-  if (!iframe.contentWindow) {
-    console.error("no embedded docs iframe `contentWindow`");
-    return;
-  }
-
   const link = iframe.contentDocument?.querySelector<HTMLLinkElement>(
     'link[rel="canonical"]',
   );
@@ -19,9 +14,7 @@ export function navigateEmbeddedDocs(iframe: HTMLIFrameElement, docsPath = "") {
 
   try {
     if (!iframe.contentDocument)
-      throw new Error(
-        "no embedded docs iframe `contentDocument`, cannot instant navigate",
-      );
+      throw "no embedded docs iframe `contentDocument`, cannot instant navigate";
 
     const el = iframe.contentDocument.createElement("a");
     el.setAttribute("href", href);
@@ -31,8 +24,7 @@ export function navigateEmbeddedDocs(iframe: HTMLIFrameElement, docsPath = "") {
   } catch (err) {
     console.debug(err);
 
-    // Try navigating iframe normally
-    iframe.contentWindow.location.assign(docsPath);
+    iframe.src = docsPath;
   }
 }
 
@@ -44,6 +36,7 @@ export function searchEmbeddedDocs(iframe: HTMLIFrameElement) {
     console.debug(
       "no embedded docs iframe `contentDocument`, cannot search modal",
     );
+
     return;
   }
 
