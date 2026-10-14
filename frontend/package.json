@@ -110,7 +110,7 @@
     "build:analyze": "BUNDLE_ANALYZER=true webpack --config webpack.prod.js",
     "build-dev:vendor": "webpack --mode development --config vendor.webpack.config.js",
     "start": "yarn build-dev:vendor && webpack serve --mode=development --config webpack.dev.js",
-    "docs-start": "cd docs; DOCS_URL=\"${DOCS_URL:-'http://localhost:8000'}\" zensical serve --config-file mkdocs.embed.yml",
+    "docs-start": "cd docs; DOCS_URL=\"${DOCS_URL:-http://localhost:8000}\" zensical serve --config-file mkdocs.embed.yml",
     "docs-build": "cd docs; DOCS_URL=http://localhost:9870/docs-embed/ zensical build --config-file mkdocs.embed.yml",
     "start-with-docs": "yarn docs-build && yarn start",
     "start-with-start-docs": "DOCS_DEV_ADDR=localhost:8000 concurrently 'DOCS_URL=http://localhost:9870/docs-embed/ yarn docs-start --dev-addr \"$DOCS_DEV_ADDR\"' 'yarn start'",
