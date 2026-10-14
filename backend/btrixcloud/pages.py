@@ -873,7 +873,6 @@ class PageOps:
                     }
                 },
                 {"$sort": {"count": -1}},
-                #{"$limit": page_size},
                 {"$project": {"_id": 0, "url": "$_id", "count": 1, "snapshots": 1}},
             ],
             allowDiskUse=True,
