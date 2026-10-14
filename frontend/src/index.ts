@@ -4,7 +4,7 @@ import "./global";
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
-import { html, nothing, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
@@ -38,6 +38,11 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
 import { getAppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import {
+  getEmbeddedDocsSearchBackdrop,
+  navigateEmbeddedDocs,
+  searchEmbeddedDocs,
+} from "@/utils/docs";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
@@ -225,7 +230,7 @@ export class App extends BtrixElement {
       "btrix-user-guide-show",
       (e: BtrixUserGuideShowEvent) => {
         e.stopPropagation();
-        void this.showUserGuide(e.detail.path);
+        void this.showUserGuide(e.detail);
       },
     );
   }
@@ -240,6 +245,25 @@ export class App extends BtrixElement {
       this.handleViewStateChange(
         changedProperties.get("viewState") as undefined | ViewState,
       );
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (changedProperties.has("userGuidePath")) {
+      const iframe = this.userGuideDrawer.querySelector("iframe");
+
+      if (iframe) {
+        const docsPath = `${DOCS_EMBED_PATH_PREFIX}/user-guide${this.userGuidePath ? `/${this.userGuidePath}` : ""}`;
+
+        if (
+          docsPath.slice(docsPath.indexOf(DOCS_EMBED_PATH_PREFIX)) !==
+          iframe.src.slice(iframe.src.indexOf(DOCS_EMBED_PATH_PREFIX))
+        ) {
+          navigateEmbeddedDocs(iframe, docsPath);
+        }
+      } else {
+        console.debug("user guide iframe not found");
+      }
     }
   }
 
@@ -420,8 +444,6 @@ export class App extends BtrixElement {
   }
 
   private renderUserGuide() {
-    const url = `${DOCS_EMBED_PATH_PREFIX}/user-guide/${this.userGuidePath}`;
-
     return html`
       <sl-drawer
         id="userGuideDrawer"
@@ -445,7 +467,7 @@ export class App extends BtrixElement {
         </span>
         <iframe
           class="size-full text-xs transition-opacity duration-slow"
-          src="${url}"
+          src="${DOCS_EMBED_PATH_PREFIX}/user-guide"
         ></iframe>
         <sl-icon-button
           slot="header-actions"
@@ -735,26 +757,31 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private async showUserGuide(pathName = "") {
+  private async showUserGuide({
+    path,
+    search,
+  }: BtrixUserGuideShowEvent["detail"]) {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
-    if (iframe) {
-      const url = `${DOCS_EMBED_PATH_PREFIX}/user-guide/${pathName}`;
-
-      if (
-        url.slice(url.indexOf(DOCS_EMBED_PATH_PREFIX)) !==
-        iframe.src.slice(iframe.src.indexOf(DOCS_EMBED_PATH_PREFIX))
-      ) {
-        this.userGuidePath = pathName;
-
-        await this.updateComplete;
-      }
-
-      if (!this.appState.userGuideOpen) {
-        AppStateService.updateUserGuideOpen(true);
+    if (search) {
+      if (iframe) {
+        searchEmbeddedDocs(iframe);
+      } else {
+        console.debug("no embedded docs iframe");
       }
     } else {
-      console.debug("user guide iframe not found");
+      if (iframe) {
+        // Find and close search modal
+        getEmbeddedDocsSearchBackdrop(iframe)?.click();
+      } else {
+        console.debug("no embedded docs iframe");
+      }
+
+      this.userGuidePath = path || "";
+    }
+
+    if (!this.appState.userGuideOpen) {
+      AppStateService.updateUserGuideOpen(true);
     }
   }
 

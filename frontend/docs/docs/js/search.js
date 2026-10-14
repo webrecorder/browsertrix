@@ -1,36 +1,29 @@
 setupSearch();
 
 function setupSearch() {
-  openSearchIfParams();
+  idSearchComponent();
 }
 
 /**
- * Recreate Mkdocs Material deep link into open search modal until
- * https://github.com/zensical/backlog/issues/119 is resolved
+ * HACK Zensical doesn't currently allow customizing the search component
+ * (https://github.com/zensical/ui/tree/master/src/assets/javascripts/components/search)
+ * so this script must be positioned after where the search UI is added.
  */
-function openSearchIfParams() {
-  if (isSearching()) {
-    openSearch();
+function idSearchComponent() {
+  const scripts = document.getElementsByTagName("script");
+  let currEl = scripts[scripts.length - 1];
+
+  while (currEl.previousElementSibling.tagName !== "DIV") {
+    currEl = currEl.previousElementSibling;
   }
-}
 
-function isSearching() {
-  const url = new URL(window.location.href);
+  const el = currEl.previousElementSibling;
 
-  return url.searchParams.has("q");
-}
-
-function openSearch() {
-  if (!isSearching()) return;
-
-  const searchButton = document.querySelector(".md-search__button");
-
-  if (!searchButton) {
+  if (el.shadowRoot) {
+    el.setAttribute("id", "search-component");
+  } else {
     console.debug(
-      'no searchButton `document.querySelector(".md-search__button)`',
+      "no previous element sibling with shadow root, cannot ID search component",
     );
-    return;
   }
-
-  searchButton.click();
 }

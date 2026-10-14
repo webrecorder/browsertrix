@@ -14,33 +14,23 @@ if (url.pathname.includes("/docs-embed") && window.self === window.top) {
   }
 }
 
-/**
- * HACK Zensical doesn't currently allow customizing the search component
- * (https://github.com/zensical/ui/tree/master/src/assets/javascripts/components/search)
- * so this script must be positioned after where the search UI is added.
- */
 function styleSearchComponent() {
+  // ID added by search.js
+  const el = document.getElementById("search-component");
+
+  if (!el) {
+    console.debug("no element with ID `search-component`, cannot apply styles");
+    return;
+  }
+
   const styles = `.l { border: 0; }
   .k { padding: 0.25rem 1rem 0.25rem 0.125rem; }`;
 
-  const scripts = document.getElementsByTagName("script");
-  let currEl = scripts[scripts.length - 1];
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(styles);
 
-  while (currEl.previousElementSibling.tagName !== "DIV") {
-    currEl = currEl.previousElementSibling;
-  }
-
-  const prevEl = currEl.previousElementSibling;
-
-  if (prevEl.shadowRoot) {
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(styles);
-
-    prevEl.shadowRoot.adoptedStyleSheets = [
-      ...prevEl.shadowRoot.adoptedStyleSheets,
-      sheet,
-    ];
-  } else {
-    console.debug("no previous element sibling with shadow root");
-  }
+  el.shadowRoot.adoptedStyleSheets = [
+    ...el.shadowRoot.adoptedStyleSheets,
+    sheet,
+  ];
 }
