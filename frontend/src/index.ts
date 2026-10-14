@@ -39,7 +39,7 @@ import { type Auth } from "@/types/auth";
 import { getAppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import {
-  getEmbeddedDocsSearchBackdrop,
+  closeEmbeddedSearch,
   navigateEmbeddedDocs,
   searchEmbeddedDocs,
 } from "@/utils/docs";
@@ -758,7 +758,7 @@ export class App extends BtrixElement {
   }
 
   private async showUserGuide({
-    path,
+    path = "",
     search,
   }: BtrixUserGuideShowEvent["detail"]) {
     const iframe = this.userGuideDrawer.querySelector("iframe");
@@ -770,14 +770,19 @@ export class App extends BtrixElement {
         console.debug("no embedded docs iframe");
       }
     } else {
-      if (iframe) {
-        // Find and close search modal
-        getEmbeddedDocsSearchBackdrop(iframe)?.click();
-      } else {
-        console.debug("no embedded docs iframe");
-      }
+      this.userGuidePath = path;
 
-      this.userGuidePath = path || "";
+      await this.updateComplete;
+
+      // FIXME If the search button is manually clicked, the modal will re-open
+      // after navigation. Setting a timeout seems to prevent this from happening.
+      window.setTimeout(() => {
+        if (iframe) {
+          closeEmbeddedSearch(iframe);
+        } else {
+          console.debug("no embedded docs iframe");
+        }
+      }, 150);
     }
 
     if (!this.appState.userGuideOpen) {

@@ -40,7 +40,7 @@ export function searchEmbeddedDocs(iframe: HTMLIFrameElement) {
     return;
   }
 
-  if (!getEmbeddedDocsSearchBackdrop(iframe)) {
+  if (!getEmbeddedDocsSearchDialog(iframe)) {
     iframe.contentDocument
       .querySelector<HTMLButtonElement>(".md-search__button")
       ?.click();
@@ -50,14 +50,23 @@ export function searchEmbeddedDocs(iframe: HTMLIFrameElement) {
 /**
  * Find search modal in embedded docs and check if search modal is open.
  * ID is added by `docs/js/search.js`.
- * Unfortunately the "v" class seems to be only way to detect whether the modal is open.
  */
-export function getEmbeddedDocsSearchBackdrop(iframe: HTMLIFrameElement) {
+export function getEmbeddedDocsSearchDialog(iframe: HTMLIFrameElement) {
   const searchModal =
     iframe.contentDocument?.getElementById("search-component");
-  const backdrop = searchModal?.shadowRoot?.children[0]?.children[0];
+  const dialog = searchModal?.shadowRoot?.children[0];
 
-  if (backdrop && !backdrop.classList.contains("v")) {
-    return backdrop as HTMLElement;
+  if (dialog?.hasAttribute("open")) {
+    return dialog as HTMLElement;
   }
+}
+
+export function closeEmbeddedSearch(iframe: HTMLIFrameElement) {
+  const dialog = getEmbeddedDocsSearchDialog(iframe);
+
+  if (!dialog) return;
+
+  const backdrop = dialog.children[0] as HTMLElement | undefined;
+
+  backdrop?.click();
 }
