@@ -1,3 +1,14 @@
+import { type RouteName } from "./APIRouter";
+
+// FIXME Paths cannot contain a hash because the initial scroll will cause
+// issues where the user guide drawer shifts when opening for the first time.
+// TODO Validate against zensical paths
+export const routeToUserGuide: Partial<Record<RouteName, string>> = {
+  home: "",
+  org: "",
+  join: "signup",
+};
+
 /**
  * Navigates embedded docs without reloading the iframe.
  * Based on https://github.com/zensical/ui/blob/87eaf380f83c2dd581e23ed15a5eca5020a37e49/src/assets/javascripts/browser/location/_/index.ts

@@ -6,6 +6,7 @@ import { localized, msg, str } from "@lit/localize";
 import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import isEqual from "lodash/fp/isEqual";
@@ -41,6 +42,7 @@ import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
 import {
   closeEmbeddedSearch,
   navigateEmbeddedDocs,
+  routeToUserGuide,
   searchEmbeddedDocs,
 } from "@/utils/docs";
 import localize from "@/utils/localize";
@@ -200,6 +202,10 @@ export class App extends BtrixElement {
       console.debug(e);
     }
     this.syncViewState();
+    if (this.viewState.route) {
+      this.userGuidePath = routeToUserGuide[this.viewState.route] ?? "";
+    }
+
     if (authState) {
       this.authService.saveLogin(authState);
     }
@@ -249,18 +255,16 @@ export class App extends BtrixElement {
   }
 
   protected updated(changedProperties: PropertyValues): void {
-    if (changedProperties.has("userGuidePath")) {
+    if (
+      changedProperties.has("userGuidePath") &&
+      changedProperties.get("userGuidePath") !== undefined
+    ) {
       const iframe = this.userGuideDrawer.querySelector("iframe");
 
       if (iframe) {
         const docsPath = `${DOCS_EMBED_PATH_PREFIX}/user-guide${this.userGuidePath ? `/${this.userGuidePath}` : ""}`;
 
-        if (
-          docsPath.slice(docsPath.indexOf(DOCS_EMBED_PATH_PREFIX)) !==
-          iframe.src.slice(iframe.src.indexOf(DOCS_EMBED_PATH_PREFIX))
-        ) {
-          navigateEmbeddedDocs(iframe, docsPath);
-        }
+        navigateEmbeddedDocs(iframe, docsPath);
       } else {
         console.debug("user guide iframe not found");
       }
@@ -427,6 +431,8 @@ export class App extends BtrixElement {
           ${this.renderPage()}
         </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
+
+        ${this.renderUserGuide()}
       </div>
 
       <sl-dialog
@@ -436,8 +442,6 @@ export class App extends BtrixElement {
         @sl-after-hide=${() => (this.globalDialogContent = {})}
         >${this.globalDialogContent.body}</sl-dialog
       >
-
-      ${this.renderUserGuide()}
 
       <btrix-toast-stack></btrix-toast-stack>
     `;
@@ -454,21 +458,20 @@ export class App extends BtrixElement {
         @sl-hide=${() => {
           AppStateService.updateUserGuideOpen(false);
         }}
-        @sl-after-hide=${() => {
-          if (this.userGuidePath.startsWith("?q=")) {
-            // Reset search
-            this.userGuidePath = "";
-          }
-        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book"></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
-        <iframe
-          class="size-full text-xs transition-opacity duration-slow"
-          src="${DOCS_EMBED_PATH_PREFIX}/user-guide"
-        ></iframe>
+        ${guard(
+          // Only set src the first render, then navigate using iframe directly
+          [],
+          () =>
+            html`<iframe
+              class="size-full"
+              src="${DOCS_EMBED_PATH_PREFIX}/user-guide/${this.userGuidePath}"
+            ></iframe>`,
+        )}
         <sl-icon-button
           slot="header-actions"
           name="box-arrow-up-right"

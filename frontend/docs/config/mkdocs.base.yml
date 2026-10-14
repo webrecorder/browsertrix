@@ -12,21 +12,17 @@ extra_javascript:
   - js/search.js
 theme:
   name: material
-  # yaml-language-server-disable
-  variant: classic # Zensical-only setting
+  variant: classic
   custom_dir: docs/overrides
   features:
     - navigation.instant
     - navigation.instant.prefetch
     - navigation.instant.progress
-    - navigation.tracking
     - navigation.footer
     - navigation.prune
     - content.code.copy
     - content.tooltips
     - content.tabs.link
-    - search.suggest
-    - search.share
   logo: assets/brand/browsertrix-icon-color.png
   favicon: assets/brand/favicon.svg
 
