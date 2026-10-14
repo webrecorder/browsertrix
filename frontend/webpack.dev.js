@@ -72,6 +72,28 @@ if (process.env.WEBPACK_SERVE === "true") {
   }
 }
 
+/** @type {import('webpack-dev-server').Configuration['static']} */
+let extraStatic = [];
+
+if (!process.env.DOCS_DEV_ADDR) {
+  extraStatic.push({
+    directory: path.join(__dirname, "docs/site-embed"),
+    publicPath: "/docs-embed",
+  });
+}
+
+/** @type {import('webpack-dev-server').Configuration['proxy']} */
+let extraProxy = [];
+
+if (process.env.DOCS_DEV_ADDR) {
+  extraProxy.push({
+    context: "/docs-embed/",
+    target: `http://${process.env.DOCS_DEV_ADDR}/`,
+    changeOrigin: true,
+    secure: false,
+  });
+}
+
 module.exports = [
   merge(main, {
     devtool: "eval",
@@ -90,6 +112,7 @@ module.exports = [
           directory: path.join(__dirname, "dist/vendor"),
           publicPath: "/vendor",
         },
+        ...extraStatic,
       ],
       historyApiFallback: true,
       proxy: [
@@ -114,17 +137,7 @@ module.exports = [
           pathRewrite: { "^/docs/": "/" },
           changeOrigin: true,
         },
-        {
-          context: "/docs-embed/",
-          target: process.env.DOCS_DEV_ADDR
-            ? `http://${process.env.DOCS_DEV_ADDR}/`
-            : `${devDocsUrl.href.replace(/\/$/, "")}/`,
-          pathRewrite: process.env.DOCS_DEV_ADDR
-            ? undefined
-            : { "^/docs-embed/": "/" },
-          changeOrigin: true,
-          secure: false,
-        },
+        ...extraProxy,
       ],
       setupMiddlewares: (middlewares, server) => {
         // Serve replay service worker file
