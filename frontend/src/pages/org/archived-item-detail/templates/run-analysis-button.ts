@@ -17,7 +17,7 @@ export function runAnalysisButton({
 }) {
   const fileCount = item?.filePageCount || 0;
   const errorCount = item?.errorPageCount || 0;
-  const doneCount = item?.stats?.done ? parseInt(item.stats.done) : 0;
+  const doneCount = item?.stats?.done ? parseInt(`${item.stats.done}`) : 0;
   const htmlCount = doneCount - fileCount - errorCount;
   const archivingDisabled = isArchivingDisabled(org, true);
   const noPagesToAnalyze = !htmlCount;
