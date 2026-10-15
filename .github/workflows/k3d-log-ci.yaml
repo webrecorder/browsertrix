@@ -73,12 +73,21 @@ jobs:
           # check the auto-generated password for elastic
           while kubectl get secret btrixlog-es-elastic-user -n btrix-admin -o go-template='{{.data.elastic | base64decode}}'; ret=$?; [ $ret -ne 0 ]; do sleep 5; done
 
-      - name: Test Kibana via port-forward
+      # This step runs in the background so the runner gives it a separate log,
+      # and `Stop Kibana port-forward` below can shut the process down.
+      - name: Port-forward Kibana
+        id: kibana-port-forward
         run: |
           sleep 20
-          kubectl port-forward service/btrixlog-kb-http -n btrix-admin 5601:5601 &
-          sleep 5
-          curl -k -v https://myhost.internal:5601/kibana/ 2>&1 | grep -i "location"
+          kubectl port-forward service/btrixlog-kb-http -n btrix-admin 5601:5601
+        background: true
+
+      - name: Test Kibana via port-forward
+        run: |
+          curl -k -v --retry 30 --retry-delay 3 --retry-connrefused https://myhost.internal:5601/kibana/ 2>&1 | grep -i "location"
+
+      - name: Stop Kibana port-forward
+        cancel: kibana-port-forward
 
       - name: Test Kibana via Ingress
         run: |
@@ -100,4 +109,3 @@ jobs:
       - name: Cleanup Cluster
         if: ${{ always() }}
         run: k3d cluster delete btrix-1
-

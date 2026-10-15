@@ -4,17 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       repo_tag:
-        description: 'Tag to push to'
+        description: "Tag to push to"
         required: true
         type: string
-        default: 'latest'
+        default: "latest"
 
 jobs:
   push_images:
+    name: Push ${{ matrix.image }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [backend, emails, frontend]
+    env:
+      HUSKY: 0
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -34,43 +41,15 @@ jobs:
           echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
           echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
 
-      - name: Build Backend
+      - name: Build ${{ matrix.image }}
         uses: docker/build-push-action@v7
         with:
-          context: backend
-          push: true
-          build-args: |
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-backend:${{ inputs.repo_tag }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,scope=backend,mode=max
-
-      - name: Build Emails
-        uses: docker/build-push-action@v7
-        with:
-          context: emails
+          context: ${{ matrix.image }}
           push: true
           build-args: |
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-emails:${{ inputs.repo_tag }}
-          cache-from: type=gha,scope=emails
-          cache-to: type=gha,scope=emails,mode=max
-
-      - name: Build Frontend
-        uses: docker/build-push-action@v7
-        env:
-          HUSKY: 0
-        with:
-          context: frontend
-          push: true
-          build-args: |
-            VERSION=${{ env.VERSION }}
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-
-          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-frontend:${{ inputs.repo_tag }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
+          tags: ${{ secrets.DO_REGISTRY_PATH }}/webrecorder/browsertrix-${{ matrix.image }}:${{ inputs.repo_tag }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
