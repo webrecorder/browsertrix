@@ -15,7 +15,8 @@ import {
 } from "@/types/localization";
 import { ORG_NAME_MAX_LENGTH } from "@/types/org";
 import { type UserOrg } from "@/types/user";
-import { type RouteName, type ViewState } from "@/utils/APIRouter";
+import { type ViewState } from "@/utils/APIRouter";
+import { routeToUserGuide } from "@/utils/docs";
 import {
   completeOnboardingStep,
   OnboardingStep,
@@ -24,13 +25,6 @@ import { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
 import brandLockupColor from "~assets/brand/browsertrix-lockup-color.svg";
-
-// TODO Validate against zensical paths
-const mapToUserGuide: Partial<Record<RouteName, string>> = {
-  home: "",
-  org: "#quick-links",
-  join: "signup#set-up-your-personal-account",
-};
 
 @customElement("btrix-app-bar")
 @localized()
@@ -262,7 +256,7 @@ export class AppBar extends BtrixElement {
 
   private renderOrgUserActions() {
     const userGuidePath =
-      (this.viewState?.route && mapToUserGuide[this.viewState.route]) ?? "";
+      (this.viewState?.route && routeToUserGuide[this.viewState.route]) ?? "";
 
     return html`<btrix-popover-menu>
       ${this.renderUserGuideButton()}
@@ -304,7 +298,8 @@ export class AppBar extends BtrixElement {
         {
           detail: {
             path:
-              (this.viewState?.route && mapToUserGuide[this.viewState.route]) ??
+              (this.viewState?.route &&
+                routeToUserGuide[this.viewState.route]) ??
               "",
           },
           bubbles: true,

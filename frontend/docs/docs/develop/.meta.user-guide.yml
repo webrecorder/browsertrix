@@ -1,0 +1,3 @@
+# Exclude from user guide search results
+search:
+  exclude: true

@@ -1,4 +1,7 @@
-export type BtrixUserGuideShowEvent = CustomEvent<{ path?: string }>;
+export type BtrixUserGuideShowEvent = CustomEvent<{
+  path?: string;
+  search?: boolean | string;
+}>;
 
 declare global {
   interface GlobalEventHandlersEventMap {

@@ -1,77 +1,42 @@
-if (window.self !== window.top) {
-  // Within iframe--assume this is an iframe embedded in the Browsertrix app.
-  window.document.documentElement.classList.add("btrix-app-embed");
+setupEmbed();
 
-  replaceDocsTitle();
+function setupEmbed() {
+  const url = new URL(window.location.href);
 
-  // TODO Detect Browsertrix color scheme
-  setColorScheme("webrecorder-light");
-
-  try {
-    styleSearchComponent();
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-/**
- * Replace the "Browsertrix Docs" title with the title of the current page,
- * since the embed is already labeled by the Browsertrix panel as "User Guide".
- */
-function replaceDocsTitle() {
-  const docsTitle = document.querySelector(
-    ".md-header__title .md-header__topic:first-child .md-ellipsis",
-  );
-  const pageTitle = document.querySelector(
-    ".md-header__title .md-header__topic:last-child .md-ellipsis",
-  );
-
-  if (!docsTitle) {
-    console.debug(
-      "no docsTitle `.md-header__title md-header__topic:first-child .md-ellipsis`",
+  if (url.pathname.includes("/docs-embed") && window.self === window.top) {
+    // Not within iframe, redirect to docs site instead
+    window.location.assign(
+      window.location.href.replace("/docs-embed", "/docs"),
     );
-    return;
-  }
+  } else {
+    // Assume this is an iframe embedded in the Browsertrix app.
+    window.document.documentElement.classList.add("btrix-app-embed");
 
-  if (!pageTitle) {
-    console.debug(
-      "no pageTitle `.md-header__title md-header__topic:last-child .md-ellipsis`",
-    );
-    return;
-  }
-
-  if (pageTitle.textContent) {
-    docsTitle.textContent = pageTitle.textContent.trim();
+    try {
+      styleSearchComponent();
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
-/**
- * Override theme preference to match Browsertrix
- */
-function setColorScheme(scheme) {
-  window.document.body.setAttribute("data-md-color-scheme", scheme);
-}
-
-/**
- * HACK Zensical doesn't currently allow customizing the search component
- * (https://github.com/zensical/ui/tree/master/src/assets/javascripts/components/search)
- * so this script must be positioned after where the search UI is added.
- */
 function styleSearchComponent() {
-  const styles = `.l { border: 0; }
-  .k { padding: 0.25rem 1rem 0.25rem 0.125rem; }`;
+  // ID added by search.js
+  const el = document.getElementById("search-component");
 
-  const scripts = document.getElementsByTagName("script");
-  const thisScript = scripts[scripts.length - 1];
-  const prevEl = thisScript.previousElementSibling;
-
-  if (prevEl.tagName === "DIV" && prevEl.shadowRoot) {
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(styles);
-
-    prevEl.shadowRoot.adoptedStyleSheets = [
-      ...prevEl.shadowRoot.adoptedStyleSheets,
-      sheet,
-    ];
+  if (!el) {
+    console.debug("no element with ID `search-component`, cannot apply styles");
+    return;
   }
+
+  const styles = `.e { border: 0; }
+  .w { padding: 0.25rem 0.25rem 0.25rem 0.125rem; }`;
+
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(styles);
+
+  el.shadowRoot.adoptedStyleSheets = [
+    ...el.shadowRoot.adoptedStyleSheets,
+    sheet,
+  ];
 }

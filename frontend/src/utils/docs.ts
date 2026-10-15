@@ -1,0 +1,83 @@
+import { type RouteName } from "./APIRouter";
+
+// FIXME Paths cannot contain a hash because the initial scroll will cause
+// issues where the user guide drawer shifts when opening for the first time.
+// TODO Validate against zensical paths
+export const routeToUserGuide: Partial<Record<RouteName, string>> = {
+  home: "",
+  org: "",
+  join: "signup",
+};
+
+/**
+ * Navigates embedded docs without reloading the iframe.
+ * Based on https://github.com/zensical/ui/blob/87eaf380f83c2dd581e23ed15a5eca5020a37e49/src/assets/javascripts/browser/location/_/index.ts
+ */
+export function navigateEmbeddedDocs(iframe: HTMLIFrameElement, docsPath = "") {
+  const link = iframe.contentDocument?.querySelector<HTMLLinkElement>(
+    'link[rel="canonical"]',
+  );
+  const baseUrl = link?.href.split("/docs-embed")[0] ?? window.location.origin;
+  const url = new URL(`${baseUrl}${docsPath}`);
+  // The URL format must match the format of URLs found in the docs site's sitemap.xml,
+  // which have a trailing slash.
+  const href = `${url.origin}${url.pathname.replace(/\/$/, "")}/${url.search}${url.hash}`;
+
+  try {
+    if (!iframe.contentDocument)
+      throw "no embedded docs iframe `contentDocument`, cannot instant navigate";
+
+    const el = iframe.contentDocument.createElement("a");
+    el.setAttribute("href", href);
+    iframe.contentDocument.body.appendChild(el);
+    el.click();
+    el.remove();
+  } catch (err) {
+    console.debug(err);
+
+    iframe.src = docsPath;
+  }
+}
+
+/**
+ * Open search modal in embedded docs.
+ */
+export function searchEmbeddedDocs(iframe: HTMLIFrameElement) {
+  if (!iframe.contentDocument) {
+    console.debug(
+      "no embedded docs iframe `contentDocument`, cannot search modal",
+    );
+
+    return;
+  }
+
+  if (!getEmbeddedDocsSearchDialog(iframe)) {
+    iframe.contentDocument
+      .querySelector<HTMLButtonElement>(".md-search__button")
+      ?.click();
+  }
+}
+
+/**
+ * Find search modal in embedded docs and check if search modal is open.
+ * ID is added by `docs/js/search.js`.
+ */
+export function getEmbeddedDocsSearchDialog(iframe: HTMLIFrameElement) {
+  const searchModal =
+    iframe.contentDocument?.getElementById("search-component");
+  const dialog = searchModal?.shadowRoot?.children[0];
+
+  if (dialog?.hasAttribute("open")) {
+    return dialog as HTMLElement;
+  }
+}
+
+export function closeEmbeddedSearch(iframe: HTMLIFrameElement) {
+  const dialog = getEmbeddedDocsSearchDialog(iframe);
+
+  if (!dialog) return;
+
+  const backdrop = dialog.children[0] as HTMLElement | undefined;
+
+  backdrop?.click();
+}

@@ -1,36 +1,64 @@
 setupSearch();
 
 function setupSearch() {
-  openSearchIfParams();
+  idSearchComponent();
+  styleSearchComponent();
 }
 
 /**
- * Recreate Mkdocs Material deep link into open search modal until
- * https://github.com/zensical/backlog/issues/119 is resolved
+ * HACK Zensical doesn't currently allow customizing the search component
+ * (https://github.com/zensical/ui/tree/master/src/assets/javascripts/components/search)
+ * so this script must be positioned after where the search UI is added.
  */
-function openSearchIfParams() {
-  if (isSearching()) {
-    openSearch();
+function idSearchComponent() {
+  const scripts = document.getElementsByTagName("script");
+  let currEl = scripts[scripts.length - 1];
+
+  while (currEl.previousElementSibling.tagName !== "DIV") {
+    currEl = currEl.previousElementSibling;
+  }
+
+  const el = currEl.previousElementSibling;
+
+  if (el.shadowRoot) {
+    el.setAttribute("id", "search-component");
+
+    // FIXME Instant navigation seems to break clicking into search results;
+    // the search modal is re-opened after navigation completes.
+    // Disable instant navigation for now by preventing the click from bubbling.
+    el.addEventListener(
+      "click",
+      (e) => {
+        if (e.composedPath().some((el) => el.href)) {
+          e.stopPropagation();
+        }
+      },
+      { capture: true },
+    );
+  } else {
+    console.debug(
+      "no previous element sibling with shadow root, cannot ID search component",
+    );
   }
 }
 
-function isSearching() {
-  const url = new URL(window.location.href);
+function styleSearchComponent() {
+  // ID added by search.js
+  const el = document.getElementById("search-component");
 
-  return url.searchParams.has("q");
-}
-
-function openSearch() {
-  if (!isSearching()) return;
-
-  const searchButton = document.querySelector(".md-search__button");
-
-  if (!searchButton) {
-    console.debug(
-      'no searchButton `document.querySelector(".md-search__button)`',
-    );
+  if (!el) {
+    console.debug("no element with ID `search-component`, cannot apply styles");
     return;
   }
 
-  searchButton.click();
+  // The dialog width is 100vw by default which causes a layout shift
+  const styles = `.r { width: 100%; overflow: hidden; }`;
+
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(styles);
+
+  el.shadowRoot.adoptedStyleSheets = [
+    ...el.shadowRoot.adoptedStyleSheets,
+    sheet,
+  ];
 }

@@ -108,7 +108,7 @@
 /* Nav changes */
 
 .md-header__title,
-.md-nav__list > .md-nav__item > [for="__nav_2"],
+.md-nav__list > .md-nav__item > [for^="__nav_"],
 .md-nav__title {
   font-family: var(--md-display-font);
   text-transform: uppercase;

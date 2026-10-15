@@ -4,8 +4,9 @@ import "./global";
 import { provide } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import type { SlDialog, SlDrawer } from "@shoelace-style/shoelace";
-import { html, nothing, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { until } from "lit/directives/until.js";
 import isEqual from "lodash/fp/isEqual";
@@ -38,6 +39,12 @@ import type { NavigateEventDetail } from "@/controllers/navigate";
 import { type Auth } from "@/types/auth";
 import { getAppSettings } from "@/utils/app";
 import { DEFAULT_MAX_SCALE } from "@/utils/crawler";
+import {
+  closeEmbeddedSearch,
+  navigateEmbeddedDocs,
+  routeToUserGuide,
+  searchEmbeddedDocs,
+} from "@/utils/docs";
 import localize from "@/utils/localize";
 import router, { urlForName } from "@/utils/router";
 import { AppStateService } from "@/utils/state";
@@ -63,6 +70,8 @@ export type APIUser = {
 // Server will pass true as "1"
 const numberToBoolean = (value: string | null) =>
   value === "1" || value === "true";
+
+const DOCS_EMBED_PATH_PREFIX = "/docs-embed";
 
 @customElement("browsertrix-app")
 @localized()
@@ -193,6 +202,10 @@ export class App extends BtrixElement {
       console.debug(e);
     }
     this.syncViewState();
+    if (this.viewState.route) {
+      this.userGuidePath = routeToUserGuide[this.viewState.route] ?? "";
+    }
+
     if (authState) {
       this.authService.saveLogin(authState);
     }
@@ -223,7 +236,7 @@ export class App extends BtrixElement {
       "btrix-user-guide-show",
       (e: BtrixUserGuideShowEvent) => {
         e.stopPropagation();
-        void this.showUserGuide(e.detail.path);
+        void this.showUserGuide(e.detail);
       },
     );
   }
@@ -238,6 +251,23 @@ export class App extends BtrixElement {
       this.handleViewStateChange(
         changedProperties.get("viewState") as undefined | ViewState,
       );
+    }
+  }
+
+  protected updated(changedProperties: PropertyValues): void {
+    if (
+      changedProperties.has("userGuidePath") &&
+      changedProperties.get("userGuidePath") !== undefined
+    ) {
+      const iframe = this.userGuideDrawer.querySelector("iframe");
+
+      if (iframe) {
+        const docsPath = `${DOCS_EMBED_PATH_PREFIX}/user-guide${this.userGuidePath ? `/${this.userGuidePath}` : ""}`;
+
+        navigateEmbeddedDocs(iframe, docsPath);
+      } else {
+        console.debug("user guide iframe not found");
+      }
     }
   }
 
@@ -401,6 +431,8 @@ export class App extends BtrixElement {
           ${this.renderPage()}
         </main>
         <div class="border-t border-neutral-100">${this.renderFooter()}</div>
+
+        ${this.renderUserGuide()}
       </div>
 
       <sl-dialog
@@ -411,17 +443,11 @@ export class App extends BtrixElement {
         >${this.globalDialogContent.body}</sl-dialog
       >
 
-      ${this.renderUserGuide()}
-
       <btrix-toast-stack></btrix-toast-stack>
     `;
   }
 
   private renderUserGuide() {
-    if (!this.docsUrl) return;
-
-    const url = `${this.docsUrl}user-guide/${this.userGuidePath}`;
-
     return html`
       <sl-drawer
         id="userGuideDrawer"
@@ -432,25 +458,24 @@ export class App extends BtrixElement {
         @sl-hide=${() => {
           AppStateService.updateUserGuideOpen(false);
         }}
-        @sl-after-hide=${() => {
-          if (this.userGuidePath.startsWith("?q=")) {
-            // Reset search
-            this.userGuidePath = "";
-          }
-        }}
       >
         <span slot="label" class="flex items-center gap-3">
           <sl-icon name="book"></sl-icon>
           <span>${msg("User Guide")}</span>
         </span>
-        <iframe
-          class="size-full text-xs transition-opacity duration-slow"
-          src="${url}"
-        ></iframe>
+        ${guard(
+          // Only set src the first render, then navigate using iframe directly
+          [],
+          () =>
+            html`<iframe
+              class="size-full"
+              src="${DOCS_EMBED_PATH_PREFIX}/user-guide/${this.userGuidePath}"
+            ></iframe>`,
+        )}
         <sl-icon-button
           slot="header-actions"
           name="box-arrow-up-right"
-          href="${url}"
+          href="${this.docsUrl}user-guide/${this.userGuidePath}"
           target="_blank"
           title=${msg("Open in New Tab")}
         ></sl-icon-button>
@@ -735,23 +760,36 @@ export class App extends BtrixElement {
     ></btrix-not-found>`;
   }
 
-  private async showUserGuide(pathName = "") {
+  private async showUserGuide({
+    path = "",
+    search,
+  }: BtrixUserGuideShowEvent["detail"]) {
     const iframe = this.userGuideDrawer.querySelector("iframe");
 
-    if (iframe) {
-      const url = `${this.docsUrl}user-guide/${pathName}`;
-
-      if (url !== iframe.src) {
-        this.userGuidePath = pathName;
-
-        await this.updateComplete;
-      }
-
-      if (!this.appState.userGuideOpen) {
-        AppStateService.updateUserGuideOpen(true);
+    if (search) {
+      if (iframe) {
+        searchEmbeddedDocs(iframe);
+      } else {
+        console.debug("no embedded docs iframe");
       }
     } else {
-      console.debug("user guide iframe not found");
+      this.userGuidePath = path;
+
+      await this.updateComplete;
+
+      // FIXME If the search button is manually clicked, the modal will re-open
+      // after navigation. Setting a timeout seems to prevent this from happening.
+      window.setTimeout(() => {
+        if (iframe) {
+          closeEmbeddedSearch(iframe);
+        } else {
+          console.debug("no embedded docs iframe");
+        }
+      }, 150);
+    }
+
+    if (!this.appState.userGuideOpen) {
+      AppStateService.updateUserGuideOpen(true);
     }
   }
 
