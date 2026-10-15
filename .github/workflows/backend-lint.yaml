@@ -58,13 +58,13 @@ jobs:
       - name: Style Check
         run: |
           cd backend/
-          uv run ruff format --check btrixcloud/
+          uv run ruff format --check
 
       - name: Lint Check
         run: |
           cd backend/
           uv run pylint btrixcloud/
-          uv run ruff check --exit-non-zero-on-fix btrixcloud/
+          uv run ruff check --exit-non-zero-on-fix
 
       - name: Type Check
         run: |
