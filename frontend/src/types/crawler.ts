@@ -270,8 +270,9 @@ export type CrawlerChannelsAPIResponse = {
 
 export type ArchivedItem = Crawl | Upload;
 
-export type ListArchivedItem = Omit<ArchivedItem, "collections">;
 export type ListCrawl = Omit<Crawl, "collections">;
+export type ListUpload = Omit<Upload, "collections">;
+export type ListArchivedItem = ListCrawl | ListUpload;
 
 export type ArchivedItemPageComment = {
   id: string;
