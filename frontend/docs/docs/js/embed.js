@@ -30,7 +30,7 @@ function styleSearchComponent() {
   }
 
   const styles = `.e { border: 0; }
-  .w { padding: 0.25rem 1rem 0.25rem 0.125rem; }`;
+  .w { padding: 0.25rem 0.25rem 0.25rem 0.125rem; }`;
 
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(styles);
