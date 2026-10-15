@@ -297,7 +297,7 @@ async def drop_indexes(mdb):
     logger.info("db_dropping_indexes", unstructured_message="Dropping database indexes")
     collection_names = await mdb.list_collection_names()
     for collection in collection_names:
-        if collection in ("pages", "crawl_logs"):
+        if collection in ("crawl_logs"):
             continue
 
         try:
