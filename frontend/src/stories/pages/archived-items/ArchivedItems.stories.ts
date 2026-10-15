@@ -6,7 +6,10 @@ import { renderComponent, type RenderProps } from "./ArchivedItems";
 
 import archivedItemsMock from "@/__mocks__/api/orgs/[id]/all-crawls";
 import { type TagCounts } from "@/components/ui/tag-filter/types";
-import { orgDecorator } from "@/stories/decorators/orgDecorator";
+import {
+  orgDecorator,
+  type StorybookOrgProps,
+} from "@/stories/decorators/orgDecorator";
 import {
   userDecorator,
   type StorybookUserProps,
@@ -29,10 +32,10 @@ const meta = {
     user: true,
     auth: true,
   },
-} satisfies Meta<RenderProps & StorybookUserProps>;
+} satisfies Meta<RenderProps & StorybookUserProps & StorybookOrgProps>;
 
 export default meta;
-type Story = StoryObj<RenderProps>;
+type Story = StoryObj<RenderProps & StorybookOrgProps>;
 
 const searchValuesRequest = () =>
   http.get(/\/all-crawls\/search-values/, async () => {
@@ -51,6 +54,14 @@ const tagCountsRequest = () =>
       tags: [],
     });
   });
+const itemReplayRequest = () =>
+  http.get(/\/replay\.json/, async () => {
+    await delay(500);
+    return HttpResponse.json<ListArchivedItem>(
+      (archivedItemsMock as APIPaginatedList<ListArchivedItem>).items[0],
+    );
+  });
+
 export const NoItems: Story = {
   args: {},
   parameters: {
@@ -79,6 +90,7 @@ export const WithItems: Story = {
       handlers: [
         searchValuesRequest(),
         tagCountsRequest(),
+        itemReplayRequest(),
         http.get(/\/all-crawls/, async () => {
           await delay(500);
           return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
@@ -93,6 +105,83 @@ export const WithItems: Story = {
 export const Crawler: Story = {
   args: {
     isCrawler: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        itemReplayRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
+
+export const BulkActions: Story = {
+  args: {
+    isCrawler: true,
+    bulkActions: true,
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
+
+export const SelectedItems: Story = {
+  args: {
+    isCrawler: true,
+    bulkActions: true,
+    selectedItemIds: new Set(
+      (archivedItemsMock.items as ListArchivedItem[])
+        .slice(0, 2)
+        .map(({ id }) => id),
+    ),
+  },
+  parameters: {
+    msw: {
+      handlers: [
+        searchValuesRequest(),
+        tagCountsRequest(),
+        http.get(/\/all-crawls/, async () => {
+          await delay(500);
+          return HttpResponse.json<APIPaginatedList<ListArchivedItem>>(
+            archivedItemsMock as APIPaginatedList<ListArchivedItem>,
+          );
+        }),
+      ],
+    },
+  },
+};
+
+export const SelectedItemsWithDependents: Story = {
+  args: {
+    orgFeatureFlags: {
+      dedupeEnabled: true,
+    },
+    isCrawler: true,
+    bulkActions: true,
+    selectedItemIds: new Set(
+      (archivedItemsMock.items as ListArchivedItem[])
+        .slice(2)
+        .map(({ id }) => id),
+    ),
   },
   parameters: {
     msw: {

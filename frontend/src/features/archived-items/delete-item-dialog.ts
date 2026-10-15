@@ -9,7 +9,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
-import type { ArchivedItem } from "@/types/crawler";
+import type { ArchivedItem, ListArchivedItem } from "@/types/crawler";
 import { isCrawl, isFailed, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 
@@ -23,7 +23,7 @@ import { pluralOf } from "@/utils/pluralize";
 @localized()
 export class DeleteItemDialog extends BtrixElement {
   @property({ type: Object })
-  item?: ArchivedItem;
+  item?: ListArchivedItem | ArchivedItem;
 
   @property({ type: Boolean })
   open = false;
