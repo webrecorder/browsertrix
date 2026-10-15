@@ -18,7 +18,7 @@ def behavior_log_crawl_id(admin_auth_headers, default_org_id):
             "scopeType": "page",
             "limit": 1,
             "customBehaviors": [
-              "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
+                "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
             ],
         },
     }
