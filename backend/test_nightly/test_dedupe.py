@@ -561,7 +561,8 @@ def test_missing_dependencies_removed_from_collection(
     dedupe_first_crawl,
     crawler_auth_headers,
 ):
-    # removing the dependency from the collection should be reported
+    # removing the dependency from the collection should not be reported as
+    # long as the crawl still exists elsewhere in the org
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/{missing_deps_coll_id}/remove",
         json={"crawlIds": [dedupe_first_crawl]},
@@ -569,9 +570,12 @@ def test_missing_dependencies_removed_from_collection(
     )
     assert r.status_code == 200
 
-    assert get_missing_dependencies(
-        default_org_id, missing_deps_coll_id, crawler_auth_headers
-    ) == [dedupe_first_crawl]
+    assert (
+        get_missing_dependencies(
+            default_org_id, missing_deps_coll_id, crawler_auth_headers
+        )
+        == []
+    )
 
 
 def test_missing_dependencies_deleted(
@@ -580,7 +584,7 @@ def test_missing_dependencies_deleted(
     dedupe_first_crawl,
     crawler_auth_headers,
 ):
-    # deleting the dependency outright should also be reported
+    # deleting the dependency from the org entirely should be reported
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
         json={"crawl_ids": [dedupe_first_crawl]},

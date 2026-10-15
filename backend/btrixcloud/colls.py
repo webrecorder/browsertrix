@@ -971,35 +971,25 @@ class CollectionOps:
         self, coll_id: UUID, org: Organization
     ) -> list[str]:
         """Return crawl ids required as dependencies by crawls in this
-        collection that are no longer present in the collection (deleted or
-        removed from the collection)."""
+        collection that are no longer present in the org."""
         # 404 if collection doesn't exist or belongs to another org
         await self.get_collection_raw(coll_id, org.id)
 
-        required: set[str] = set(
-            await self.crawls.distinct(
+        required = [
+            crawl_id
+            for crawl_id in await self.crawls.distinct(
                 "requiresCrawls",
                 {"oid": org.id, "collectionIds": coll_id},
             )
-        )
-        required.discard(None)
+            if crawl_id is not None
+        ]
 
         if not required:
             return []
 
-        # determine which of the required crawls are still in the collection
-        present: set[str] = set()
-        async for crawl in self.crawls.find(
-            {
-                "oid": org.id,
-                "_id": {"$in": list(required)},
-                "collectionIds": coll_id,
-            },
-            projection=["_id"],
-        ):
-            present.add(crawl["_id"])
-
-        return sorted(required - present)
+        # only report dependencies that are gone from the org entirely; crawls
+        # that still exist but were merely removed from this collection are fine
+        return sorted(await self.crawl_ops.find_missing_crawls(required, org.id))
 
     # END DEDUPE OPS
 
