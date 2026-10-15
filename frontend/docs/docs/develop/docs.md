@@ -60,7 +60,11 @@ We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with 
 
 Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, Zensical must be restarted. For more information, see the [Zensical page on Changing the logo and icons](https://zensical.org/docs/setup/logo-and-icons/#customization).
 
-## Docs Style Guide
+## Link Behavior
+
+Externals links will open in a new tab by default.
+
+## Writing Style Guide
 
 ### American English
 
@@ -170,6 +174,8 @@ Page names should be Title Cased and **bolded**.
 ### Manual Word Wrapping
 
 Do not manually wrap words by adding newlines when writing documentation.
+
+## Authoring
 
 ### Code Block Syntax Highlighting
 
