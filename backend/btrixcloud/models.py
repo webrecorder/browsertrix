@@ -2142,6 +2142,7 @@ class OrgQuotas(BaseModel):
     planExecMinutes: int = 0
     extraExecMinutes: int = 0
     giftedExecMinutes: int = 0
+    extraStorageQuota: int = 0
 
 
 # ============================================================================
@@ -2158,6 +2159,7 @@ class OrgQuotasIn(BaseModel):
     planExecMinutes: int | None = None
     extraExecMinutes: int | None = None
     giftedExecMinutes: int | None = None
+    extraStorageQuota: int | None = None
 
 
 # ============================================================================
@@ -2187,6 +2189,13 @@ class SubscriptionEventOut(BaseModel):
 
 
 # ============================================================================
+# A billing cycle is expressed the way Stripe prices express it, minus the
+# intervals we will never sell: "month" or "year", N at a time (so a
+# quarterly plan is month × 3, a 3-year agreement is year × 3).
+BillingInterval = Literal["month", "year"]
+
+
+# ============================================================================
 class SubscriptionCreate(BaseModel):
     """create new subscription"""
 
@@ -2197,6 +2206,14 @@ class SubscriptionCreate(BaseModel):
     firstAdminInviteEmail: EmailStr
     quotas: OrgQuotas | None = None
     renewalDate: datetime | None = None
+
+    billingInterval: BillingInterval | None = None
+    billingIntervalCount: int | None = None
+
+    storageAddonGB: int | None = None
+
+    # Minutes bought as a one-time add-on at signup.
+    additionalMinutes: int | None = None
 
 
 # ============================================================================
@@ -2236,6 +2253,25 @@ class SubscriptionUpdate(BaseModel):
     futureCancelDate: datetime | None = None
     renewalDate: datetime | None = None
     quotas: OrgQuotasIn | None = None
+    billingInterval: BillingInterval | None = None
+    billingIntervalCount: int | None = None
+
+    # Storage add-on size in GB. They default to None: `exclude_defaults=True`
+    # in api.py leaves out fields equal to their default, so 0 is sent but an
+    # absent field means "no value".
+    storageAddonGB: int | None = None
+    storageAddonPendingGB: int | None = None
+
+    # Set when the external subscription app cancelled a reduction made outside
+    # Browsertrix (in the Stripe portal) that would have left the org over its
+    # storage limit. Browsertrix then emails the org admins.
+    storageAddonReverted: bool | None = None
+    storageAddonRequestedGB: int | None = None
+
+    # Plan scheduled to take effect at the next renewal, when one is waiting.
+    # The external subscription app leaves this out of the JSON when there is
+    # nothing pending, so an absent field means "clear it".
+    pendingPlanId: str | None = None
 
 
 # ============================================================================
@@ -2349,6 +2385,41 @@ class AddonMinutesPricing(BaseModel):
 
 
 # ============================================================================
+class AddonStoragePricing(BaseModel):
+    """Addon storage pricing"""
+
+    value: float
+    currency: str
+
+
+# ============================================================================
+class StorageAddonUpdateResponse(BaseModel):
+    """Response for a storage add-on update (mirror of subscription app model)"""
+
+    sizeGB: int
+    pendingGB: int | None = None
+
+
+# ============================================================================
+class StorageAddonUpdateRequest(BaseModel):
+    """Request to purchase/change/cancel the storage add-on"""
+
+    sizeGB: int
+
+
+# ============================================================================
+class StorageAddonUsageResponse(BaseModel):
+    """How much storage a subscription's org is using and is allowed to use.
+
+    External subscription app reads this to check a change made externally."""
+
+    bytesStored: int
+    storageQuota: int
+    extraStorageQuota: int
+    storageAddonPendingGB: int | None = None
+
+
+# ============================================================================
 class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 
@@ -2380,6 +2451,27 @@ class Subscription(BaseModel):
 
     renewalDate: datetime | None = None
     """When the subscription next renews and plan execution minutes refill, if known."""
+
+    billingInterval: BillingInterval | None = None
+    """Subscription billing interval ("month" or "year"), if known."""
+
+    billingIntervalCount: int | None = None
+    """Number of intervals per renewal; together with billingInterval this
+    expresses quarterly (month x 3) or multi-year (year x 3) cycles. None
+    means a single interval."""
+
+    storageAddonPendingGB: int | None = None
+    """Pending storage add-on quantity (GB) scheduled to take effect at the
+    next renewal, if a reduction/cancellation is pending."""
+
+    storageAddonRevertedRequestedGB: int | None = None
+    """Add-on size (GB) of the most recent reduction the external subscription
+    app cancelled. Used as the "have we already told them about this one?"
+    marker, so admins get one email per attempt and not one per retry."""
+
+    pendingPlanId: str | None = None
+    """Plan scheduled to take effect at the next renewal, if a plan change is
+    waiting."""
 
     readOnlyOnCancel: bool = False
 

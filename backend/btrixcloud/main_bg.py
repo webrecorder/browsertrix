@@ -6,6 +6,7 @@ import sys
 from uuid import UUID
 
 import structlog
+from fastapi import HTTPException
 
 from .logger import init_logging, set_log_context
 from .models import BgJobExitCode as ExitCode
@@ -115,8 +116,20 @@ async def main():
         )
         return ExitCode.FATAL_DONT_RETRY
 
-    org = await org_ops.get_org_by_id(UUID(oid))
-    if not org:
+    try:
+        org = await org_ops.get_org_by_id(UUID(oid))
+    except HTTPException:
+        # The org is gone. For a delete-org job this means a prior attempt
+        # already succeeded (a hard-killed pod can re-run after the org doc
+        # was deleted), so treat it as success so the job isn't wrongly
+        # marked failed and its k8s resources still get cleaned up. For every
+        # other job type the org must exist, so it's a fatal misconfiguration.
+        if job_type == BgJobType.DELETE_ORG:
+            crawl_logger.info(
+                "org_already_deleted",
+                unstructured_message="Org already deleted, finishing job",
+            )
+            return 0
         crawl_logger.error(
             "org_id_invalid",
             unstructured_message="Org id invalid, quitting",
