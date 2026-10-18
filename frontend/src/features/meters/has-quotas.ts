@@ -5,6 +5,7 @@ export function hasExecutionMinuteQuota(org: OrgData | null | undefined) {
 
   return (
     org.quotas.maxExecMinutesPerMonth > 0 ||
+    org.quotas.planExecMinutes > 0 ||
     org.quotas.extraExecMinutes > 0 ||
     org.quotas.giftedExecMinutes > 0
   );
