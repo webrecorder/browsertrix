@@ -289,7 +289,7 @@ describe("btrix-org-settings-billing-storage-addon", () => {
         return makeOrg();
       });
       // @ts-expect-error priceTask is private
-      await el.priceTask.run();
+      await el.priceTask.run("month");
 
       // @ts-expect-error requestChange is private
       el.requestChange(1000);
@@ -307,7 +307,7 @@ describe("btrix-org-settings-billing-storage-addon", () => {
           : makeOrg(),
       );
       // @ts-expect-error priceTask is private
-      await el.priceTask.run();
+      await el.priceTask.run("month");
 
       // @ts-expect-error requestChange is private
       el.requestChange(50);
