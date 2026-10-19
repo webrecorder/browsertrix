@@ -23,7 +23,6 @@ import { AppStateService } from "@/utils/state";
 const PRESET_GB = [100, 500, 1000];
 
 const CUSTOM_MIN_GB = 1;
-const CUSTOM_MAX_GB = 5000;
 
 /** How often to re-check whether the org's quota has caught up */
 const CONVERGENCE_POLL_SECONDS = 5;
@@ -187,14 +186,14 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
 
   private onCustomSubmit() {
     const sizeGB = Number(this.customSizeGB);
+    const minimum = this.localize.number(CUSTOM_MIN_GB)
     if (
       !Number.isInteger(sizeGB) ||
-      sizeGB < CUSTOM_MIN_GB ||
-      sizeGB > CUSTOM_MAX_GB
+      sizeGB < CUSTOM_MIN_GB
     ) {
       this.notify.toast({
         message: msg(
-          str`Enter a storage amount between ${CUSTOM_MIN_GB} and ${CUSTOM_MAX_GB} GB.`,
+          str`Enter a storage amount of at least ${minimum} GB.`,
         ),
         variant: "danger",
       });
@@ -274,10 +273,7 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
           </sl-button>
           <sl-menu>
             <sl-menu-label>
-              ${msg("Add or change storage")}
-              <div class="text-xs font-normal">
-                ${msg("Charged to your current plan’s renewal.")}
-              </div>
+              ${msg("Add or change storage add-on")}
             </sl-menu-label>
             ${PRESET_GB.map(
               (gb) => html`
@@ -340,7 +336,6 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
             <sl-input
               type="number"
               min=${CUSTOM_MIN_GB}
-              max=${CUSTOM_MAX_GB}
               value=${this.customSizeGB}
               @sl-input=${(e: SlInputEvent) => {
                 this.customSizeGB = (e.target as HTMLInputElement).value;
@@ -388,7 +383,7 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
     if (targetGB === undefined) return nothing;
 
     const currentGB = this.addonSizeGB;
-    const planStorage = this.org?.quotas.storageQuota ?? 0;
+    const planStorageBytes = this.org?.quotas.storageQuota ?? 0;
     const isGrowth = targetGB > currentGB;
     const isCancel = targetGB === 0;
 
@@ -398,11 +393,12 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
         })
       : "";
     const current = this.localize.bytes(
-      planStorage + currentGB * STORAGE_ADDON_GB,
+      planStorageBytes + currentGB * STORAGE_ADDON_GB,
     );
     const targetTotal = this.localize.bytes(
-      planStorage + targetGB * STORAGE_ADDON_GB,
+      planStorageBytes + targetGB * STORAGE_ADDON_GB,
     );
+    const planStorage = this.localize.bytes(planStorageBytes);
     const targetSize = formatStorageAddonSize(this.localize, targetGB);
     const cost = this.priceForGB(targetGB);
 
@@ -422,16 +418,16 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
         () => html`
           <p>
             ${msg(
-              str`Your organization's storage will increase to ${targetTotal} right away.`,
+              str`Your organization’s storage will increase to ${targetTotal} right away.`,
             )}
           </p>
           <p class="mt-3">
             ${cost
               ? msg(
-                  str`You'll be charged a prorated amount now for the rest of this billing period, and ${cost} at each renewal.`,
+                  str`You will be charged a prorated amount now for the rest of this billing period, and ${cost} at each renewal.`,
                 )
               : msg(
-                  "You'll be charged a prorated amount now for the rest of this billing period.",
+                  "You will be charged a prorated amount now for the rest of this billing period.",
                 )}
           </p>
         `,
@@ -439,7 +435,7 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
           <p>
             ${isCancel
               ? msg(
-                  str`At your next renewal on ${renewalDate}, the add-on will be cancelled and your organization's storage will drop to your plan's ${this.localize.bytes(planStorage)}.`,
+                  str`At your next renewal on ${renewalDate}, the add-on will be cancelled and your organization’s storage will drop to the ${planStorage} included in your plan.`,
                 )
               : msg(
                   str`At your next renewal on ${renewalDate}, the add-on will drop to ${targetSize}, giving your organization ${targetTotal} of storage.`,
@@ -450,14 +446,14 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
             (cost) => html`
               <p class="mt-3">
                 ${msg(
-                  str`You'll be charged ${cost} at each renewal from then on.`,
+                  str`You will be charged ${cost} at each renewal after this.`,
                 )}
               </p>
             `,
           )}
           <p class="mt-3">
             ${msg(
-              str`Until then, your organization keeps ${current} of storage and you keep paying for it.`,
+              str`Until then, your organization will continue to have ${current} of total storage available.`,
             )}
           </p>
         `,
@@ -486,18 +482,19 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
   private renderUnitPrice(price: string) {
     const interval = this.org?.subscription?.billingInterval;
     const count = this.org?.subscription?.billingIntervalCount ?? 1;
+    const intervalCount = this.localize.number(count);
 
     if (interval === "month") {
       return count === 1
         ? msg(html`${price} per GB per month`)
         : msg(
-            html`${price} per GB every ${this.localize.number(count)} months`,
+            html`${price} per GB every ${intervalCount} months`,
           );
     }
     if (interval === "year") {
       return count === 1
         ? msg(html`${price} per GB per year`)
-        : msg(html`${price} per GB every ${this.localize.number(count)} years`);
+        : msg(html`${price} per GB every ${intervalCount} years`);
     }
     return msg(html`${price} per GB, per renewal`);
   }
