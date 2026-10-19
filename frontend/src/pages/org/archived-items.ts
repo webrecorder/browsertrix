@@ -38,6 +38,7 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
+import { type ConfirmBulkDeleteEvent } from "@/features/archived-items/bulk-delete-items-dialog";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { listControls } from "@/layouts/listControls";
@@ -1129,10 +1130,12 @@ export class CrawlsList extends BtrixElement {
         ?open=${this.openDialog === "bulkDelete"}
         ?inProgress=${this.deleteItemsTask.status === TaskStatus.PENDING}
         @sl-after-hide=${() => (this.openDialog = undefined)}
-        @btrix-confirm=${async () => {
-          await this.deleteItemsTask.run([
-            Array.from(this.selectedItemIds.values()),
-          ]);
+        @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
+          const { itemIds } = e.detail;
+
+          if (itemIds?.length) {
+            await this.deleteItemsTask.run([itemIds]);
+          }
           this.openDialog = undefined;
         }}
       ></btrix-bulk-delete-items-dialog>`;

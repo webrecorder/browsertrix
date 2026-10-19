@@ -1,4 +1,4 @@
-export type BtrixConfirmEvent = CustomEvent<never>;
+export type BtrixConfirmEvent<T = never> = CustomEvent<T>;
 
 declare global {
   interface GlobalEventHandlersEventMap {

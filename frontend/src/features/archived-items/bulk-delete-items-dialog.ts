@@ -6,6 +6,7 @@ import { when } from "lit/directives/when.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type GridColumn } from "@/components/ui/data-grid/types";
 import type { Dialog } from "@/components/ui/dialog";
+import { type BtrixConfirmEvent } from "@/events/btrix-confirm";
 import { pluralOfItems } from "@/plurals/items";
 import { pluralOfPages } from "@/plurals/pages";
 import { pluralOfSkippingItems } from "@/plurals/skipping-items";
@@ -15,6 +16,10 @@ import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem"
 import { renderName } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { tw } from "@/utils/tailwind";
+
+export type ConfirmBulkDeleteEvent = BtrixConfirmEvent<{
+  itemIds: string[] | null;
+}>;
 
 /**
  * @fires btrix-cancel
@@ -175,7 +180,14 @@ export class BulkDeleteItemsDialog extends BtrixElement {
           ?disabled=${!deleteable || this.inProgress}
           ?loading=${this.inProgress}
           @click=${() => {
-            this.dispatchEvent(new CustomEvent("btrix-confirm"));
+            this.dispatchEvent(
+              new CustomEvent<ConfirmBulkDeleteEvent["detail"]>(
+                "btrix-confirm",
+                {
+                  detail: { itemIds: deleteable?.map(({ id }) => id) || null },
+                },
+              ),
+            );
           }}
         >
           <sl-icon name="trash3" slot="prefix"></sl-icon>
