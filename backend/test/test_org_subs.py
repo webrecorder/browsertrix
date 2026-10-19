@@ -1165,12 +1165,22 @@ def test_refill_plan_minutes(admin_auth_headers):
     assert event["renewalDate"] == renewal_date
 
 
-def _import_storage_addon_test_org(admin_auth_headers, bytes_stored: int) -> str:
+def _import_storage_addon_test_org(
+    admin_auth_headers, bytes_stored: int, billing_interval: str | None = None
+) -> str:
     """Import an org with a subscription, base+add-on storage quota and the
     given bytesStored (there is no API to set usage directly, so seed via the
     org import endpoint, which restores the org document verbatim)."""
     oid = str(uuid4())
     suffix = oid[:8]
+    subscription = {
+        "subId": f"stripe:sub_addon_{suffix}",
+        "status": "active",
+        "planId": "basic",
+        "renewalDate": None,
+    }
+    if billing_interval:
+        subscription["billingInterval"] = billing_interval
     org_export = {
         "data": {
             "dbVersion": "0027",
@@ -1194,12 +1204,7 @@ def _import_storage_addon_test_org(admin_auth_headers, bytes_stored: int) -> str
                     "extraExecMinutes": 0,
                     "giftedExecMinutes": 0,
                 },
-                "subscription": {
-                    "subId": f"stripe:sub_addon_{suffix}",
-                    "status": "active",
-                    "planId": "basic",
-                    "renewalDate": None,
-                },
+                "subscription": subscription,
             },
             "profiles": [],
             "workflows": [],
@@ -1310,6 +1315,39 @@ def test_storage_addon_state_on_org_payload_and_price(admin_auth_headers):
     assert r.status_code == 200
     assert r.json()["value"] == 1.0
     assert r.json()["currency"] == "usd"
+
+
+def test_storage_price_uses_subscription_billing_interval(admin_auth_headers):
+    """The storage add-on has separate monthly and yearly prices, so ensure the
+    price endpoint sends the appropriate price for the org's cadence."""
+    monthly_oid = _import_storage_addon_test_org(
+        admin_auth_headers, 0, billing_interval="month"
+    )
+    yearly_oid = _import_storage_addon_test_org(
+        admin_auth_headers, 0, billing_interval="year"
+    )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{monthly_oid}/price/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 1.0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{yearly_oid}/price/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 2.0
+
+    # an explicit interval overrides the subscription's own cadence
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{monthly_oid}/price/storage?interval=year",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 2.0
 
 
 def test_update_sub_storage_addon_quota(admin_auth_headers):

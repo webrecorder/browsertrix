@@ -15,7 +15,7 @@ import {
   STORAGE_ADDON_GB,
 } from "@/pages/org/settings/components/billing";
 import { APIErrorDetail } from "@/types/api";
-import type { AddonStoragePricing } from "@/types/billing";
+import type { AddonStoragePricing, Subscription } from "@/types/billing";
 import type { OrgData } from "@/types/org";
 import { isApiError } from "@/utils/api";
 import { AppStateService } from "@/utils/state";
@@ -44,11 +44,16 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
   private confirmGB: number | undefined = undefined;
 
   private readonly priceTask = new Task(this, {
-    task: async () => {
+    task: async ([interval]) => {
       if (!this.env.billingEnabled) return;
-      return this.fetchPrice();
+      return this.fetchPrice(interval);
     },
-    args: () => [] as const,
+    // Re-fetch when the subscription's cadence changes so the displayed price
+    // matches the monthly/yearly add-on actually charged.
+    args: () =>
+      [this.org?.subscription?.billingInterval ?? "month"] as readonly [
+        NonNullable<Subscription["billingInterval"]>,
+      ],
   });
 
   private readonly updateTask = new Task(this, {
@@ -172,9 +177,12 @@ export class OrgSettingsBillingStorageAddon extends BtrixElement {
     return pendingGB === null;
   }
 
-  private async fetchPrice(): Promise<AddonStoragePricing> {
+  private async fetchPrice(
+    interval: NonNullable<Subscription["billingInterval"]>,
+  ): Promise<AddonStoragePricing> {
+    const params = new URLSearchParams({ interval });
     return this.api.fetch<AddonStoragePricing>(
-      `/orgs/${this.orgId}/price/storage`,
+      `/orgs/${this.orgId}/price/storage?${params.toString()}`,
     );
   }
 

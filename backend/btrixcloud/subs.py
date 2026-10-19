@@ -20,6 +20,7 @@ from .models import (
     AddedResponseId,
     AddonMinutesPricing,
     AddonStoragePricing,
+    BillingInterval,
     CheckoutAddonMinutesRequest,
     CheckoutAddonMinutesResponse,
     InviteAddedResponse,
@@ -610,18 +611,26 @@ class SubOps:
                     status_code=500, detail="Error fetching checkout url"
                 ) from exc
 
-    async def get_storage_price(self, org: Organization):
-        """Fetch price for addon storage from external subscription app"""
+    async def get_storage_price(
+        self, org: Organization, interval: BillingInterval | None = None
+    ):
+        """Fetch the price per GB for the storage add-on at the subscription's
+        billing interval from the external subscription app"""
         if not org.subscription:
             raise HTTPException(
                 status_code=404, detail="Organization has no subscription"
             )
+        # The add-on joins the subscription's cadence, and Stripe has a
+        # different price per GB for monthly and yearly add-ons. Fall back to
+        # monthly when the subscription's interval isn't known.
+        billing_interval = interval or org.subscription.billingInterval or "month"
         if external_subs_app_api_url:
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.request(
                         "GET",
                         f"{external_subs_app_api_url}/prices/additionalStorage",
+                        params={"interval": billing_interval},
                         headers={
                             "Authorization": "bearer " + external_subs_app_api_key,
                         },
@@ -896,9 +905,10 @@ def init_subs_api(
         response_model=AddonStoragePricing | None,
     )
     async def get_storage_price(
+        interval: BillingInterval | None = None,
         org: Organization = Depends(org_ops.org_owner_dep),
     ):
-        return await ops.get_storage_price(org)
+        return await ops.get_storage_price(org, interval)
 
     @org_ops.router.post(
         "/subscription/storage-addon",
