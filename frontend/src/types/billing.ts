@@ -19,6 +19,15 @@ export const subscriptionSchema = z.object({
   futureCancelDate: apiDateSchema.nullable(),
   renewalDate: apiDateSchema.nullable().optional(),
   subId: z.string(),
+  /* Billing cycle as interval + count (quarterly = month × 3, a 3-year
+     agreement = year × 3). None when the cadence isn't one we sell. */
+  billingInterval: z.enum(["month", "year"]).nullable().optional(),
+  billingIntervalCount: z.number().int().positive().nullable().optional(),
+  /* Pending storage add-on quantity (GB) taking effect at the next renewal.
+     Absent/None means no change is pending; 0 means a cancellation. */
+  storageAddonPendingGB: z.number().nullable().optional(),
+  /* Plan taking effect at the next renewal, if a plan change is waiting. */
+  pendingPlanId: z.string().nullable().optional(),
 });
 export type Subscription = z.infer<typeof subscriptionSchema>;
 
@@ -30,3 +39,9 @@ export const billingAddonCheckoutSchema = z.object({
   checkoutUrl: z.string().url(),
 });
 export type BillingAddonCheckout = z.infer<typeof billingAddonCheckoutSchema>;
+
+export const addonStoragePricingSchema = z.object({
+  value: z.number(),
+  currency: z.string(),
+});
+export type AddonStoragePricing = z.infer<typeof addonStoragePricingSchema>;

@@ -45,6 +45,23 @@ To subscribe again after canceling your plan, visit the **Choose Plan** link, or
 
 Usage history statistics for previous months are shown here to better inform your plan and quota requirements.
 
+### Storage add-on
+
+`Paid Feature`{ .badge-green }
+
+If your org needs more storage than your plan includes, you can purchase additional storage in 1&nbsp;GB increments as a recurring add-on. The add-on is charged at a per-GB rate and added to your current plan's renewal, so the cost is pro-rated into your existing billing cycle rather than billed separately.
+
+Choose a preset amount (100, 500, or 1000&nbsp;GB) or enter a custom amount up to 5000&nbsp;GB. Your total storage quota is your plan's storage plus the add-on. To remove the add-on, choose **Cancel add-on** from the same menu.
+
+**Increasing** your add-on takes effect right away. **Reducing or cancelling** it takes effect at your next renewal, so you keep the storage you've already paid for through the end of the current period. Until then, the pending change is shown next to your add-on (for example, "reduces to 100 GB at ..."). You can undo a pending change with **Keep**.
+
+Every change to your add-on is confirmed first, with the change to your storage and your bill spelled out before anything is charged.
+
+If reducing or cancelling your add-on would put your org below the amount of storage you're currently using, the change is rejected and you'll be asked to free up space first. The same check applies to changes made in the Stripe billing portal: if an upcoming change there would drop you below your current usage, it's automatically cancelled and org admins are emailed.
+
+!!! info "Storage add-on changes while a plan change is scheduled"
+    If a plan change is already scheduled on your subscription (for example, a downgrade scheduled from the billing portal), you'll need to resolve or undo that change before you can increase your storage add-on.
+
 ## Crawling Defaults
 
 Set default suggested settings for all new crawl workflows. When creating a new workflow, org members will see the form pre-filled with these default values. Org members can still change or remove these settings when configuring the workflow. Removing a default setting will revert the setting back to Browsertrix' defaults.

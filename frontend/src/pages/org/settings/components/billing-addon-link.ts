@@ -115,7 +115,7 @@ export class OrgSettingsBillingAddonLink extends BtrixElement {
         this.lastClickedMinutesPreset !== undefined}
         class="-ml-3"
       >
-        ${msg("Add More Execution Minutes")}
+        ${msg("Add more execution minutes")}
       </sl-button>
       <hr class="h-6 border-l" aria-orientation="vertical" />
       <sl-dropdown

@@ -97,6 +97,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert data["subscription"] == {
         "subId": "123",
@@ -104,6 +105,7 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "planId": "basic",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -138,6 +140,7 @@ def test_validate_new_org_with_quotas_and_update_name(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert "subscription" in data
 
@@ -257,6 +260,7 @@ def test_login_existing_user_for_invite():
         "planExecMinutes": 0,
         "extraExecMinutes": 0,
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
     }
     assert "subscription" in org
 
@@ -288,6 +292,7 @@ def test_update_sub(admin_auth_headers):
         "planId": "basic",
         "futureCancelDate": "2028-12-26T01:02:03Z",
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -329,6 +334,7 @@ def test_update_sub_2(admin_auth_headers):
         "planId": "basic2",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -491,6 +497,7 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
         "planId": "basic",
         "futureCancelDate": None,
         "renewalDate": None,
+        "storageAddonPendingGB": None,
         "readOnlyOnCancel": False,
     }
 
@@ -525,6 +532,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -543,6 +551,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -569,6 +578,7 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -617,6 +627,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -643,6 +654,7 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -683,6 +695,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -709,6 +722,7 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -746,6 +760,7 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -785,6 +800,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
                 "planExecMinutes": 0,
                 "extraExecMinutes": 0,
                 "giftedExecMinutes": 0,
+                "extraStorageQuota": 0,
             },
         },
         {
@@ -801,6 +817,7 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
                 "planExecMinutes": None,
                 "extraExecMinutes": None,
                 "giftedExecMinutes": None,
+                "extraStorageQuota": None,
                 "maxConcurrentCrawls": None,
                 "maxExecMinutesPerMonth": None,
             },
@@ -1041,6 +1058,7 @@ def test_subscription_add_minutes(admin_auth_headers):
         "planExecMinutes": 0,
         "extraExecMinutes": 75,  # only this value updated from previous
         "giftedExecMinutes": 0,
+        "extraStorageQuota": 0,
         "maxConcurrentCrawls": 1,
         "maxExecMinutesPerMonth": 1000,
     }
@@ -1145,3 +1163,317 @@ def test_refill_plan_minutes(admin_auth_headers):
     assert event["oid"] == refill_test_oid
     assert event["minutes"] == 500
     assert event["renewalDate"] == renewal_date
+
+
+def _import_storage_addon_test_org(
+    admin_auth_headers, bytes_stored: int, billing_interval: str | None = None
+) -> str:
+    """Import an org with a subscription, base+add-on storage quota and the
+    given bytesStored (there is no API to set usage directly, so seed via the
+    org import endpoint, which restores the org document verbatim)."""
+    oid = str(uuid4())
+    suffix = oid[:8]
+    subscription = {
+        "subId": f"stripe:sub_addon_{suffix}",
+        "status": "active",
+        "planId": "basic",
+        "renewalDate": None,
+    }
+    if billing_interval:
+        subscription["billingInterval"] = billing_interval
+    org_export = {
+        "data": {
+            "dbVersion": "0027",
+            "org": {
+                "_id": oid,
+                "name": f"Storage Addon Test Org {suffix}",
+                "slug": f"storage-addon-test-{suffix}",
+                "users": {},
+                "bytesStored": bytes_stored,
+                "bytesStoredCrawls": 0,
+                "bytesStoredUploads": 0,
+                "bytesStoredProfiles": 0,
+                "storage": {"name": "default", "custom": None},
+                "quotas": {
+                    "storageQuota": 500_000_000_000,
+                    "extraStorageQuota": 200_000_000_000,
+                    "maxExecMinutesPerMonth": 0,
+                    "maxConcurrentCrawls": 0,
+                    "maxPagesPerCrawl": 0,
+                    "planExecMinutes": 0,
+                    "extraExecMinutes": 0,
+                    "giftedExecMinutes": 0,
+                },
+                "subscription": subscription,
+            },
+            "profiles": [],
+            "workflows": [],
+            "workflowRevisions": [],
+            "items": [],
+            "pages": [],
+            "collections": [],
+        }
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/import/json?ignoreVersion=true",
+        headers=admin_auth_headers,
+        json=org_export,
+    )
+    assert r.status_code == 200
+    return oid
+
+
+def test_storage_addon_usage_gate(admin_auth_headers, echo_server):
+    """Reductions below current usage are rejected; growth/keep pass the gate
+    and reach the external subs app."""
+    # 600GB usage vs 500GB base + 200GB add-on
+    oid = _import_storage_addon_test_org(admin_auth_headers, 600_000_000_000)
+
+    # reduction to 50GB: target total 550GB < 600GB usage -> rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 50},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "storage_addon_below_usage"
+
+    # reduction to 100GB: target total 600GB == usage -> passes gate
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 100},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"sizeGB": 100}
+
+    # cancellation: 600GB usage > 500GB base -> rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 0},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "storage_addon_below_usage"
+
+    # growth above current add-on: no usage gate
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 300},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"sizeGB": 300}
+
+    # keep (no change): passes gate and hits the subs app
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 300},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"sizeGB": 300}
+
+    # org with usage below base quota can cancel
+    oid_2 = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{oid_2}/subscription/storage-addon",
+        headers=admin_auth_headers,
+        json={"sizeGB": 0},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"sizeGB": 0}
+
+
+def test_storage_addon_state_on_org_payload_and_price(admin_auth_headers):
+    """The UI reads the add-on size and any pending change from the org itself
+    (there is no separate endpoint for it), and the price is still available."""
+    oid = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["quotas"]["extraStorageQuota"] == 200_000_000_000
+    assert data["bytesStored"] == 400_000_000_000
+    assert data["subscription"]["storageAddonPendingGB"] is None
+
+    # the dedicated state-read route is gone. 405 (not 404) because the path
+    # still carries the POST used to change the add-on; the GET is what was
+    # removed, and the UI must not depend on it.
+    assert (
+        requests.get(
+            f"{API_PREFIX}/orgs/{oid}/subscription/storage-addon",
+            headers=admin_auth_headers,
+        ).status_code
+        == 405
+    )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{oid}/price/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 1.0
+    assert r.json()["currency"] == "usd"
+
+
+def test_storage_price_uses_subscription_billing_interval(admin_auth_headers):
+    """The storage add-on has separate monthly and yearly prices, so ensure the
+    price endpoint sends the appropriate price for the org's cadence."""
+    monthly_oid = _import_storage_addon_test_org(
+        admin_auth_headers, 0, billing_interval="month"
+    )
+    yearly_oid = _import_storage_addon_test_org(
+        admin_auth_headers, 0, billing_interval="year"
+    )
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{monthly_oid}/price/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 1.0
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{yearly_oid}/price/storage",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 2.0
+
+    # an explicit interval overrides the subscription's own cadence
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{monthly_oid}/price/storage?interval=year",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["value"] == 2.0
+
+
+def test_update_sub_storage_addon_quota(admin_auth_headers):
+    """An update carrying storageAddonGB sets quotas.extraStorageQuota to
+    match. Doing it twice does not add a second OrgQuotaUpdate row, and a real
+    0 is written rather than being dropped as an empty value."""
+    oid = _import_storage_addon_test_org(admin_auth_headers, 0)
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    sub_id = r.json()["subscription"]["subId"]
+
+    def quota_update_count() -> int:
+        resp = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+        return len(resp.json()["quotaUpdates"])
+
+    def post_addon(gb: int):
+        return requests.post(
+            f"{API_PREFIX}/subscriptions/update",
+            headers=admin_auth_headers,
+            json={
+                "subId": sub_id,
+                "status": "active",
+                "planId": "basic",
+                "storageAddonGB": gb,
+            },
+        )
+
+    r = post_addon(300)
+    assert r.status_code == 200
+    assert r.json() == {"updated": True}
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.json()["quotas"]["extraStorageQuota"] == 300_000_000_000
+
+    # repeating the same value writes nothing: no extra OrgQuotaUpdate row
+    count = quota_update_count()
+    assert post_addon(300).status_code == 200
+    assert quota_update_count() == count
+
+    # a genuine 0 survives serialization (None is what gets stripped)
+    assert post_addon(0).status_code == 200
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.json()["quotas"]["extraStorageQuota"] == 0
+
+
+def test_create_sub_storage_addon_quota(admin_auth_headers):
+    """POST /subscriptions/create with storageAddonGB sets the quota on the new
+    org."""
+    sub_id = f"stripe:sub_create_addon_{str(uuid4())[:8]}"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=admin_auth_headers,
+        json={
+            "subId": sub_id,
+            "status": "active",
+            "planId": "basic",
+            # a fresh email each run: an email that already belongs to the
+            # logged-in admin would be rejected with "Can't invite ourselves!"
+            "firstAdminInviteEmail": f"addon-{uuid4().hex[:8]}@example.com",
+            "storageAddonGB": 400,
+        },
+    )
+    assert r.status_code == 200
+    oid = r.json()["id"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    assert r.json()["quotas"]["extraStorageQuota"] == 400_000_000_000
+
+
+def test_create_sub_checkout_addons_quota(admin_auth_headers):
+    """POST /subscriptions/create with both checkout add-ons sets storage in
+    `extraStorageQuota` and minutes in `extraExecMinutes` on the new org."""
+    sub_id = f"stripe:sub_create_checkout_{str(uuid4())[:8]}"
+    r = requests.post(
+        f"{API_PREFIX}/subscriptions/create",
+        headers=admin_auth_headers,
+        json={
+            "subId": sub_id,
+            "status": "active",
+            "planId": "basic",
+            # a fresh email each run: an email that already belongs to the
+            # logged-in admin would be rejected with "Can't invite ourselves!"
+            "firstAdminInviteEmail": f"checkout-{uuid4().hex[:8]}@example.com",
+            "storageAddonGB": 400,
+            "additionalMinutes": 600,
+        },
+    )
+    assert r.status_code == 200
+    oid = r.json()["id"]
+
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    assert r.status_code == 200
+    quotas = r.json()["quotas"]
+    assert quotas["extraStorageQuota"] == 400_000_000_000
+    assert quotas["extraExecMinutes"] == 600
+
+
+def test_storage_usage_endpoint(admin_auth_headers, shared_secret_auth_headers):
+    """GET /subscriptions/storage-usage/{sub_id} serves the org's usage state to
+    the external subscription app's add-on revert guard using the
+    pre-shared secret"""
+    oid = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
+    r = requests.get(f"{API_PREFIX}/orgs/{oid}", headers=admin_auth_headers)
+    sub_id = r.json()["subscription"]["subId"]
+
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/{sub_id}",
+        headers=shared_secret_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["bytesStored"] == 400_000_000_000
+    assert data["storageQuota"] == 500_000_000_000
+    assert data["extraStorageQuota"] == 200_000_000_000
+    assert data["storageAddonPendingGB"] is None
+
+    # superuser session also works
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/{sub_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+    r = requests.get(
+        f"{API_PREFIX}/subscriptions/storage-usage/stripe:sub_does_not_exist",
+        headers=shared_secret_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "org_for_subscription_not_found"
