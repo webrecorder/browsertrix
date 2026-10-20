@@ -1,9 +1,10 @@
-import time
 import os
+import subprocess
+import time
+
+import structlog
 import pytest
 import requests
-import subprocess
-import structlog
 
 from .conftest import API_PREFIX
 
@@ -17,9 +18,11 @@ SCHEDULE = "*/2 * * * *"
 # Pull address to echo server running on host from CI env var.
 # If not set, default to host.docker.internal (for local testing with
 # Docker Desktop).
-ECHO_SERVER_URL = os.environ.get(
-    "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
-) + "/rl-index.html"
+ECHO_SERVER_URL = (
+    os.environ.get("ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080")
+    + "/rl-index.html"
+)
+
 
 @pytest.fixture(scope="session")
 def echo_server():
@@ -66,7 +69,9 @@ def test_server(echo_server):
 
 
 @pytest.mark.timeout(600)
-def test_rate_limited_scheduled_crawl(admin_auth_headers, default_org_id, rl_config_id, echo_server):
+def test_rate_limited_scheduled_crawl(
+    admin_auth_headers, default_org_id, rl_config_id, echo_server
+):
     # Ensure workflow exists with correct schedule, no crawls yet
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{rl_config_id}",
@@ -97,7 +102,10 @@ def test_rate_limited_scheduled_crawl(admin_auth_headers, default_org_id, rl_con
         last_crawl_id = data.get("lastCrawlId")
         last_crawl_state = data.get("lastCrawlState")
 
-        if not last_crawl_id or last_crawl_state not in ("failed", "stopped_for_next_scheduled_crawl"):
+        if not last_crawl_id or last_crawl_state not in (
+            "failed",
+            "stopped_for_next_scheduled_crawl",
+        ):
             time.sleep(10)
 
     # Recheck workflow stats
