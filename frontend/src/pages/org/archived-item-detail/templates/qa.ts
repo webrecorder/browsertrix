@@ -20,6 +20,7 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
+import { stringFor } from "@/strings/ui";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -139,40 +140,45 @@ export class ArchivedItemDetailQA extends BtrixElement {
   }
 
   render() {
-    const fileCount = this.item?.filePageCount || 0;
-    const errorCount = this.item?.errorPageCount || 0;
-    const doneCount = this.item?.stats?.done
-      ? parseInt(this.item.stats.done)
-      : 0;
-    const htmlCount = doneCount - fileCount - errorCount;
-
-    let count: TemplateResult;
+    const isCrawlType = this.itemType === "crawl";
 
     return html`
       <div class="mb-5 rounded-lg border p-2">
         <btrix-desc-list horizontal>
-          <btrix-desc-list-item label=${msg("Analysis Status")}>
+          <btrix-desc-list-item label=${msg("QA Rating")}>
             ${when(
-              this.qaRuns,
-              () =>
-                this.mostRecentNonFailedQARun
-                  ? html`<btrix-crawl-status
-                      state=${this.mostRecentNonFailedQARun.state}
-                      type="qa"
-                      class="min-w-32"
-                    ></btrix-crawl-status>`
-                  : statusWithIcon(
-                      html`<sl-icon
-                        name="slash-circle"
-                        class="text-neutral-400"
-                      ></sl-icon>`,
-                      html`<span class="text-neutral-400">
-                        ${msg("Not Analyzed")}
-                      </span>`,
-                    ),
-
+              this.item,
+              (crawl) =>
+                html`<btrix-qa-review-status
+                  .status=${crawl.reviewStatus}
+                ></btrix-qa-review-status>`,
               this.renderLoadingDetail,
             )}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Analysis Status")}>
+            ${isCrawlType
+              ? when(
+                  this.qaRuns,
+                  () =>
+                    this.mostRecentNonFailedQARun
+                      ? html`<btrix-crawl-status
+                          state=${this.mostRecentNonFailedQARun.state}
+                          type="qa"
+                          class="min-w-32"
+                        ></btrix-crawl-status>`
+                      : statusWithIcon(
+                          html`<sl-icon
+                            name="slash-circle"
+                            class="text-neutral-400"
+                          ></sl-icon>`,
+                          html`<span class="text-neutral-400">
+                            ${msg("Not Analyzed")}
+                          </span>`,
+                        ),
+
+                  this.renderLoadingDetail,
+                )
+              : stringFor.notApplicable}
           </btrix-desc-list-item>
           ${this.mostRecentNonFailedQARun?.state === "running"
             ? html`
@@ -199,166 +205,168 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 </btrix-desc-list-item>
               `
             : ""}
-          <btrix-desc-list-item label=${msg("QA Rating")}>
-            ${when(
-              this.item,
-              (crawl) =>
-                html`<btrix-qa-review-status
-                  .status=${crawl.reviewStatus}
-                ></btrix-qa-review-status>`,
-              this.renderLoadingDetail,
-            )}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Total Analysis Time")}>
-            ${when(
-              this.qaRuns,
-              () =>
-                this.mostRecentNonFailedQARun && this.item?.qaCrawlExecSeconds
-                  ? humanizeExecutionSeconds(this.item.qaCrawlExecSeconds)
-                  : notApplicable(),
+          ${when(
+            isCrawlType,
+            () =>
+              html`<btrix-desc-list-item label=${msg("Total Analysis Time")}>
+                ${when(
+                  this.qaRuns,
+                  () =>
+                    this.mostRecentNonFailedQARun &&
+                    this.item?.qaCrawlExecSeconds
+                      ? humanizeExecutionSeconds(this.item.qaCrawlExecSeconds)
+                      : notApplicable(),
 
-              this.renderLoadingDetail,
-            )}
-          </btrix-desc-list-item>
+                  this.renderLoadingDetail,
+                )}
+              </btrix-desc-list-item>`,
+          )}
         </btrix-desc-list>
       </div>
       ${this.renderDeleteConfirmDialog()}
-      <btrix-tab-group>
-        <btrix-tab-group-tab slot="nav" panel="pages">
-          <sl-icon name="file-richtext-fill"></sl-icon>
-          ${msg("Pages")}
-        </btrix-tab-group-tab>
-        <btrix-tab-group-tab
-          slot="nav"
-          panel="runs"
-          ?disabled=${!this.qaRuns?.length}
-        >
-          <sl-icon name="list-ul"></sl-icon>
-          ${msg("Analysis Runs")}
-        </btrix-tab-group-tab>
+      ${isCrawlType
+        ? html`<btrix-tab-group>
+            <btrix-tab-group-tab slot="nav" panel="pages">
+              <sl-icon name="file-richtext-fill"></sl-icon>
+              ${msg("Pages")}
+            </btrix-tab-group-tab>
+            <btrix-tab-group-tab
+              slot="nav"
+              panel="runs"
+              ?disabled=${!this.qaRuns?.length}
+            >
+              <sl-icon name="list-ul"></sl-icon>
+              ${msg("Analysis Runs")}
+            </btrix-tab-group-tab>
 
-        <sl-divider></sl-divider>
+            <sl-divider></sl-divider>
 
-        <btrix-tab-group-panel name="pages" class="block">
-          <btrix-card class="gap-y-1">
-            <div slot="title" class="flex flex-wrap justify-between">
-              ${msg("Crawl Results")}
-              <div class="text-neutral-500">
-                <sl-tooltip
-                  content=${msg(
-                    "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
-                  )}
-                >
-                  <sl-icon class="text-base" name="info-circle"></sl-icon>
-                </sl-tooltip>
-              </div>
-            </div>
-            ${this.item
-              ? html`<div class="tabular-nums">
-                  <p>
-                    ${((count = html`<span class="text-primary"
-                      >${this.localize.number(htmlCount)}</span
-                    >`),
-                    pluralize<string | TemplateResult>(htmlCount, {
-                      zero: msg(html`${count} HTML pages`),
-                      one: msg(html`${count} HTML page`),
-                      two: msg(html`${count} HTML pages`),
-                      few: msg(html`${count} HTML pages`),
-                      many: msg(html`${count} HTML pages`),
-                      other: msg(html`${count} HTML pages`),
-                    }))}
-                  </p>
-                  <p>
-                    ${((count = html`<span class="text-neutral-600"
-                      >${this.localize.number(fileCount)}</span
-                    >`),
-                    pluralize<string | TemplateResult>(fileCount, {
-                      zero: msg(
-                        html`${count} Non-HTML files captured as pages`,
-                      ),
-                      one: msg(html`${count} Non-HTML files captured as page`),
-                      two: msg(html`${count} Non-HTML files captured as pages`),
-                      few: msg(html`${count} Non-HTML files captured as pages`),
-                      many: msg(
-                        html`${count} Non-HTML files captured as pages`,
-                      ),
-                      other: msg(
-                        html`${count} Non-HTML files captured as pages`,
-                      ),
-                    }))}
-                  </p>
-                  <p>
-                    ${((count = html`<span class="text-danger"
-                      >${this.localize.number(errorCount)}</span
-                    >`),
-                    pluralize<string | TemplateResult>(errorCount, {
-                      zero: msg(html`${count} Failed pages`),
-                      one: msg(html`${count} Failed page`),
-                      two: msg(html`${count} Failed pages`),
-                      few: msg(html`${count} Failed pages`),
-                      many: msg(html`${count} Failed pages`),
-                      other: msg(html`${count} Failed pages`),
-                    }))}
-                    ${errorCount > 0
-                      ? html`—
-                          <a
-                            class="text-primary"
-                            href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.itemId}#logs`}
-                            >${msg("View error logs")}</a
-                          >`
-                      : ""}
-                  </p>
-                </div> `
-              : html`
-                  <sl-skeleton class="mb-[5px] w-24"></sl-skeleton>
-                  <sl-skeleton class="mb-[5px] w-64"></sl-skeleton>
-                  <sl-skeleton class="mb-[5px] w-28"></sl-skeleton>
-                `}
-            ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
-              this.renderAnalysis(qaRuns),
-            )}
-          </btrix-card>
-
-          <div>
-            <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
-              <span class="font-semibold">${msg("Pages")}</span>
-              ${this.pages != null
-                ? `(${this.localize.number(this.pages.total)})`
-                : html`<sl-skeleton
-                    class="inline-block h-6 w-5 align-[-6px]"
-                  ></sl-skeleton>`}
-            </h4>
-          </div>
-          ${this.renderPageListControls()} ${this.renderPageList()}
-        </btrix-tab-group-panel>
-        <btrix-tab-group-panel name="runs" class="block">
-          <btrix-table
-            class="-mx-3 grid-cols-[repeat(4,_auto)_min-content] overflow-x-auto px-3"
-          >
-            <btrix-table-head>
-              <btrix-table-header-cell>
-                ${msg("Status")}
-              </btrix-table-header-cell>
-              <btrix-table-header-cell>
-                ${msg("Started")}
-              </btrix-table-header-cell>
-              <btrix-table-header-cell>
-                ${msg("Finished")}
-              </btrix-table-header-cell>
-              <btrix-table-header-cell>
-                ${msg("Started by")}
-              </btrix-table-header-cell>
-              <btrix-table-header-cell class="px-0">
-                <span class="sr-only">${msg("Row actions")}</span>
-              </btrix-table-header-cell>
-            </btrix-table-head>
-            <btrix-table-body class="rounded border">
-              ${when(this.qaRuns, this.renderQARunRows)}
-            </btrix-table-body>
-          </btrix-table>
-        </btrix-tab-group-panel>
-      </btrix-tab-group>
+            <btrix-tab-group-panel name="pages" class="block">
+              ${this.renderPages()}
+            </btrix-tab-group-panel>
+            <btrix-tab-group-panel name="runs" class="block">
+              ${this.renderQARuns()}
+            </btrix-tab-group-panel>
+          </btrix-tab-group>`
+        : this.renderPages()}
     `;
+  }
+
+  private renderPages() {
+    const fileCount = this.item?.filePageCount || 0;
+    const errorCount = this.item?.errorPageCount || 0;
+    const doneCount = this.item?.stats?.done
+      ? parseInt(this.item.stats.done)
+      : 0;
+    const htmlCount = doneCount - fileCount - errorCount;
+
+    let count: TemplateResult;
+
+    return html`<btrix-card class="gap-y-1">
+        <div slot="title" class="flex flex-wrap justify-between">
+          ${msg("Crawl Results")}
+          <div class="text-neutral-500">
+            <sl-tooltip
+              content=${msg(
+                "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
+              )}
+            >
+              <sl-icon class="text-base" name="info-circle"></sl-icon>
+            </sl-tooltip>
+          </div>
+        </div>
+        ${this.item
+          ? html`<div class="tabular-nums">
+              <p>
+                ${((count = html`<span class="text-primary"
+                  >${this.localize.number(htmlCount)}</span
+                >`),
+                pluralize<string | TemplateResult>(htmlCount, {
+                  zero: msg(html`${count} HTML pages`),
+                  one: msg(html`${count} HTML page`),
+                  two: msg(html`${count} HTML pages`),
+                  few: msg(html`${count} HTML pages`),
+                  many: msg(html`${count} HTML pages`),
+                  other: msg(html`${count} HTML pages`),
+                }))}
+              </p>
+              <p>
+                ${((count = html`<span class="text-neutral-600"
+                  >${this.localize.number(fileCount)}</span
+                >`),
+                pluralize<string | TemplateResult>(fileCount, {
+                  zero: msg(html`${count} Non-HTML files captured as pages`),
+                  one: msg(html`${count} Non-HTML files captured as page`),
+                  two: msg(html`${count} Non-HTML files captured as pages`),
+                  few: msg(html`${count} Non-HTML files captured as pages`),
+                  many: msg(html`${count} Non-HTML files captured as pages`),
+                  other: msg(html`${count} Non-HTML files captured as pages`),
+                }))}
+              </p>
+              <p>
+                ${((count = html`<span class="text-danger"
+                  >${this.localize.number(errorCount)}</span
+                >`),
+                pluralize<string | TemplateResult>(errorCount, {
+                  zero: msg(html`${count} Failed pages`),
+                  one: msg(html`${count} Failed page`),
+                  two: msg(html`${count} Failed pages`),
+                  few: msg(html`${count} Failed pages`),
+                  many: msg(html`${count} Failed pages`),
+                  other: msg(html`${count} Failed pages`),
+                }))}
+                ${errorCount > 0
+                  ? html`—
+                      <a
+                        class="text-primary"
+                        href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.itemId}#logs`}
+                        >${msg("View error logs")}</a
+                      >`
+                  : ""}
+              </p>
+            </div> `
+          : html`
+              <sl-skeleton class="mb-[5px] w-24"></sl-skeleton>
+              <sl-skeleton class="mb-[5px] w-64"></sl-skeleton>
+              <sl-skeleton class="mb-[5px] w-28"></sl-skeleton>
+            `}
+        ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
+          this.renderAnalysis(qaRuns),
+        )}
+      </btrix-card>
+
+      <div>
+        <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
+          <span class="font-semibold">${msg("Pages")}</span>
+          ${this.pages != null
+            ? `(${this.localize.number(this.pages.total)})`
+            : html`<sl-skeleton
+                class="inline-block h-6 w-5 align-[-6px]"
+              ></sl-skeleton>`}
+        </h4>
+      </div>
+      ${this.renderPageListControls()} ${this.renderPageList()}`;
+  }
+
+  private renderQARuns() {
+    return html`<btrix-table
+      class="-mx-3 grid-cols-[repeat(4,_auto)_min-content] overflow-x-auto px-3"
+    >
+      <btrix-table-head>
+        <btrix-table-header-cell> ${msg("Status")} </btrix-table-header-cell>
+        <btrix-table-header-cell> ${msg("Started")} </btrix-table-header-cell>
+        <btrix-table-header-cell> ${msg("Finished")} </btrix-table-header-cell>
+        <btrix-table-header-cell>
+          ${msg("Started by")}
+        </btrix-table-header-cell>
+        <btrix-table-header-cell class="px-0">
+          <span class="sr-only">${msg("Row actions")}</span>
+        </btrix-table-header-cell>
+      </btrix-table-head>
+      <btrix-table-body class="rounded border">
+        ${when(this.qaRuns, this.renderQARunRows)}
+      </btrix-table-body>
+    </btrix-table>`;
   }
 
   private readonly renderQARunRows = (qaRuns: QARun[]) => {
