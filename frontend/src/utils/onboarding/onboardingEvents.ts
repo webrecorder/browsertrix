@@ -1,8 +1,10 @@
 import { msg } from "@lit/localize";
 import { html } from "lit";
 
+import { hasUsage } from "../orgs";
+
 import { AnalyticsTrackEvent } from "@/trackEvents";
-import { track } from "@/utils/analytics";
+import { track, type AnalyticsTrackProps } from "@/utils/analytics";
 import appState, { AppStateService } from "@/utils/state";
 
 export enum OnboardingStep {
@@ -51,7 +53,13 @@ export function completeOnboardingStep(step: OnboardingStep) {
     stepsComplete: { [step]: true },
   });
 
+  const trackProps = {
+    trialing: appState.isTrialing,
+    has_usage: hasUsage(appState.org),
+  } satisfies AnalyticsTrackProps;
+
   track(AnalyticsTrackEvent.CompleteOnboardingStep, {
+    ...trackProps,
     completed_onboarding_step: step,
   });
 }
