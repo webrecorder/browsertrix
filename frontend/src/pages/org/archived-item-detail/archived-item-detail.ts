@@ -403,10 +403,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
     switch (this.activeTab) {
       case "qa": {
-        if (!this.isCrawler) {
-          sectionContent = "";
-          break;
-        }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
@@ -719,17 +715,12 @@ export class ArchivedItemDetail extends BtrixElement {
         ${when(this.item, (item) =>
           isSuccessfullyFinished(item)
             ? html`
-                ${when(
-                  this.itemType === "crawl" && this.isCrawler,
-                  () => html`
-                    ${renderNavItem({
-                      section: "qa",
-                      iconLibrary: "default",
-                      icon: "clipboard2-data-fill",
-                      beta: true,
-                    })}
-                  `,
-                )}
+                ${renderNavItem({
+                  section: "qa",
+                  iconLibrary: "default",
+                  icon: "clipboard2-data-fill",
+                  beta: true,
+                })}
                 ${renderNavItem({
                   section: "replay",
                   iconLibrary: "default",
@@ -1836,7 +1827,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private async getQARuns(): Promise<QARun[]> {
     return this.api.fetch<QARun[]>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId}/qa`,
     );
   }
 }
