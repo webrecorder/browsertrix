@@ -87,10 +87,13 @@ export class ArchivedItemDetailQA extends BtrixElement {
   workflowId?: string;
 
   @property({ type: String, attribute: false })
-  crawlId?: string;
+  itemId?: string;
+
+  @property({ type: String, attribute: false })
+  itemType: ArchivedItem["type"] = "crawl";
 
   @property({ type: Object, attribute: false })
-  crawl?: ArchivedItem;
+  item?: ArchivedItem;
 
   @property({ type: String, attribute: false })
   qaRunId?: string;
@@ -110,14 +113,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
   private readonly qaStats = new Task(this, {
     // mostRecentNonFailedQARun passed as arg for reactivity so that meter will auto-update
     // like progress bar as the analysis run finishes new pages
-    task: async ([crawlId, qaRunId, mostRecentNonFailedQARun]) => {
+    task: async ([itemId, qaRunId, mostRecentNonFailedQARun]) => {
       if (!qaRunId || !mostRecentNonFailedQARun)
         throw new Error("Missing args");
-      const stats = await this.getQAStats(crawlId, qaRunId);
+      const stats = await this.getQAStats(itemId, qaRunId);
       return stats;
     },
     args: () =>
-      [this.crawlId!, this.qaRunId, this.mostRecentNonFailedQARun] as const,
+      [this.itemId!, this.qaRunId, this.mostRecentNonFailedQARun] as const,
   });
 
   @state()
@@ -130,18 +133,18 @@ export class ArchivedItemDetailQA extends BtrixElement {
   private readonly deleteQADialog?: Dialog | null;
 
   willUpdate(changedProperties: PropertyValues<this>) {
-    if (changedProperties.has("crawlId") && this.crawlId) {
+    if (changedProperties.has("itemId") && this.itemId) {
       void this.fetchPages();
     }
   }
 
   render() {
-    const fileCount = this.crawl?.filePageCount || 0;
-    const errorCount = this.crawl?.errorPageCount || 0;
-    const doneCount = this.crawl?.stats?.done
-      ? typeof this.crawl.stats.done === "string"
-        ? parseInt(this.crawl.stats.done)
-        : this.crawl.stats.done
+    const fileCount = this.item?.filePageCount || 0;
+    const errorCount = this.item?.errorPageCount || 0;
+    const doneCount = this.item?.stats?.done
+      ? typeof this.item.stats.done === "string"
+        ? parseInt(this.item.stats.done)
+        : this.item.stats.done
       : 0;
     const htmlCount = doneCount - fileCount - errorCount;
 
@@ -200,7 +203,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             : ""}
           <btrix-desc-list-item label=${msg("QA Rating")}>
             ${when(
-              this.crawl,
+              this.item,
               (crawl) =>
                 html`<btrix-qa-review-status
                   .status=${crawl.reviewStatus}
@@ -212,8 +215,8 @@ export class ArchivedItemDetailQA extends BtrixElement {
             ${when(
               this.qaRuns,
               () =>
-                this.mostRecentNonFailedQARun && this.crawl?.qaCrawlExecSeconds
-                  ? humanizeExecutionSeconds(this.crawl.qaCrawlExecSeconds)
+                this.mostRecentNonFailedQARun && this.item?.qaCrawlExecSeconds
+                  ? humanizeExecutionSeconds(this.item.qaCrawlExecSeconds)
                   : notApplicable(),
 
               this.renderLoadingDetail,
@@ -252,7 +255,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                 </sl-tooltip>
               </div>
             </div>
-            ${this.crawl
+            ${this.item
               ? html`<div class="tabular-nums">
                   <p>
                     ${((count = html`<span class="text-primary"
@@ -302,7 +305,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                       ? html`—
                           <a
                             class="text-primary"
-                            href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.crawlId}#logs`}
+                            href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.itemId}#logs`}
                             >${msg("View error logs")}</a
                           >`
                       : ""}
@@ -414,7 +417,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                     ? nothing
                     : html`
                         <btrix-menu-item-link
-                          href=${`/api/orgs/${this.orgId}/crawls/${this.crawlId}/qa/${run.id}/download?auth_bearer=${authToken}`}
+                          href=${`/api/orgs/${this.orgId}/crawls/${this.itemId}/qa/${run.id}/download?auth_bearer=${authToken}`}
                           download
                         >
                           <sl-icon
@@ -814,7 +817,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   rowClickTarget="a"
                 >
                   <a
-                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.crawlId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
+                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
                     title=${msg(str`Review "${page.title ?? page.url}"`)}
                     @click=${this.navigate.link}
                   >
@@ -950,14 +953,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.crawlId}/pages?${query}`,
+      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
     );
   }
 
   private async deleteQARun(id: string) {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.crawlId}/qa/delete`,
+        `/orgs/${this.orgId}/crawls/${this.itemId}/qa/delete`,
         { method: "POST", body: JSON.stringify({ qa_run_ids: [id] }) },
       );
     } catch (e) {
@@ -965,7 +968,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     }
   }
 
-  private async getQAStats(crawlId: string, qaRunId: string) {
+  private async getQAStats(itemId: string, qaRunId: string) {
     const query = queryString.stringify(
       {
         screenshotThresholds: [0.5, 0.9],
@@ -977,7 +980,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     );
 
     return this.api.fetch<QAStats>(
-      `/orgs/${this.orgId}/crawls/${crawlId}/qa/${qaRunId}/stats?${query}`,
+      `/orgs/${this.orgId}/crawls/${itemId}/qa/${qaRunId}/stats?${query}`,
     );
   }
 }
