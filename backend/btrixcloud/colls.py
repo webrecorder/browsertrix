@@ -1333,7 +1333,7 @@ class CollectionOps:
 
         return {"deleted": True}
 
-    async def calculate_collection_storage(self, oid: UUID) -> tuple(int, int):
+    async def calculate_collection_storage(self, oid: UUID) -> tuple[int, int]:
         """Calculate storage for thumbnails and dedupe indexes in org"""
         thumbnail_size = 0
         dedupe_index_size = 0
