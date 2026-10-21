@@ -1037,7 +1037,7 @@ export class CrawlsList extends BtrixElement {
 
     return html`
       ${when(
-        this.isCrawler && isSuccessfullyFinished(item),
+        this.isCrawler,
         () => html`
           <sl-menu-item
             @click=${async () => {
