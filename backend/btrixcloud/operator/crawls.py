@@ -618,6 +618,7 @@ class CrawlOperator(BaseOperator):
         crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
 
         self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
+        self.crawl_config_ops.ensure_timeout_defaults(crawlconfig)
 
         crawler_image = params["crawler_image"]
 

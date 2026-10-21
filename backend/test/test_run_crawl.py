@@ -238,6 +238,10 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
     )
     assert data["downloadUrl"] is None
 
+    # default timeouts
+    assert data["config"]["pageLoadTimeout"] == 120
+    assert data["config"]["behaviorTimeout"] == 300
+
     # ensure filename matches specified pattern
     # set in default_crawl_filename_template
     assert re.search("/[\\d]+-testing-[\\w-]+\\.wacz", data["resources"][0]["path"])

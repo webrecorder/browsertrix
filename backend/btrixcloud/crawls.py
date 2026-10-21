@@ -667,7 +667,7 @@ class CrawlOps(BaseCrawlOps):
             for i in range(0, scale):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
-        new_config = await self.crawl_configs.add_or_remove_exclusion(
+        new_exclude = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
         )
 
@@ -675,7 +675,7 @@ class CrawlOps(BaseCrawlOps):
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": {"config": new_config.dict()}},
+            {"$set": {"config.exclude": new_exclude}},
         )
 
         return {"success": True}
