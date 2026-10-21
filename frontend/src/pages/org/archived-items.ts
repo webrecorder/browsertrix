@@ -44,7 +44,11 @@ import { emptyMessage } from "@/layouts/emptyMessage";
 import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import { pluralOfItemsSelected } from "@/plurals/items-selected";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+} from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
@@ -487,7 +491,7 @@ export class CrawlsList extends BtrixElement {
             title = msg("Some items cannot be deleted");
 
             message = msg("Please check selected items and try again.");
-          } else if (err.details == "not_allowed") {
+          } else if (err.errorCode === APIErrorDetail.NotAllowed) {
             title = msg("Some items cannot be deleted");
             message = `${msg("Only org owners can delete other users' archived items.")} ${msg("Please deselect items and try again.")}`;
           }
