@@ -1702,9 +1702,12 @@ class OrgOps(BaseOrgs):
 
             seed_file_size = await self.file_ops.calculate_seed_file_storage(org.id)
 
-            thumbnail_size = await self.coll_ops.calculate_thumbnail_storage(org.id)
+            (
+                thumbnail_size,
+                dedupe_index_size,
+            ) = await self.coll_ops.calculate_collection_storage(org.id)
 
-            user_file_size = seed_file_size + thumbnail_size
+            user_file_size = seed_file_size + thumbnail_size + dedupe_index_size
 
             org_size = total_crawl_size + profile_size + user_file_size
 
@@ -1720,6 +1723,7 @@ class OrgOps(BaseOrgs):
                         "bytesStoredProfiles": profile_size,
                         "bytesStoredSeedFiles": seed_file_size,
                         "bytesStoredThumbnails": thumbnail_size,
+                        "bytesStoredDedupeIndexes": dedupe_index_size,
                     }
                 },
             )

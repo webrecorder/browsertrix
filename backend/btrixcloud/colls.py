@@ -1333,17 +1333,22 @@ class CollectionOps:
 
         return {"deleted": True}
 
-    async def calculate_thumbnail_storage(self, oid: UUID) -> int:
-        """Calculate storage for thumbnails in org"""
-        total_size = 0
+    async def calculate_collection_storage(self, oid: UUID) -> tuple(int, int):
+        """Calculate storage for thumbnails and dedupe indexes in org"""
+        thumbnail_size = 0
+        dedupe_index_size = 0
 
         cursor = self.collections.find({"oid": oid})
         async for coll_dict in cursor:
-            file_ = coll_dict.get("thumbnail")
-            if file_:
-                total_size += file_.get("size", 0)
+            thumbnail_file = coll_dict.get("thumbnail")
+            if thumbnail_file:
+                thumbnail_size += thumbnail_file.get("size", 0)
 
-        return total_size
+            dedupe_index_file = coll_dict.get("indexFile")
+            if dedupe_index_file:
+                dedupe_index_size += dedupe_index_file.get("size", 0)
+
+        return thumbnail_size, dedupe_index_size
 
     async def get_running_updates_count(self, coll_id: UUID, org: Organization) -> int:
         """Return count of running collection stats update background jobs"""
