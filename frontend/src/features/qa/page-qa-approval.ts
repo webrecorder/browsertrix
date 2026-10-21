@@ -239,6 +239,8 @@ export class PageQAToolbar extends BtrixElement {
 
     try {
       await this.api.fetch(
+        // FIXME `crawls` also currently works for uploaded items
+        // https://github.com/webrecorder/browsertrix/issues/3756
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.pageId}`,
         {
           method: "PATCH",
