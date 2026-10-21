@@ -1364,7 +1364,7 @@ def init_pages_api(
     async def get_page(
         crawl_id: str,
         page_id: UUID,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         """GET single page"""
         return await ops.get_page_out(page_id, org.id, crawl_id)
@@ -1378,7 +1378,7 @@ def init_pages_api(
         crawl_id: str,
         qa_run_id: str,
         page_id: UUID,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         """GET single page with QA details"""
         return await ops.get_page_out(page_id, org.id, crawl_id, qa_run_id=qa_run_id)
@@ -1461,7 +1461,7 @@ def init_pages_api(
     )
     async def get_crawl_pages_list(
         crawl_id: str,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
         urlPrefix: str | None = None,
@@ -1508,7 +1508,7 @@ def init_pages_api(
     )
     async def get_search_pages_list(
         crawl_id: str,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
         ts: datetime | None = None,
@@ -1686,7 +1686,7 @@ def init_pages_api(
         reviewed: bool | None = None,
         approved: str | None = None,
         hasNotes: bool | None = None,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str | None = None,
