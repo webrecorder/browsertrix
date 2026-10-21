@@ -62,7 +62,7 @@ The `access_key` and `secret_key` should be changed, otherwise no additional cha
 The S3 bucket is accessible via `/data/` path on the same host Browsertrix is running on, eg. `http://localhost:30870/data/`.
 
 
-### Using External S3 Storage Providers
+### Using External S3 Storage Providers (Internet)
 
 Browsertrix can also be used with external S3 storage providers, which can be configured as follows:
 
@@ -78,7 +78,6 @@ storages:
     is_default_primary: true
 ```
 
-
 The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
 `https://s3provider.example.com/bucket/path/`.
 
@@ -86,7 +85,7 @@ An optional `bucket_name` can also be provided. This can be used as a shortcut w
 
 For example, the following:
 
-```
+```yaml
 ...
 endpoint_url: https://s3provider.example.com/
 bucket_name: bucket_name
@@ -95,7 +94,7 @@ bucket_name: bucket_name
 
 is equivalent to:
 
-```
+```yaml
 endpoint_url: https://s3provider.example.com/bucket_name/
 ```
 
@@ -103,6 +102,35 @@ Browsertrix will handle presigning S3 URLs so that WACZ files (and other data) c
 
 Since the local Minio service is not used, `minio_local: false` can be set to save resource in not deploying Minio.
 
+### Using External S3 Storage Providers (LAN)
+
+Browsertrix can use external S3 storage providers hosted locally outside of the Kubernetes deployment within private IP address ranges: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16. However, the Kubernetes egress policy for the Browsertrix Crawler worker—which uploads WACZ files—intentionally blocks connections to these reserved IP ranges which results in an [ETIMEDOUT error](https://github.com/webrecorder/browsertrix/issues/2121). To allow uploads to a private locally hosted S3 endpoint, configure an exception in the Helm chart used for deployment. For example:
+
+```yaml
+crawler_network_policy_additional_egress:
+  - to:
+      - ipBlock:
+          cidr: 192.168.1.105/32
+    ports:
+      - protocol: TCP
+        port: 9000
+```
+
+... then continue to define your S3 target:
+
+```yaml
+minio_local: false
+
+storages:
+- name: "default"
+  type: s3
+  access_key: "accesskey"
+  secret_key: "secretkey"
+  endpoint_url: "http://192.168.1.105:9000/btrix/"
+  is_default_primary: true
+```
+
+See [Local Network Access Policy and Custom Services](../customization/#local-network-access-policy-and-custom-services) for additional information.
 
 ### Custom Access Endpoint URL
 
@@ -119,7 +147,7 @@ Since the `access_endpoint_url` may use either path or virtual host addressing, 
 #### Virtual Host vs Path Addressing for Access Endpoints
 
 Virtual host addressing:
-```
+```yaml
 endpoint_url: https://s3provider.example.com/bucket/path/
 access_endpoint_url: https://my-custom-domain.example.com/path/
 access_addressing_style: virtual
@@ -128,7 +156,7 @@ access_addressing_style: virtual
 ```
 
 Path addressing:
-```
+```yaml
 ...
 endpoint_url: https://s3provider.example.com/bucket/path/
 access_endpoint_url: https://my-custom-domain.example.com/bucket/path/
