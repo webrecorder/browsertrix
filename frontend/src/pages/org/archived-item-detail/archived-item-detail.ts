@@ -27,6 +27,7 @@ import {
   type Breadcrumb,
 } from "@/layouts/pageHeader";
 import { panelBody } from "@/layouts/panel";
+import type * as QATypes from "@/pages/org/archived-item-qa/types";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type {
@@ -54,6 +55,7 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { isNotEqual } from "@/utils/is-not-equal";
 import {
   completeOnboardingStep,
   OnboardingStep,
@@ -117,7 +119,7 @@ export class ArchivedItemDetail extends BtrixElement {
   @state()
   private isRunActive = false;
 
-  @state()
+  @state({ hasChanged: isNotEqual })
   qaRuns?: QARun[];
 
   @state()
@@ -181,7 +183,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+    return `${new URL(window.location.href).pathname}/review/${
+      (this.itemType === "crawl"
+        ? "screenshots"
+        : "replay") satisfies QATypes.QATab
+    }${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
   }
 
   private timerId?: number;
@@ -254,8 +260,8 @@ export class ArchivedItemDetail extends BtrixElement {
       void this.fetchCrawl();
       if (this.itemType === "crawl") {
         void this.fetchSeeds();
-        void this.fetchQARuns();
       }
+      void this.fetchQARuns();
     } else if (changedProperties.get("activeTab")) {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
@@ -405,11 +411,11 @@ export class ArchivedItemDetail extends BtrixElement {
         sectionContent = this.renderPanel(
           html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${when(this.isCrawler && this.qaRuns, this.renderQAHeader)}
+              ${when(this.isCrawler && this.qaRuns, this.renderQAActions)}
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .crawlId=${this.itemId}
+              .itemId=${this.itemId}
               .workflowId=${this.workflowId}
               .item=${this.item}
               .itemType=${this.itemType}
@@ -1381,8 +1387,9 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderQAHeader = (qaRuns: QARun[]) => {
+  private readonly renderQAActions = (qaRuns: QARun[]) => {
     const analyzing = this.isRunActive;
+    const isCrawlType = this.itemType === "crawl";
 
     return html`
       ${analyzing
@@ -1408,16 +1415,18 @@ export class ArchivedItemDetail extends BtrixElement {
               </sl-button>
             </sl-button-group>
           `
-        : runAnalysisButton({
-            org: this.org ?? undefined,
-            item: this.item,
-            runCount: qaRuns.length,
-            runCallback: () => void this.startQARun(),
-          })}
+        : isCrawlType
+          ? runAnalysisButton({
+              org: this.org ?? undefined,
+              item: this.item,
+              runCount: qaRuns.length,
+              runCallback: () => void this.startQARun(),
+            })
+          : nothing}
 
       <sl-button
         size="small"
-        variant=${qaRuns.length === 0 ? "default" : "primary"}
+        variant=${isCrawlType && qaRuns.length === 0 ? "default" : "primary"}
         href=${this.reviewUrl}
         @click=${this.navigate.link}
       >
@@ -1781,8 +1790,6 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async fetchQARuns(): Promise<void> {
-    if (this.itemType !== "crawl") return;
-
     try {
       this.qaRuns = await this.getQARuns();
     } catch {
@@ -1821,6 +1828,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async getQARuns(): Promise<QARun[]> {
+    if (this.itemType !== "crawl") {
+      // `/all-crawls` and `/uploads` endpoints for `/qa` are not currently supported
+      return [];
+    }
+
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );
