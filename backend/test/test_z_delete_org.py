@@ -177,7 +177,6 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
         bytes_dedupe_indexes=bytes_dedupe_indexes,
     )
 
-    assert data["bytesStored"] == bytes_total
     assert data["bytesStoredCrawls"] == bytes_crawls
     assert data["bytesStoredFinishedCrawls"] == bytes_finished_crawls
     assert data["bytesStoredActiveCrawls"] == bytes_active_crawls
@@ -186,6 +185,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     assert data["bytesStoredSeedFiles"] == bytes_seed_files
     assert data["bytesStoredThumbnails"] == bytes_thumbnails
     assert data["bytesStoredDedupeIndexes"] == bytes_dedupe_indexes
+    assert data["bytesStored"] == bytes_total
 
 
 def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
