@@ -819,7 +819,7 @@ export class ArchivedItemDetail extends BtrixElement {
             () => html`
               <btrix-menu-item-link href=${this.reviewUrl}>
                 <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Crawl")}
+                ${msg("Review Pages")}
               </btrix-menu-item-link>
               <btrix-menu-item-link
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
@@ -1432,7 +1432,7 @@ export class ArchivedItemDetail extends BtrixElement {
         @click=${this.navigate.link}
       >
         <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-        ${msg("Review Crawl")}
+        ${msg("Review Pages")}
       </sl-button>
 
       <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>

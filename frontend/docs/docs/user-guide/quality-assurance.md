@@ -39,4 +39,4 @@ You will see a list of all the Web pages crawled featuring its Title, URL, any a
 
 ## Review Crawl Analysis
 
-Once the QA analysis run is complete, you can inspect top-priority pages by tapping [**Review Crawl**](./qa-review.md).
+Once the QA analysis run is complete, you can inspect top-priority pages by tapping [**Review Pages**](./qa-review.md).

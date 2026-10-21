@@ -754,7 +754,7 @@ export class ArchivedItemQA extends BtrixElement {
   private renderBackLink() {
     return pageBack({
       href: this.backUrl,
-      content: this.fromWorkflow ? msg("Workflow") : msg("Crawl QA Overview"),
+      content: this.fromWorkflow ? msg("Workflow") : msg("QA Overview"),
     });
   }
 
@@ -771,7 +771,7 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-radio-group
                 class="mb-5"
                 name="reviewStatus"
-                label=${msg("Rate this crawl:")}
+                label=${msg("Rate this archived item:")}
                 value=${this.item?.reviewStatus ?? ""}
                 required
               >
@@ -819,7 +819,7 @@ export class ArchivedItemQA extends BtrixElement {
             </div>
             <div class="flex-1 pl-4 md:border-l">
               <sl-textarea
-                label=${msg("Update crawl metadata?")}
+                label=${msg("Update item metadata?")}
                 name="description"
                 value=${this.item?.description ?? ""}
                 placeholder=${msg("Add a description")}
