@@ -8,7 +8,7 @@ Quality assurance (QA) in web archiving is the systematic process of verifying t
 
 The process often involves checking for broken links, missing content, and ensuring the archived version matches the website website at the time it was crawled, especially sites with dynamic and interactive elements.
 
-To access QA tools, go to the **Quality Assurance** tab of a crawled item’s detail page. QA tools are available to org admins and members with “crawler” permissions.
+To access QA tools, go to the **Quality Assurance** tab of an archived item’s detail page. QA tools are available to org admins and members with “crawler” permissions.
 
 ## Overview of Quality Assurance
 
@@ -16,8 +16,8 @@ Quality assurance has often been performed manually, typically by visually compa
 
 With assisted QA, you can analyze any web archive crawled through Browsertrix to compare, replay, and review pages in the web archive.
 
-!!! note "Types of crawls you can review"
-    You are able to review and analyze crawls that have been completed or even stopped. You would not be able to review or run an analysis on cancelled crawls, paused crawls or uploaded crawls.
+!!! note "Types of archived items you can review"
+    You are able to review and analyze crawls that have been completed or even stopped. You would not be able to run an analysis on cancelled crawls, paused crawls or uploaded crawls.
 
 At a quick glance, you can tell:
 
@@ -27,7 +27,7 @@ At a quick glance, you can tell:
 
 ### Crawl Results
 
-You will be automatically given a summarization of your crawl, even without running analysis.
+You will be automatically given a summarization of your crawled item, even without running analysis.
 
 You will get a count of all the HTML (HyperText Markup Language) files captured as well as non-HTML files. Non-HTML files include PDFs, Word and text files, images, and other downloadable content that the crawler discovers through clickable links on a page. These files are not analyzed, as they are standalone assets without comparable Web elements. Failed pages did not respond when the crawlers tried to visit them.
 
@@ -37,6 +37,6 @@ A Page refers to a Web page. A Web page is a Web document that is accessed in a 
 
 You will see a list of all the Web pages crawled featuring its Title, URL, any approval rating and comments done by users of the org.
 
-## Review Crawl Analysis
+## Submit Review
 
-Once the QA analysis run is complete, you can inspect top-priority pages by tapping [**Review Pages**](./qa-review.md).
+You can review individual pages and submit an overall QA report by tapping [**Review Pages**](./qa-review.md).
