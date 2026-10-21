@@ -2014,13 +2014,13 @@ def init_crawl_config_api(
     @router.get("/crawler-channels", response_model=CrawlerChannels)
     async def get_crawler_channels(
         # pylint: disable=unused-argument
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return ops.crawler_channels
 
     @router.get("/crawler-proxies", response_model=CrawlerProxies)
     async def get_crawler_proxies(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return CrawlerProxies(
             default_proxy_id=DEFAULT_PROXY_ID,
