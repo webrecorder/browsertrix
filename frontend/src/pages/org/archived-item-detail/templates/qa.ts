@@ -242,7 +242,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
             <sl-divider></sl-divider>
 
             <btrix-tab-group-panel name="pages" class="block">
-              ${this.renderPages()}
+              ${this.renderCrawlResults()} ${this.renderPages()}
             </btrix-tab-group-panel>
             <btrix-tab-group-panel name="runs" class="block">
               ${this.renderQARuns()}
@@ -252,7 +252,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
     `;
   }
 
-  private renderPages() {
+  private renderCrawlResults() {
     const fileCount = this.item?.filePageCount || 0;
     const errorCount = this.item?.errorPageCount || 0;
     const doneCount = this.item?.stats?.done
@@ -265,79 +265,81 @@ export class ArchivedItemDetailQA extends BtrixElement {
     let count: TemplateResult;
 
     return html`<btrix-card class="gap-y-1">
-        <div slot="title" class="flex flex-wrap justify-between">
-          ${msg("Crawl Results")}
-          <div class="text-neutral-500">
-            <sl-tooltip
-              content=${msg(
-                "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
-              )}
-            >
-              <sl-icon class="text-base" name="info-circle"></sl-icon>
-            </sl-tooltip>
-          </div>
+      <div slot="title" class="flex flex-wrap justify-between">
+        ${msg("Crawl Results")}
+        <div class="text-neutral-500">
+          <sl-tooltip
+            content=${msg(
+              "Non-HTML files captured as pages are known good files that the crawler found as clickable links on a page and don't need to be analyzed. Failed pages did not respond when the crawler tried to visit them.",
+            )}
+          >
+            <sl-icon class="text-base" name="info-circle"></sl-icon>
+          </sl-tooltip>
         </div>
-        ${this.item
-          ? html`<div class="tabular-nums">
-              <p>
-                ${((count = html`<span class="text-primary"
-                  >${this.localize.number(htmlCount)}</span
-                >`),
-                pluralize<string | TemplateResult>(htmlCount, {
-                  zero: msg(html`${count} HTML pages`),
-                  one: msg(html`${count} HTML page`),
-                  two: msg(html`${count} HTML pages`),
-                  few: msg(html`${count} HTML pages`),
-                  many: msg(html`${count} HTML pages`),
-                  other: msg(html`${count} HTML pages`),
-                }))}
-              </p>
-              <p>
-                ${((count = html`<span class="text-neutral-600"
-                  >${this.localize.number(fileCount)}</span
-                >`),
-                pluralize<string | TemplateResult>(fileCount, {
-                  zero: msg(html`${count} Non-HTML files captured as pages`),
-                  one: msg(html`${count} Non-HTML files captured as page`),
-                  two: msg(html`${count} Non-HTML files captured as pages`),
-                  few: msg(html`${count} Non-HTML files captured as pages`),
-                  many: msg(html`${count} Non-HTML files captured as pages`),
-                  other: msg(html`${count} Non-HTML files captured as pages`),
-                }))}
-              </p>
-              <p>
-                ${((count = html`<span class="text-danger"
-                  >${this.localize.number(errorCount)}</span
-                >`),
-                pluralize<string | TemplateResult>(errorCount, {
-                  zero: msg(html`${count} Failed pages`),
-                  one: msg(html`${count} Failed page`),
-                  two: msg(html`${count} Failed pages`),
-                  few: msg(html`${count} Failed pages`),
-                  many: msg(html`${count} Failed pages`),
-                  other: msg(html`${count} Failed pages`),
-                }))}
-                ${errorCount > 0
-                  ? html`—
-                      <a
-                        class="text-primary"
-                        href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.itemId}#logs`}
-                        >${msg("View error logs")}</a
-                      >`
-                  : ""}
-              </p>
-            </div> `
-          : html`
-              <sl-skeleton class="mb-[5px] w-24"></sl-skeleton>
-              <sl-skeleton class="mb-[5px] w-64"></sl-skeleton>
-              <sl-skeleton class="mb-[5px] w-28"></sl-skeleton>
-            `}
-        ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
-          this.renderAnalysis(qaRuns),
-        )}
-      </btrix-card>
+      </div>
+      ${this.item
+        ? html`<div class="tabular-nums">
+            <p>
+              ${((count = html`<span class="text-primary"
+                >${this.localize.number(htmlCount)}</span
+              >`),
+              pluralize<string | TemplateResult>(htmlCount, {
+                zero: msg(html`${count} HTML pages`),
+                one: msg(html`${count} HTML page`),
+                two: msg(html`${count} HTML pages`),
+                few: msg(html`${count} HTML pages`),
+                many: msg(html`${count} HTML pages`),
+                other: msg(html`${count} HTML pages`),
+              }))}
+            </p>
+            <p>
+              ${((count = html`<span class="text-neutral-600"
+                >${this.localize.number(fileCount)}</span
+              >`),
+              pluralize<string | TemplateResult>(fileCount, {
+                zero: msg(html`${count} Non-HTML files captured as pages`),
+                one: msg(html`${count} Non-HTML files captured as page`),
+                two: msg(html`${count} Non-HTML files captured as pages`),
+                few: msg(html`${count} Non-HTML files captured as pages`),
+                many: msg(html`${count} Non-HTML files captured as pages`),
+                other: msg(html`${count} Non-HTML files captured as pages`),
+              }))}
+            </p>
+            <p>
+              ${((count = html`<span class="text-danger"
+                >${this.localize.number(errorCount)}</span
+              >`),
+              pluralize<string | TemplateResult>(errorCount, {
+                zero: msg(html`${count} Failed pages`),
+                one: msg(html`${count} Failed page`),
+                two: msg(html`${count} Failed pages`),
+                few: msg(html`${count} Failed pages`),
+                many: msg(html`${count} Failed pages`),
+                other: msg(html`${count} Failed pages`),
+              }))}
+              ${errorCount > 0
+                ? html`—
+                    <a
+                      class="text-primary"
+                      href=${`/orgs/${this.orgSlugState}/workflows/${this.workflowId}/crawls/${this.itemId}#logs`}
+                      >${msg("View error logs")}</a
+                    >`
+                : ""}
+            </p>
+          </div> `
+        : html`
+            <sl-skeleton class="mb-[5px] w-24"></sl-skeleton>
+            <sl-skeleton class="mb-[5px] w-64"></sl-skeleton>
+            <sl-skeleton class="mb-[5px] w-28"></sl-skeleton>
+          `}
+      ${when(this.mostRecentNonFailedQARun && this.qaRuns, (qaRuns) =>
+        this.renderAnalysis(qaRuns),
+      )}
+    </btrix-card>`;
+  }
 
-      <div>
+  private renderPages() {
+    return html`<div>
         <h4 class="mb-2 mt-4 text-lg tabular-nums leading-8">
           <span class="font-semibold">${msg("Pages")}</span>
           ${this.pages != null
