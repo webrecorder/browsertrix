@@ -83,6 +83,12 @@ spec:
           {{- end }}
 
           imagePullPolicy: {{ .Values.mongo_pull_policy }}
+          # needed for mongo 8 with latest kernels
+          # (see: https://github.com/appwrite/appwrite/issues/12786)
+          env:
+          - name: GLIBC_TUNABLES
+            value: "glibc.pthread.rseq=1"
+
           envFrom:
             - secretRef:
                 name: mongo-auth
@@ -100,13 +106,25 @@ spec:
               cpu: {{ .Values.mongo_cpu }}
               memory: {{ .Values.mongo_memory }}
 
-          # should work with 6.0.x with longer timeout
-          readinessProbe:
-            timeoutSeconds: 20
-            periodSeconds: 40
+          # wait for startup, upto 120 x 5 seconds retries
+          startupProbe:
             initialDelaySeconds: 5
-            successThreshold: 1
-            failureThreshold: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 120
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - db.adminCommand('ping')
+                - --quiet
+
+          # ensure db is ready
+          readinessProbe:
+            initialDelaySeconds: 0
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
             exec:
               command:
                 - mongosh
