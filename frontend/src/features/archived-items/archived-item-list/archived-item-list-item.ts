@@ -17,7 +17,7 @@ import {
   type Crawl,
   type ListArchivedItem,
 } from "@/types/crawler";
-import { renderName } from "@/utils/crawler";
+import { isSuccessfullyFinished, renderName } from "@/utils/crawler";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -291,7 +291,7 @@ export class ArchivedItemListItem extends BtrixElement {
               </sl-tooltip>`}
         </btrix-table-cell>
         <btrix-table-cell>
-          ${isUpload
+          ${!isSuccessfullyFinished(this.item)
             ? notApplicable
             : html`<sl-tooltip
                 hoist
