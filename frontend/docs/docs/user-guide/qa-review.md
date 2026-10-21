@@ -1,4 +1,4 @@
-# Review Crawl
+# Review Archived Pages
 
 Review crawl quality using screenshots, extracted text, and document status codes.
 
@@ -15,6 +15,9 @@ You will be able to review the crawled pages by:
 - **Screenshots**: A static visual snapshot of a section of the captured page
 - **Text**: A full transcript of the text within the page
 - **Resources**: Web documents (i.e. HTML, stylesheets, fonts, etc.) that make up the page
+- **Replay**: An interactive snapshot of the captured page
+
+Screenshots, text, and resources are not available for uploaded items.
 
 !!! note "Navigation Prevented in Replay within QA"
     To navigate through the captured website, use the Replay feature in the Crawling section. Links will not be clickable when using the Replay tab within the Analysis view.
@@ -71,7 +74,7 @@ The pages from the crawl will be listed so you can click on pages based on parti
 
 Once a satisfactory amount of pages have been reviewed, press the Finish Review button to give the archived item an overall quality score ranging from "Excellent!" to "Bad". You can add any additional notes or considerations in the archived item description, which can be edited during this step.
 
-### Rate This Crawl
+### Rate This Item
 
 This quality score helps others in your organization understand how well the page was captured and whether it needs to be recaptured. You can choose from the following rating ranges:
 
@@ -80,6 +83,6 @@ This quality score helps others in your organization understand how well the pag
 - Fair. Similar to the original pages, but may be missing non-critical content or functionality
 - Bad. Missing all content and functionality from original pages
 
-### Update Crawl Metadata
+### Update Item Metadata
 
 You can include additional metadata in the provided text area. There is a maximum of 500 characters for this section.

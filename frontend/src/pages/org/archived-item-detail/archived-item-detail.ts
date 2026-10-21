@@ -27,6 +27,7 @@ import {
   type Breadcrumb,
 } from "@/layouts/pageHeader";
 import { panelBody } from "@/layouts/panel";
+import type * as QATypes from "@/pages/org/archived-item-qa/types";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import type {
@@ -54,6 +55,7 @@ import {
   renderName,
 } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import { isNotEqual } from "@/utils/is-not-equal";
 import {
   completeOnboardingStep,
   OnboardingStep,
@@ -117,7 +119,7 @@ export class ArchivedItemDetail extends BtrixElement {
   @state()
   private isRunActive = false;
 
-  @state()
+  @state({ hasChanged: isNotEqual })
   qaRuns?: QARun[];
 
   @state()
@@ -181,7 +183,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+    return `${new URL(window.location.href).pathname}/review/${
+      (this.itemType === "crawl"
+        ? "screenshots"
+        : "replay") satisfies QATypes.QATab
+    }${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
   }
 
   private timerId?: number;
@@ -254,8 +260,8 @@ export class ArchivedItemDetail extends BtrixElement {
       void this.fetchCrawl();
       if (this.itemType === "crawl") {
         void this.fetchSeeds();
-        void this.fetchQARuns();
       }
+      void this.fetchQARuns();
     } else if (changedProperties.get("activeTab")) {
       if (this.activeTab === "qa") {
         void this.fetchQARuns();
@@ -402,20 +408,17 @@ export class ArchivedItemDetail extends BtrixElement {
 
     switch (this.activeTab) {
       case "qa": {
-        if (!this.isCrawler) {
-          sectionContent = "";
-          break;
-        }
         sectionContent = this.renderPanel(
           html`${this.renderTitle(this.tabLabels.qa, { beta: true })}
             <div class="ml-auto flex flex-wrap justify-end gap-2">
-              ${when(this.qaRuns, this.renderQAHeader)}
+              ${when(this.isCrawler && this.qaRuns, this.renderQAActions)}
             </div> `,
           html`
             <btrix-archived-item-detail-qa
-              .crawlId=${this.itemId}
+              .itemId=${this.itemId}
               .workflowId=${this.workflowId}
-              .crawl=${this.item}
+              .item=${this.item}
+              .itemType=${this.itemType}
               .qaRuns=${this.qaRuns}
               .qaRunId=${this.qaRunId}
               .mostRecentNonFailedQARun=${this.mostRecentNonFailedQARun}
@@ -718,17 +721,12 @@ export class ArchivedItemDetail extends BtrixElement {
         ${when(this.item, (item) =>
           isSuccessfullyFinished(item)
             ? html`
-                ${when(
-                  this.itemType === "crawl" && this.isCrawler,
-                  () => html`
-                    ${renderNavItem({
-                      section: "qa",
-                      iconLibrary: "default",
-                      icon: "clipboard2-data-fill",
-                      beta: true,
-                    })}
-                  `,
-                )}
+                ${renderNavItem({
+                  section: "qa",
+                  iconLibrary: "default",
+                  icon: "clipboard2-data-fill",
+                  beta: true,
+                })}
                 ${renderNavItem({
                   section: "replay",
                   iconLibrary: "default",
@@ -775,13 +773,11 @@ export class ArchivedItemDetail extends BtrixElement {
     return pageHeader({
       title: this.item ? renderName(this.item) : undefined,
       secondary: when(this.item, badges, badgesSkeleton),
-      actions: this.isCrawler
-        ? this.item
-          ? this.renderActions()
-          : html`<sl-skeleton
-              class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
-            ></sl-skeleton>`
-        : undefined,
+      actions: this.item
+        ? this.renderActions()
+        : html`<sl-skeleton
+            class="h-8 w-24 [--border-radius:theme(borderRadius.sm)]"
+          ></sl-skeleton>`,
     });
   }
 
@@ -818,17 +814,12 @@ export class ArchivedItemDetail extends BtrixElement {
             `,
           )}
           ${when(
-            isSuccess,
+            this.isCrawler && isSuccess,
             () => html`
-              ${when(
-                isCrawlType,
-                () => html`
-                  <btrix-menu-item-link href=${this.reviewUrl}>
-                    <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                    ${msg("Review Crawl")}
-                  </btrix-menu-item-link>
-                `,
-              )}
+              <btrix-menu-item-link href=${this.reviewUrl}>
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                ${msg("Review Pages")}
+              </btrix-menu-item-link>
               <btrix-menu-item-link
                 href=${`/api/orgs/${this.orgId}/all-crawls/${this.itemId}/download?auth_bearer=${authToken}&preferSingleWACZ=true`}
                 download
@@ -1396,8 +1387,9 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private readonly renderQAHeader = (qaRuns: QARun[]) => {
+  private readonly renderQAActions = (qaRuns: QARun[]) => {
     const analyzing = this.isRunActive;
+    const isCrawlType = this.itemType === "crawl";
 
     return html`
       ${analyzing
@@ -1423,21 +1415,23 @@ export class ArchivedItemDetail extends BtrixElement {
               </sl-button>
             </sl-button-group>
           `
-        : runAnalysisButton({
-            org: this.org ?? undefined,
-            item: this.item,
-            runCount: qaRuns.length,
-            runCallback: () => void this.startQARun(),
-          })}
+        : isCrawlType
+          ? runAnalysisButton({
+              org: this.org ?? undefined,
+              item: this.item,
+              runCount: qaRuns.length,
+              runCallback: () => void this.startQARun(),
+            })
+          : nothing}
 
       <sl-button
         size="small"
-        variant=${qaRuns.length === 0 ? "default" : "primary"}
+        variant=${isCrawlType && qaRuns.length === 0 ? "default" : "primary"}
         href=${this.reviewUrl}
         @click=${this.navigate.link}
       >
         <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-        ${msg("Review Crawl")}
+        ${msg("Review Pages")}
       </sl-button>
 
       <btrix-dialog id="stopQARunDialog" .label=${msg("Stop QA Analysis?")}>
@@ -1834,6 +1828,11 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private async getQARuns(): Promise<QARun[]> {
+    if (this.itemType !== "crawl") {
+      // `/all-crawls` and `/uploads` endpoints for `/qa` are not currently supported
+      return [];
+    }
+
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );

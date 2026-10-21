@@ -36,6 +36,7 @@ import {
 import { type UpdatePageApprovalDetail } from "@/features/qa/page-qa-approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
 import { pageBack } from "@/layouts/pageHeader";
+import { OrgTab } from "@/routes";
 import type {
   APIPaginatedList,
   APIPaginationQuery,
@@ -103,6 +104,9 @@ export class ArchivedItemQA extends BtrixElement {
   static styles = styles;
 
   @property({ type: String })
+  itemType: ArchivedItem["type"] = "crawl";
+
+  @property({ type: String })
   workflowId?: string;
 
   @property({ type: String })
@@ -115,7 +119,7 @@ export class ArchivedItemQA extends BtrixElement {
   qaRunId?: string;
 
   @property({ type: String })
-  tab: QATypes.QATab = "screenshots";
+  tab: QATypes.QATab = this.itemType == "crawl" ? "screenshots" : "replay";
 
   @state()
   private item?: ArchivedItem;
@@ -431,17 +435,26 @@ export class ArchivedItemQA extends BtrixElement {
 
   private get backUrl() {
     if (this.fromWorkflow) {
-      return `${this.navigate.orgBasePath}/workflows/${this.workflowId}/latest`;
+      return `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${this.workflowId}/latest`;
     }
 
-    return `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}#qa`;
+    return `${this.itemBaseUrl}#qa`;
+  }
+
+  private get itemBaseUrl() {
+    if (this.workflowId) {
+      return `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${this.workflowId}/crawls/${this.itemId}`;
+    }
+
+    return `${this.navigate.orgBasePath}/${OrgTab.Items}/${this.itemType}/${this.itemId}`;
   }
 
   render() {
-    const crawlBaseUrl = `${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}`;
+    const itemBaseUrl = this.itemBaseUrl;
 
     const searchParams = new URLSearchParams(window.location.search);
     const itemName = this.item ? renderName(this.item) : nothing;
+    const isCrawlType = this.itemType === "crawl";
     const [prevPage, currentPage, nextPage] = this.getPageListSliceByCurrent();
 
     return html`
@@ -494,7 +507,7 @@ export class ArchivedItemQA extends BtrixElement {
                   <sl-icon slot="prefix" name="patch-check-fill"></sl-icon>
                   ${msg("Rate Crawl")}
                 </sl-menu-item>
-                <btrix-menu-item-link href="${crawlBaseUrl}#qa">
+                <btrix-menu-item-link href="${itemBaseUrl}#qa">
                   <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
                   ${msg("Go to QA Overview")}
                 </btrix-menu-item-link>
@@ -569,46 +582,50 @@ export class ArchivedItemQA extends BtrixElement {
             aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
-            <btrix-navigation-button
-              id="screenshot-tab"
-              href=${`${crawlBaseUrl}/review/screenshots?${searchParams.toString()}`}
-              ?active=${this.tab === "screenshots"}
-              @click=${this.onTabNavClick}
-            >
-              <sl-icon name="images"></sl-icon>
-              ${msg("Screenshot")}
-              ${when(this.page || currentPage, (page) =>
-                isQaPage(page)
-                  ? renderSeverityBadge(page.qa.screenshotMatch)
-                  : nothing,
-              )}
-            </btrix-navigation-button>
-            <btrix-navigation-button
-              id="text-tab"
-              href=${`${crawlBaseUrl}/review/text?${searchParams.toString()}`}
-              ?active=${this.tab === "text"}
-              @click=${this.onTabNavClick}
-            >
-              <sl-icon name="file-text-fill"></sl-icon>
-              ${msg("Text")}
-              ${when(this.page || currentPage, (page) =>
-                isQaPage(page)
-                  ? renderSeverityBadge(page.qa.textMatch)
-                  : nothing,
-              )}
-            </btrix-navigation-button>
-            <btrix-navigation-button
-              id="text-tab"
-              href=${`${crawlBaseUrl}/review/resources?${searchParams.toString()}`}
-              ?active=${this.tab === "resources"}
-              @click=${this.onTabNavClick}
-            >
-              <sl-icon name="puzzle-fill"></sl-icon>
-              ${msg("Resources")}
-            </btrix-navigation-button>
+            ${when(
+              isCrawlType,
+              () =>
+                html`<btrix-navigation-button
+                    id="screenshot-tab"
+                    href=${`${itemBaseUrl}/review/screenshots?${searchParams.toString()}`}
+                    ?active=${this.tab === "screenshots"}
+                    @click=${this.onTabNavClick}
+                  >
+                    <sl-icon name="images"></sl-icon>
+                    ${msg("Screenshot")}
+                    ${when(this.page || currentPage, (page) =>
+                      isQaPage(page)
+                        ? renderSeverityBadge(page.qa.screenshotMatch)
+                        : nothing,
+                    )}
+                  </btrix-navigation-button>
+                  <btrix-navigation-button
+                    id="text-tab"
+                    href=${`${itemBaseUrl}/review/text?${searchParams.toString()}`}
+                    ?active=${this.tab === "text"}
+                    @click=${this.onTabNavClick}
+                  >
+                    <sl-icon name="file-text-fill"></sl-icon>
+                    ${msg("Text")}
+                    ${when(this.page || currentPage, (page) =>
+                      isQaPage(page)
+                        ? renderSeverityBadge(page.qa.textMatch)
+                        : nothing,
+                    )}
+                  </btrix-navigation-button>
+                  <btrix-navigation-button
+                    id="text-tab"
+                    href=${`${itemBaseUrl}/review/resources?${searchParams.toString()}`}
+                    ?active=${this.tab === "resources"}
+                    @click=${this.onTabNavClick}
+                  >
+                    <sl-icon name="puzzle-fill"></sl-icon>
+                    ${msg("Resources")}
+                  </btrix-navigation-button>`,
+            )}
             <btrix-navigation-button
               id="replay-tab"
-              href=${`${crawlBaseUrl}/review/replay?${searchParams.toString()}`}
+              href=${`${itemBaseUrl}/review/replay?${searchParams.toString()}`}
               ?active=${this.tab === "replay"}
               @click=${this.onTabNavClick}
             >
@@ -617,7 +634,7 @@ export class ArchivedItemQA extends BtrixElement {
             </btrix-navigation-button>
             <div class="ml-auto flex items-center gap-3">
               ${when(
-                !this.analyzed,
+                isCrawlType && !this.analyzed,
                 () =>
                   html`<btrix-popover
                     content=${msg(
@@ -633,7 +650,7 @@ export class ArchivedItemQA extends BtrixElement {
                   </btrix-popover>`,
               )}
               ${when(
-                this.noRuns,
+                isCrawlType && this.noRuns,
                 () =>
                   runAnalysisButton({
                     org: this.org ?? undefined,
@@ -643,7 +660,7 @@ export class ArchivedItemQA extends BtrixElement {
                   }),
                 () =>
                   when(
-                    this.notFailedQaRuns,
+                    isCrawlType && this.notFailedQaRuns,
                     (qaRuns) => html`
                       <btrix-qa-run-dropdown
                         .items=${qaRuns}
@@ -737,7 +754,7 @@ export class ArchivedItemQA extends BtrixElement {
   private renderBackLink() {
     return pageBack({
       href: this.backUrl,
-      content: this.fromWorkflow ? msg("Workflow") : msg("Crawl QA Overview"),
+      content: this.fromWorkflow ? msg("Workflow") : msg("QA Overview"),
     });
   }
 
@@ -754,7 +771,7 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-radio-group
                 class="mb-5"
                 name="reviewStatus"
-                label=${msg("Rate this crawl:")}
+                label=${msg("Rate this archived item:")}
                 value=${this.item?.reviewStatus ?? ""}
                 required
               >
@@ -802,7 +819,7 @@ export class ArchivedItemQA extends BtrixElement {
             </div>
             <div class="flex-1 pl-4 md:border-l">
               <sl-textarea
-                label=${msg("Update crawl metadata?")}
+                label=${msg("Update item metadata?")}
                 name="description"
                 value=${this.item?.description ?? ""}
                 placeholder=${msg("Add a description")}
@@ -1200,7 +1217,7 @@ export class ArchivedItemQA extends BtrixElement {
     if (!rwpId) return;
 
     const query = queryString.stringify({ withDependencies: true });
-    const replaySource = `/api/orgs/${this.orgId}/crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?${query}`;
+    const replaySource = `/api/orgs/${this.orgId}/all-crawls/${this.itemId}${qa ? `/qa/${rwpId}` : ""}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
     console.debug("rendering rwp", rwpId);
@@ -1289,6 +1306,8 @@ export class ArchivedItemQA extends BtrixElement {
 
     try {
       const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
+        // FIXME `crawls` also currently works for uploaded items
+        // https://github.com/webrecorder/browsertrix/issues/3756
         `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes`,
         {
           method: "POST",
@@ -1329,7 +1348,7 @@ export class ArchivedItemQA extends BtrixElement {
   private async deletePageComment(commentId: string): Promise<void> {
     try {
       await this.api.fetch(
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes/delete`,
+        `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages/${this.itemPageId}/notes/delete`,
         {
           method: "POST",
           body: JSON.stringify({ delete_list: [commentId] }),
@@ -1374,6 +1393,11 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private async getQARuns(): Promise<QARun[]> {
+    if (this.itemType !== "crawl") {
+      // `/all-crawls` and `/uploads` endpoints for `/qa` are not currently supported
+      return [];
+    }
+
     return this.api.fetch<QARun[]>(
       `/orgs/${this.orgId}/crawls/${this.itemId}/qa`,
     );
@@ -1611,8 +1635,8 @@ export class ArchivedItemQA extends BtrixElement {
   private async getPage(pageId: string): Promise<ArchivedItemQAPage> {
     return this.api.fetch<ArchivedItemQAPage>(
       this.analyzed
-        ? `/orgs/${this.orgId}/crawls/${this.itemId}/qa/${this.qaRunId}/pages/${pageId}`
-        : `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${pageId}`,
+        ? `/orgs/${this.orgId}/all-crawls/${this.itemId}/qa/${this.qaRunId}/pages/${pageId}`
+        : `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages/${pageId}`,
     );
   }
 
@@ -1650,7 +1674,7 @@ export class ArchivedItemQA extends BtrixElement {
     );
 
     return this.api.fetch<APIPaginatedList<QATypes.Page>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId ?? ""}${this.qaRunId && this.analyzed ? `/qa/${this.qaRunId}` : ""}/pages?${query}`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId ?? ""}${this.qaRunId && this.analyzed ? `/qa/${this.qaRunId}` : ""}/pages?${query}`,
     );
   }
 

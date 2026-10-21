@@ -1691,7 +1691,7 @@ export class WorkflowDetail extends BtrixElement {
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Review Crawl")}
+              ${msg("Review Pages")}
             </sl-button> `}
       </div> `;
     };

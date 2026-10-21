@@ -95,7 +95,9 @@ export type OrgParams = {
   };
   [OrgTab.Items]: ArchivedItemPageParams & {
     itemType?: string;
+    itemPageId?: string;
     qaTab?: QATab;
+    qaRunId?: string;
   };
   [OrgTab.BrowserProfiles]: {
     profileId?: string;
@@ -591,6 +593,23 @@ export class Org extends BtrixElement {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
+      if (params.qaTab) {
+        if (!this.appState.isCrawler) {
+          return html`<btrix-not-found
+            class="flex items-center justify-center"
+          ></btrix-not-found>`;
+        }
+
+        return html`<btrix-archived-item-qa
+          class="flex-1"
+          itemId=${params.itemId}
+          itemType=${params.itemType || "crawl"}
+          itemPageId=${ifDefined(params.itemPageId)}
+          qaRunId=${ifDefined(params.qaRunId)}
+          tab=${params.qaTab}
+        ></btrix-archived-item-qa>`;
+      }
+
       return html` <btrix-archived-item-detail
         itemId=${params.itemId}
         collectionId=${params.collectionId || ""}
@@ -626,6 +645,7 @@ export class Org extends BtrixElement {
             class="flex-1"
             workflowId=${workflowId}
             itemId=${params.itemId}
+            itemType="crawl"
             itemPageId=${ifDefined(params.itemPageId)}
             qaRunId=${ifDefined(params.qaRunId)}
             tab=${params.qaTab}
