@@ -592,7 +592,7 @@ signer:
 
 signer_cpu: "5m"
 
-signer_memory: "50Mi"
+signer_memory: "75Mi"
 
 # Migration Options (Advanced)
 # =========================================
