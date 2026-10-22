@@ -183,7 +183,7 @@ def make_crawl(userid):
 async def test_delete_crawls_unauthorized_does_not_mark_deleted(upload_ops: UploadOps):
     """A 403 delete attempt must not set the deleted marker, which would
     otherwise abort upload post-processing, which relies on the current files"""
-    org = SimpleNamespace(id=uuid4(), is_owner=lambda u: False)
+    org = SimpleNamespace(id=uuid4(), is_crawler=lambda u: False)
     upload_ops.get_base_crawl = AsyncMock(return_value=make_crawl(userid=uuid4()))
     upload_ops.crawls.find_one_and_update = AsyncMock()
 
