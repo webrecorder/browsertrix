@@ -812,6 +812,7 @@ def test_update_read_only(admin_auth_headers, default_org_id):
         headers=admin_auth_headers,
         json=crawl_config | {"name": "Test Read Only"},
     )
+    data = r.json()
 
     assert data["added"]
     assert data["run_now_job"] is None
@@ -1009,15 +1010,15 @@ def test_max_workflows(admin_auth_headers, default_org_id):
             },
         },
     )
-    print(r.json())
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
-    _created_org_ids.append(data["id"])
+    org_id = data["id"]
+    _created_org_ids.append(org_id)
 
     # create first workflow
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=crawl_config | {"name": "Test New 1"},
     )
@@ -1026,7 +1027,7 @@ def test_max_workflows(admin_auth_headers, default_org_id):
 
     # second workflow above limit
     r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        f"{API_PREFIX}/orgs/{org_id}/crawlconfigs/",
         headers=admin_auth_headers,
         json=crawl_config | {"name": "Test New 2"},
     )
