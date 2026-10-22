@@ -895,13 +895,8 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     data = r.json()
 
     assert data["total"] >= 1
-
-    found_matching_page = False
     for page in data["items"]:
-        if page["id"] == page_id and page["url"] == test_page_url:
-            found_matching_page = True
-
-    assert found_matching_page
+        assert page["url"].startswith(url_prefix)
 
     # Test urlRegex filter
     url_regex = quote(r"old\.webrecorder")
@@ -913,13 +908,8 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     data = r.json()
 
     assert data["total"] >= 1
-
-    found_matching_page = False
     for page in data["items"]:
-        if page["id"] == page_id and page["url"] == test_page_url:
-            found_matching_page = True
-
-    assert found_matching_page
+        assert "old.webrecorder" in page["url"]
 
     # Test isSeed filter
     r = requests.get(
