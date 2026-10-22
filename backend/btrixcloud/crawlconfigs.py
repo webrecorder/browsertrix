@@ -277,6 +277,15 @@ class CrawlConfigOps:
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
 
+        # don't allow new crawlconfigs if in read-only mode
+        self.org_ops.can_write_data(org)
+
+        # max number of workflows = max pages * concurrent crawls
+        max_workflows = org.quotas.maxPagesPerCrawl * org.quotas.maxConcurrentCrawls
+        if max_workflows:
+            if await self.get_num_active_workflows(org.id) >= max_workflows:
+                raise HTTPException(status_code=403, detail="too_many_crawl_workflows")
+
         # ensure crawlChannel is valid
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
             raise HTTPException(status_code=404, detail="crawler_not_found")
@@ -541,6 +550,12 @@ class CrawlConfigOps:
         await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
             {"$inc": {"crawlAttemptCount": 1}},
+        )
+
+    async def get_num_active_workflows(self, oid: UUID) -> int:
+        """return number of active workflows for an org"""
+        return await self.crawl_configs.count_documents(
+            {"oid": oid, "inactive": {"$ne": True}}
         )
 
     def check_attr_changed(
