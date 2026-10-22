@@ -88,20 +88,28 @@ export class BulkDeleteItemsDialog extends BtrixElement {
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
 
-  private readonly colsWithDependents = [
+  private readonly colsWithNotDeleteable = [
     ...this.columns.slice(0, 2),
     {
-      field: "requiredByCrawls",
-      label: msg("Dependents"),
-      renderCell: ({ item }) =>
-        this.localize.number(item.requiredByCrawls.length),
+      field: "userid",
+      label: msg("Reason"),
+      renderCell: ({ item }) => {
+        const isAdmin = this.appState.isAdmin;
+        const userId = this.userInfo?.id;
+
+        if (!isAdmin && userId !== item.userid) {
+          return msg("Item belongs to another org member");
+        }
+
+        return msg("Item is required by another item");
+      },
       width: `minmax(max-content, 1fr)`,
     },
   ] as const satisfies GridColumn<ListArchivedItem>[];
 
   render() {
     return html`<btrix-dialog
-      class="[--width:36rem]"
+      class="[--width:40rem]"
       .label=${msg("Delete Archived Items?")}
       .open=${this.open}
       @sl-request-close=${(e: CustomEvent) => {
@@ -115,13 +123,17 @@ export class BulkDeleteItemsDialog extends BtrixElement {
   }
 
   private readonly renderContent = (items: ListArchivedItem[]) => {
-    const hasDependents = true;
-    const noDependents = false;
+    const isAdmin = this.appState.isAdmin;
+    const userId = this.userInfo?.id;
+    const deletionRequirementsNotMet = true;
+    const deletionRequirementsMet = false;
     const grouped = Map.groupBy(items, (item) =>
-      item.requiredByCrawls.length ? hasDependents : noDependents,
+      item.requiredByCrawls.length || (!isAdmin && item.userid !== userId)
+        ? deletionRequirementsNotMet
+        : deletionRequirementsMet,
     );
-    const deleteable = grouped.get(noDependents);
-    const notDeleteable = grouped.get(hasDependents);
+    const deleteable = grouped.get(deletionRequirementsMet);
+    const notDeleteable = grouped.get(deletionRequirementsNotMet);
 
     return html`<div class="flex flex-col gap-3">
         ${when(
@@ -156,9 +168,7 @@ export class BulkDeleteItemsDialog extends BtrixElement {
                   ${pluralOfSkippingItems(items.length)}
                 </span>
 
-                <div class="mt-2">
-                  ${this.renderItemsWithDependents(items, true)}
-                </div>
+                <div class="mt-2">${this.renderItemsWithDependents(items)}</div>
               </btrix-details>`
             : this.renderItemsWithDependents(items),
         )}
@@ -196,23 +206,13 @@ export class BulkDeleteItemsDialog extends BtrixElement {
       </div>`;
   };
 
-  private readonly renderItemsWithDependents = (
-    items: ListArchivedItem[],
-    hasDeleteable = false,
-  ) => {
+  private readonly renderItemsWithDependents = (items: ListArchivedItem[]) => {
     return html` <p class="max-w-prose text-pretty">
-        ${hasDeleteable
-          ? msg(
-              "The following items will not be deleted because they are required by other items.",
-            )
-          : msg(
-              "The following items cannot be deleted they are required by other items.",
-            )}
-        ${msg("Each item must be deleted individually.")}
+        ${msg("The following items cannot be deleted in bulk.")}
       </p>
       <btrix-data-grid
         class="part-[body]:text-xs"
-        .columns=${this.colsWithDependents}
+        .columns=${this.colsWithNotDeleteable}
         .items=${items}
       ></btrix-data-grid>`;
   };
