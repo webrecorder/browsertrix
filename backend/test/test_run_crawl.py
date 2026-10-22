@@ -7,6 +7,7 @@ import re
 import time
 import zipfile
 from tempfile import TemporaryFile
+from urllib.parse import quote
 from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
@@ -888,6 +889,24 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     url_prefix = test_page_url[:8]
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?urlPrefix={url_prefix}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+
+    found_matching_page = False
+    for page in data["items"]:
+        if page["id"] == page_id and page["url"] == test_page_url:
+            found_matching_page = True
+
+    assert found_matching_page
+
+    # Test urlRegex filter
+    url_regex = quote(r"old\.webrecorder")
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?urlRegex={url_regex}",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 200
