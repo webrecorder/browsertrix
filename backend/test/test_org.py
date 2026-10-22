@@ -810,7 +810,7 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
-        json=crawl_config,
+        json=crawl_config | {"name": "Test Read Only"},
     )
 
     assert data["added"]
@@ -836,7 +836,7 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
-        json=crawl_config,
+        json=crawl_config | {"name": "Test Read Only Fail"},
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "org_set_to_read_only"
@@ -845,7 +845,6 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/run",
         headers=admin_auth_headers,
-        json=crawl_config,
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "org_set_to_read_only"
@@ -1010,6 +1009,7 @@ def test_max_workflows(admin_auth_headers, default_org_id):
             },
         },
     )
+    print(r.json())
     assert r.status_code == 200
     data = r.json()
     assert data["added"]
@@ -1019,7 +1019,7 @@ def test_max_workflows(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
-        json=crawl_config,
+        json=crawl_config | {"name": "Test New 1"},
     )
 
     assert data["added"]
@@ -1028,7 +1028,7 @@ def test_max_workflows(admin_auth_headers, default_org_id):
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
-        json=crawl_config,
+        json=crawl_config | {"name": "Test New 2"},
     )
 
     assert r.status_code == 403
