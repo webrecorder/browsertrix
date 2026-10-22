@@ -1356,17 +1356,13 @@ def test_crawl_page_notes(crawler_auth_headers, default_org_id, crawler_crawl_id
     assert notes == []
 
 
-def test_delete_crawls_crawler(crawler_auth_headers, default_org_id, crawler_crawl_id):
-    # Test that crawler user can't delete another user's crawls
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
-        headers=crawler_auth_headers,
-        json={"crawl_ids": [curr_admin_crawl_id]},
-    )
-    assert r.status_code == 403
-    data = r.json()
-    assert data["detail"] == "not_allowed"
-
+def test_delete_crawls_crawler(
+    crawler_auth_headers,
+    admin_auth_headers,
+    default_org_id,
+    crawler_crawl_id,
+    wr_specs_crawl_id,
+):
     # Check that pages exist for crawl
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages",
@@ -1387,7 +1383,7 @@ def test_delete_crawls_crawler(crawler_auth_headers, default_org_id, crawler_cra
     for resource in data["resources"]:
         wacz_presigned_urls.append(resource["path"])
 
-    # Test that crawler user can delete own crawl
+    # Test that crawler user can delete own crawls
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=crawler_auth_headers,
@@ -1420,15 +1416,29 @@ def test_delete_crawls_crawler(crawler_auth_headers, default_org_id, crawler_cra
     assert r.status_code == 200
     assert r.json()["total"] == 0
 
+    # Test that crawler user can delete another org user's crawls
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+        headers=crawler_auth_headers,
+        json={"crawl_ids": [wr_specs_crawl_id]},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"] == 1
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{wr_specs_crawl_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
 
 def test_delete_crawls_org_owner(
     admin_auth_headers,
-    crawler_auth_headers,
     default_org_id,
     crawler_crawl_id,
-    wr_specs_crawl_id,
 ):
-    # Test that org owner can delete own crawl
+    # Test that org owner can delete crawl
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
         headers=admin_auth_headers,
@@ -1441,22 +1451,6 @@ def test_delete_crawls_org_owner(
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 404
-
-    # Test that org owner can delete another org user's crawls
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": [wr_specs_crawl_id]},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["deleted"] == 1
-
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{wr_specs_crawl_id}",
         headers=admin_auth_headers,
     )
     assert r.status_code == 404

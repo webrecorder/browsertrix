@@ -408,10 +408,7 @@ class BaseCrawlOps:
             if crawl.type != type_:
                 continue
 
-            # Ensure user has appropriate permissions for all crawls in list:
-            # - Crawler users can delete their own crawls
-            # - Org owners can delete any crawls in org
-            if user and (crawl.userid != user.id) and not org.is_owner(user):
+            if user and not org.is_crawler(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
 
             # Mark as deleted before removing files so in-flight background
