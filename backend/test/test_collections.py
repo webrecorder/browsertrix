@@ -1049,7 +1049,7 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
 
     assert len(data["items"]) >= 1
     for page in data["items"]:
-        assert page["url"].startswith(coll_page_url)
+        assert page["url"].startswith(url_prefix)
 
     # Test urlRegex filter
     url_regex = quote(r"webrecorder\.net")
