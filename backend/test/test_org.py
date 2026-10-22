@@ -23,6 +23,14 @@ CRAWLER_PW_FOR_ORG_WITH_NOTE = "crawler-pw-for-org-with-note"
 
 _created_org_ids = []
 
+crawl_config = {
+    "runNow": False,
+    "config": {
+        "seeds": [{"url": "https://old.webrecorder.net/", "depth": 1}],
+        "exclude": "community",
+    },
+}
+
 
 @pytest.fixture(scope="module", autouse=True)
 def _cleanup_created_orgs(admin_auth_headers):
@@ -798,6 +806,20 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     assert data["readOnly"] in (False, None)
     assert data["readOnlyReason"] in (None, "")
 
+    # create new config before setting to readOnly
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_config,
+    )
+
+    assert data["added"]
+    assert data["run_now_job"] is None
+
+    cid = data["id"]
+    assert cid
+
+    # set read-only
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/read-only",
         headers=admin_auth_headers,
@@ -810,35 +832,20 @@ def test_update_read_only(admin_auth_headers, default_org_id):
     assert data["readOnly"] is True
     assert data["readOnlyReason"] == "Payment suspended"
 
-    # Try to start crawl from new workflow, should fail
-    crawl_data = {
-        "runNow": True,
-        "name": "Read Only Test Crawl",
-        "description": "Should not run now",
-        "tags": [],
-        "config": {
-            "seeds": [{"url": "https://old.webrecorder.net/", "depth": 1}],
-            "exclude": "community",
-        },
-    }
+    # attempt to create new config and start crawl, should fail
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
         headers=admin_auth_headers,
-        json=crawl_data,
+        json=crawl_config,
     )
-    data = r.json()
-
-    assert data["added"]
-    assert data["run_now_job"] is None
-
-    cid = data["id"]
-    assert cid
+    assert r.status_code == 403
+    assert r.json()["detail"] == "org_set_to_read_only"
 
     # Try to start crawl from existing workflow, should fail
     r = requests.post(
         f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/{cid}/run",
         headers=admin_auth_headers,
-        json=crawl_data,
+        json=crawl_config,
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "org_set_to_read_only"
@@ -988,3 +995,41 @@ def test_update_org_note_non_superuser(crawler_auth_headers, default_org_id):
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "Not Allowed"
+
+
+def test_max_workflows(admin_auth_headers, default_org_id):
+    r = requests.post(
+        f"{API_PREFIX}/orgs/create",
+        headers=admin_auth_headers,
+        json={
+            "name": "Org With Low Limit",
+            "slug": "org-with-low-limit",
+            "quotas": {
+                "maxConcurrentCrawls": 1,
+                "maxPagesPerCrawl": 1,
+            },
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["added"]
+    _created_org_ids.append(data["id"])
+
+    # create first workflow
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_config,
+    )
+
+    assert data["added"]
+
+    # second workflow above limit
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_config,
+    )
+
+    assert r.status_code == 403
+    assert r.json()["detail"] == "too_many_crawl_workflows"
