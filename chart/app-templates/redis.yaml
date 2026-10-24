@@ -40,6 +40,8 @@ metadata:
     role: redis
 
 spec:
+  # Redis doesn't call the Kubernetes API
+  automountServiceAccountToken: false
   hostname: {{ name }}
   subdomain: redis
   securityContext:

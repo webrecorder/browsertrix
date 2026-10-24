@@ -25,6 +25,10 @@ spec:
     spec:
       template:
         spec:
+          # For trusted backend code that only talks to the Kubernetes API, 
+          # mount a root-only token instead of the world-readable auto-injected 
+          # one.
+          automountServiceAccountToken: false
           restartPolicy: Never
           priorityClassName: bg-job
           podFailurePolicy:
@@ -39,15 +43,45 @@ spec:
             - name: ops-configs
               secret:
                 secretName: ops-configs
+                defaultMode: 0400
 
             - name: app-templates
               configMap:
                 name: app-templates
 
+            - name: kube-api-access
+              projected:
+                defaultMode: 0400
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      expirationSeconds: 3607
+                  - configMap:
+                      name: kube-root-ca.crt
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+                  - downwardAPI:
+                      items:
+                        - path: namespace
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.namespace
+
+            - name: tmp
+              emptyDir: {}
+
           containers:
             - name: btrixbgjob
               image: {{ backend_image }}
               imagePullPolicy: {{ pull_policy }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
               env:
               - name: BG_JOB_TYPE
                 value: {{ job_type }}
@@ -59,6 +93,13 @@ spec:
                     name: mongo-auth
 
               volumeMounts:
+                - name: kube-api-access
+                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+                  readOnly: true
+
+                - name: tmp
+                  mountPath: /tmp
+
                 - name: ops-configs
                   mountPath: /ops-configs/
 
