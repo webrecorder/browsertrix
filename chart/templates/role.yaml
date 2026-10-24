@@ -5,17 +5,41 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
   name: crawler-run
 rules:
+# backend never reads pod specs or creates pods: crawler pods, PVCs and 
+# ConfigMaps are applied by metacontroller, which has its own permissions
 - apiGroups: [""]
-  resources: ["pods", "pods/exec", "pods/log", "services", "configmaps", "secrets", "events", "persistentvolumeclaims"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection", "exec"]
+  resources: ["pods/log"]
+  verbs: ["get"]
 
-- apiGroups: ["batch", "extensions", "apps"]
-  resources: ["jobs", "cronjobs", "statefulsets"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+# Graceful shutdown uses exec into crawler pods (SIGTERM on resize/stop) and
+# redis save containers (SIGUSR1/SIGUSR2) - see operator/crawls.py and
+# operator/collindexes.py
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
 
+# Per-org storage secrets and per-crawl signing secrets
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create", "patch", "delete"]
+
+# Jobs and cronjobs the backend creates directly (background, index-import,
+# replica, crawl schedules)
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["get", "list", "create", "update", "patch", "delete", "deletecollection"]
+
+# ConfigMaps are only directly used by migrations, otherwise they're applied by 
+# metacontroller.
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["list", "patch", "deletecollection"]
+
+# backend creates and tracks Crawl/profile/index resources; children are applied
+# by metacontroller.
 - apiGroups: ["btrix.cloud"]
   resources: ["crawljobs", "profilejobs", "collindexes"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+  verbs: ["get", "list", "create", "patch", "delete", "deletecollection"]
 
 - apiGroups: ["metrics.k8s.io"]
   resources: ["pods"]
@@ -30,7 +54,7 @@ metadata:
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+    verbs: ["get", "list", "create", "update", "patch", "delete", "deletecollection"]
 
 ---
 kind: RoleBinding
@@ -41,10 +65,6 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Release.Namespace }}
-
-- kind: User
-  name: system:anonymous
   namespace: {{ .Release.Namespace }}
 
 roleRef:
@@ -61,10 +81,6 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: {{ .Release.Namespace }}
-
-- kind: User
-  name: system:anonymous
   namespace: {{ .Release.Namespace }}
 
 roleRef:
