@@ -26,6 +26,8 @@ spec:
         {{- end }}
 
     spec:
+      # The backend doesn't need the auto-mounted, world-readable token
+      automountServiceAccountToken: false
       {{- if .Values.main_node_type }}
       nodeSelector:
         nodeType: {{ .Values.main_node_type }}
@@ -42,15 +44,39 @@ spec:
         - name: ops-configs
           secret:
             secretName: ops-configs
+            # contains storage access keys; readable by uid 0 only
+            defaultMode: 0400
 
         - name: ops-proxy-configs
           secret:
             secretName: ops-proxy-configs
             optional: true
+            # contains proxy credentials; readable by uid 0 only
+            defaultMode: 0400
 
         - name: app-templates
           configMap:
             name: app-templates
+
+        # Replacement for the default service-account mount, with 0400 files
+        - name: kube-api-access
+          projected:
+            defaultMode: 0400
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3607
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
 
       initContainers:
         - name: migrations
@@ -71,6 +97,10 @@ spec:
               value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
             - name: config-volume
               mountPath: /config
 
@@ -134,6 +164,10 @@ spec:
                   optional: true
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
             - name: ops-configs
               mountPath: /ops-configs/
 
@@ -205,6 +239,10 @@ spec:
               value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
             - name: config-volume
               mountPath: /config
 
