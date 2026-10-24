@@ -78,10 +78,22 @@ spec:
                         apiVersion: v1
                         fieldPath: metadata.namespace
 
+        # readOnlyRootFilesystem leaves no writable /tmp; uploads and temp
+        # files (file_uploads.py, orgs.py) need one.
+        - name: tmp
+          emptyDir: {}
+
       initContainers:
         - name: migrations
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command: ["python3", "-m", "btrixcloud.main_migrations"]
 
           envFrom:
@@ -100,6 +112,9 @@ spec:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
+
+            - name: tmp
+              mountPath: /tmp
 
             - name: config-volume
               mountPath: /config
@@ -125,6 +140,17 @@ spec:
         - name: api
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          # uid 0 is required so the git subprocess can drop to nobody
+          # (btrixcloud.utils.drop_privileges). SETUID/SETGID are the only
+          # capabilities that drop needs; everything else is removed.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["SETUID", "SETGID"]
+            seccompProfile:
+              type: RuntimeDefault
           command:
               - gunicorn
               - btrixcloud.main:app_root
@@ -167,6 +193,9 @@ spec:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
+
+            - name: tmp
+              mountPath: /tmp
 
             - name: ops-configs
               mountPath: /ops-configs/
@@ -214,6 +243,14 @@ spec:
         - name: op
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          # Serves metacontroller hooks only, never spawns subprocesses.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command:
               - gunicorn
               - btrixcloud.main_op:app_root
@@ -242,6 +279,9 @@ spec:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
+
+            - name: tmp
+              mountPath: /tmp
 
             - name: config-volume
               mountPath: /config
