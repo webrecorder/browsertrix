@@ -11,7 +11,7 @@ export const pluralOfPages = (number: number) => {
       id: "pages_with_num.plural.zero",
     }),
     one: msg("1 page", {
-      desc: "plural form of 'X pages' for one rule",
+      desc: "plural form of 'X pages' for one page",
       id: "pages_with_num.plural.one",
     }),
     two: msg("2 pages", {

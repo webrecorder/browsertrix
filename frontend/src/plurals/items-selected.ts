@@ -11,7 +11,7 @@ export const pluralOfItemsSelected = (number: number) => {
       id: "items_selected.plural.zero",
     }),
     one: msg("1 item selected", {
-      desc: "plural form of 'X items selected' for one rule",
+      desc: "plural form of 'X items selected' for one item selected",
       id: "items_selected.plural.one",
     }),
     two: msg("2 items selected", {

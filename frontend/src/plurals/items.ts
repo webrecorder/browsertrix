@@ -11,7 +11,7 @@ export const pluralOfItems = (number: number) => {
       id: "items_with_num.plural.zero",
     }),
     one: msg("1 item", {
-      desc: "plural form of 'X items' for one rule",
+      desc: "plural form of 'X items' for one item",
       id: "items_with_num.plural.one",
     }),
     two: msg("2 items", {
