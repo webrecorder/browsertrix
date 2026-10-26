@@ -17,7 +17,7 @@ You will be able to review the crawled pages by:
 - **Resources**: Web documents (i.e. HTML, stylesheets, fonts, etc.) that make up the page
 - **Replay**: An interactive snapshot of the captured page
 
-Text and resources are not available for uploaded items. Screenshots are available for uploaded items created with [ArchiveWeb.Page](https://archiveweb.page/) version 0.15.2 or higher.
+Text and resources are not available for uploaded items. Screenshots are available for uploaded items created with Browsertrix or [ArchiveWeb.Page](https://archiveweb.page/) version 0.15.2 and higher.
 
 !!! note "Navigation Prevented in Replay within QA"
     To navigate through the captured website, use the Replay feature in the Crawling section. Links will not be clickable when using the Replay tab within the Analysis view.
