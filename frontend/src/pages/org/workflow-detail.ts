@@ -39,7 +39,11 @@ import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+} from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
 import {
   workflowParamsSchema,
@@ -2562,7 +2566,7 @@ export class WorkflowDetail extends BtrixElement {
         str`Sorry, couldn't delete archived item at this time.`,
       );
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(
             str`Only org owners can delete other users' archived items.`,
           );

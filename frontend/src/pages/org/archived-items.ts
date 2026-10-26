@@ -918,6 +918,7 @@ export class CrawlsList extends BtrixElement {
         )}
         name="check2-all"
         ?disabled=${anySelected}
+        label=${msg("Select All Visible")}
         @click=${() => {
           this.selectAll();
         }}
@@ -958,6 +959,7 @@ export class CrawlsList extends BtrixElement {
         ? html`<sl-icon-button
             class="text-base hover:text-danger focus:text-danger"
             name="trash3"
+            label=${msg("Delete Items")}
             @click=${() => (this.openDialog = "bulkDelete")}
           ></sl-icon-button>`
         : nothing} `;
@@ -1387,7 +1389,7 @@ export class CrawlsList extends BtrixElement {
         str`Sorry, couldn't delete archived item at this time.`,
       );
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(
             str`Only org owners can delete other users' archived items.`,
           );
