@@ -119,7 +119,7 @@ export class ArchivedItemQA extends BtrixElement {
   qaRunId?: string;
 
   @property({ type: String })
-  tab: QATypes.QATab = this.itemType == "crawl" ? "screenshots" : "replay";
+  tab: QATypes.QATab = "screenshots";
 
   @state()
   private item?: ArchivedItem;
@@ -582,24 +582,25 @@ export class ArchivedItemQA extends BtrixElement {
             aria-label="${msg("Page heuristics")}"
             class="-mx-3 my-0 flex flex-wrap items-center gap-2 overflow-x-auto px-3 py-2 lg:mx-0 lg:px-0"
           >
+            <btrix-navigation-button
+              id="screenshot-tab"
+              href=${`${itemBaseUrl}/review/screenshots?${searchParams.toString()}`}
+              ?active=${this.tab === "screenshots"}
+              @click=${this.onTabNavClick}
+            >
+              <sl-icon name="images"></sl-icon>
+              ${msg("Screenshot")}
+              ${when(this.page || currentPage, (page) =>
+                isQaPage(page)
+                  ? renderSeverityBadge(page.qa.screenshotMatch)
+                  : nothing,
+              )}
+            </btrix-navigation-button>
+
             ${when(
               isCrawlType,
               () =>
                 html`<btrix-navigation-button
-                    id="screenshot-tab"
-                    href=${`${itemBaseUrl}/review/screenshots?${searchParams.toString()}`}
-                    ?active=${this.tab === "screenshots"}
-                    @click=${this.onTabNavClick}
-                  >
-                    <sl-icon name="images"></sl-icon>
-                    ${msg("Screenshot")}
-                    ${when(this.page || currentPage, (page) =>
-                      isQaPage(page)
-                        ? renderSeverityBadge(page.qa.screenshotMatch)
-                        : nothing,
-                    )}
-                  </btrix-navigation-button>
-                  <btrix-navigation-button
                     id="text-tab"
                     href=${`${itemBaseUrl}/review/text?${searchParams.toString()}`}
                     ?active=${this.tab === "text"}

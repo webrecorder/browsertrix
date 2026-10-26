@@ -27,7 +27,6 @@ import {
   type Breadcrumb,
 } from "@/layouts/pageHeader";
 import { panelBody } from "@/layouts/panel";
-import type * as QATypes from "@/pages/org/archived-item-qa/types";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
 import {
@@ -184,11 +183,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/${
-      (this.itemType === "crawl"
-        ? "screenshots"
-        : "replay") satisfies QATypes.QATab
-    }${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
   }
 
   private timerId?: number;

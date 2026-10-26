@@ -20,7 +20,6 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import type * as QATypes from "@/pages/org/archived-item-qa/types";
 import { OrgTab } from "@/routes";
 import { stringFor } from "@/strings/ui";
 import type {
@@ -798,7 +797,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
   }
 
   private renderPageList() {
-    const isCrawlType = this.itemType === "crawl";
     const itemBaseUrl = this.itemBaseUrl;
 
     const pageTitle = (page: ArchivedItemPage) => html`
@@ -840,11 +838,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   rowClickTarget="a"
                 >
                   <a
-                    href=${`${itemBaseUrl}/review/${
-                      (isCrawlType
-                        ? "screenshots"
-                        : "replay") satisfies QATypes.QATab
-                    }?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
+                    href=${`${itemBaseUrl}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
                     title=${msg(str`Review "${page.title ?? page.url}"`)}
                     @click=${this.navigate.link}
                   >
