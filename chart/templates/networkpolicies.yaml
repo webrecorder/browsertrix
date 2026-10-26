@@ -102,3 +102,207 @@ spec:
     {{- end -}}
   {{- end -}}
 {{- end -}}
+
+{{- if .Values.namespace_network_policy_enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.name }}-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+    # Backend API and operator webhook port metacontroller calls
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ .Values.name }}
+              role: backend
+      ports:
+        - port: 8000
+          protocol: TCP
+        - port: {{ .Values.opPort }}
+          protocol: TCP
+
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ .Values.name }}
+              role: emails
+      ports:
+        - port: 3000
+          protocol: TCP
+
+    {{- if .Values.mongo_local }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: local-mongo
+      ports:
+        - port: 27017
+          protocol: TCP
+    {{- end }}
+
+    {{- if .Values.minio_local }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: local-minio
+      ports:
+        - port: 9000
+          protocol: TCP
+    {{- end }}
+
+    {{- if .Values.signer.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: auth-signer
+      ports:
+        - port: {{ .Values.signer.port | default 5053 }}
+          protocol: TCP
+    {{- end }}
+
+    # Crawl Redis, then the crawler and browser ports that the frontend proxies
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.crawler_namespace }}
+          podSelector:
+            matchLabels:
+              role: redis
+      ports:
+        - port: 6379
+          protocol: TCP
+
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.crawler_namespace }}
+          podSelector:
+            matchExpressions:
+              - key: role
+                operator: In
+                values:
+                  - crawler
+                  - browser
+      ports:
+        - port: 9037
+          protocol: TCP
+        - port: 9222
+          protocol: TCP
+        - port: 9223
+          protocol: TCP
+        - port: 6080
+          protocol: TCP
+
+    # Public web. Metadata and loopback are excluded.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+
+    # Egress is evaluated after service DNAT, so this must be the API endpoint
+    # port, not the service port.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        {{- range .Values.namespace_network_policy_api_ports }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+
+    {{- if not .Values.mongo_local }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - port: 27017
+          protocol: TCP
+    {{- end }}
+
+    {{- $storage_ports := dict }}
+    {{- $local_minio := (splitList ":" .Values.minio_host) | first }}
+    {{- range .Values.storages }}
+      {{- range (list .endpoint_url .access_endpoint_url) }}
+        {{- if . }}
+          {{- $u := urlParse . }}
+          {{- if $u.hostname }}
+            {{- $port := "" }}
+            {{- $last := last (splitList ":" $u.host) }}
+            {{- if regexMatch "^[0-9]+$" $last }}
+              {{- $port = $last }}
+            {{- end }}
+            {{- if not $port }}
+              {{- $port = ternary "443" "80" (eq $u.scheme "https") }}
+            {{- end }}
+            {{- if and (ne (toString $port) "80") (ne (toString $port) "443") }}
+              {{- if not (and $.Values.minio_local (eq $u.hostname $local_minio)) }}
+                {{- $_ := set $storage_ports (toString $port) true }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- if $storage_ports }}
+    # Storage endpoints on non-80/443 ports (local MinIO is covered above).
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        {{- range $port, $_ := $storage_ports }}
+        - port: {{ $port }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+
+    {{- if .Values.email.smtp_host }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - port: {{ .Values.email.smtp_port }}
+          protocol: TCP
+    {{- end }}
+
+    {{- with .Values.namespace_network_policy_extra_egress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

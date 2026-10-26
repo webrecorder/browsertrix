@@ -330,3 +330,22 @@ crawler_network_policy_additional_egress:
 ```
 
 Refer to the [default networkpolicies.yaml](https://github.com/webrecorder/browsertrix/blob/main/chart/templates/networkpolicies.yaml) for additional examples and the [official Kubernetes documentation for Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+
+## Application Namespace Egress Policy
+
+The application namespace policy limits what the backend, frontend, emails and job pods can reach, including the custom behavior URLs the backend fetches on a user's behalf.
+
+```yaml
+namespace_network_policy_enabled: true
+```
+
+The examples in `chart/examples/` enable the policy with the API server port for their cluster.
+
+The policy allows DNS, the chart's own services, public web on 80/443, the Kubernetes API, the port of an external MongoDB server (if `mongo_local` is `false`), non-80/443 ports in `storages[].endpoint_url` or `access_endpoint_url`, and `email.smtp_port` when `email.smtp_host` is set.
+
+Two settings might need attention:
+
+- `namespace_network_policy_api_ports` is the Kubernetes API endpoint port after service DNAT, not the service port. The defaults are `443` on managed clusters and `6443` on kubeadm. OrbStack uses `26443`.
+- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as HTTPS proxies.
+
+Rules are additive and apply to the whole namespace, so every pod can reach every allowed destination. After enabling the policy, confirm that crawls start and complete, because a missing rule could block traffic without a clear error in the UI.
