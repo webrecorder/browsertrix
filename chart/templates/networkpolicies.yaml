@@ -25,6 +25,11 @@ spec:
           - 10.0.0.0/8
           - 172.16.0.0/12
           - 192.168.0.0/16
+      - ipBlock:
+          cidr: ::/0
+          except: # Exclude traffic to Kubernetes service IPs and pods
+          - fc00::/7
+          - fe80::/10
 
     # allow frontend access for QA runs
     - to:
@@ -214,11 +219,7 @@ spec:
 
     # Public web. Metadata and loopback are excluded.
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 169.254.0.0/16
-              - 127.0.0.0/8
+        {{- include "browsertrix.egressIpBlocks" . | nindent 8 }}
       ports:
         - port: 80
           protocol: TCP
@@ -228,11 +229,7 @@ spec:
     # Egress is evaluated after service DNAT, so this must be the API endpoint
     # port, not the service port.
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 169.254.0.0/16
-              - 127.0.0.0/8
+        {{- include "browsertrix.egressIpBlocks" . | nindent 8 }}
       ports:
         {{- range .Values.namespace_network_policy_api_ports }}
         - port: {{ . }}
@@ -241,11 +238,7 @@ spec:
 
     {{- if not .Values.mongo_local }}
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 169.254.0.0/16
-              - 127.0.0.0/8
+        {{- include "browsertrix.egressIpBlocks" . | nindent 8 }}
       ports:
         - port: 27017
           protocol: TCP
@@ -278,11 +271,7 @@ spec:
     {{- if $storage_ports }}
     # Storage endpoints on non-80/443 ports (local MinIO is covered above).
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 169.254.0.0/16
-              - 127.0.0.0/8
+        {{- include "browsertrix.egressIpBlocks" . | nindent 8 }}
       ports:
         {{- range $port, $_ := $storage_ports }}
         - port: {{ $port }}
@@ -292,11 +281,7 @@ spec:
 
     {{- if .Values.email.smtp_host }}
     - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 169.254.0.0/16
-              - 127.0.0.0/8
+        {{- include "browsertrix.egressIpBlocks" . | nindent 8 }}
       ports:
         - port: {{ .Values.email.smtp_port }}
           protocol: TCP
