@@ -21,15 +21,18 @@ spec:
     - to:
       - ipBlock:
           cidr: 0.0.0.0/0
-          except: # Exclude traffic to Kubernetes service IPs and pods
+          except: # Exclude cluster, loopback and link-local ranges
           - 10.0.0.0/8
           - 172.16.0.0/12
           - 192.168.0.0/16
+          - 169.254.0.0/16
+          - 127.0.0.0/8
       - ipBlock:
           cidr: ::/0
-          except: # Exclude traffic to Kubernetes service IPs and pods
+          except: # Exclude cluster, loopback and link-local ranges
           - fc00::/7
           - fe80::/10
+          - ::1/128
 
     # allow frontend access for QA runs
     - to:
