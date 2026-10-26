@@ -20,6 +20,8 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
+import type * as QATypes from "@/pages/org/archived-item-qa/types";
+import { OrgTab } from "@/routes";
 import { stringFor } from "@/strings/ui";
 import type {
   APIPaginatedList,
@@ -132,6 +134,14 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
   @query("#deleteQARunDialog")
   private readonly deleteQADialog?: Dialog | null;
+
+  private get itemBaseUrl() {
+    if (this.workflowId) {
+      return `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${this.workflowId}/crawls/${this.itemId}`;
+    }
+
+    return `${this.navigate.orgBasePath}/${OrgTab.Items}/${this.itemType}/${this.itemId}`;
+  }
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
@@ -788,6 +798,9 @@ export class ArchivedItemDetailQA extends BtrixElement {
   }
 
   private renderPageList() {
+    const isCrawlType = this.itemType === "crawl";
+    const itemBaseUrl = this.itemBaseUrl;
+
     const pageTitle = (page: ArchivedItemPage) => html`
       <div class="truncate font-medium">
         ${page.title ||
@@ -827,7 +840,11 @@ export class ArchivedItemDetailQA extends BtrixElement {
                   rowClickTarget="a"
                 >
                   <a
-                    href=${`${this.navigate.orgBasePath}/workflows/${this.workflowId}/crawls/${this.itemId}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
+                    href=${`${itemBaseUrl}/review/${
+                      (isCrawlType
+                        ? "screenshots"
+                        : "replay") satisfies QATypes.QATab
+                    }?qaRunId=${this.mostRecentSuccessQARun?.id || ""}&itemPageId=${page.id}`}
                     title=${msg(str`Review "${page.title ?? page.url}"`)}
                     @click=${this.navigate.link}
                   >
