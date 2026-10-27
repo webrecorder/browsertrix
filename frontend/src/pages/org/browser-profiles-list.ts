@@ -23,6 +23,7 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { originsWithRemainder } from "@/features/browser-profiles/templates/origins-with-remainder";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import { OrgTab } from "@/routes";
 import type {
@@ -282,10 +283,11 @@ export class BrowserProfilesList extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-        ${this.renderControls()}
-      </div>
-
+      ${listControls({
+        renderSearchControl: this.renderSearch,
+        renderSortControl: this.renderSortControl,
+        renderFilterControl: this.renderFilterControls,
+      })}
       ${when(
         this.profilesTask.value,
         ({ items, total, page, pageSize }) => html`
@@ -415,32 +417,7 @@ export class BrowserProfilesList extends BtrixElement {
     });
   }
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
-
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
-          >
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="whitespace-nowrap text-neutral-500">
-            ${msg("Filter by:")}
-          </span>
-          ${this.renderFilterControls()}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-search-combobox
         .searchKeys=${SEARCH_KEYS}
@@ -462,9 +439,9 @@ export class BrowserProfilesList extends BtrixElement {
       >
       </btrix-search-combobox>
     `;
-  }
+  };
 
-  private renderFilterControls() {
+  private readonly renderFilterControls = () => {
     const filterBy = this.filterBy.value;
 
     return html`
@@ -509,9 +486,9 @@ export class BrowserProfilesList extends BtrixElement {
         `,
       )}
     `;
-  }
+  };
 
-  private renderSortControl() {
+  private readonly renderSortControl = () => {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
@@ -520,7 +497,7 @@ export class BrowserProfilesList extends BtrixElement {
     return html`
       <sl-select
         id="sort-select"
-        class="md:min-w-[9.2rem]"
+        class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
         value=${this.orderBy.value.field}
@@ -559,11 +536,11 @@ export class BrowserProfilesList extends BtrixElement {
         ></sl-icon-button>
       </sl-tooltip>
     `;
-  }
+  };
 
   private readonly renderTable = (profiles: Profile[]) => {
     return html`<btrix-overflow-scroll
-      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-5"
+      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-4"
     >
       <btrix-table
         style="--btrix-table-grid-template-columns: ${columnsCss}"
