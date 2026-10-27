@@ -16,7 +16,7 @@ rules:
 # operator/collindexes.py
 - apiGroups: [""]
   resources: ["pods/exec"]
-  verbs: ["create"]
+  verbs: ["get"]
 
 # Per-org storage secrets and per-crawl signing secrets
 - apiGroups: [""]
