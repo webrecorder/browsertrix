@@ -177,7 +177,7 @@ export class SearchCombobox<T> extends TailwindElement {
                 slot="prefix"
                 size="small"
                 pill
-                style="margin-left: var(--sl-spacing-3x-small)"
+                class="ml-[--sl-spacing-3x-small]"
                 >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
             () =>

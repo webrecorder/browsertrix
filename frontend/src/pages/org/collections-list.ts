@@ -6,7 +6,7 @@ import type {
   SlMenuItem,
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
-import { html, nothing, type TemplateResult } from "lit";
+import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -49,6 +49,7 @@ import { tw } from "@/utils/tailwind";
 
 type FilterBy = {
   name?: string;
+  namePrefix?: string;
 };
 type SearchFields = keyof FilterBy;
 type SortField =
@@ -176,18 +177,12 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
     (value, params) => {
-      const keys = ["name"] as (keyof FilterBy)[];
+      const keys = ["name", "namePrefix"] as (keyof FilterBy)[];
       keys.forEach((key) => {
         if (value[key] == null) {
           params.delete(key);
         } else {
-          switch (key) {
-            case "name":
-              params.set(key, value[key]);
-              break;
-            default:
-              break;
-          }
+          params.set(key, value[key]);
         }
       });
       return params;
@@ -195,6 +190,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     (params) => {
       const values = {
         name: params.get("name") ?? undefined,
+        namePrefix: params.get("namePrefix") ?? undefined,
       };
 
       if (Object.values(values).some((v) => v !== undefined)) {
@@ -264,6 +260,11 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       // TODO consolidate filters into single fetch params
       [this.pagination, this.orderBy.value, this.filterBy.value] as const,
   });
+
+  protected firstUpdated(_changedProperties: PropertyValues): void {
+    this.searchByValue =
+      this.filterBy.value.name ?? this.filterBy.value.namePrefix ?? "";
+  }
 
   render() {
     return html`
@@ -491,6 +492,34 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   };
 
   private readonly renderSearch = () => {
+    let prefix = html`<sl-icon
+      name="search"
+      slot="prefix"
+      aria-hidden="true"
+      library="default"
+    ></sl-icon>`;
+
+    if (this.searchByValue) {
+      if (this.filterBy.value.name === this.searchByValue) {
+        prefix = html`<sl-tag
+          slot="prefix"
+          size="small"
+          pill
+          class="ml-[--sl-spacing-3x-small]"
+          >${msg("Name")}</sl-tag
+        >`;
+      }
+      if (this.filterBy.value.namePrefix === this.searchByValue) {
+        prefix = html`<sl-tag
+          slot="prefix"
+          size="small"
+          pill
+          class="ml-[--sl-spacing-3x-small]"
+          >${msg("Name Starts With")}</sl-tag
+        >`;
+      }
+    }
+
     return html`
       <btrix-autocomplete
         ?open=${this.searchResultsOpen}
@@ -504,8 +533,13 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           const key = item.dataset["key"] as SearchFields;
           this.searchByValue = item.value;
           await this.updateComplete;
+
+          const clear =
+            key === "name" ? { namePrefix: undefined } : { name: undefined };
+
           this.filterBy.setValue({
             ...this.filterBy.value,
+            ...clear,
             [key]: item.value,
           });
         }}
@@ -513,24 +547,23 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         <sl-input
           size="small"
           placeholder=${msg("Search by name")}
-          value=${this.filterBy.value.name ?? ""}
+          value=${this.searchByValue}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name: _, ...otherFilters } = this.filterBy.value;
+            const {
+              name: _,
+              namePrefix: _namePrefix,
+              ...otherFilters
+            } = this.filterBy.value;
             this.filterBy.setValue(otherFilters);
           }}
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
           >}
         >
-          <sl-icon
-            name="search"
-            slot="prefix"
-            aria-hidden="true"
-            library="default"
-          ></sl-icon>
+          ${prefix}
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-autocomplete>
@@ -558,14 +591,29 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       `;
     }
 
+    const search_term = html`<strong class="font-semibold"
+      >${this.searchByValue}</strong
+    >`;
+
     return html`
       ${searchResults.map(
         ({ item }) => html`
           <sl-menu-item slot="menu-item" data-key="name" value=${item.name}>
             ${item.name}
+            <btrix-badge slot="suffix" variant="lime" pill
+              >${msg("Exact Match")}</btrix-badge
+            >
           </sl-menu-item>
         `,
       )}
+      <sl-divider slot="menu-item"></sl-divider>
+      <sl-menu-item
+        slot="menu-item"
+        data-key="namePrefix"
+        value=${this.searchByValue}
+      >
+        ${msg(html`Collection name starts with ${search_term}`)}
+      </sl-menu-item>
     `;
   }
 
@@ -928,7 +976,11 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
 
     if (!this.searchByValue) {
-      const { name: _, ...otherFilters } = this.filterBy.value;
+      const {
+        name: _,
+        namePrefix: _namePrefix,
+        ...otherFilters
+      } = this.filterBy.value;
       this.filterBy.setValue(otherFilters);
     }
   });
