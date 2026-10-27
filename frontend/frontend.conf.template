@@ -109,9 +109,12 @@ server {
       proxy_pass http://${BACKEND_HOST}:8000;
       proxy_set_header Host $http_host;
       proxy_set_header X-Forwarded-Proto $ingress_proto;
-      # for larger uploads to not timeout
+
       proxy_http_version 1.1;
-      proxy_read_timeout 300;
+
+      # for larger uploads to not timeout, effectively unlimited
+      proxy_send_timeout 10d;
+      proxy_read_timeout 10d;
     }
 
     location ~* /internal/ {
