@@ -31,7 +31,11 @@ import {
 import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
 import { listControls } from "@/layouts/listControls";
 import { OrgTab, WorkflowTab } from "@/routes";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+} from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
 import { isApiError } from "@/utils/api";
 import { isActive, isSuccessfullyFinished, renderName } from "@/utils/crawler";
@@ -853,7 +857,7 @@ export class OrgCrawls extends BtrixElement {
       }
       let message = msg(str`Sorry, couldn't delete crawl at this time.`);
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(str`Only org owners can delete other users' crawls.`);
         } else if (e.message) {
           message = e.message;

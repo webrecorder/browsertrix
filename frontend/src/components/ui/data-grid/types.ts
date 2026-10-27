@@ -51,6 +51,7 @@ export type GridColumn<
   }) => TemplateResult<1>;
   renderCell?: (props: { item: Item }) => string | TemplateResult<1>;
   renderCellTooltip?: (props: { item: Item }) => string | TemplateResult<1>;
+  renderCellClasses?: (props: { item: Item }) => string | false | undefined;
   inputType?: InputType;
 } & (
   | {

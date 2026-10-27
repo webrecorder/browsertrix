@@ -29,10 +29,11 @@ import {
 import { panelBody } from "@/layouts/panel";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
-import type {
-  APIPaginatedList,
-  APIPaginationQuery,
-  APISortQuery,
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+  type APISortQuery,
 } from "@/types/api";
 import type {
   ArchivedItem,
@@ -1666,7 +1667,7 @@ export class ArchivedItemDetail extends BtrixElement {
       );
       this.navigate.to(this.listUrl);
       this.notify.toast({
-        message: msg(`Successfully deleted crawl`),
+        message: msg(`Successfully deleted archived item.`),
         variant: "success",
         icon: "check2-circle",
         id: "crawl-stop-error",
@@ -1676,7 +1677,7 @@ export class ArchivedItemDetail extends BtrixElement {
         str`Sorry, couldn't delete archived item at this time.`,
       );
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(
             str`Only org owners can delete other users' archived items.`,
           );
