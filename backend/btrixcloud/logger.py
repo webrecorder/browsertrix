@@ -229,7 +229,7 @@ def init_logging() -> None:
             foreign_pre_chain=SHARED_PROCESSORS,
             processors=[
                 structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                structlog.dev.ConsoleRenderer(colors=True),
+                structlog.dev.ConsoleRenderer(colors=False),
             ],
         )
 
