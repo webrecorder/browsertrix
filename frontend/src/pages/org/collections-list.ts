@@ -104,6 +104,7 @@ enum ListView {
   List = "list",
   Grid = "grid",
 }
+const DEFAULT_LIST_VIEW = ListView.List;
 
 const noData = html`<sl-tooltip hoist content=${stringFor.none}>
   <sl-icon name="dash-lg" class="text-base text-neutral-400"></sl-icon>
@@ -156,8 +157,21 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     },
   );
 
-  @state()
-  private listView = ListView.List;
+  private readonly listView = new SearchParamsValue<ListView | undefined>(
+    this,
+    (value, params) => {
+      const key = "view";
+      if (!value || value === DEFAULT_LIST_VIEW) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+      return params;
+    },
+    (params) => {
+      return (params.get("view") as ListView | null) ?? DEFAULT_LIST_VIEW;
+    },
+  );
 
   private readonly filterBy = new SearchParamsValue<FilterBy>(
     this,
@@ -289,14 +303,18 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                 <div class="lg:mx-1">
                   <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
                     ${guard(
-                      [collections, this.listView, this.collectionRefreshing],
-                      this.listView === ListView.List
+                      [
+                        collections,
+                        this.listView.value,
+                        this.collectionRefreshing,
+                      ],
+                      this.listView.value === ListView.List
                         ? this.renderList
                         : this.renderGrid,
                     )}
                   </btrix-overflow-scroll>
                 </div>
-                ${when(this.listView === ListView.List, () =>
+                ${when(this.listView.value === ListView.List, () =>
                   when(
                     collections.total > collections.pageSize ||
                       collections.page > 1,
@@ -452,10 +470,10 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly renderViewControl = () => {
     return html`<sl-radio-group
       id="view-select"
-      value=${this.listView}
+      value=${this.listView.value}
       size="small"
       @sl-change=${(e: SlChangeEvent) => {
-        this.listView = (e.target as SlRadioGroup).value as ListView;
+        this.listView.setValue((e.target as SlRadioGroup).value as ListView);
       }}
     >
       <sl-tooltip content=${msg("View as List")}>
