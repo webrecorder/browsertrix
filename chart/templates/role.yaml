@@ -13,10 +13,11 @@ rules:
 
 # Graceful shutdown uses exec into crawler pods (SIGTERM on resize/stop) and
 # redis save containers (SIGUSR1/SIGUSR2) - see operator/crawls.py and
-# operator/collindexes.py
+# operator/collindexes.py. The exec request is authorized twice, using `get` for
+# the websocket handshake and `create` for the exec itself, so both are needed.
 - apiGroups: [""]
   resources: ["pods/exec"]
-  verbs: ["get"]
+  verbs: ["get", "create"]
 
 # Per-org storage secrets and per-crawl signing secrets
 - apiGroups: [""]
