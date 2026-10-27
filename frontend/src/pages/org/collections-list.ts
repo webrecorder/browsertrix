@@ -282,46 +282,48 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             renderSortControl: this.renderSortControl,
             renderViewControl: this.renderViewControl,
           })}
-          ${when(
-            this.collectionsTask.value,
-            (collections) => html`
-              <div class="lg:mx-1">
-                <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
-                  ${guard(
-                    [collections, this.listView, this.collectionRefreshing],
-                    this.listView === ListView.List
-                      ? this.renderList
-                      : this.renderGrid,
-                  )}
-                </btrix-overflow-scroll>
-              </div>
-              ${when(this.listView === ListView.List, () =>
-                when(
-                  collections.total > collections.pageSize ||
-                    collections.page > 1,
-                  () => html`
-                    <footer class="mt-6 flex justify-center">
-                      <btrix-pagination
-                        page=${collections.page}
-                        totalCount=${collections.total}
-                        size=${collections.pageSize}
-                        @page-change=${async (e: PageChangeEvent) => {
-                          this.pagination = {
-                            ...this.pagination,
-                            page: e.detail.page,
-                          };
-                          await this.updateComplete;
+          ${guard([this.collectionsTask.value], () =>
+            when(
+              this.collectionsTask.value,
+              (collections) => html`
+                <div class="lg:mx-1">
+                  <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
+                    ${guard(
+                      [collections, this.listView, this.collectionRefreshing],
+                      this.listView === ListView.List
+                        ? this.renderList
+                        : this.renderGrid,
+                    )}
+                  </btrix-overflow-scroll>
+                </div>
+                ${when(this.listView === ListView.List, () =>
+                  when(
+                    collections.total > collections.pageSize ||
+                      collections.page > 1,
+                    () => html`
+                      <footer class="mt-6 flex justify-center">
+                        <btrix-pagination
+                          page=${collections.page}
+                          totalCount=${collections.total}
+                          size=${collections.pageSize}
+                          @page-change=${async (e: PageChangeEvent) => {
+                            this.pagination = {
+                              ...this.pagination,
+                              page: e.detail.page,
+                            };
+                            await this.updateComplete;
 
-                          // Scroll to top of list
-                          this.scrollIntoView({ behavior: "smooth" });
-                        }}
-                      ></btrix-pagination>
-                    </footer>
-                  `,
-                ),
-              )}
-            `,
-            this.renderLoading,
+                            // Scroll to top of list
+                            this.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        ></btrix-pagination>
+                      </footer>
+                    `,
+                  ),
+                )}
+              `,
+              this.renderLoading,
+            ),
           )}`,
       )}
 
