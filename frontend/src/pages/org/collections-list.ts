@@ -1,11 +1,12 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlChangeEvent,
   SlInput,
   SlMenuItem,
   SlRadioGroup,
 } from "@shoelace-style/shoelace";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
 import { guard } from "lit/directives/guard.js";
@@ -30,18 +31,25 @@ import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { metadata } from "@/strings/collections/metadata";
 import { stringFor } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
-import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
+import {
+  type APIPaginatedList,
+  type APIPaginationQuery,
+  type APISortQuery,
+} from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
+import {
+  decodeSortDirection,
+  encodeSortDirection,
+  validSortDirection,
+} from "@/utils/searchParamsEncoders";
 import { tw } from "@/utils/tailwind";
 
 type FilterBy = {
   name?: string;
 };
-
-type Collections = APIPaginatedList<Collection>;
 type SearchFields = keyof FilterBy;
 type SortField =
   | "modified"
@@ -50,6 +58,11 @@ type SortField =
   | "totalSize"
   | "pageCount"
   | "crawlCount";
+type SortBy = {
+  field: SortField;
+  direction: SortDirection;
+};
+
 const INITIAL_PAGE_SIZE = 20;
 const sortableFields: Record<
   SortField,
@@ -80,6 +93,10 @@ const sortableFields: Record<
     defaultDirection: SortDirection.Descending,
   },
 };
+const DEFAULT_SORT_BY: SortBy = {
+  field: "modified",
+  direction: sortableFields["modified"].defaultDirection!,
+};
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 5;
 
@@ -99,16 +116,45 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   isCrawler?: boolean;
 
   @state()
-  private collections?: Collections;
-
-  @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "modified",
-    direction: sortableFields["modified"].defaultDirection!,
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
   };
+
+  private readonly orderBy = new SearchParamsValue<SortBy>(
+    this,
+    (value, params) => {
+      if (value.field === DEFAULT_SORT_BY.field) {
+        params.delete("sortBy");
+      } else {
+        params.set("sortBy", value.field);
+      }
+      if (value.direction === sortableFields[value.field].defaultDirection) {
+        params.delete("sortDir");
+      } else {
+        params.set("sortDir", encodeSortDirection(value.direction));
+      }
+      return params;
+    },
+    (params) => {
+      let field = params.get("sortBy") as SortBy["field"] | null;
+
+      if (!field) {
+        field = DEFAULT_SORT_BY.field;
+      }
+      const sortDir = params.get("sortDir") as ReturnType<
+        typeof encodeSortDirection
+      > | null;
+      let direction =
+        sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
+
+      if (sortDir && validSortDirection(sortDir)) {
+        direction = decodeSortDirection(sortDir);
+      }
+
+      return { field, direction };
+    },
+  );
 
   @state()
   private listView = ListView.List;
@@ -180,16 +226,30 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  protected async willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (
-      changedProperties.has("filterBy.internalValue") ||
-      changedProperties.has("orderBy")
-    ) {
-      void this.fetchCollections();
-    }
-  }
+  private readonly collectionsTask = new Task(this, {
+    task: async ([pagination, orderBy, filterBy], { signal }) => {
+      try {
+        return await this.getCollections(
+          {
+            ...filterBy,
+            ...pagination,
+            sortBy: orderBy.field,
+            sortDirection: orderBy.direction,
+          },
+          signal,
+        );
+      } catch (e) {
+        if (isApiError(e)) {
+          this.fetchErrorStatusCode = e.statusCode;
+        } else {
+          console.error(e);
+        }
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [this.pagination, this.orderBy.value, this.filterBy.value] as const,
+  });
 
   render() {
     return html`
@@ -222,49 +282,47 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             renderSortControl: this.renderSortControl,
             renderViewControl: this.renderViewControl,
           })}
-          ${this.collections
-            ? html`
-                <div class="lg:mx-1">
-                  <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
-                    ${guard(
-                      [
-                        this.collections,
-                        this.listView,
-                        this.collectionRefreshing,
-                      ],
-                      this.listView === ListView.List
-                        ? this.renderList
-                        : this.renderGrid,
-                    )}
-                  </btrix-overflow-scroll>
-                </div>
-                ${when(this.listView === ListView.List, () =>
-                  when(
-                    (this.collections &&
-                      this.collections.total > this.collections.pageSize) ||
-                      (this.collections && this.collections.page > 1),
-                    () => html`
-                      <footer class="mt-6 flex justify-center">
-                        <btrix-pagination
-                          page=${this.collections!.page}
-                          totalCount=${this.collections!.total}
-                          size=${this.collections!.pageSize}
-                          @page-change=${async (e: PageChangeEvent) => {
-                            await this.fetchCollections({
-                              page: e.detail.page,
-                            });
+          ${when(
+            this.collectionsTask.value,
+            (collections) => html`
+              <div class="lg:mx-1">
+                <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
+                  ${guard(
+                    [collections, this.listView, this.collectionRefreshing],
+                    this.listView === ListView.List
+                      ? this.renderList
+                      : this.renderGrid,
+                  )}
+                </btrix-overflow-scroll>
+              </div>
+              ${when(this.listView === ListView.List, () =>
+                when(
+                  collections.total > collections.pageSize ||
+                    collections.page > 1,
+                  () => html`
+                    <footer class="mt-6 flex justify-center">
+                      <btrix-pagination
+                        page=${collections.page}
+                        totalCount=${collections.total}
+                        size=${collections.pageSize}
+                        @page-change=${async (e: PageChangeEvent) => {
+                          this.pagination = {
+                            ...this.pagination,
+                            page: e.detail.page,
+                          };
+                          await this.updateComplete;
 
-                            // Scroll to top of list
-                            // TODO once deep-linking is implemented, scroll to top of pushstate
-                            this.scrollIntoView({ behavior: "smooth" });
-                          }}
-                        ></btrix-pagination>
-                      </footer>
-                    `,
-                  ),
-                )}
-              `
-            : this.renderLoading()}`,
+                          // Scroll to top of list
+                          this.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      ></btrix-pagination>
+                    </footer>
+                  `,
+                ),
+              )}
+            `,
+            this.renderLoading,
+          )}`,
       )}
 
       <btrix-dialog
@@ -314,7 +372,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               `${this.navigate.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           } else {
-            void this.fetchCollections();
+            void this.collectionsTask.run();
           }
         }}
       >
@@ -329,7 +387,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               this.selectedCollection = undefined;
             }}
             @btrix-collection-saved=${() => {
-              void this.fetchCollections();
+              void this.collectionsTask.run();
             }}
           ></btrix-collection-edit-dialog>
     `;
@@ -346,14 +404,15 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
-        value=${this.orderBy.field}
+        value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
           const field = (e.target as HTMLSelectElement).value as SortField;
-          this.orderBy = {
-            field: field,
+          this.orderBy.setValue({
+            field,
             direction:
-              sortableFields[field].defaultDirection || this.orderBy.direction,
-          };
+              sortableFields[field].defaultDirection ||
+              this.orderBy.value.direction,
+          });
         }}
       >
         ${Object.entries(sortableFields).map(
@@ -362,15 +421,27 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           `,
         )}
       </sl-select>
-      <sl-tooltip content=${msg("Reverse sort")}>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === SortDirection.Ascending
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
         <sl-icon-button
-          name="arrow-down-up"
-          label=${msg("Reverse sort")}
+          name=${this.orderBy.value.direction === SortDirection.Ascending
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
           @click=${() => {
-            this.orderBy = {
-              ...this.orderBy,
-              direction: -1 * this.orderBy.direction,
-            };
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === SortDirection.Ascending
+                  ? SortDirection.Descending
+                  : SortDirection.Ascending,
+            });
           }}
         ></sl-icon-button>
       </sl-tooltip>`;
@@ -479,9 +550,11 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   }
 
   private readonly renderGrid = () => {
+    const collections = this.collectionsTask.value;
+
     return html`<btrix-collections-grid
       slug=${this.orgSlugState || ""}
-      .collections=${this.collections?.items}
+      .collections=${collections?.items}
       .collectionRefreshing=${this.collectionRefreshing}
       .renderActions=${(col: Collection) =>
         this.renderActions(col, { renderOnGridItem: true })}
@@ -489,24 +562,24 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       class="mt-8 block"
       @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
         this.collectionRefreshing = detail.id;
-        await this.fetchCollections();
+        await this.collectionsTask.run();
         this.collectionRefreshing = null;
       }}
     >
-      ${this.collections &&
-      this.collections.total > this.collections.items.length
+      ${collections && collections.total > collections.items.length
         ? html`
             <btrix-pagination
-              page=${this.collections.page}
-              totalCount=${this.collections.total}
-              size=${this.collections.pageSize}
+              page=${collections.page}
+              totalCount=${collections.total}
+              size=${collections.pageSize}
               @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchCollections({
+                this.pagination = {
+                  ...this.pagination,
                   page: e.detail.page,
-                });
+                };
+                await this.updateComplete;
 
                 // Scroll to top of list
-                // TODO once deep-linking is implemented, scroll to top of pushstate
                 this.scrollIntoView({ behavior: "smooth" });
               }}
               slot="pagination"
@@ -518,7 +591,9 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   };
 
   private readonly renderList = () => {
-    if (this.collections?.items.length) {
+    const items = this.collectionsTask.value?.items;
+
+    if (items?.length) {
       return html`
         <btrix-table
           class="mb-1 [--btrix-table-column-gap:var(--sl-spacing-small)]"
@@ -548,7 +623,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="[--btrix-row-gap:var(--sl-spacing-x-small)]">
-            ${this.collections.items.map(this.renderItem)}
+            ${items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
       `;
@@ -838,22 +913,6 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
   });
 
-  private async updateAccess(coll: Collection, access: CollectionAccess) {
-    await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ access }),
-    });
-
-    void this.fetchCollections();
-  }
-
-  private getPublicReplayURL(col: Collection) {
-    return new URL(
-      `/api/orgs/${this.orgId}/collections/${col.id}/public/replay.json`,
-      window.location.href,
-    ).href;
-  }
-
   private readonly manageCollection = async (
     collection: Collection,
     dialogName: CollectionsList["openDialogName"],
@@ -874,7 +933,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         },
       );
 
-      void this.fetchCollections();
+      void this.collectionsTask.run();
 
       this.notify.toast({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
@@ -908,47 +967,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
   }
 
-  private async fetchCollections(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
-
-    try {
-      this.collections = await this.getCollections(params);
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn’t retrieve collection at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-retrieve-status",
-        });
-      }
-    }
-  }
-
-  private async getCollections(queryParams?: APIPaginationQuery) {
-    const query = queryString.stringify(
-      {
-        ...this.filterBy.value,
-        page:
-          queryParams?.page ||
-          this.collections?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          queryParams?.pageSize ||
-          this.collections?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
+  private async getCollections(
+    queryParams: APIPaginationQuery & APISortQuery & FilterBy,
+    signal: AbortSignal,
+  ) {
+    const query = queryString.stringify(queryParams, {
+      arrayFormat: "comma",
+    });
 
     const data = await this.api.fetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
+      { signal },
     );
 
     return data;
