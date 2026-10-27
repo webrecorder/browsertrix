@@ -17,6 +17,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -36,8 +37,12 @@ import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
+type FilterBy = {
+  name?: string;
+};
+
 type Collections = APIPaginatedList<Collection>;
-type SearchFields = "name";
+type SearchFields = keyof FilterBy;
 type SortField =
   | "modified"
   | "dateLatest"
@@ -108,8 +113,39 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   @state()
   private listView = ListView.List;
 
-  @state()
-  private filterBy: Partial<Record<keyof Collection, unknown>> = {};
+  private readonly filterBy = new SearchParamsValue<FilterBy>(
+    this,
+    (value, params) => {
+      const keys = ["name"] as (keyof FilterBy)[];
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          switch (key) {
+            case "name":
+              params.set(key, value[key]);
+              break;
+            default:
+              break;
+          }
+        }
+      });
+      return params;
+    },
+    (params) => {
+      const values = {
+        name: params.get("name") ?? undefined,
+      };
+
+      if (Object.values(values).some((v) => v !== undefined)) {
+        return values;
+      }
+
+      // Since all values are optional, this can lead to an object with all undefined values,
+      // which should be considered equivalent to when all key-values are deleted from search params
+      return {};
+    },
+  );
 
   @state()
   private searchByValue = "";
@@ -147,7 +183,10 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   protected async willUpdate(
     changedProperties: PropertyValues<this> & Map<string, unknown>,
   ) {
-    if (changedProperties.has("filterBy") || changedProperties.has("orderBy")) {
+    if (
+      changedProperties.has("filterBy.internalValue") ||
+      changedProperties.has("orderBy")
+    ) {
       void this.fetchCollections();
     }
   }
@@ -374,21 +413,22 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           const key = item.dataset["key"] as SearchFields;
           this.searchByValue = item.value;
           await this.updateComplete;
-          this.filterBy = {
-            ...this.filterBy,
+          this.filterBy.setValue({
+            ...this.filterBy.value,
             [key]: item.value,
-          };
+          });
         }}
       >
         <sl-input
           size="small"
           placeholder=${msg("Search by name")}
+          value=${this.filterBy.value.name ?? ""}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name: _, ...otherFilters } = this.filterBy;
-            this.filterBy = otherFilters;
+            const { name: _, ...otherFilters } = this.filterBy.value;
+            this.filterBy.setValue(otherFilters);
           }}
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
@@ -793,10 +833,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
 
     if (!this.searchByValue) {
-      const { name: _, ...otherFilters } = this.filterBy;
-      this.filterBy = {
-        ...otherFilters,
-      };
+      const { name: _, ...otherFilters } = this.filterBy.value;
+      this.filterBy.setValue(otherFilters);
     }
   });
 
@@ -892,7 +930,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private async getCollections(queryParams?: APIPaginationQuery) {
     const query = queryString.stringify(
       {
-        ...this.filterBy,
+        ...this.filterBy.value,
         page:
           queryParams?.page ||
           this.collections?.page ||
