@@ -37,13 +37,16 @@ import {
   type APIPaginationQuery,
 } from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isActive, isSuccessfullyFinished, renderName } from "@/utils/crawler";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortBy,
+} from "@/utils/searchParams/orderBy";
 
 type Crawls = APIPaginatedList<Crawl>;
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
-
 type Keys<T> = (keyof T)[];
 
 const POLL_INTERVAL_SECONDS = 5;
@@ -55,33 +58,29 @@ const sortableFields: Record<
 > = {
   started: {
     label: msg("Date Started"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   finished: {
     label: msg("Date Finished"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   crawlExecSeconds: {
     label: msg("Execution Time"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   pageCount: {
     label: msg("Pages Crawled"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   fileSize: {
     label: msg("Size"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
 };
 
 type SortField = keyof typeof sortableFields;
 
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
-const DEFAULT_SORT_BY: SortBy = {
+const DEFAULT_SORT_BY: SortBy<SortField> = {
   field: "started",
   direction: sortableFields["started"].defaultDirection!,
 };
@@ -113,38 +112,12 @@ export class OrgCrawls extends BtrixElement {
   @state()
   private searchOptions: Record<string, string>[] = [];
 
-  @state()
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy");
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
+
   private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
     this,
     (value, params) => {
@@ -552,23 +525,25 @@ export class OrgCrawls extends BtrixElement {
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
+        content=${this.orderBy.value.direction === SortDirection.Ascending
           ? msg("Sort in descending order")
           : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
+          name=${this.orderBy.value.direction === SortDirection.Ascending
             ? "sort-up-alt"
             : "sort-down"}
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
               direction:
-                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+                this.orderBy.value.direction === SortDirection.Ascending
+                  ? SortDirection.Descending
+                  : SortDirection.Ascending,
             });
           }}
         ></sl-icon-button>
@@ -784,7 +759,7 @@ export class OrgCrawls extends BtrixElement {
           : undefined,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: params.orderBy.direction,
       },
       {
         arrayFormat: "none",
