@@ -5,7 +5,7 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -1143,18 +1143,31 @@ class PageOps:
 
         migrate_logger = logger.bind(version=version)
 
+        # Claims carry a timestamp so a pod hard-killed mid-migration leaves a
+        # lease that eventually expires and can be reclaimed, rather than
+        # blocking the final wait loop forever. A claim older than this is
+        # considered orphaned (no live worker should hold one that long) and
+        # may be re-claimed, at which point the crawl is re-processed (which
+        # is idempotent).
+        stale_claim_before = dt_now() - timedelta(minutes=10)
+
+        # A crawl is claimable if it isn't migrating, or its claim is stale.
+        def claimable_query():
+            return {
+                "version": {"$ne": version},
+                "finished": {"$ne": None},
+                "$or": [
+                    {"isMigrating": {"$ne": True}},
+                    {"migrationStarted": {"$lt": stale_claim_before}},
+                ],
+            }
+
         async def process_finished_crawls():
             while True:
                 # Pull new finished crawl and set isMigrating
-                match_query = {
-                    "version": {"$ne": version},
-                    "isMigrating": {"$ne": True},
-                    "finished": {"$ne": None},
-                }
-
                 next_crawl = await self.crawls.find_one_and_update(
-                    match_query,
-                    {"$set": {"isMigrating": True}},
+                    claimable_query(),
+                    {"$set": {"isMigrating": True, "migrationStarted": dt_now()}},
                     sort=[("finished", -1)],
                     projection={
                         "_id": 1,
@@ -1214,7 +1227,10 @@ class PageOps:
                     # Update crawl version and unset isMigrating
                     await self.crawls.find_one_and_update(
                         {"_id": crawl_id},
-                        {"$set": {"version": version, "isMigrating": False}},
+                        {
+                            "$set": {"version": version, "isMigrating": False},
+                            "$unset": {"migrationStarted": ""},
+                        },
                     )
                 # pylint: disable=broad-exception-caught
                 except Exception:
@@ -1255,12 +1271,25 @@ class PageOps:
         # parallelism to work as expected, pods must only return exit code 0
         # once the work in all pods is fully complete.
         while True:
-            in_progress = await self.crawls.find_one({"isMigrating": True})
-            if in_progress is None:
+            # Only wait on un-migrated crawls whose claim is still fresh
+            # (owned by a live worker). A crawler that is un-migrated and not
+            # freshly claimed is orphaned (its worker died) and would
+            # otherwise block this loop forever; it gets reclaimed and
+            # re-processed on a subsequent run.
+            pending = await self.crawls.find_one(
+                {
+                    "version": {"$ne": version},
+                    "$or": [
+                        {"isMigrating": {"$ne": True}},
+                        {"migrationStarted": {"$gte": stale_claim_before}},
+                    ],
+                }
+            )
+            if pending is None:
                 break
             migrate_logger.info(
                 "unmigrated_crawls_remain_finishing",
-                in_progress=in_progress._id,  # pylint: disable=protected-access
+                in_progress=pending._id,  # pylint: disable=protected-access
                 unstructured_message="Unmigrated crawls remain, finishing job",
             )
             await asyncio.sleep(5)

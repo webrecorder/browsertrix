@@ -5,6 +5,7 @@ A web server to record POST requests and return them on a GET request
 
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlparse
 
 BIND_HOST = "0.0.0.0"
 PORT = 18080
@@ -20,6 +21,19 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(
                 json.dumps({"value": 1.0, "currency": "usd"}).encode("utf-8")
+            )
+        elif urlparse(self.path).path.endswith("/prices/additionalStorage"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            interval = parse_qs(urlparse(self.path).query).get("interval", ["month"])[0]
+            self.wfile.write(
+                json.dumps(
+                    {
+                        "value": 2.0 if interval == "year" else 1.0,
+                        "currency": "usd",
+                    }
+                ).encode("utf-8")
             )
         else:
             self.send_response(200)
@@ -46,6 +60,12 @@ class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
                     {"checkoutUrl": "https://checkout.example.com/path/"}
                 ).encode("utf-8")
             )
+        elif self.path.endswith("/subscription/additionalStorage"):
+            # POST body: {"subId": ..., "orgId": ..., "sizeGB": ...}
+            payload = json.loads(body.decode("utf-8").replace("'", '"'))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"sizeGB": payload["sizeGB"]}).encode("utf-8"))
         else:
             self.end_headers()
 
