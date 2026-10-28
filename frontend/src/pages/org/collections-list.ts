@@ -592,8 +592,10 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       `;
     }
 
+    const searchByValue = this.searchByValue.trim();
+
     const search_term = html`<strong class="font-semibold"
-      >${this.searchByValue}</strong
+      >${searchByValue}</strong
     >`;
 
     return html`
@@ -601,9 +603,11 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         ({ item }) => html`
           <sl-menu-item slot="menu-item" data-key="name" value=${item.name}>
             ${item.name}
-            <btrix-badge slot="suffix" variant="success" outline
-              >${msg("Exact match")}</btrix-badge
-            >
+            ${item.name.toLowerCase() === searchByValue.toLowerCase()
+              ? html`<btrix-badge slot="suffix" variant="success" outline
+                  >${msg("Exact match")}</btrix-badge
+                >`
+              : nothing}
           </sl-menu-item>
         `,
       )}
@@ -611,7 +615,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       <sl-menu-item
         slot="menu-item"
         data-key="namePrefix"
-        value=${this.searchByValue}
+        value=${searchByValue}
       >
         ${msg(html`Collection name starts with ${search_term}`)}
       </sl-menu-item>
