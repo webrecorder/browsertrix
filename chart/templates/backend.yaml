@@ -78,9 +78,12 @@ spec:
                         apiVersion: v1
                         fieldPath: metadata.namespace
 
-        # readOnlyRootFilesystem leaves no writable /tmp; uploads and temp
-        # files (file_uploads.py, orgs.py) need one.
-        - name: tmp
+        # readOnlyRootFilesystem leaves no writable /tmp
+        - name: tmp-migrations
+          emptyDir: {}
+        - name: tmp-api
+          emptyDir: {}
+        - name: tmp-op
           emptyDir: {}
 
       initContainers:
@@ -113,7 +116,7 @@ spec:
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
 
-            - name: tmp
+            - name: tmp-migrations
               mountPath: /tmp
 
             - name: config-volume
@@ -197,7 +200,7 @@ spec:
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
 
-            - name: tmp
+            - name: tmp-api
               mountPath: /tmp
 
             - name: ops-configs
@@ -286,7 +289,7 @@ spec:
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
 
-            - name: tmp
+            - name: tmp-op
               mountPath: /tmp
 
             - name: config-volume
