@@ -505,7 +505,7 @@ export class ArchivedItemQA extends BtrixElement {
               <sl-menu>
                 <sl-menu-item @click=${() => void this.reviewDialog?.show()}>
                   <sl-icon slot="prefix" name="patch-check-fill"></sl-icon>
-                  ${msg("Rate Crawl")}
+                  ${msg("Rate This Item")}
                 </sl-menu-item>
                 <btrix-menu-item-link href="${itemBaseUrl}#qa">
                   <sl-icon slot="prefix" name="clipboard2-data-fill"></sl-icon>
