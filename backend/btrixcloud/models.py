@@ -1789,11 +1789,11 @@ class DedupeIndexStats(BaseModel):
 
 
 # ============================================================================
-class CollectionMissingDependencies(BaseModel):
+class CollectionMissingRequiresCrawls(BaseModel):
     """Crawl ids required by deduped crawls in a collection
     that are no longer present in the org."""
 
-    missingDependencies: list[str] = []
+    missingRequiresCrawls: list[str] = []
 
 
 # ============================================================================

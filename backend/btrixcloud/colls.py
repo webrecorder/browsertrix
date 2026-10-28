@@ -33,7 +33,7 @@ from .models import (
     Collection,
     CollectionAddRemove,
     CollectionAllResponse,
-    CollectionMissingDependencies,
+    CollectionMissingRequiresCrawls,
     CollectionSearchValuesResponse,
     CollectionThumbnailSource,
     CollIdName,
@@ -967,7 +967,7 @@ class CollectionOps:
         )
         return coll and coll.get("indexState") is not None
 
-    async def get_missing_dependencies(
+    async def get_missing_requires_crawls(
         self, coll_id: UUID, org: Organization
     ) -> list[str]:
         """Return crawl ids required as dependencies by crawls in this
@@ -989,7 +989,7 @@ class CollectionOps:
 
         # only report dependencies that are gone from the org entirely; crawls
         # that still exist but were merely removed from this collection are fine
-        return sorted(await self.crawl_ops.find_missing_crawls(required, org.id))
+        return await self.crawl_ops.find_missing_requires_crawls(required, org.id)
 
     # END DEDUPE OPS
 
@@ -1755,14 +1755,14 @@ def init_collections_api(
     @app.get(
         "/orgs/{oid}/collections/{coll_id}/dedupeIndex/missingDependencies",
         tags=["collections", "dedupe"],
-        response_model=CollectionMissingDependencies,
+        response_model=CollectionMissingRequiresCrawls,
     )
     async def get_missing_dependencies(
         coll_id: UUID,
         org: Organization = Depends(org_viewer_dep),
     ):
-        return CollectionMissingDependencies(
-            missingDependencies=await colls.get_missing_dependencies(coll_id, org)
+        return CollectionMissingRequiresCrawls(
+            missingRequiresCrawls=await colls.get_missing_requires_crawls(coll_id, org)
         )
 
     @app.post(
