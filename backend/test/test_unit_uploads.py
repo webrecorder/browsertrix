@@ -301,7 +301,7 @@ def setup_split(upload_ops: UploadOps, find_result: dict | None):
     org = SimpleNamespace(
         id=uuid4(),
         storage=MagicMock(),
-        quotas=SimpleNamespace(storageQuota=0),
+        quotas=SimpleNamespace(storageQuota=0, extraStorageQuota=0),
         bytesStored=0,
     )
 
