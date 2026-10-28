@@ -492,6 +492,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   };
 
   private readonly renderSearch = () => {
+    // TODO Update `search-combobox` to handle and use component instead
     let prefix = html`<sl-icon
       name="search"
       slot="prefix"
