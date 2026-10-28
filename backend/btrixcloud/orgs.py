@@ -1376,6 +1376,7 @@ class OrgOps(BaseOrgs):
         stream_file_object,
         ignore_version: bool = False,
         storage_name: str | None = None,
+        pages_batch_size=100,
     ) -> None:
         """Import org from exported org JSON
 
@@ -1488,8 +1489,8 @@ class OrgOps(BaseOrgs):
                     workflow[userid_field] = user_id_map[old_userid]
 
             # Convert scale to browser windows and respect limits
-            workflow_scale = max(workflow.get("scale", 1), MAX_CRAWL_SCALE)
             if workflow.get("browserWindows") is None:
+                workflow_scale = max(workflow.get("scale") or 1, MAX_CRAWL_SCALE)
                 workflow_browser_windows = browser_windows_from_scale(workflow_scale)
                 workflow["browserWindows"] = max(
                     workflow_browser_windows, MAX_BROWSER_WINDOWS
@@ -1565,9 +1566,19 @@ class OrgOps(BaseOrgs):
             )
 
         # pages
+        pages_buffer: list[PageWithAllQA] = []
+
         for page in org_data.get("pages", []):
             page = json_stream.to_standard_types(page)
-            await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
+            pages_buffer.append(PageWithAllQA.from_dict(page))
+
+            if len(pages_buffer) % pages_batch_size == 0:
+                await self.page_ops.add_pages_to_db(pages_buffer, crawl_id=None)
+                pages_buffer = []
+
+        if pages_buffer:
+            await self.page_ops.add_pages_to_db(pages_buffer, crawl_id=None)
+            pages_buffer = []
 
         # collections
         for coll_raw in org_data.get("collections", []):

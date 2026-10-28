@@ -4,7 +4,7 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -145,9 +145,7 @@ class PageOps:
 
                 if len(pages_buffer) > batch_size:
                     try:
-                        await self._add_pages_to_db(
-                            crawl_id, pages_buffer, ordered=False
-                        )
+                        await self.add_pages_to_db(pages_buffer, crawl_id)
                     # pylint: disable=broad-exception-caught
                     except Exception as e:
                         wacz_logger.warning(
@@ -166,7 +164,7 @@ class PageOps:
             # Add any remaining pages in buffer to db
             if pages_buffer:
                 try:
-                    await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                    await self.add_pages_to_db(pages_buffer, crawl_id)
                 # pylint: disable=broad-exception-caught
                 except Exception as e:
                     wacz_logger.warning(
@@ -230,7 +228,7 @@ class PageOps:
         p.compute_page_type()
         return p
 
-    async def _add_pages_to_db(self, crawl_id: str, pages: list[Page], ordered=True):
+    async def add_pages_to_db(self, pages: Sequence[Page], crawl_id: str | None):
         """Add batch of pages to db in one insert"""
         try:
             result = await self.pages.insert_many(
@@ -240,7 +238,7 @@ class PageOps:
                     )
                     for page in pages
                 ],
-                ordered=ordered,
+                ordered=False,
             )
         except pymongo.errors.BulkWriteError as bwe:
             for err in bwe.details.get("writeErrors", []):
@@ -257,7 +255,9 @@ class PageOps:
             )
             return
 
-        await self.update_crawl_file_and_error_counts(crawl_id, pages)
+        # update crawl counts only if crawl_id provided
+        if crawl_id:
+            await self.update_crawl_file_and_error_counts(crawl_id, pages)
 
     async def add_page_to_db(
         self,
@@ -305,7 +305,7 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, crawl_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: list[Page] | None = None
+        self, crawl_id: str, pages: Sequence[Page] | None = None
     ):
         """Update crawl filePageCount and errorPageCount.
 
