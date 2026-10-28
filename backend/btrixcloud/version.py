@@ -2,6 +2,6 @@
 
 import os
 
-__version__ = "1.26.3"
+__version__ = "1.26.4"
 __commit_hash__ = os.environ.get("GIT_COMMIT_HASH")
 __branch__ = os.environ.get("GIT_BRANCH_NAME")
