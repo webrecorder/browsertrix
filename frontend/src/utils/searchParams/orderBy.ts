@@ -1,30 +1,9 @@
 import { type SearchParamsValue } from "@/controllers/searchParamsValue";
 import { SortDirection } from "@/types/utils";
 
-enum SortDirectionStr {
+export enum EncodedSortDirection {
   Descending = "desc",
   Ascending = "asc",
-}
-
-export function validSortDirection(
-  dir?: AnyString | null,
-): dir is SortDirectionStr {
-  if (
-    dir &&
-    (dir === SortDirectionStr.Descending || dir === SortDirectionStr.Ascending)
-  )
-    return true;
-  return false;
-}
-
-function encodeSortDirection(dir: SortDirection) {
-  if (dir === SortDirection.Descending) return SortDirectionStr.Descending;
-  return SortDirectionStr.Ascending;
-}
-
-function decodeSortDirection(dir: SortDirectionStr) {
-  if (dir === SortDirectionStr.Descending) return SortDirection.Descending;
-  return SortDirection.Ascending;
 }
 
 export type SortBy<T extends string> = {
@@ -32,15 +11,39 @@ export type SortBy<T extends string> = {
   direction: SortDirection;
 };
 
+export type SortableFields<T extends string> = Record<
+  T,
+  { label: string; defaultDirection?: SortDirection }
+>;
+
+export function validSortDirection(
+  dir?: AnyString | null,
+): dir is EncodedSortDirection {
+  if (
+    dir &&
+    (dir === EncodedSortDirection.Descending ||
+      dir === EncodedSortDirection.Ascending)
+  )
+    return true;
+  return false;
+}
+
+function encodeSortDirection(dir: SortDirection) {
+  if (dir === SortDirection.Descending) return EncodedSortDirection.Descending;
+  return EncodedSortDirection.Ascending;
+}
+
+function decodeSortDirection(dir: EncodedSortDirection) {
+  if (dir === EncodedSortDirection.Descending) return SortDirection.Descending;
+  return SortDirection.Ascending;
+}
+
 export function orderByEncoder<T extends string>({
   defaultSort,
   sortableFields,
 }: {
   defaultSort: SortBy<T>;
-  sortableFields: Record<
-    T,
-    { label: string; defaultDirection?: SortDirection }
-  >;
+  sortableFields: SortableFields<T>;
 }): ConstructorParameters<typeof SearchParamsValue<SortBy<T>>>[1] {
   return (value, params) => {
     if (value.field === defaultSort.field) {
@@ -61,10 +64,7 @@ export function orderByDecoder<T extends string>({
   sortableFields,
 }: {
   defaultSort: SortBy<T>;
-  sortableFields: Record<
-    T,
-    { label: string; defaultDirection?: SortDirection }
-  >;
+  sortableFields: SortableFields<T>;
 }): ConstructorParameters<typeof SearchParamsValue<SortBy<T>>>[2] {
   return (params) => {
     let field = params.get("sortBy") as SortBy<T>["field"] | null;

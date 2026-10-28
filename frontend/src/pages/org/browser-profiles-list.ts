@@ -37,6 +37,7 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import {
   orderByDecoder,
   orderByEncoder,
+  type SortableFields,
   type SortBy,
 } from "@/utils/searchParams/orderBy";
 import { toSearchItem, type SearchValues } from "@/utils/searchValues";
@@ -44,10 +45,7 @@ import { tw } from "@/utils/tailwind";
 
 type SortField = "name" | "url" | "modified" | "created";
 
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   name: {
     label: msg("Name"),
     defaultDirection: SortDirection.Ascending,
@@ -64,12 +62,11 @@ const sortableFields: Record<
     label: msg("Date Created"),
     defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
 
 const DEFAULT_SORT_BY = {
   field: "modified",
-  direction:
-    sortableFields.modified.defaultDirection || SortDirection.Descending,
+  direction: sortableFields.modified.defaultDirection,
 } as const satisfies SortBy<SortField>;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
@@ -476,9 +473,7 @@ export class BrowserProfilesList extends BtrixElement {
           const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >

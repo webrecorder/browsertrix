@@ -52,10 +52,7 @@ type Keys<T> = (keyof T)[];
 const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const sortableFields: Record<
-  string,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   started: {
     label: msg("Date Started"),
     defaultDirection: SortDirection.Descending,
@@ -76,14 +73,17 @@ const sortableFields: Record<
     label: msg("Size"),
     defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies Record<
+  string,
+  { label: string; defaultDirection?: SortDirection }
+>;
 
 type SortField = keyof typeof sortableFields;
 
-const DEFAULT_SORT_BY: SortBy<SortField> = {
+const DEFAULT_SORT_BY = {
   field: "started",
-  direction: sortableFields["started"].defaultDirection!,
-};
+  direction: sortableFields["started"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 
 type FilterBy = {
   id?: string;
@@ -513,12 +513,10 @@ export class OrgCrawls extends BtrixElement {
         pill
         value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
-          const field = (e.target as HTMLSelectElement).value;
+          const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
