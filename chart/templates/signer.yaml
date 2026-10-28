@@ -125,9 +125,6 @@ spec:
               subPath: signer
 
           resources:
-            limits:
-              memory: {{ .Values.signer_memory }}
-
             requests:
               cpu: {{ .Values.signer_cpu }}
               memory: {{ .Values.signer_memory }}

@@ -1,6 +1,7 @@
 import os
 import time
 from tempfile import TemporaryFile
+from urllib.parse import quote
 from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
@@ -1047,13 +1048,21 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     data = r.json()
 
     assert len(data["items"]) >= 1
-
-    found_matching_page = False
     for page in data["items"]:
-        if page["id"] == coll_page_id and page["url"] == coll_page_url:
-            found_matching_page = True
+        assert page["url"].startswith(url_prefix)
 
-    assert found_matching_page
+    # Test urlRegex filter
+    url_regex = quote(r"webrecorder\.net")
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?urlRegex={url_regex}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["items"]) >= 1
+    for page in data["items"]:
+        assert "webrecorder.net" in page["url"]
 
     # Test isSeed filter
     r = requests.get(

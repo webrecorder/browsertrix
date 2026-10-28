@@ -24,6 +24,10 @@ const styles = unsafeCSS(stylesheet);
  *
  * [Figma design file](https://www.figma.com/design/ySaSMMI2vctbxP3edAHXib/Webrecorder-Shoelace?node-id=1327-354&p=f)
  *
+ * @cssPart base
+ * @cssPart table
+ * @cssPart head
+ * @cssPart body
  * @slot label
  * @slot rows
  * @fires btrix-change
@@ -159,6 +163,7 @@ export class DataGrid<
           : nothing}
       </slot>
       <div
+        part="base"
         class=${clsx(
           this.stickyHeader === "table" && tw`overflow-x-auto overscroll-none`,
           this.stickyHeader && tw`rounded border`,
@@ -181,6 +186,7 @@ export class DataGrid<
 
     return html`
       <btrix-table
+        part="table"
         role="grid"
         class=${clsx(
           tw`relative size-full min-w-0`,
@@ -201,6 +207,7 @@ export class DataGrid<
         aria-readonly=${ifDefined(this.disabled)}
       >
         <btrix-table-head
+          part="head"
           class=${clsx(
             tw`[--btrix-table-cell-padding:var(--sl-spacing-x-small)]`,
             this.stickyHeader
@@ -249,6 +256,7 @@ export class DataGrid<
             : nothing}
         </btrix-table-head>
         <btrix-table-body
+          part="body"
           class=${clsx(
             "data-grid-body data-grid-body--horizontalRule",
             this.stickyHeader

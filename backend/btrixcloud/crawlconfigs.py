@@ -125,6 +125,12 @@ class CrawlConfigOps:
     crawler_images_map: dict[str, str]
     crawler_image_pull_policy_map: dict[str, str]
 
+    default_filename_template: str
+    default_crawler_image_pull_policy: str
+
+    default_behavior_timeout: int
+    default_page_load_timeout: int
+
     paused_expiry_delta: timedelta
 
     def __init__(
@@ -155,6 +161,13 @@ class CrawlConfigOps:
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
         self.default_crawler_image_pull_policy = os.environ.get(
             "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
+
+        self.default_behavior_timeout = int(
+            os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
+        )
+        self.default_page_load_timeout = int(
+            os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         )
 
         self.min_seed_file_crawler_image = os.environ.get("MIN_SEED_FILE_CRAWLER_IMAGE")
@@ -263,6 +276,15 @@ class CrawlConfigOps:
         user: User,
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
+
+        # don't allow new crawlconfigs if in read-only mode
+        self.org_ops.can_write_data(org)
+
+        # max number of workflows = max pages * concurrent crawls
+        max_workflows = org.quotas.maxPagesPerCrawl * org.quotas.maxConcurrentCrawls
+        if max_workflows:
+            if await self.get_num_active_workflows(org.id) >= max_workflows:
+                raise HTTPException(status_code=403, detail="too_many_crawl_workflows")
 
         # ensure crawlChannel is valid
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
@@ -489,6 +511,15 @@ class CrawlConfigOps:
             else:
                 crawlconfig.config.limit = org.quotas.maxPagesPerCrawl
 
+    def ensure_timeout_defaults(self, crawlconfig: CrawlConfig):
+        """ensure timeouts are set to configured defaults"""
+        config = crawlconfig.config
+        if config.behaviorTimeout is None:
+            config.behaviorTimeout = self.default_behavior_timeout
+
+        if config.pageLoadTimeout is None:
+            config.pageLoadTimeout = self.default_page_load_timeout
+
     async def add_new_crawl(
         self,
         crawl_id: str,
@@ -502,6 +533,7 @@ class CrawlConfigOps:
         started = dt_now()
 
         self.ensure_quota_page_limit(crawlconfig, org)
+        self.ensure_timeout_defaults(crawlconfig)
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
@@ -518,6 +550,12 @@ class CrawlConfigOps:
         await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
             {"$inc": {"crawlAttemptCount": 1}},
+        )
+
+    async def get_num_active_workflows(self, oid: UUID) -> int:
+        """return number of active workflows for an org"""
+        return await self.crawl_configs.count_documents(
+            {"oid": oid, "inactive": {"$ne": True}}
         )
 
     def check_attr_changed(
@@ -1254,7 +1292,9 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def add_or_remove_exclusion(self, regex, cid, org, user, add=True):
+    async def add_or_remove_exclusion(
+        self, regex, cid, org, user, add=True
+    ) -> list[str]:
         """added or remove regex to crawl config"""
         # get crawl config
         crawl_config = await self.get_crawl_config(cid, org.id, active_only=False)
@@ -1281,7 +1321,7 @@ class CrawlConfigOps:
 
         await self.update_crawl_config(cid, org, user, update_config)
 
-        return crawl_config.config
+        return crawl_config.config.exclude
 
     async def remove_collection_from_all_configs(
         self, coll_id: UUID, org: Organization
@@ -2014,13 +2054,13 @@ def init_crawl_config_api(
     @router.get("/crawler-channels", response_model=CrawlerChannels)
     async def get_crawler_channels(
         # pylint: disable=unused-argument
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return ops.crawler_channels
 
     @router.get("/crawler-proxies", response_model=CrawlerProxies)
     async def get_crawler_proxies(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return CrawlerProxies(
             default_proxy_id=DEFAULT_PROXY_ID,

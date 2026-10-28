@@ -140,7 +140,7 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
             "failOnContentCheck": True,
             "behaviors": "siteSpecific",
             "customBehaviors": [
-              "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
+                "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
             ],
         },
         "profileid": profile_id,
@@ -166,6 +166,10 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
         if data["state"] == "running":
             # Give crawl time to start properly
             time.sleep(30)
+            return crawl_id
+        if data["state"] in ("failed_not_logged_in", "failed", "complete"):
+            # The crawl can detect the login failure and reach its terminal
+            # state in under one poll interval, so "running" may never be seen.
             return crawl_id
         time.sleep(5)
 

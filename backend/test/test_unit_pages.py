@@ -69,6 +69,6 @@ async def test_all_duplicate_insert_does_not_raise_or_inc(page_ops: PageOps):
     page = MagicMock()
     page.to_dict = lambda **kwargs: {"_id": "p1"}
     # Must not raise
-    await page_ops._add_pages_to_db("crawl-1", [page], ordered=False)
+    await page_ops.add_pages_to_db([page], "crawl-1")
 
     page_ops.crawls.find_one_and_update.assert_not_awaited()

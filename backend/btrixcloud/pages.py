@@ -4,7 +4,7 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -145,9 +145,7 @@ class PageOps:
 
                 if len(pages_buffer) > batch_size:
                     try:
-                        await self._add_pages_to_db(
-                            crawl_id, pages_buffer, ordered=False
-                        )
+                        await self.add_pages_to_db(pages_buffer, crawl_id)
                     # pylint: disable=broad-exception-caught
                     except Exception as e:
                         wacz_logger.warning(
@@ -166,7 +164,7 @@ class PageOps:
             # Add any remaining pages in buffer to db
             if pages_buffer:
                 try:
-                    await self._add_pages_to_db(crawl_id, pages_buffer, ordered=False)
+                    await self.add_pages_to_db(pages_buffer, crawl_id)
                 # pylint: disable=broad-exception-caught
                 except Exception as e:
                     wacz_logger.warning(
@@ -230,7 +228,7 @@ class PageOps:
         p.compute_page_type()
         return p
 
-    async def _add_pages_to_db(self, crawl_id: str, pages: list[Page], ordered=True):
+    async def add_pages_to_db(self, pages: Sequence[Page], crawl_id: str | None):
         """Add batch of pages to db in one insert"""
         try:
             result = await self.pages.insert_many(
@@ -240,7 +238,7 @@ class PageOps:
                     )
                     for page in pages
                 ],
-                ordered=ordered,
+                ordered=False,
             )
         except pymongo.errors.BulkWriteError as bwe:
             for err in bwe.details.get("writeErrors", []):
@@ -257,7 +255,9 @@ class PageOps:
             )
             return
 
-        await self.update_crawl_file_and_error_counts(crawl_id, pages)
+        # update crawl counts only if crawl_id provided
+        if crawl_id:
+            await self.update_crawl_file_and_error_counts(crawl_id, pages)
 
     async def add_page_to_db(
         self,
@@ -305,7 +305,7 @@ class PageOps:
             await self.add_qa_run_for_page(page.id, oid, qa_run_id, crawl_id, compare)
 
     async def update_crawl_file_and_error_counts(
-        self, crawl_id: str, pages: list[Page] | None = None
+        self, crawl_id: str, pages: Sequence[Page] | None = None
     ):
         """Update crawl filePageCount and errorPageCount.
 
@@ -615,6 +615,7 @@ class PageOps:
         search: str | None = None,
         url: str | None = None,
         url_prefix: str | None = None,
+        url_regex: str | None = None,
         ts: datetime | None = None,
         is_seed: bool | None = None,
         depth: int | None = None,
@@ -683,6 +684,8 @@ class PageOps:
             query["url"] = urllib.parse.unquote(url)
         elif url_prefix:
             query["url"] = {"$gte": urllib.parse.unquote(url_prefix)}
+        elif url_regex:
+            query["url"] = {"$regex": urllib.parse.unquote(url_regex)}
 
         if ts:
             query["ts"] = ts
@@ -1364,28 +1367,48 @@ def init_pages_api(
     async def get_page(
         crawl_id: str,
         page_id: UUID,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         """GET single page"""
         return await ops.get_page_out(page_id, org.id, crawl_id)
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
-        tags=["pages", "qa"],
+        tags=["pages", "qa", "crawls"],
+        response_model=PageOutWithSingleQA,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        tags=["pages", "qa", "uploads"],
+        response_model=PageOutWithSingleQA,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        tags=["pages", "qa", "all-crawls"],
         response_model=PageOutWithSingleQA,
     )
     async def get_page_with_qa(
         crawl_id: str,
         qa_run_id: str,
         page_id: UUID,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         """GET single page with QA details"""
         return await ops.get_page_out(page_id, org.id, crawl_id, qa_run_id=qa_run_id)
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=UpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}",
+        tags=["pages", "uploads"],
+        response_model=UpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}",
+        tags=["pages", "all-crawls"],
         response_model=UpdatedResponse,
     )
     async def update_page_approval(
@@ -1402,7 +1425,17 @@ def init_pages_api(
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageNoteAddedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "uploads"],
+        response_model=PageNoteAddedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "all-crawls"],
         response_model=PageNoteAddedResponse,
     )
     async def add_page_note(
@@ -1417,7 +1450,17 @@ def init_pages_api(
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageNoteUpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "uploads"],
+        response_model=PageNoteUpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "all-crawls"],
         response_model=PageNoteUpdatedResponse,
     )
     async def edit_page_note(
@@ -1432,7 +1475,17 @@ def init_pages_api(
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes/delete",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=DeletedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes/delete",
+        tags=["pages", "uploads"],
+        response_model=DeletedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes/delete",
+        tags=["pages", "all-crawls"],
         response_model=DeletedResponse,
     )
     async def delete_page_notes(
@@ -1461,10 +1514,11 @@ def init_pages_api(
     )
     async def get_crawl_pages_list(
         crawl_id: str,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
         urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1487,6 +1541,7 @@ def init_pages_api(
             search=search,
             url=url,
             url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
@@ -1506,9 +1561,19 @@ def init_pages_api(
         tags=["pages", "crawls"],
         response_model=PageOutItemsResponse,
     )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pagesSearch",
+        tags=["pages", "uploads"],
+        response_model=PageOutItemsResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pagesSearch",
+        tags=["pages", "all-crawls"],
+        response_model=PageOutItemsResponse,
+    )
     async def get_search_pages_list(
         crawl_id: str,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
         ts: datetime | None = None,
@@ -1584,6 +1649,8 @@ def init_pages_api(
         org: Organization = Depends(org_public),
         search: str | None = None,
         url: str | None = None,
+        urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1598,6 +1665,8 @@ def init_pages_api(
             org=org,
             search=search,
             url=url,
+            url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
@@ -1644,6 +1713,8 @@ def init_pages_api(
         org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
+        urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1658,6 +1729,8 @@ def init_pages_api(
             org=org,
             search=search,
             url=url,
+            url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
@@ -1675,6 +1748,16 @@ def init_pages_api(
         tags=["pages", "qa"],
         response_model=PaginatedPageOutWithQAResponse,
     )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/qa/{qa_run_id}/pages",
+        tags=["pages", "qa"],
+        response_model=PaginatedPageOutWithQAResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/qa/{qa_run_id}/pages",
+        tags=["pages", "qa"],
+        response_model=PaginatedPageOutWithQAResponse,
+    )
     async def get_pages_list_with_qa(
         crawl_id: str,
         qa_run_id: str,
@@ -1686,7 +1769,7 @@ def init_pages_api(
         reviewed: bool | None = None,
         approved: str | None = None,
         hasNotes: bool | None = None,
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
         sortBy: str | None = None,

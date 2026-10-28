@@ -105,10 +105,18 @@ jobs:
       - name: Run Tests
         run: cd backend && uv run pytest -vv ./test/test_*.py
 
-      - name: Print Backend Logs
+      - name: Print Backend Logs (API)
         if: ${{ always() }}
-        run: sudo microk8s kubectl logs svc/browsertrix-cloud-backend
+        run: kubectl logs svc/browsertrix-cloud-backend -c api
+
+      - name: Print Backend Logs (Operator)
+        if: ${{ always() }}
+        run: kubectl logs svc/browsertrix-cloud-backend -c op
 
       - name: Print Emails Logs
         if: ${{ always() }}
-        run: sudo microk8s kubectl logs svc/browsertrix-cloud-emails
+        run: kubectl logs svc/browsertrix-cloud-emails -c emails
+
+      - name: Print K8S Events
+        if: ${{ always() }}
+        run: kubectl events --all-namespaces
