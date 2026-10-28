@@ -310,4 +310,21 @@ spec:
               protocol: TCP
           {{- end }}
 {{- end }}
+---
+{{- if .Capabilities.APIVersions.Has "cilium.io/v2" }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.name }}-egress-host-services
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+{{- end }}
 {{- end }}
