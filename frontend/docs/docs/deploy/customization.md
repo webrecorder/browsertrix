@@ -346,6 +346,30 @@ The policy allows DNS, the chart's own services, public web on 80/443, the Kuber
 Two settings might need attention:
 
 - `namespace_network_policy_api_ports` is the Kubernetes API endpoint port after service DNAT, not the service port. The defaults are `443` on managed clusters and `6443` on kubeadm. OrbStack uses `26443`.
-- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as HTTPS proxies.
+- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as HTTPS proxies. For example:
+  - If you are using [NodeLocal DNSCache in your Kubernetes cluster](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/) you will want to allowlist the local listen IP address(es) that it is using:
+
+  ```yaml
+  namespace_network_policy_extra_egress:
+    - to:
+        - ipBlock:
+            cidr: 169.254.20.10/32
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+  ```
+  - If you are using a private network in your setup for Mongo (or other services), you will need to allowlist it:
+  
+  ```yaml
+  namespace_network_policy_extra_egress:
+    - to:
+        - ipBlock:
+            cidr: 10.124.0.0/20
+      ports:
+        - port: 27017 # Mongo port
+          protocol: TCP
+  ```
 
 Rules are additive and apply to the whole namespace, so every pod can reach every allowed destination. After enabling the policy, confirm that crawls start and complete, because a missing rule could block traffic without a clear error in the UI.
