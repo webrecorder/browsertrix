@@ -1371,7 +1371,17 @@ def init_pages_api(
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
-        tags=["pages", "qa"],
+        tags=["pages", "qa", "crawls"],
+        response_model=PageOutWithSingleQA,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        tags=["pages", "qa", "uploads"],
+        response_model=PageOutWithSingleQA,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/qa/{qa_run_id}/pages/{page_id}",
+        tags=["pages", "qa", "all-crawls"],
         response_model=PageOutWithSingleQA,
     )
     async def get_page_with_qa(
@@ -1385,7 +1395,17 @@ def init_pages_api(
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=UpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}",
+        tags=["pages", "uploads"],
+        response_model=UpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}",
+        tags=["pages", "all-crawls"],
         response_model=UpdatedResponse,
     )
     async def update_page_approval(
@@ -1402,7 +1422,17 @@ def init_pages_api(
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageNoteAddedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "uploads"],
+        response_model=PageNoteAddedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "all-crawls"],
         response_model=PageNoteAddedResponse,
     )
     async def add_page_note(
@@ -1417,7 +1447,17 @@ def init_pages_api(
 
     @app.patch(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=PageNoteUpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "uploads"],
+        response_model=PageNoteUpdatedResponse,
+    )
+    @app.patch(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes",
+        tags=["pages", "all-crawls"],
         response_model=PageNoteUpdatedResponse,
     )
     async def edit_page_note(
@@ -1432,7 +1472,17 @@ def init_pages_api(
 
     @app.post(
         "/orgs/{oid}/crawls/{crawl_id}/pages/{page_id}/notes/delete",
-        tags=["pages"],
+        tags=["pages", "crawls"],
+        response_model=DeletedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/uploads/{crawl_id}/pages/{page_id}/notes/delete",
+        tags=["pages", "uploads"],
+        response_model=DeletedResponse,
+    )
+    @app.post(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pages/{page_id}/notes/delete",
+        tags=["pages", "all-crawls"],
         response_model=DeletedResponse,
     )
     async def delete_page_notes(
@@ -1504,6 +1554,16 @@ def init_pages_api(
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/pagesSearch",
         tags=["pages", "crawls"],
+        response_model=PageOutItemsResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/pagesSearch",
+        tags=["pages", "uploads"],
+        response_model=PageOutItemsResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/pagesSearch",
+        tags=["pages", "all-crawls"],
         response_model=PageOutItemsResponse,
     )
     async def get_search_pages_list(
@@ -1672,6 +1732,16 @@ def init_pages_api(
 
     @app.get(
         "/orgs/{oid}/crawls/{crawl_id}/qa/{qa_run_id}/pages",
+        tags=["pages", "qa"],
+        response_model=PaginatedPageOutWithQAResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/uploads/{crawl_id}/qa/{qa_run_id}/pages",
+        tags=["pages", "qa"],
+        response_model=PaginatedPageOutWithQAResponse,
+    )
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/qa/{qa_run_id}/pages",
         tags=["pages", "qa"],
         response_model=PaginatedPageOutWithQAResponse,
     )
