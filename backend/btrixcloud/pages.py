@@ -615,6 +615,7 @@ class PageOps:
         search: str | None = None,
         url: str | None = None,
         url_prefix: str | None = None,
+        url_regex: str | None = None,
         ts: datetime | None = None,
         is_seed: bool | None = None,
         depth: int | None = None,
@@ -683,6 +684,8 @@ class PageOps:
             query["url"] = urllib.parse.unquote(url)
         elif url_prefix:
             query["url"] = {"$gte": urllib.parse.unquote(url_prefix)}
+        elif url_regex:
+            query["url"] = {"$regex": urllib.parse.unquote(url_regex)}
 
         if ts:
             query["ts"] = ts
@@ -1515,6 +1518,7 @@ def init_pages_api(
         search: str | None = None,
         url: str | None = None,
         urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1537,6 +1541,7 @@ def init_pages_api(
             search=search,
             url=url,
             url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
@@ -1644,6 +1649,8 @@ def init_pages_api(
         org: Organization = Depends(org_public),
         search: str | None = None,
         url: str | None = None,
+        urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1658,6 +1665,8 @@ def init_pages_api(
             org=org,
             search=search,
             url=url,
+            url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
@@ -1704,6 +1713,8 @@ def init_pages_api(
         org: Organization = Depends(org_viewer_dep),
         search: str | None = None,
         url: str | None = None,
+        urlPrefix: str | None = None,
+        urlRegex: str | None = None,
         ts: datetime | None = None,
         isSeed: bool | None = None,
         depth: int | None = None,
@@ -1718,6 +1729,8 @@ def init_pages_api(
             org=org,
             search=search,
             url=url,
+            url_prefix=urlPrefix,
+            url_regex=urlRegex,
             ts=ts,
             is_seed=isSeed,
             depth=depth,
