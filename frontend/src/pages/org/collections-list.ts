@@ -600,8 +600,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         ({ item }) => html`
           <sl-menu-item slot="menu-item" data-key="name" value=${item.name}>
             ${item.name}
-            <btrix-badge slot="suffix" variant="lime" pill
-              >${msg("Exact Match")}</btrix-badge
+            <btrix-badge slot="suffix" variant="success" outline
+              >${msg("Exact match")}</btrix-badge
             >
           </sl-menu-item>
         `,
