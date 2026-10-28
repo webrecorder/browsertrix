@@ -59,7 +59,7 @@ const qaStatsThresholds = [
 ];
 
 const notApplicable = () =>
-  html`<span class="text-neutral-400">${msg("n/a")}</span>`;
+  html`<span class="text-neutral-400">${stringFor.notApplicable}</span>`;
 
 function statusWithIcon(
   icon: TemplateResult<1>,
@@ -187,7 +187,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
                   this.renderLoadingDetail,
                 )
-              : stringFor.notApplicable}
+              : notApplicable()}
           </btrix-desc-list-item>
           ${this.mostRecentNonFailedQARun?.state === "running"
             ? html`
