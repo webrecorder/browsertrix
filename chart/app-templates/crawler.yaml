@@ -42,6 +42,9 @@ metadata:
     network-policy: limit-crawler-egress
 
 spec:
+  # The crawler processes untrusted web content and never calls the Kubernetes
+  # API; do not give it a service-account token.
+  automountServiceAccountToken: false
   hostname: {{ name }}
   subdomain: crawler
 

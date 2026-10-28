@@ -27,6 +27,7 @@ spec:
     spec:
       template:
         spec:
+          automountServiceAccountToken: false
           restartPolicy: Never
           priorityClassName: bg-job
           podFailurePolicy:

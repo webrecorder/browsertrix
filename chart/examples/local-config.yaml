@@ -67,3 +67,9 @@
 #   # optional: if not set, automatically generated
 #   # change or remove this
 #   password: PASSW0RD!
+
+# API ports for common local clusters: kind/k3s 6443, minikube 8443,
+# microk8s 16443, OrbStack 26443. If crawls do not start, add your cluster's
+# API endpoint port, or set namespace_network_policy_enabled: false.
+namespace_network_policy_enabled: true
+namespace_network_policy_api_ports: [443, 6443, 8443, 16443, 26443]
