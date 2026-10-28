@@ -48,7 +48,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
         )
 
     # Give post-crawl tasks a little time
-    time.sleep(30)
+    time.sleep(90)
 
     # Get our baseline values pre-recalculation
     r = requests.get(
