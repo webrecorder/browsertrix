@@ -1,5 +1,7 @@
 """background jobs tests, named to run after everything else has finished"""
 
+import time
+
 import pytest
 import requests
 
@@ -8,13 +10,23 @@ from .conftest import API_PREFIX
 job_id = None
 
 
+@pytest.mark.timeout(1800)
 def test_background_jobs_list(admin_auth_headers, default_org_id, deleted_crawl_id):
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/", headers=admin_auth_headers
-    )
-    assert r.status_code == 200
-    data = r.json()
-    items = data["items"]
+    # Wait until at least one delete-replica job is successful
+    attempts = 0
+    while attempts < 20:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs/", headers=admin_auth_headers
+        )
+        assert r.status_code == 200
+        data = r.json()
+        items = data.get("items", [])
+        for job in items:
+            if job.get("type") == "delete-replica" and job.get("success"):
+                break
+
+        attempts += 1
+        time.sleep(30)
 
     assert items
     assert len(items) == data["total"]
@@ -33,12 +45,11 @@ def test_background_jobs_list(admin_auth_headers, default_org_id, deleted_crawl_
     assert job_id
 
 
-@pytest.mark.parametrize("job_type", [("create-replica"), ("delete-replica")])
 def test_background_jobs_list_filter_by_type(
-    admin_auth_headers, default_org_id, deleted_crawl_id, job_type
+    admin_auth_headers, default_org_id, deleted_crawl_id
 ):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType={job_type}",
+        f"{API_PREFIX}/orgs/{default_org_id}/jobs/?jobType=delete-replica",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -49,7 +60,7 @@ def test_background_jobs_list_filter_by_type(
     assert len(items) == data["total"]
 
     for item in items:
-        assert item["type"] == job_type
+        assert item["type"] == "delete-replica"
 
 
 def test_background_jobs_list_filter_by_success(
@@ -91,7 +102,12 @@ def test_get_background_job(admin_auth_headers, default_org_id, deleted_crawl_id
     data = r.json()
 
     assert data["id"]
-    assert data["type"] in ("create-replica", "delete-replica")
+    assert data["type"] in (
+        "replicate-files-cron",
+        "copy-bucket",
+        "delete-replica",
+        "cleanup-seed-files",
+    )
     assert data["oid"] == default_org_id
     assert data["success"]
     assert data["started"]
@@ -99,7 +115,8 @@ def test_get_background_job(admin_auth_headers, default_org_id, deleted_crawl_id
     assert data["file_path"]
     assert data["object_type"]
     assert data["object_id"]
-    assert data["replica_storage"]
+    if data["type"] in ("delete-replica", "copy-bucket"):
+        assert data["replica_storage"]
 
 
 def test_retry_all_failed_bg_jobs_not_superuser(crawler_auth_headers, deleted_crawl_id):
