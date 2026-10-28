@@ -40,7 +40,12 @@ import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
-import { orderByDecoder, orderByEncoder } from "@/utils/searchParams/orderBy";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 type FilterBy = {
@@ -55,16 +60,9 @@ type SortField =
   | "totalSize"
   | "pageCount"
   | "crawlCount";
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
 
 const INITIAL_PAGE_SIZE = 20;
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   name: {
     label: msg("Name"),
     defaultDirection: SortDirection.Ascending,
@@ -89,11 +87,11 @@ const sortableFields: Record<
     label: msg("Last Modified"),
     defaultDirection: SortDirection.Descending,
   },
-};
-const DEFAULT_SORT_BY: SortBy = {
+} as const satisfies SortableFields<SortField>;
+const DEFAULT_SORT_BY = {
   field: "modified",
-  direction: sortableFields["modified"].defaultDirection!,
-};
+  direction: sortableFields["modified"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 5;
 
@@ -119,7 +117,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     pageSize: INITIAL_PAGE_SIZE,
   };
 
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
     orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
     orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
@@ -397,9 +395,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
