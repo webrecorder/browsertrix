@@ -291,4 +291,23 @@ spec:
     {{- with .Values.namespace_network_policy_extra_egress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+---
+{{- if .Capabilities.APIVersions.Has "cilium.io/v2" }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.name }}-egress-k8s-api
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+          {{- range .Values.namespace_network_policy_api_ports }}
+            - port: {{ . }}
+              protocol: TCP
+          {{- end }}
+{{- end }}
 {{- end }}
