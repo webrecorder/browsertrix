@@ -39,7 +39,7 @@ import {
   orderByEncoder,
   type SortableFields,
   type SortBy,
-} from "@/utils/searchParams/orderBy";
+} from "@/utils/searchParams/sortBy";
 import { toSearchItem, type SearchValues } from "@/utils/searchValues";
 import { tw } from "@/utils/tailwind";
 

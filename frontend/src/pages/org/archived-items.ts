@@ -68,7 +68,7 @@ import {
   orderByEncoder,
   type SortableFields,
   type SortBy,
-} from "@/utils/searchParams/orderBy";
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;

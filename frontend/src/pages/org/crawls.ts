@@ -44,7 +44,7 @@ import {
   orderByDecoder,
   orderByEncoder,
   type SortBy,
-} from "@/utils/searchParams/orderBy";
+} from "@/utils/searchParams/sortBy";
 
 type Crawls = APIPaginatedList<Crawl>;
 type Keys<T> = (keyof T)[];
