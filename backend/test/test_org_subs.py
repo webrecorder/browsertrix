@@ -18,6 +18,76 @@ VALID_PASSWORD = "ValidPassW0rd!"
 
 invite_email = "test-User@EXample.com"
 
+# Quotas in the create and update events asserted by the event log tests.
+CREATE_EVENT_QUOTAS = {
+    "maxConcurrentCrawls": 1,
+    "maxPagesPerCrawl": 100,
+    "storageQuota": 1000000,
+    "maxExecMinutesPerMonth": 1000,
+    "planExecMinutes": 0,
+    "extraExecMinutes": 0,
+    "giftedExecMinutes": 0,
+    "extraStorageQuota": 0,
+}
+
+UPDATE_EVENT_QUOTAS = {
+    "maxPagesPerCrawl": 50,
+    "storageQuota": 500000,
+    "planExecMinutes": None,
+    "extraExecMinutes": None,
+    "giftedExecMinutes": None,
+    "extraStorageQuota": None,
+    "maxConcurrentCrawls": None,
+    "maxExecMinutesPerMonth": None,
+}
+
+
+def _subscription(**fields):
+    """Expected org subscription payload, with optional fields unset."""
+    return {
+        "futureCancelDate": None,
+        "renewalDate": None,
+        "billingInterval": None,
+        "billingIntervalCount": None,
+        "storageAddonPendingGB": None,
+        "storageAddonRevertedRequestedGB": None,
+        "pendingPlanId": None,
+        "readOnlyOnCancel": False,
+        **fields,
+    }
+
+
+def _create_event(**fields):
+    """Expected create event, including fields the output model fills with None."""
+    return {
+        "type": "create",
+        "renewalDate": None,
+        "billingInterval": None,
+        "billingIntervalCount": None,
+        "storageAddonGB": None,
+        "additionalMinutes": None,
+        "quotas": CREATE_EVENT_QUOTAS,
+        **fields,
+    }
+
+
+def _update_event(**fields):
+    """Expected update event, including fields the output model fills with None."""
+    return {
+        "type": "update",
+        "futureCancelDate": None,
+        "renewalDate": None,
+        "billingInterval": None,
+        "billingIntervalCount": None,
+        "storageAddonGB": None,
+        "storageAddonPendingGB": None,
+        "storageAddonReverted": None,
+        "storageAddonRequestedGB": None,
+        "pendingPlanId": None,
+        "quotas": None,
+        **fields,
+    }
+
 
 def test_create_sub_org_invalid_auth(crawler_auth_headers):
     r = requests.post(
@@ -99,15 +169,9 @@ def test_validate_new_org_with_quotas_and_name_is_uid(admin_auth_headers):
         "giftedExecMinutes": 0,
         "extraStorageQuota": 0,
     }
-    assert data["subscription"] == {
-        "subId": "123",
-        "status": "active",
-        "planId": "basic",
-        "futureCancelDate": None,
-        "renewalDate": None,
-        "storageAddonPendingGB": None,
-        "readOnlyOnCancel": False,
-    }
+    assert data["subscription"] == _subscription(
+        subId="123", status="active", planId="basic"
+    )
 
 
 def test_register_with_invite():
@@ -286,15 +350,12 @@ def test_update_sub(admin_auth_headers):
     data = r.json()
 
     sub = data["subscription"]
-    assert sub == {
-        "subId": "123",
-        "status": "paused_payment_failed",
-        "planId": "basic",
-        "futureCancelDate": "2028-12-26T01:02:03Z",
-        "renewalDate": None,
-        "storageAddonPendingGB": None,
-        "readOnlyOnCancel": False,
-    }
+    assert sub == _subscription(
+        subId="123",
+        status="paused_payment_failed",
+        planId="basic",
+        futureCancelDate="2028-12-26T01:02:03Z",
+    )
 
     assert data["readOnly"] == True
     assert data["readOnlyReason"] == "subscriptionPaused"
@@ -328,15 +389,7 @@ def test_update_sub_2(admin_auth_headers):
     data = r.json()
 
     sub = data["subscription"]
-    assert sub == {
-        "subId": "123",
-        "status": "active",
-        "planId": "basic2",
-        "futureCancelDate": None,
-        "renewalDate": None,
-        "storageAddonPendingGB": None,
-        "readOnlyOnCancel": False,
-    }
+    assert sub == _subscription(subId="123", status="active", planId="basic2")
 
     assert data["readOnly"] == False
     assert data["readOnlyReason"] == ""
@@ -491,15 +544,9 @@ def test_import_sub_existing_org(admin_auth_headers, non_default_org_id):
     )
     assert r.status_code == 200
     data = r.json()
-    assert data["subscription"] == {
-        "subId": "345",
-        "status": "active",
-        "planId": "basic",
-        "futureCancelDate": None,
-        "renewalDate": None,
-        "storageAddonPendingGB": None,
-        "readOnlyOnCancel": False,
-    }
+    assert data["subscription"] == _subscription(
+        subId="345", status="active", planId="basic"
+    )
 
 
 def test_subscription_events_log(admin_auth_headers, non_default_org_id):
@@ -516,73 +563,34 @@ def test_subscription_events_log(admin_auth_headers, non_default_org_id):
         del event["timestamp"]
 
     assert events == [
-        {
-            "type": "create",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
-            "renewalDate": None,
-            "quotas": {
-                "maxConcurrentCrawls": 1,
-                "maxPagesPerCrawl": 100,
-                "storageQuota": 1000000,
-                "maxExecMinutesPerMonth": 1000,
-                "planExecMinutes": 0,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "extraStorageQuota": 0,
-            },
-        },
-        {
-            "type": "create",
-            "subId": "234",
-            "oid": new_subs_oid_2,
-            "status": "active",
-            "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
-            "renewalDate": None,
-            "quotas": {
-                "maxConcurrentCrawls": 1,
-                "maxPagesPerCrawl": 100,
-                "storageQuota": 1000000,
-                "maxExecMinutesPerMonth": 1000,
-                "planExecMinutes": 0,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "extraStorageQuota": 0,
-            },
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "paused_payment_failed",
-            "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03Z",
-            "renewalDate": None,
-            "quotas": None,
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic2",
-            "futureCancelDate": None,
-            "renewalDate": None,
-            "quotas": {
-                "maxPagesPerCrawl": 50,
-                "storageQuota": 500000,
-                "planExecMinutes": None,
-                "extraExecMinutes": None,
-                "giftedExecMinutes": None,
-                "extraStorageQuota": None,
-                "maxConcurrentCrawls": None,
-                "maxExecMinutesPerMonth": None,
-            },
-        },
+        _create_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic",
+            firstAdminInviteEmail="test-user@example.com",
+        ),
+        _create_event(
+            subId="234",
+            oid=new_subs_oid_2,
+            status="active",
+            planId="basic",
+            firstAdminInviteEmail="test-user@example.com",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="paused_payment_failed",
+            planId="basic",
+            futureCancelDate="2028-12-26T01:02:03Z",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic2",
+            quotas=UPDATE_EVENT_QUOTAS,
+        ),
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
         {"subId": "234", "oid": new_subs_oid_2, "type": "cancel"},
         {
@@ -611,54 +619,27 @@ def test_subscription_events_log_filter_sub_id(admin_auth_headers):
         del event["timestamp"]
 
     assert events == [
-        {
-            "type": "create",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
-            "renewalDate": None,
-            "quotas": {
-                "maxConcurrentCrawls": 1,
-                "maxPagesPerCrawl": 100,
-                "storageQuota": 1000000,
-                "maxExecMinutesPerMonth": 1000,
-                "planExecMinutes": 0,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "extraStorageQuota": 0,
-            },
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "paused_payment_failed",
-            "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03Z",
-            "renewalDate": None,
-            "quotas": None,
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic2",
-            "futureCancelDate": None,
-            "renewalDate": None,
-            "quotas": {
-                "maxPagesPerCrawl": 50,
-                "storageQuota": 500000,
-                "planExecMinutes": None,
-                "extraExecMinutes": None,
-                "giftedExecMinutes": None,
-                "extraStorageQuota": None,
-                "maxConcurrentCrawls": None,
-                "maxExecMinutesPerMonth": None,
-            },
-        },
+        _create_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic",
+            firstAdminInviteEmail="test-user@example.com",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="paused_payment_failed",
+            planId="basic",
+            futureCancelDate="2028-12-26T01:02:03Z",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic2",
+            quotas=UPDATE_EVENT_QUOTAS,
+        ),
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
 
@@ -679,54 +660,27 @@ def test_subscription_events_log_filter_oid(admin_auth_headers):
         del event["timestamp"]
 
     assert events == [
-        {
-            "type": "create",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
-            "renewalDate": None,
-            "quotas": {
-                "maxConcurrentCrawls": 1,
-                "maxPagesPerCrawl": 100,
-                "storageQuota": 1000000,
-                "maxExecMinutesPerMonth": 1000,
-                "planExecMinutes": 0,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "extraStorageQuota": 0,
-            },
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "paused_payment_failed",
-            "planId": "basic",
-            "futureCancelDate": "2028-12-26T01:02:03Z",
-            "renewalDate": None,
-            "quotas": None,
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic2",
-            "futureCancelDate": None,
-            "renewalDate": None,
-            "quotas": {
-                "maxPagesPerCrawl": 50,
-                "storageQuota": 500000,
-                "planExecMinutes": None,
-                "extraExecMinutes": None,
-                "giftedExecMinutes": None,
-                "extraStorageQuota": None,
-                "maxConcurrentCrawls": None,
-                "maxExecMinutesPerMonth": None,
-            },
-        },
+        _create_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic",
+            firstAdminInviteEmail="test-user@example.com",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="paused_payment_failed",
+            planId="basic",
+            futureCancelDate="2028-12-26T01:02:03Z",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic2",
+            quotas=UPDATE_EVENT_QUOTAS,
+        ),
         {"subId": "123", "oid": new_subs_oid, "type": "cancel"},
     ]
 
@@ -746,25 +700,13 @@ def test_subscription_events_log_filter_plan_id(admin_auth_headers):
         del event["timestamp"]
 
     assert events == [
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic2",
-            "futureCancelDate": None,
-            "renewalDate": None,
-            "quotas": {
-                "maxPagesPerCrawl": 50,
-                "storageQuota": 500000,
-                "planExecMinutes": None,
-                "extraExecMinutes": None,
-                "giftedExecMinutes": None,
-                "extraStorageQuota": None,
-                "maxConcurrentCrawls": None,
-                "maxExecMinutesPerMonth": None,
-            },
-        }
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic2",
+            quotas=UPDATE_EVENT_QUOTAS,
+        )
     ]
 
 
@@ -784,44 +726,20 @@ def test_subscription_events_log_filter_status(admin_auth_headers):
         del event["timestamp"]
 
     assert events == [
-        {
-            "type": "create",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic",
-            "firstAdminInviteEmail": "test-user@example.com",
-            "renewalDate": None,
-            "quotas": {
-                "maxConcurrentCrawls": 1,
-                "maxPagesPerCrawl": 100,
-                "storageQuota": 1000000,
-                "maxExecMinutesPerMonth": 1000,
-                "planExecMinutes": 0,
-                "extraExecMinutes": 0,
-                "giftedExecMinutes": 0,
-                "extraStorageQuota": 0,
-            },
-        },
-        {
-            "type": "update",
-            "subId": "123",
-            "oid": new_subs_oid,
-            "status": "active",
-            "planId": "basic2",
-            "futureCancelDate": None,
-            "renewalDate": None,
-            "quotas": {
-                "maxPagesPerCrawl": 50,
-                "storageQuota": 500000,
-                "planExecMinutes": None,
-                "extraExecMinutes": None,
-                "giftedExecMinutes": None,
-                "extraStorageQuota": None,
-                "maxConcurrentCrawls": None,
-                "maxExecMinutesPerMonth": None,
-            },
-        },
+        _create_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic",
+            firstAdminInviteEmail="test-user@example.com",
+        ),
+        _update_event(
+            subId="123",
+            oid=new_subs_oid,
+            status="active",
+            planId="basic2",
+            quotas=UPDATE_EVENT_QUOTAS,
+        ),
     ]
 
 
@@ -1245,7 +1163,7 @@ def test_storage_addon_usage_gate(admin_auth_headers, echo_server):
         json={"sizeGB": 100},
     )
     assert r.status_code == 200
-    assert r.json() == {"sizeGB": 100}
+    assert r.json() == {"sizeGB": 100, "pendingGB": None}
 
     # cancellation: 600GB usage > 500GB base -> rejected
     r = requests.post(
@@ -1263,7 +1181,7 @@ def test_storage_addon_usage_gate(admin_auth_headers, echo_server):
         json={"sizeGB": 300},
     )
     assert r.status_code == 200
-    assert r.json() == {"sizeGB": 300}
+    assert r.json() == {"sizeGB": 300, "pendingGB": None}
 
     # keep (no change): passes gate and hits the subs app
     r = requests.post(
@@ -1272,7 +1190,7 @@ def test_storage_addon_usage_gate(admin_auth_headers, echo_server):
         json={"sizeGB": 300},
     )
     assert r.status_code == 200
-    assert r.json() == {"sizeGB": 300}
+    assert r.json() == {"sizeGB": 300, "pendingGB": None}
 
     # org with usage below base quota can cancel
     oid_2 = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
@@ -1282,10 +1200,10 @@ def test_storage_addon_usage_gate(admin_auth_headers, echo_server):
         json={"sizeGB": 0},
     )
     assert r.status_code == 200
-    assert r.json() == {"sizeGB": 0}
+    assert r.json() == {"sizeGB": 0, "pendingGB": None}
 
 
-def test_storage_addon_state_on_org_payload_and_price(admin_auth_headers):
+def test_storage_addon_state_on_org_payload_and_price(admin_auth_headers, echo_server):
     """The UI reads the add-on size and any pending change from the org itself
     (there is no separate endpoint for it), and the price is still available."""
     oid = _import_storage_addon_test_org(admin_auth_headers, 400_000_000_000)
@@ -1317,7 +1235,9 @@ def test_storage_addon_state_on_org_payload_and_price(admin_auth_headers):
     assert r.json()["currency"] == "usd"
 
 
-def test_storage_price_uses_subscription_billing_interval(admin_auth_headers):
+def test_storage_price_uses_subscription_billing_interval(
+    admin_auth_headers, echo_server
+):
     """The storage add-on has separate monthly and yearly prices, so ensure the
     price endpoint sends the appropriate price for the org's cadence."""
     monthly_oid = _import_storage_addon_test_org(
