@@ -989,7 +989,7 @@ class CollectionOps:
 
         # only report dependencies that are gone from the org entirely; crawls
         # that still exist but were merely removed from this collection are fine
-        return await self.crawl_ops.find_missing_requires_crawls(required, org.id)
+        return await self.crawl_ops.find_missing_crawls(required, org.id)
 
     # END DEDUPE OPS
 
