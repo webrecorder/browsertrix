@@ -306,7 +306,7 @@ spec:
       toPorts:
         - ports:
           {{- range .Values.namespace_network_policy_api_ports }}
-            - port: {{ . }}
+            - port: "{{ . }}"
               protocol: TCP
           {{- end }}
 {{- end }}
