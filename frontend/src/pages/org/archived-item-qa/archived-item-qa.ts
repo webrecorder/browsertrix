@@ -50,6 +50,7 @@ import {
   type QARun,
 } from "@/types/qa";
 import { SortDirection as APISortDirection } from "@/types/utils";
+import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import {
   isActive,
   isSuccessfullyFinished,
@@ -442,11 +443,11 @@ export class ArchivedItemQA extends BtrixElement {
   }
 
   private get itemBaseUrl() {
-    if (this.workflowId) {
-      return `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${this.workflowId}/crawls/${this.itemId}`;
-    }
-
-    return `${this.navigate.orgBasePath}/${OrgTab.Items}/${this.itemType}/${this.itemId}`;
+    return `${this.navigate.orgBasePath}/${pathForArchivedItem({
+      type: this.itemType,
+      id: this.itemId,
+      cid: this.workflowId,
+    })}`;
   }
 
   render() {

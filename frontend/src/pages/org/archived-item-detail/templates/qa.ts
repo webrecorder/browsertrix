@@ -20,7 +20,6 @@ import { ClipboardController } from "@/controllers/clipboard";
 import { iconFor as iconForPageReview } from "@/features/qa/page-list/helpers";
 import * as pageApproval from "@/features/qa/page-list/helpers/approval";
 import type { SelectDetail } from "@/features/qa/qa-run-dropdown";
-import { OrgTab } from "@/routes";
 import { stringFor } from "@/strings/ui";
 import type {
   APIPaginatedList,
@@ -29,6 +28,7 @@ import type {
 } from "@/types/api";
 import { type ArchivedItem, type ArchivedItemPage } from "@/types/crawler";
 import type { QARun } from "@/types/qa";
+import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import { isActive, isSuccessfullyFinished } from "@/utils/crawler";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 import { pluralize, pluralOf } from "@/utils/pluralize";
@@ -133,14 +133,6 @@ export class ArchivedItemDetailQA extends BtrixElement {
 
   @query("#deleteQARunDialog")
   private readonly deleteQADialog?: Dialog | null;
-
-  private get itemBaseUrl() {
-    if (this.workflowId) {
-      return `${this.navigate.orgBasePath}/${OrgTab.Workflows}/${this.workflowId}/crawls/${this.itemId}`;
-    }
-
-    return `${this.navigate.orgBasePath}/${OrgTab.Items}/${this.itemType}/${this.itemId}`;
-  }
 
   willUpdate(changedProperties: PropertyValues<this>) {
     if (changedProperties.has("itemId") && this.itemId) {
@@ -797,7 +789,11 @@ export class ArchivedItemDetailQA extends BtrixElement {
   }
 
   private renderPageList() {
-    const itemBaseUrl = this.itemBaseUrl;
+    const itemBaseUrl = `${this.navigate.orgBasePath}/${pathForArchivedItem({
+      type: this.itemType,
+      id: this.itemId,
+      cid: this.workflowId,
+    })}`;
 
     const pageTitle = (page: ArchivedItemPage) => html`
       <div class="truncate font-medium">
