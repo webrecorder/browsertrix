@@ -162,9 +162,9 @@ spec:
               - "{{ .Values.backend_workers | default 1 }}"
               - --worker-class
               - uvicorn.workers.UvicornWorker
-              # readOnlyRootFilesystem blocks the default ~/.gunicorn socket
-              - --control-socket
-              - /tmp/gunicorn-api.ctl
+              # Control socket (gunicornc) is unused; disabling avoids needing
+              # a writable ~/.gunicorn path with a read-only rootfs.
+              - --no-control-socket
 
           envFrom:
             - configMapRef:
@@ -265,9 +265,9 @@ spec:
               - "{{ .Values.backend_workers | default 1 }}"
               - --worker-class
               - uvicorn.workers.UvicornWorker
-              # readOnlyRootFilesystem blocks the default ~/.gunicorn socket
-              - --control-socket
-              - /tmp/gunicorn-op.ctl
+              # Control socket (gunicornc) is unused; disabling avoids needing
+              # a writable ~/.gunicorn path with a read-only rootfs.
+              - --no-control-socket
 
           envFrom:
             - configMapRef:
