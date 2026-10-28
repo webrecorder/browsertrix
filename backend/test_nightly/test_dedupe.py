@@ -508,7 +508,7 @@ def test_removed_from_workflow(
 
 
 # ---------------------------------------------------------------------------
-# Missing dependencies
+# Missing requires crawls (missing dependencies)
 # ---------------------------------------------------------------------------
 
 
@@ -523,16 +523,16 @@ def missing_deps_coll_id(crawler_auth_headers, default_org_id):
     return r.json()["id"]
 
 
-def get_missing_dependencies(org_id, coll_id, headers):
+def get_missing_requires_crawls(org_id, coll_id, headers):
     r = requests.get(
-        f"{API_PREFIX}/orgs/{org_id}/collections/{coll_id}/dedupeIndex/missingDependencies",
+        f"{API_PREFIX}/orgs/{org_id}/collections/{coll_id}/dedupeIndex/missingRequiresCrawls",
         headers=headers,
     )
     assert r.status_code == 200
-    return r.json()["missingDependencies"]
+    return r.json()["missingRequiresCrawls"]
 
 
-def test_missing_dependencies_none(
+def test_missing_requires_crawls_none(
     default_org_id,
     missing_deps_coll_id,
     dedupe_first_crawl,
@@ -548,14 +548,14 @@ def test_missing_dependencies_none(
     assert r.status_code == 200
 
     assert (
-        get_missing_dependencies(
+        get_missing_requires_crawls(
             default_org_id, missing_deps_coll_id, crawler_auth_headers
         )
         == []
     )
 
 
-def test_missing_dependencies_removed_from_collection(
+def test_missing_requires_crawls_removed_from_collection(
     default_org_id,
     missing_deps_coll_id,
     dedupe_first_crawl,
@@ -571,14 +571,14 @@ def test_missing_dependencies_removed_from_collection(
     assert r.status_code == 200
 
     assert (
-        get_missing_dependencies(
+        get_missing_requires_crawls(
             default_org_id, missing_deps_coll_id, crawler_auth_headers
         )
         == []
     )
 
 
-def test_missing_dependencies_deleted(
+def test_missing_requires_crawls_deleted(
     default_org_id,
     missing_deps_coll_id,
     dedupe_first_crawl,
@@ -592,15 +592,15 @@ def test_missing_dependencies_deleted(
     )
     assert r.status_code == 200
 
-    assert get_missing_dependencies(
+    assert get_missing_requires_crawls(
         default_org_id, missing_deps_coll_id, crawler_auth_headers
     ) == [dedupe_first_crawl]
 
 
-def test_missing_dependencies_no_collection(default_org_id, crawler_auth_headers):
+def test_missing_requires_crawls_no_collection(default_org_id, crawler_auth_headers):
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/collections/"
-        "00000000-0000-0000-0000-000000000000/dedupeIndex/missingDependencies",
+        "00000000-0000-0000-0000-000000000000/dedupeIndex/missingRequiresCrawls",
         headers=crawler_auth_headers,
     )
     assert r.status_code == 404
