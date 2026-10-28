@@ -1308,9 +1308,7 @@ export class ArchivedItemQA extends BtrixElement {
 
     try {
       const { data } = await this.api.fetch<{ data: ArchivedItemPageComment }>(
-        // FIXME `crawls` also currently works for uploaded items
-        // https://github.com/webrecorder/browsertrix/issues/3756
-        `/orgs/${this.orgId}/crawls/${this.itemId}/pages/${this.itemPageId}/notes`,
+        `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages/${this.itemPageId}/notes`,
         {
           method: "POST",
           body: JSON.stringify({ text: value }),

@@ -970,7 +970,7 @@ export class ArchivedItemDetailQA extends BtrixElement {
       },
     );
     return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
-      `/orgs/${this.orgId}/crawls/${this.itemId}/pages?${query}`,
+      `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages?${query}`,
     );
   }
 
