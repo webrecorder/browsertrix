@@ -40,11 +40,7 @@ import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
-import {
-  decodeSortDirection,
-  encodeSortDirection,
-  validSortDirection,
-} from "@/utils/searchParamsEncoders";
+import { orderByDecoder, orderByEncoder } from "@/utils/searchParams/orderBy";
 import { tw } from "@/utils/tailwind";
 
 type FilterBy = {
@@ -125,37 +121,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
 
   private readonly orderBy = new SearchParamsValue<SortBy>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", encodeSortDirection(value.direction));
-      }
-      return params;
-    },
-    (params) => {
-      let field = params.get("sortBy") as SortBy["field"] | null;
-
-      if (!field) {
-        field = DEFAULT_SORT_BY.field;
-      }
-      const sortDir = params.get("sortDir") as ReturnType<
-        typeof encodeSortDirection
-      > | null;
-      let direction =
-        sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-
-      if (sortDir && validSortDirection(sortDir)) {
-        direction = decodeSortDirection(sortDir);
-      }
-
-      return { field, direction };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
 
   private readonly listView = new SearchParamsValue<ListView | undefined>(
