@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { Task } from "@lit/task";
 import type {
   SlChangeEvent,
   SlInput,
@@ -17,6 +18,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { WithSearchOrgContext } from "@/context/search-org/WithSearchOrgContext";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { BtrixRequestOrgUpdate } from "@/events/btrix-request-org-update";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { SelectCollectionAccess } from "@/features/collections/select-collection-access";
@@ -29,15 +31,28 @@ import { getIndexErrorMessage } from "@/strings/collections/index-error";
 import { metadata } from "@/strings/collections/metadata";
 import { stringFor } from "@/strings/ui";
 import { monthYearDateRange } from "@/strings/utils";
-import { type APIPaginatedList, type APIPaginationQuery } from "@/types/api";
+import {
+  type APIPaginatedList,
+  type APIPaginationQuery,
+  type APISortQuery,
+} from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
 import { SortDirection, type UnderlyingFunction } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pluralOf } from "@/utils/pluralize";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
-type Collections = APIPaginatedList<Collection>;
-type SearchFields = "name";
+type FilterBy = {
+  name?: string;
+  namePrefix?: string;
+};
+type SearchFields = keyof FilterBy;
 type SortField =
   | "modified"
   | "dateLatest"
@@ -45,11 +60,9 @@ type SortField =
   | "totalSize"
   | "pageCount"
   | "crawlCount";
+
 const INITIAL_PAGE_SIZE = 20;
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   name: {
     label: msg("Name"),
     defaultDirection: SortDirection.Ascending,
@@ -74,7 +87,11 @@ const sortableFields: Record<
     label: msg("Last Modified"),
     defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
+const DEFAULT_SORT_BY = {
+  field: "modified",
+  direction: sortableFields["modified"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 5;
 
@@ -82,6 +99,7 @@ enum ListView {
   List = "list",
   Grid = "grid",
 }
+const DEFAULT_LIST_VIEW = ListView.List;
 
 const noData = html`<sl-tooltip hoist content=${stringFor.none}>
   <sl-icon name="dash-lg" class="text-base text-neutral-400"></sl-icon>
@@ -94,22 +112,62 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   isCrawler?: boolean;
 
   @state()
-  private collections?: Collections;
-
-  @state()
-  private orderBy: {
-    field: SortField;
-    direction: SortDirection;
-  } = {
-    field: "modified",
-    direction: sortableFields["modified"].defaultDirection!,
+  private pagination: Required<APIPaginationQuery> = {
+    page: parsePage(new URLSearchParams(location.search).get("page")),
+    pageSize: INITIAL_PAGE_SIZE,
   };
 
-  @state()
-  private listView = ListView.List;
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
+    this,
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+  );
 
-  @state()
-  private filterBy: Partial<Record<keyof Collection, unknown>> = {};
+  private readonly listView = new SearchParamsValue<ListView | undefined>(
+    this,
+    (value, params) => {
+      const key = "view";
+      if (!value || value === DEFAULT_LIST_VIEW) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+      return params;
+    },
+    (params) => {
+      return (params.get("view") as ListView | null) ?? DEFAULT_LIST_VIEW;
+    },
+  );
+
+  private readonly filterBy = new SearchParamsValue<FilterBy>(
+    this,
+    (value, params) => {
+      const keys = ["name", "namePrefix"] as (keyof FilterBy)[];
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          params.set(key, value[key]);
+        }
+      });
+      return params;
+    },
+    (params) => {
+      const values = {
+        name: params.get("name") ?? undefined,
+        namePrefix:
+          (!params.get("name") && params.get("namePrefix")) ?? undefined,
+      };
+
+      if (Object.values(values).some((v) => v !== undefined)) {
+        return values;
+      }
+
+      // Since all values are optional, this can lead to an object with all undefined values,
+      // which should be considered equivalent to when all key-values are deleted from search params
+      return {};
+    },
+  );
 
   @state()
   private searchByValue = "";
@@ -144,12 +202,34 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     return this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
-  protected async willUpdate(
-    changedProperties: PropertyValues<this> & Map<string, unknown>,
-  ) {
-    if (changedProperties.has("filterBy") || changedProperties.has("orderBy")) {
-      void this.fetchCollections();
-    }
+  private readonly collectionsTask = new Task(this, {
+    task: async ([pagination, orderBy, filterBy], { signal }) => {
+      try {
+        return await this.getCollections(
+          {
+            ...filterBy,
+            ...pagination,
+            sortBy: orderBy.field,
+            sortDirection: orderBy.direction,
+          },
+          signal,
+        );
+      } catch (e) {
+        if (isApiError(e)) {
+          this.fetchErrorStatusCode = e.statusCode;
+        } else {
+          console.error(e);
+        }
+      }
+    },
+    args: () =>
+      // TODO consolidate filters into single fetch params
+      [this.pagination, this.orderBy.value, this.filterBy.value] as const,
+  });
+
+  protected firstUpdated(_changedProperties: PropertyValues): void {
+    this.searchByValue =
+      this.filterBy.value.name ?? this.filterBy.value.namePrefix ?? "";
   }
 
   render() {
@@ -183,40 +263,42 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             renderSortControl: this.renderSortControl,
             renderViewControl: this.renderViewControl,
           })}
-          ${this.collections
-            ? html`
+          ${guard([this.collectionsTask.value], () =>
+            when(
+              this.collectionsTask.value,
+              (collections) => html`
                 <div class="lg:mx-1">
                   <btrix-overflow-scroll class="-mx-3 pb-1 part-[content]:px-3">
                     ${guard(
                       [
-                        this.collections,
-                        this.listView,
+                        collections,
+                        this.listView.value,
                         this.collectionRefreshing,
                       ],
-                      this.listView === ListView.List
+                      this.listView.value === ListView.List
                         ? this.renderList
                         : this.renderGrid,
                     )}
                   </btrix-overflow-scroll>
                 </div>
-                ${when(this.listView === ListView.List, () =>
+                ${when(this.listView.value === ListView.List, () =>
                   when(
-                    (this.collections &&
-                      this.collections.total > this.collections.pageSize) ||
-                      (this.collections && this.collections.page > 1),
+                    collections.total > collections.pageSize ||
+                      collections.page > 1,
                     () => html`
                       <footer class="mt-6 flex justify-center">
                         <btrix-pagination
-                          page=${this.collections!.page}
-                          totalCount=${this.collections!.total}
-                          size=${this.collections!.pageSize}
+                          page=${collections.page}
+                          totalCount=${collections.total}
+                          size=${collections.pageSize}
                           @page-change=${async (e: PageChangeEvent) => {
-                            await this.fetchCollections({
+                            this.pagination = {
+                              ...this.pagination,
                               page: e.detail.page,
-                            });
+                            };
+                            await this.updateComplete;
 
                             // Scroll to top of list
-                            // TODO once deep-linking is implemented, scroll to top of pushstate
                             this.scrollIntoView({ behavior: "smooth" });
                           }}
                         ></btrix-pagination>
@@ -224,8 +306,10 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
                     `,
                   ),
                 )}
-              `
-            : this.renderLoading()}`,
+              `,
+              this.renderLoading,
+            ),
+          )}`,
       )}
 
       <btrix-dialog
@@ -275,7 +359,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               `${this.navigate.orgBasePath}/collections/view/${e.detail.id}/items`,
             );
           } else {
-            void this.fetchCollections();
+            void this.collectionsTask.run();
           }
         }}
       >
@@ -290,7 +374,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
               this.selectedCollection = undefined;
             }}
             @btrix-collection-saved=${() => {
-              void this.fetchCollections();
+              void this.collectionsTask.run();
             }}
           ></btrix-collection-edit-dialog>
     `;
@@ -307,14 +391,13 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
-        value=${this.orderBy.field}
+        value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
           const field = (e.target as HTMLSelectElement).value as SortField;
-          this.orderBy = {
-            field: field,
-            direction:
-              sortableFields[field].defaultDirection || this.orderBy.direction,
-          };
+          this.orderBy.setValue({
+            field,
+            direction: sortableFields[field].defaultDirection,
+          });
         }}
       >
         ${Object.entries(sortableFields).map(
@@ -323,15 +406,27 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           `,
         )}
       </sl-select>
-      <sl-tooltip content=${msg("Reverse sort")}>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === SortDirection.Ascending
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
         <sl-icon-button
-          name="arrow-down-up"
-          label=${msg("Reverse sort")}
+          name=${this.orderBy.value.direction === SortDirection.Ascending
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
           @click=${() => {
-            this.orderBy = {
-              ...this.orderBy,
-              direction: -1 * this.orderBy.direction,
-            };
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction:
+                this.orderBy.value.direction === SortDirection.Ascending
+                  ? SortDirection.Descending
+                  : SortDirection.Ascending,
+            });
           }}
         ></sl-icon-button>
       </sl-tooltip>`;
@@ -340,10 +435,10 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   private readonly renderViewControl = () => {
     return html`<sl-radio-group
       id="view-select"
-      value=${this.listView}
+      value=${this.listView.value}
       size="small"
       @sl-change=${(e: SlChangeEvent) => {
-        this.listView = (e.target as SlRadioGroup).value as ListView;
+        this.listView.setValue((e.target as SlRadioGroup).value as ListView);
       }}
     >
       <sl-tooltip content=${msg("View as List")}>
@@ -361,6 +456,32 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   };
 
   private readonly renderSearch = () => {
+    // TODO Update `search-combobox` to handle and use component instead
+    let prefix = html`<sl-icon
+      name="search"
+      slot="prefix"
+      aria-hidden="true"
+      library="default"
+    ></sl-icon>`;
+
+    if (this.filterBy.value.name) {
+      prefix = html`<sl-tag
+        slot="prefix"
+        size="small"
+        pill
+        class="ml-[--sl-spacing-3x-small]"
+        >${msg("Name")}</sl-tag
+      >`;
+    } else if (this.filterBy.value.namePrefix) {
+      prefix = html`<sl-tag
+        slot="prefix"
+        size="small"
+        pill
+        class="ml-[--sl-spacing-3x-small]"
+        >${msg("Name Starts With")}</sl-tag
+      >`;
+    }
+
     return html`
       <btrix-autocomplete
         ?open=${this.searchResultsOpen}
@@ -374,32 +495,39 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
           const key = item.dataset["key"] as SearchFields;
           this.searchByValue = item.value;
           await this.updateComplete;
-          this.filterBy = {
-            ...this.filterBy,
+
+          const clear =
+            key === "name" ? { namePrefix: undefined } : { name: undefined };
+
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            ...clear,
             [key]: item.value,
-          };
+          });
         }}
       >
         <sl-input
           size="small"
           placeholder=${msg("Search by name")}
+          value=${this.filterBy.value.name ??
+          this.filterBy.value.namePrefix ??
+          ""}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;
             this.onSearchInput.cancel();
-            const { name: _, ...otherFilters } = this.filterBy;
-            this.filterBy = otherFilters;
+            const {
+              name: _,
+              namePrefix: _namePrefix,
+              ...otherFilters
+            } = this.filterBy.value;
+            this.filterBy.setValue(otherFilters);
           }}
           @sl-input=${this.onSearchInput as UnderlyingFunction<
             typeof this.onSearchInput
           >}
         >
-          <sl-icon
-            name="search"
-            slot="prefix"
-            aria-hidden="true"
-            library="default"
-          ></sl-icon>
+          ${prefix}
         </sl-input>
         ${this.renderSearchResults()}
       </btrix-autocomplete>
@@ -427,21 +555,42 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       `;
     }
 
+    const searchByValue = this.searchByValue.trim();
+
+    const search_term = html`<strong class="font-semibold"
+      >${searchByValue}</strong
+    >`;
+
     return html`
       ${searchResults.map(
         ({ item }) => html`
           <sl-menu-item slot="menu-item" data-key="name" value=${item.name}>
             ${item.name}
+            ${item.name.toLowerCase() === searchByValue.toLowerCase()
+              ? html`<btrix-badge slot="suffix" variant="success" outline
+                  >${msg("Exact match")}</btrix-badge
+                >`
+              : nothing}
           </sl-menu-item>
         `,
       )}
+      <sl-divider slot="menu-item"></sl-divider>
+      <sl-menu-item
+        slot="menu-item"
+        data-key="namePrefix"
+        value=${searchByValue}
+      >
+        ${msg(html`Collection name starts with ${search_term}`)}
+      </sl-menu-item>
     `;
   }
 
   private readonly renderGrid = () => {
+    const collections = this.collectionsTask.value;
+
     return html`<btrix-collections-grid
       slug=${this.orgSlugState || ""}
-      .collections=${this.collections?.items}
+      .collections=${collections?.items}
       .collectionRefreshing=${this.collectionRefreshing}
       .renderActions=${(col: Collection) =>
         this.renderActions(col, { renderOnGridItem: true })}
@@ -449,24 +598,24 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       class="mt-8 block"
       @btrix-collection-saved=${async ({ detail }: CollectionSavedEvent) => {
         this.collectionRefreshing = detail.id;
-        await this.fetchCollections();
+        await this.collectionsTask.run();
         this.collectionRefreshing = null;
       }}
     >
-      ${this.collections &&
-      this.collections.total > this.collections.items.length
+      ${collections && collections.total > collections.items.length
         ? html`
             <btrix-pagination
-              page=${this.collections.page}
-              totalCount=${this.collections.total}
-              size=${this.collections.pageSize}
+              page=${collections.page}
+              totalCount=${collections.total}
+              size=${collections.pageSize}
               @page-change=${async (e: PageChangeEvent) => {
-                await this.fetchCollections({
+                this.pagination = {
+                  ...this.pagination,
                   page: e.detail.page,
-                });
+                };
+                await this.updateComplete;
 
                 // Scroll to top of list
-                // TODO once deep-linking is implemented, scroll to top of pushstate
                 this.scrollIntoView({ behavior: "smooth" });
               }}
               slot="pagination"
@@ -478,7 +627,9 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
   };
 
   private readonly renderList = () => {
-    if (this.collections?.items.length) {
+    const items = this.collectionsTask.value?.items;
+
+    if (items?.length) {
       return html`
         <btrix-table
           class="mb-1 [--btrix-table-column-gap:var(--sl-spacing-small)]"
@@ -508,7 +659,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
             </btrix-table-header-cell>
           </btrix-table-head>
           <btrix-table-body class="[--btrix-row-gap:var(--sl-spacing-x-small)]">
-            ${this.collections.items.map(this.renderItem)}
+            ${items.map(this.renderItem)}
           </btrix-table-body>
         </btrix-table>
       `;
@@ -793,28 +944,14 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
 
     if (!this.searchByValue) {
-      const { name: _, ...otherFilters } = this.filterBy;
-      this.filterBy = {
-        ...otherFilters,
-      };
+      const {
+        name: _,
+        namePrefix: _namePrefix,
+        ...otherFilters
+      } = this.filterBy.value;
+      this.filterBy.setValue(otherFilters);
     }
   });
-
-  private async updateAccess(coll: Collection, access: CollectionAccess) {
-    await this.api.fetch(`/orgs/${this.orgId}/collections/${coll.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ access }),
-    });
-
-    void this.fetchCollections();
-  }
-
-  private getPublicReplayURL(col: Collection) {
-    return new URL(
-      `/api/orgs/${this.orgId}/collections/${col.id}/public/replay.json`,
-      window.location.href,
-    ).href;
-  }
 
   private readonly manageCollection = async (
     collection: Collection,
@@ -836,7 +973,7 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         },
       );
 
-      void this.fetchCollections();
+      void this.collectionsTask.run();
 
       this.notify.toast({
         message: msg(html`Deleted <strong>${name}</strong> Collection.`),
@@ -870,47 +1007,17 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     }
   }
 
-  private async fetchCollections(params?: APIPaginationQuery) {
-    this.fetchErrorStatusCode = undefined;
-
-    try {
-      this.collections = await this.getCollections(params);
-    } catch (e) {
-      if (isApiError(e)) {
-        this.fetchErrorStatusCode = e.statusCode;
-      } else {
-        this.notify.toast({
-          message: msg("Sorry, couldn’t retrieve collection at this time."),
-          variant: "danger",
-          icon: "exclamation-octagon",
-          id: "collection-retrieve-status",
-        });
-      }
-    }
-  }
-
-  private async getCollections(queryParams?: APIPaginationQuery) {
-    const query = queryString.stringify(
-      {
-        ...this.filterBy,
-        page:
-          queryParams?.page ||
-          this.collections?.page ||
-          parsePage(new URLSearchParams(location.search).get("page")),
-        pageSize:
-          queryParams?.pageSize ||
-          this.collections?.pageSize ||
-          INITIAL_PAGE_SIZE,
-        sortBy: this.orderBy.field,
-        sortDirection: this.orderBy.direction,
-      },
-      {
-        arrayFormat: "comma",
-      },
-    );
+  private async getCollections(
+    queryParams: APIPaginationQuery & APISortQuery & FilterBy,
+    signal: AbortSignal,
+  ) {
+    const query = queryString.stringify(queryParams, {
+      arrayFormat: "comma",
+    });
 
     const data = await this.api.fetch<APIPaginatedList<Collection>>(
       `/orgs/${this.orgId}/collections?${query}`,
+      { signal },
     );
 
     return data;
