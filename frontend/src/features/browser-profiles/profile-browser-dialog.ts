@@ -154,6 +154,9 @@ export class ProfileBrowserDialog extends BtrixElement {
 
         return data;
       } catch (err) {
+        // May be aborted if the user selects "Exit" before save completes
+        if (signal.aborted) return;
+
         let message = msg("Sorry, couldn't save browser profile at this time.");
 
         if (isApiError(err) && err.statusCode === 403) {
