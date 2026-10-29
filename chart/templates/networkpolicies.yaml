@@ -108,6 +108,20 @@ spec:
     {{- end -}}
   {{- end -}}
 {{- end -}}
+{{- if and .Values.crawler_enable_network_policy (.Capabilities.APIVersions.Has "cilium.io/v2") .Values.crawler_network_policy_extra_egress_cilium }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: crawler-limit-egress-cilium-extra
+  namespace: {{ .Values.crawler_namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      network-policy: limit-crawler-egress
+  egress:
+{{- toYaml .Values.crawler_network_policy_extra_egress_cilium | nindent 4 }}
+{{- end }}
 
 {{- if .Values.namespace_network_policy_enabled }}
 ---
@@ -291,8 +305,8 @@ spec:
     {{- with .Values.namespace_network_policy_extra_egress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
----
 {{- if .Capabilities.APIVersions.Has "cilium.io/v2" }}
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -310,22 +324,16 @@ spec:
               protocol: TCP
           {{- end }}
 {{- end }}
+{{- if and (.Capabilities.APIVersions.Has "cilium.io/v2") .Values.namespace_network_policy_extra_egress_cilium }}
 ---
-{{- if .Capabilities.APIVersions.Has "cilium.io/v2" }}
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: {{ .Values.name }}-egress-host-services
+  name: {{ .Values.name }}-egress-cilium-extra
   namespace: {{ .Release.Namespace }}
 spec:
   endpointSelector: {}
   egress:
-    - toEntities:
-        - host
-        - remote-node
-      toPorts:
-        - ports:
-            - port: "9100"
-              protocol: TCP
+{{- toYaml .Values.namespace_network_policy_extra_egress_cilium | nindent 4 }}
 {{- end }}
 {{- end }}
