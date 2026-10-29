@@ -394,15 +394,26 @@ export class ProfileBrowserDialog extends BtrixElement {
 
       await this.saveProfileTask.run();
 
-      if (this.saveProfileTask.value?.id) {
-        void dialog?.hide();
+      // ID is returned for new profile, updated for existing profile
+      const { id: newProfileId, updated } =
+        (await this.saveProfileTask.taskComplete) || {};
+
+      if (newProfileId || updated) {
+        const asyncHide = dialog?.hide();
 
         if (this.navigateOnSave) {
+          const profileId = newProfileId || this.profile?.id;
           this.navigate.to(
-            `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}/profile/${this.saveProfileTask.value.id}`,
+            `${this.navigate.orgBasePath}/${OrgTab.BrowserProfiles}${profileId ? `/profile/${profileId}` : ""}`,
           );
+
+          if (!profileId) {
+            console.debug(
+              "no profileId, navigating to browser profiles list page",
+            );
+          }
         } else {
-          await dialog?.hide();
+          await asyncHide;
         }
 
         this.notify.toast({
