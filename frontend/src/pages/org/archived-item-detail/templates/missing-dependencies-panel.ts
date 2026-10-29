@@ -32,11 +32,10 @@ export function missingDependenciesPanel({
     </span>
 
     <p class="m-4 text-pretty text-neutral-600">
-      ${msg(
-        "The following is a list of IDs for archived items required by this crawl that are no longer available.",
-      )}
+      ${msg("The following archived items are no longer available.")}
     </p>
 
+    <h3 class="text-neutral-500 mx-4 font-medium">${msg("ID")}</h3>
     <ul class="divide-y">
       ${ids.map(
         (id) =>
