@@ -497,10 +497,7 @@ export class WorkflowsList extends BtrixElement {
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
-              direction:
-                this.orderBy.value.direction === SortDirection.Ascending
-                  ? SortDirection.Descending
-                  : SortDirection.Ascending,
+              direction: this.orderBy.value.direction * -1,
             });
           }}
         ></sl-icon-button>
