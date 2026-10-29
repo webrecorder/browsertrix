@@ -29,6 +29,7 @@ import type { Dialog } from "@/components/ui/dialog";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SubscriptionStatus } from "@/types/billing";
 import type { ProxiesAPIResponse, Proxy } from "@/types/crawler";
+import { OrgReadOnlyReason } from "@/types/org";
 import type { OrgData } from "@/utils/orgs";
 import { tw } from "@/utils/tailwind";
 
@@ -40,6 +41,9 @@ enum OrgFilter {
   ScheduledCancel = "scheduled-cancel",
   BadStates = "bad-states",
 }
+
+// Deleting an org runs in a background job, check on it this often
+const ORG_DELETE_POLL_INTERVAL_MS = 5000;
 
 const none = html`
   <sl-icon
@@ -105,6 +109,10 @@ export class OrgsList extends BtrixElement {
 
   @state()
   private noteValue?: string | null = null;
+
+  // Orgs with a delete job started from this page
+  @state()
+  private deletingOrgIds: string[] = [];
 
   // For fuzzy search:
   private readonly fuse = new Fuse(this.orgList ?? [], {
@@ -821,20 +829,33 @@ export class OrgsList extends BtrixElement {
       });
     }
   }
+  private isDeletingOrg(org: OrgData) {
+    return (
+      this.deletingOrgIds.includes(org.id) ||
+      org.readOnlyReason === OrgReadOnlyReason.OrgDeleting
+    );
+  }
+
   private async deleteOrg(org: OrgData) {
     try {
-      await this.api.fetch(`/orgs/${org.id}`, {
-        method: "DELETE",
-      });
+      const { id: jobId } = await this.api.fetch<{ id: string }>(
+        `/orgs/${org.id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-      this.orgList = this.orgList?.filter((o) => o.id !== org.id);
+      // The org is only deleted once the background job succeeds, until then
+      // it's read only
+      this.deletingOrgIds = [...this.deletingOrgIds, org.id];
 
       this.notify.toast({
-        message: msg(str`Org "${org.name}" has been deleted.`),
-        variant: "success",
-        icon: "check2-circle",
+        message: msg(str`Deletion of org "${org.name}" has started.`),
+        variant: "info",
         id: "org-delete-status",
       });
+
+      void this.pollOrgDeletion(org, jobId);
     } catch (e) {
       console.debug(e);
 
@@ -847,6 +868,62 @@ export class OrgsList extends BtrixElement {
     }
   }
 
+  private async pollOrgDeletion(org: OrgData, jobId: string) {
+    while (this.isConnected) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, ORG_DELETE_POLL_INTERVAL_MS),
+      );
+
+      let success: boolean | null = null;
+
+      try {
+        ({ success } = await this.api.fetch<{ success: boolean | null }>(
+          `/orgs/all/jobs/${jobId}`,
+        ));
+      } catch (e) {
+        // Job status is temporarily unavailable, try again
+        console.debug(e);
+        continue;
+      }
+
+      // Job is still running or being retried
+      if (success === null) continue;
+
+      this.deletingOrgIds = this.deletingOrgIds.filter((id) => id !== org.id);
+
+      if (success) {
+        this.orgList = this.orgList?.filter((o) => o.id !== org.id);
+
+        this.notify.toast({
+          message: msg(str`Org "${org.name}" has been deleted.`),
+          variant: "success",
+          icon: "check2-circle",
+          id: "org-delete-status",
+        });
+      } else {
+        // The org is made editable again when the job fails
+        try {
+          const updatedOrg = await this.fetchOrg(org.id);
+
+          this.orgList = this.orgList?.map((o) =>
+            o.id === org.id ? updatedOrg : o,
+          );
+        } catch (e) {
+          console.debug(e);
+        }
+
+        this.notify.toast({
+          message: msg(str`Sorry, couldn't delete org "${org.name}".`),
+          variant: "danger",
+          icon: "exclamation-octagon",
+          id: "org-delete-status",
+        });
+      }
+
+      return;
+    }
+  }
+
   private readonly renderOrg = (org?: OrgData) => {
     if (!org) return;
     if (!this.userInfo) return;
@@ -854,6 +931,8 @@ export class OrgsList extends BtrixElement {
     // There shouldn't really be a case where an org is in the org list but
     // not in user info, but disable clicking into the org just in case
     const isUserOrg = this.userInfo.orgs.some(({ id }) => id === org.id);
+
+    const isDeleting = this.isDeletingOrg(org);
 
     const memberCount = Object.keys(org.users || {}).length;
 
@@ -893,6 +972,15 @@ export class OrgsList extends BtrixElement {
         description: org.readOnlyReason
           ? `${msg("Archiving Disabled:")} ${org.readOnlyReason}`
           : msg("Archiving Disabled (no reason specified)"),
+      };
+    }
+
+    if (isDeleting) {
+      status = {
+        icon: html`<sl-spinner
+          class="text-base text-neutral-400"
+        ></sl-spinner>`,
+        description: msg("Deleting org, it can't be changed in the meantime"),
       };
     }
 
@@ -1112,11 +1200,13 @@ export class OrgsList extends BtrixElement {
 
     return html`
       <btrix-table-row
-        class="${isUserOrg
-          ? ""
-          : "opacity-50"} cursor-pointer select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
+        class="${isUserOrg && !isDeleting ? "" : "opacity-50"} ${isDeleting
+          ? "pointer-events-none"
+          : "cursor-pointer"} select-none grid-cols-[--btrix-table-grid-template-columns--internal] border-b bg-neutral-0 transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-none focus-within:bg-neutral-50 hover:bg-neutral-50"
       >
-        <btrix-table-cell class="min-w-6 gap-1 pl-2">
+        <btrix-table-cell
+          class="min-w-6 gap-1 pl-2 ${isDeleting ? "pointer-events-auto" : ""}"
+        >
           <sl-tooltip content=${status.description} hoist>
             ${status.icon}
           </sl-tooltip>
@@ -1136,9 +1226,12 @@ export class OrgsList extends BtrixElement {
               tw`flex items-center gap-1`,
             )}
             href="/orgs/${org.slug}/dashboard"
-            @click=${this.navigate.link}
+            @click=${isDeleting
+              ? (e: MouseEvent) => e.preventDefault()
+              : this.navigate.link}
             title=${org.name}
-            aria-disabled="${!isUserOrg}"
+            tabindex=${isDeleting ? -1 : 0}
+            aria-disabled="${!isUserOrg || isDeleting}"
           >
             ${org.default
               ? html`<btrix-tag>${msg("Default")}</btrix-tag>`
@@ -1192,6 +1285,7 @@ export class OrgsList extends BtrixElement {
         </btrix-table-cell>
         <btrix-table-cell class="p-1">
           <btrix-overflow-dropdown
+            class=${isDeleting ? "invisible" : ""}
             @click=${(e: MouseEvent) => e.stopPropagation()}
           >
             <sl-menu>

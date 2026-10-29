@@ -11,6 +11,7 @@ export const ORG_DESCRIPTION_MAX_LENGTH = 400;
 export enum OrgReadOnlyReason {
   SubscriptionPaused = "subscriptionPaused",
   SubscriptionCancelled = "subscriptionCancelled",
+  OrgDeleting = "orgDeleting",
 }
 export const orgReadOnlyReasonSchema = z.nativeEnum(OrgReadOnlyReason);
 
