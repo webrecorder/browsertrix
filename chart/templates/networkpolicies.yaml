@@ -322,6 +322,7 @@ spec:
   egress:
     - toEntities:
         - host
+        - remote-node
       toPorts:
         - ports:
             - port: "9100"
