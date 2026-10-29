@@ -140,6 +140,57 @@ def browser_profile_id_running(admin_auth_headers, non_default_org_id):
         time.sleep(5)
 
 
+@pytest.fixture(scope="function")
+def dedupe_index_ready(admin_auth_headers, non_default_org_id):
+    # Create a collection and a workflow that dedupes against it
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "Org deletion dedupe collection"},
+    )
+    assert r.status_code == 200
+    coll_id = r.json()["id"]
+
+    crawl_data = {
+        "runNow": True,
+        "name": "Org deletion with dedupe index",
+        "config": {
+            "seeds": [{"url": "https://old.webrecorder.net/"}],
+            "scopeType": "page",
+            "limit": 3,
+        },
+        "dedupeCollId": coll_id,
+    }
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/crawlconfigs/",
+        headers=admin_auth_headers,
+        json=crawl_data,
+    )
+    assert r.status_code == 200
+    crawl_id = r.json()["run_now_job"]
+
+    # Wait for the crawl to finish
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{non_default_org_id}/crawls/{crawl_id}/replay.json",
+            headers=admin_auth_headers,
+        )
+        if r.json()["state"] == "complete":
+            break
+        time.sleep(5)
+
+    # Wait for the dedupe index to be saved, then return the collection id
+    while True:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{coll_id}",
+            headers=admin_auth_headers,
+        )
+        data = r.json()
+        if data.get("indexState") == "idle" and data.get("indexLastSavedAt"):
+            return coll_id
+        time.sleep(5)
+
+
 def test_delete_org_crawl_running(
     admin_auth_headers, non_default_org_id, crawl_id_running
 ):
@@ -276,3 +327,37 @@ def test_delete_org_profile_running(
     for org in data["items"]:
         if org["id"] == non_default_org_id:
             assert False
+
+
+def test_delete_org_dedupe_index(
+    admin_auth_headers, non_default_org_id, dedupe_index_ready
+):
+    # Org deletion must not be blocked by collections that have a dedupe index
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{non_default_org_id}", headers=admin_auth_headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted"]
+
+    job_id = data["id"]
+
+    # The background job is retried on failure, so success stays unset until
+    # it either succeeds or runs out of retries
+    success = None
+    for _ in range(18):
+        r = requests.get(
+            f"{API_PREFIX}/orgs/all/jobs/{job_id}", headers=admin_auth_headers
+        )
+        assert r.status_code == 200
+        success = r.json()["success"]
+        if success is not None:
+            break
+        time.sleep(10)
+
+    assert success is True
+
+    # Check that org was deleted
+    r = requests.get(f"{API_PREFIX}/orgs", headers=admin_auth_headers)
+    for org in r.json()["items"]:
+        assert org["id"] != non_default_org_id
