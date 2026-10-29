@@ -45,7 +45,7 @@ export class ItemDependencyList extends BtrixElement {
       const { missingRequiresCrawls } = await this.api.fetch<{
         missingRequiresCrawls: string[];
       }>(
-        `/orgs/${this.orgId}/collections/${collectionId}/dedupeIndex/missingDependencies`,
+        `/orgs/${this.orgId}/collections/${collectionId}/dedupeIndex/missingRequiresCrawls`,
         { signal },
       );
 
