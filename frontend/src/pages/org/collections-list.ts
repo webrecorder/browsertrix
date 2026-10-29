@@ -155,7 +155,8 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
     (params) => {
       const values = {
         name: params.get("name") ?? undefined,
-        namePrefix: params.get("namePrefix") ?? undefined,
+        namePrefix:
+          (!params.get("name") && params.get("namePrefix")) ?? undefined,
       };
 
       if (Object.values(values).some((v) => v !== undefined)) {
@@ -463,25 +464,22 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
       library="default"
     ></sl-icon>`;
 
-    if (this.searchByValue) {
-      if (this.filterBy.value.name === this.searchByValue) {
-        prefix = html`<sl-tag
-          slot="prefix"
-          size="small"
-          pill
-          class="ml-[--sl-spacing-3x-small]"
-          >${msg("Name")}</sl-tag
-        >`;
-      }
-      if (this.filterBy.value.namePrefix === this.searchByValue) {
-        prefix = html`<sl-tag
-          slot="prefix"
-          size="small"
-          pill
-          class="ml-[--sl-spacing-3x-small]"
-          >${msg("Name Starts With")}</sl-tag
-        >`;
-      }
+    if (this.filterBy.value.name) {
+      prefix = html`<sl-tag
+        slot="prefix"
+        size="small"
+        pill
+        class="ml-[--sl-spacing-3x-small]"
+        >${msg("Name")}</sl-tag
+      >`;
+    } else if (this.filterBy.value.namePrefix) {
+      prefix = html`<sl-tag
+        slot="prefix"
+        size="small"
+        pill
+        class="ml-[--sl-spacing-3x-small]"
+        >${msg("Name Starts With")}</sl-tag
+      >`;
     }
 
     return html`
@@ -511,7 +509,9 @@ export class CollectionsList extends WithSearchOrgContext(BtrixElement) {
         <sl-input
           size="small"
           placeholder=${msg("Search by name")}
-          value=${this.searchByValue}
+          value=${this.filterBy.value.name ??
+          this.filterBy.value.namePrefix ??
+          ""}
           clearable
           @sl-clear=${() => {
             this.searchResultsOpen = false;
