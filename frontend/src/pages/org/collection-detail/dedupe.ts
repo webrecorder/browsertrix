@@ -9,11 +9,14 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
+import { missingDependenciesPanel } from "../archived-item-detail/templates/missing-dependencies-panel";
+
 import type { OpenDialogEventDetail } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { dedupeIconFor } from "@/features/collections/templates/dedupe-icon";
 import { indexStatus } from "@/features/collections/templates/index-status";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -64,6 +67,9 @@ export class CollectionDetailDedupe extends BtrixElement {
 
   @property({ type: Object })
   collection?: Collection;
+
+  @state()
+  private missingDependenciesOpen = false;
 
   @state()
   private crawlsPagination: Required<APIPaginationQuery> = {
@@ -167,6 +173,23 @@ export class CollectionDetailDedupe extends BtrixElement {
       );
     },
     args: () => [this.collectionId, this.dependenciesPagination] as const,
+  });
+
+  /**
+   * Dependencies that have been deleted
+   */
+  private readonly missingDependenciesTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
+      const { missingRequiresCrawls } = await this.api.fetch<{
+        missingRequiresCrawls: string[];
+      }>(
+        `/orgs/${this.orgId}/collections/${collectionId}/dedupeIndex/missingRequiresCrawls`,
+        { signal },
+      );
+
+      return missingRequiresCrawls;
+    },
+    args: () => [this.collectionId] as const,
   });
 
   /**
@@ -778,27 +801,24 @@ export class CollectionDetailDedupe extends BtrixElement {
             : undefined,
         }),
       });
-    const deletedItemsWarning = () => {
+    const missingDependencies = (ids: string[]) => {
+      if (!ids.length) return;
+
       return html`
-        <btrix-alert
-          variant="warning"
-          class="mb-3 part-[base]:flex part-[base]:items-center part-[base]:gap-2"
-        >
-          <sl-icon name="exclamation-diamond-fill" class="text-base"></sl-icon>
-          ${msg("Some dependencies were deleted and cannot be displayed.")}
-        </btrix-alert>
+        ${missingDependenciesNotice({
+          ids,
+          viewMore: () => (this.missingDependenciesOpen = true),
+        })}
+        ${missingDependenciesPanel({
+          ids,
+          open: this.missingDependenciesOpen,
+          hide: () => (this.missingDependenciesOpen = false),
+        })}
       `;
     };
 
     return html`
-      ${when(
-        // TODO More accurate warning by checking if all required IDs exist
-        this.dedupeCrawlsTask.value?.total &&
-          this.dependenciesTask.value &&
-          !this.dependenciesTask.value.total &&
-          this.collection?.indexStats?.removedCrawls,
-        deletedItemsWarning,
-      )}
+      ${when(this.missingDependenciesTask.value, missingDependencies)}
       ${this.dependenciesTask.render({
         initial: loading,
         pending: () =>
