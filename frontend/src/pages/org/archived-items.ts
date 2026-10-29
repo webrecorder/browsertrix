@@ -50,6 +50,7 @@ import {
   type APIPaginationQuery,
 } from "@/types/api";
 import { UPLOAD_STATES, type CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
 import {
@@ -62,6 +63,12 @@ import {
 } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
 import { isArchivingDisabled } from "@/utils/orgs";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 type ArchivedItems = APIPaginatedList<ArchivedItem>;
@@ -73,52 +80,43 @@ type SortField =
   | "qaRunCount"
   | "lastQAState"
   | "lastQAStarted";
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
 
 type Keys<T> = (keyof T)[];
 
 const POLL_INTERVAL_SECONDS = 30;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   finished: {
     label: msg("Date Created"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   fileSize: {
     label: msg("Size"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   reviewStatus: {
     label: msg("QA Rating"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   lastQAState: {
     label: msg("Latest Analysis Status"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   lastQAStarted: {
     label: msg("Last Analysis Run"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   qaRunCount: {
     label: msg("# of Analysis Runs"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
 
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
-const DEFAULT_SORT_BY: SortBy = {
+const DEFAULT_SORT_BY = {
   field: "finished",
-  direction: sortableFields["finished"].defaultDirection!,
-};
+  direction: sortableFields["finished"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 
 type FilterBy = {
   id?: string;
@@ -178,38 +176,12 @@ export class CrawlsList extends BtrixElement {
   @state()
   private searchOptions: Record<string, string>[] = [];
 
-  @state()
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
+
   private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
     this,
     (value, params) => {
@@ -544,7 +516,7 @@ export class CrawlsList extends BtrixElement {
       ) {
         this.orderBy.setValue({
           field: "finished",
-          direction: sortableFields["finished"].defaultDirection!,
+          direction: sortableFields["finished"].defaultDirection,
         });
       }
       this.paginationElement?.setPage(1, { dispatch: true, replace: true });
@@ -798,32 +770,29 @@ export class CrawlsList extends BtrixElement {
           const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
+        content=${this.orderBy.value.direction === SortDirection.Ascending
           ? msg("Sort in descending order")
           : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
+          name=${this.orderBy.value.direction === SortDirection.Ascending
             ? "sort-up-alt"
             : "sort-down"}
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
-              direction:
-                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+              direction: this.orderBy.value.direction * -1,
             });
           }}
         ></sl-icon-button>
@@ -1289,7 +1258,7 @@ export class CrawlsList extends BtrixElement {
         tagMatch: params.filterByTagsType,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy?.field,
-        sortDirection: params.orderBy?.direction === "desc" ? -1 : 1,
+        sortDirection: params.orderBy?.direction,
         crawlType: params.itemType ?? undefined,
         state: params.state,
       },

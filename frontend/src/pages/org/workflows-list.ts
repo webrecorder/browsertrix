@@ -47,21 +47,21 @@ import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import type { StorageSeedFile, WorkflowSearchValues } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
-
 type Keys<T> = (keyof T)[];
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
@@ -69,36 +69,33 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   lastRun: {
     label: msg("Latest Crawl"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   modified: {
     label: msg("Last Modified"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   name: {
     label: msg("Name"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   firstSeed: {
     label: msg("Crawl Start URL"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   created: {
     label: msg("Date Created"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
 
 const DEFAULT_SORT_BY = {
   field: "lastRun",
-  direction: sortableFields["lastRun"].defaultDirection!,
-} as const;
+  direction: sortableFields["lastRun"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 
 type FilterBy = {
   id?: string;
@@ -139,36 +136,10 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private workflowToDelete?: ListWorkflow;
 
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
 
   private readonly filterBy = new SearchParamsValue<FilterBy>(
@@ -500,9 +471,7 @@ export class WorkflowsList extends BtrixElement {
           const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
@@ -513,23 +482,22 @@ export class WorkflowsList extends BtrixElement {
         )}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
+        content=${this.orderBy.value.direction === SortDirection.Ascending
           ? msg("Sort in descending order")
           : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
+          name=${this.orderBy.value.direction === SortDirection.Ascending
             ? "sort-up-alt"
             : "sort-down"}
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
-              direction:
-                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+              direction: this.orderBy.value.direction * -1,
             });
           }}
         ></sl-icon-button>
@@ -846,7 +814,7 @@ export class WorkflowsList extends BtrixElement {
         tagMatch: params.filterByTagsType,
         profileIds: params.filterByProfiles,
         sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: params.orderBy.direction,
       },
       {
         arrayFormat: "none", // For tags
