@@ -15,6 +15,7 @@ from kubernetes_asyncio.utils.create_from_yaml import FailToCreateError
 from .crawlmanager import CrawlManager
 from .models import (
     CRAWL_TYPES,
+    REASON_DELETING,
     AnyJob,
     BackgroundJob,
     BaseFile,
@@ -361,6 +362,11 @@ class BackgroundJobOps:
                 {"_id": job_id}, {"$set": delete_org_job.to_dict()}, upsert=True
             )
 
+            # Prevent new crawls and uploads while the org is being deleted,
+            # unless the org is already read only for another reason
+            if not org.readOnly:
+                await self.org_ops.update_read_only(org, True, REASON_DELETING)
+
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception as exc:
@@ -680,6 +686,10 @@ class BackgroundJobOps:
         # associated with this org now that no jobs are running
         if job_type == BgJobType.DELETE_ORG and oid and success:
             await self.crawl_manager.delete_all_k8s_resources_for_org(str(oid))
+
+        # If org deletion failed, the org still exists, so unlock it
+        if job_type == BgJobType.DELETE_ORG and oid and not success:
+            await self.org_ops.clear_read_only_deleting(oid)
 
         job = await self.get_background_job(job_id)
         if job.finished:
