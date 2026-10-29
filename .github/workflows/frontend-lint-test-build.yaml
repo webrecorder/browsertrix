@@ -1,6 +1,5 @@
 name: Frontend
-on:
-  pull_request
+on: pull_request
 
 # Cancel in progress workflows on pull_requests.
 # https://docs.github.com/en/actions/using-jobs/using-concurrency#example-using-a-fallback-value
@@ -19,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 2  # important, to fetch previous commit
+          fetch-depth: 2 # important, to fetch previous commit
 
       # workaround for https://github.com/dorny/paths-filter/issues/240
       - id: previous-sha
@@ -60,7 +59,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: frontend/yarn.lock
 
       - name: Get installed Playwright version
@@ -119,16 +118,16 @@ jobs:
       working-directory: ./frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Enable corepack
         run: corepack enable yarn
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: frontend/yarn.lock
 
       - name: Get installed Playwright version
@@ -188,8 +187,8 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 30
 
-  lint:
-    name: Lint
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.matches == 'true'
@@ -199,7 +198,7 @@ jobs:
     steps:
       # Setup:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
 
@@ -207,86 +206,10 @@ jobs:
         run: corepack enable yarn
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
-
-      - name: Install dependencies
-        working-directory: frontend
-        env:
-          HUSKY: 0
-        run: yarn install --immutable
-
-      # Lint:
-      - name: Lint
-        working-directory: frontend
-        run: yarn lint:check
-
-  localize:
-    name: Localize
-    runs-on: ubuntu-latest
-    needs: paths-filter
-    if: needs.paths-filter.outputs.matches == 'true'
-    strategy:
-      matrix:
-        node: [22, 24]
-    steps:
-      # Setup:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Enable corepack
-        run: corepack enable yarn
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
-
-      - name: Install dependencies
-        working-directory: frontend
-        env:
-          HUSKY: 0
-        run: yarn install --immutable
-
-      # Localize:
-      - name: Localization extract dry run
-        working-directory: frontend
-        run: yarn localize:extract
-
-      - name: Localization build dry run
-        working-directory: frontend
-        run: yarn localize:build
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: paths-filter
-    if: needs.paths-filter.outputs.matches == 'true'
-    strategy:
-      matrix:
-        node: [22, 24]
-    steps:
-      # Setup:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Enable corepack
-        run: corepack enable yarn
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: frontend/yarn.lock
 
       - name: Restore cache
@@ -303,17 +226,28 @@ jobs:
           HUSKY: 0
         run: yarn install --immutable
 
-      # Check build:
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           driver-opts: network=host
 
-      - name: Build Frontend
-        uses: docker/build-push-action@v3
-        with:
-          context: frontend
-          load: true
-          tags: webrecorder/browsertrix-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
+      # Checks:
+      - parallel:
+          - name: Lint
+            working-directory: frontend
+            run: yarn lint:check
+
+          - name: Localization dry run
+            working-directory: frontend
+            run: |
+              yarn localize:extract
+              yarn localize:build
+
+          - name: Build Frontend
+            uses: docker/build-push-action@v7
+            with:
+              context: frontend
+              load: true
+              tags: webrecorder/browsertrix-frontend:latest
+              cache-from: type=gha,scope=frontend
+              cache-to: type=gha,scope=frontend,mode=max
