@@ -416,8 +416,8 @@ class CollectionOps:
             ) = await self.get_collection_crawl_resources(coll_id, org)
 
             initial_pages, _ = await self.page_ops.list_pages(
+                org=org,
                 crawl_ids=crawl_ids,
-                page_size=25,
             )
 
             public = "public/" if public_or_unlisted_only else ""
