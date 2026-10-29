@@ -341,35 +341,53 @@ namespace_network_policy_enabled: true
 
 The examples in `chart/examples/` enable the policy with the API server port for their cluster.
 
-The policy allows DNS, the chart's own services, public web on 80/443, the Kubernetes API, the port of an external MongoDB server (if `mongo_local` is `false`), non-80/443 ports in `storages[].endpoint_url` or `access_endpoint_url`, and `email.smtp_port` when `email.smtp_host` is set.
+The policy allows DNS, the chart's own services, public web on 80/443, the Kubernetes API, the port of an external MongoDB server (if `mongo_local` is `false`), non-80/443 ports in `storages[].endpoint_url` or `access_endpoint_url`, and `email.smtp_port` when `email.smtp_host` is set. On Cilium clusters the chart also creates a `CiliumNetworkPolicy` for the Kubernetes API, because a `NetworkPolicy` cannot select the API server's cluster entity.
 
-Two settings might need attention:
+Three settings might need attention:
 
 - `namespace_network_policy_api_ports` is the Kubernetes API endpoint port after service DNAT, not the service port. The defaults are `443` on managed clusters and `6443` on kubeadm. OrbStack uses `26443`.
-- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as HTTPS proxies. For example:
-  - If you are using [NodeLocal DNSCache in your Kubernetes cluster](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/) you will want to allowlist the local listen IP address(es) that it is using:
+- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as an HTTPS proxy:
 
   ```yaml
   namespace_network_policy_extra_egress:
     - to:
         - ipBlock:
-            cidr: 169.254.20.10/32
+            cidr: 10.0.0.5/32 # example: HTTPS proxy (separate from proxies used by the crawler)
+      ports:
+        - port: 3128
+          protocol: TCP
+    # only needed with NodeLocal DNSCache, see below
+    - to:
+        - ipBlock:
+            cidr: 169.254.20.10/32 # example: local DNS cache listen address
       ports:
         - port: 53
           protocol: UDP
         - port: 53
           protocol: TCP
   ```
-  - If you are using a private network in your setup for Mongo (or other services), you will need to allowlist it:
-  
+
+  The second entry in this example applies only to clusters running [NodeLocal DNSCache](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/). There, pods resolve through a node-local address rather than the `kube-dns` pods that the default rule targets.
+
+  Crawl pods run in the crawler namespace under their own policy (`crawler_enable_network_policy`, enabled by default) with the same DNS rule. If you're using NodeLocal DNSCache, add the entry there too using `crawler_network_policy_additional_egress`, or `crawler_network_policy_extra_egress_cilium` on Cilium. Without it, crawls might fail to resolve hostnames.
+
+- `namespace_network_policy_extra_egress_cilium` takes [Cilium egress rules](https://docs.cilium.io/en/stable/security/policy/) for outgoing connections that a `NetworkPolicy` cannot express, such as the `host`, `remote-node` and `kube-apiserver` entities. This doesn't do anything on clusters without the Cilium CRDs. Cilium policy takes ports as strings, and these rules become the policy's `egress` list. On Cilium, handle NodeLocal DNSCache with this setting instead of an `ipBlock`, because the cache's node-local address is a host identity:
+
   ```yaml
-  namespace_network_policy_extra_egress:
-    - to:
-        - ipBlock:
-            cidr: 10.124.0.0/20
-      ports:
-        - port: 27017 # Mongo port
-          protocol: TCP
+  namespace_network_policy_extra_egress_cilium:
+    - toEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
   ```
 
-Rules are additive and apply to the whole namespace, so every pod can reach every allowed destination. After enabling the policy, confirm that crawls start and complete, because a missing rule could block traffic without a clear error in the UI.
+  Crawl pods need the same rules in `crawler_network_policy_extra_egress_cilium`.
+
+  Whether the cache address resolves to the `host` entity depends on how Cilium maps that address, so check for dropped DNS traffic after applying the rule with `hubble observe --verdict DROPPED`. If the rule does not match, use `toCIDR: ["169.254.20.10/32"]` in place of `toEntities`.
+
+Rules are additive and apply to the whole namespace, so every pod can reach every allowed destination. After you enable the policy, confirm that crawls start and complete. A missing rule can block traffic without a clear error in the UI.
