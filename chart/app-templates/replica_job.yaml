@@ -14,7 +14,6 @@ spec:
   backoffLimit: 3
   template:
     spec:
-      automountServiceAccountToken: false
       restartPolicy: Never
       priorityClassName: bg-job
       podFailurePolicy:

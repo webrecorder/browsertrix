@@ -2261,17 +2261,6 @@ class CrawlOperator(BaseOperator):
         stats: OpCrawlStats | None,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
-        # The crawl may have been deleted while this task was queued. Skip
-        # stats and cleanup so the deletion isn't undone.
-        try:
-            db_crawl = await self.crawl_ops.get_crawl_raw(crawl.db_crawl_id)
-        except HTTPException:
-            db_crawl = None
-
-        if not db_crawl or db_crawl.get("deleted"):
-            await self.k8s.delete_crawl_job(crawl.id)
-            return
-
         if state in SUCCESSFUL_STATES:
             # do this first, in case dedupe index may become idle
             # and redis pod will be shut down eventually

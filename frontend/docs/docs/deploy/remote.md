@@ -108,10 +108,6 @@ mongo_auth:
 
 ```
 
-## Securing a Public Browsertrix Instance
-
-Before exposing Browsertrix to the internet, enable the [Application Namespace Egress Policy](./customization.md#application-namespace-egress-policy) to limit what the application pods can reach.
-
 ## Cloud Deployment
 
 There are also many ways to deploy Browsertrix on various cloud providers.

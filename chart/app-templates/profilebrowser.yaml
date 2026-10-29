@@ -10,8 +10,6 @@ metadata:
     network-policy: limit-crawler-egress
 
 spec:
-  # Browser profiles render untrusted sites and never call the Kubernetes API.
-  automountServiceAccountToken: false
   hostname: browser-{{ id }}
   subdomain: browser
 

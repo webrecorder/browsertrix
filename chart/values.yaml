@@ -462,48 +462,6 @@ btrix-proxies:
 # optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
-# optional: egress policy for the application namespace (backend, frontend,
-# emails, metacontroller and job pods). Allows DNS, the chart's own services,
-# public web on 80/443 and the Kubernetes API. Ports for an external MongoDB
-# and non-80/443 storage endpoints are added automatically.
-namespace_network_policy_enabled: false
-
-# optional: additional egress rules, same format as
-# crawler_network_policy_additional_egress
-#
-# namespace_network_policy_extra_egress:
-#   # example private vpn address
-#   - to:
-#       - ipBlock:
-#           cidr: 10.0.0.5/32
-#     ports:
-#       - port: 3128
-#         protocol: TCP
-#
-#   # example custom minio
-#   - to:
-#       - podSelector:
-#           matchLabels:
-#             app: my-custom-minio
-#     ports:
-#       - port: 9000
-#         protocol: TCP
-#
-#   # example custom namespace app
-#   - to:
-#       - namespaceSelector:
-#           matchLabels:
-#             kubernetes.io/metadata.name: my-namespace
-#     ports:
-#       - port: 443
-#         protocol: TCP
-
-# optional: Kubernetes API endpoint ports after service DNAT (443 on managed
-# clusters, 6443 on kubeadm). Add your cluster's port if it differs.
-namespace_network_policy_api_ports:
-  - 443
-  - 6443
-
 # optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
 # crawler_network_policy_additional_egress: []
 

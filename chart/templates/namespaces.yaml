@@ -5,9 +5,6 @@ metadata:
   name: {{ .Values.crawler_namespace }}
   labels:
     release: {{ .Release.Name }}
-    # Crawler pods run untrusted web content; baseline forbids privileged
-    # containers, host namespaces/paths and capability additions
-    pod-security.kubernetes.io/enforce: baseline
   annotations:
     "helm.sh/resource-policy": keep
 

@@ -80,7 +80,3 @@ signer:
 #   # optional: if not set, automatically generated
 #   # change or remove this
 #   # password: PASSWORD!
-
-# k3s API server port after DNAT
-namespace_network_policy_enabled: true
-namespace_network_policy_api_ports: [443, 6443]

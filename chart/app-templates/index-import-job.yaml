@@ -34,9 +34,6 @@ spec:
         oid: {{ oid }}
 
     spec:
-      # The indexer parses archived (untrusted) content and never calls the
-      # Kubernetes API.
-      automountServiceAccountToken: false
       restartPolicy: OnFailure
       priorityClassName: index-import-job
 
