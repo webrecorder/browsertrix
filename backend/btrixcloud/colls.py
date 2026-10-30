@@ -33,6 +33,7 @@ from .models import (
     Collection,
     CollectionAddRemove,
     CollectionAllResponse,
+    CollectionMissingRequiresCrawls,
     CollectionSearchValuesResponse,
     CollectionThumbnailSource,
     CollIdName,
@@ -966,6 +967,30 @@ class CollectionOps:
         )
         return coll and coll.get("indexState") is not None
 
+    async def get_missing_requires_crawls(
+        self, coll_id: UUID, org: Organization
+    ) -> list[str]:
+        """Return crawl ids required as dependencies by crawls in this
+        collection that are no longer present in the org."""
+        # 404 if collection doesn't exist or belongs to another org
+        await self.get_collection_raw(coll_id, org.id)
+
+        required = [
+            crawl_id
+            for crawl_id in await self.crawls.distinct(
+                "requiresCrawls",
+                {"oid": org.id, "collectionIds": coll_id},
+            )
+            if crawl_id is not None
+        ]
+
+        if not required:
+            return []
+
+        # only report dependencies that are gone from the org entirely; crawls
+        # that still exist but were merely removed from this collection are fine
+        return await self.crawl_ops.find_missing_crawls(required, org.id)
+
     # END DEDUPE OPS
 
     async def recalculate_org_collection_stats(self, org: Organization):
@@ -1726,6 +1751,19 @@ def init_collections_api(
         return await colls.delete_thumbnail(coll, org)
 
     # DEDUPE API
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/missingRequiresCrawls",
+        tags=["collections", "dedupe"],
+        response_model=CollectionMissingRequiresCrawls,
+    )
+    async def get_missing_dependencies(
+        coll_id: UUID,
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return CollectionMissingRequiresCrawls(
+            missingRequiresCrawls=await colls.get_missing_requires_crawls(coll_id, org)
+        )
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/dedupeIndex/create",
