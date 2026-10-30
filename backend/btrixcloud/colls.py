@@ -1753,7 +1753,7 @@ def init_collections_api(
     # DEDUPE API
 
     @app.get(
-        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/missingDependencies",
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/missingRequiresCrawls",
         tags=["collections", "dedupe"],
         response_model=CollectionMissingRequiresCrawls,
     )
