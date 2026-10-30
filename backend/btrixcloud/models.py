@@ -2122,6 +2122,7 @@ class SubscriptionStatus(StrEnum):
 
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
+REASON_DELETING = "orgDeleting"
 
 SubscriptionEventType = Literal["create", "import", "update", "cancel", "add-minutes"]
 

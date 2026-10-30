@@ -31,6 +31,7 @@ from .logger import clear_log_context, set_log_context
 from .models import (
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
+    REASON_DELETING,
     REASON_PAUSED,
     RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -1243,6 +1244,14 @@ class OrgOps(BaseOrgs):
         res = await self.orgs.find_one_and_update(
             {"_id": org.id},
             {"$set": {"readOnly": readOnly, "readOnlyReason": readOnlyReason}},
+        )
+        return res is not None
+
+    async def clear_read_only_deleting(self, oid: UUID) -> bool:
+        """Unset readOnly if it was set by org deletion, e.g. after it failed"""
+        res = await self.orgs.find_one_and_update(
+            {"_id": oid, "readOnlyReason": REASON_DELETING},
+            {"$set": {"readOnly": False, "readOnlyReason": ""}},
         )
         return res is not None
 
