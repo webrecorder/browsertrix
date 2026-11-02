@@ -1789,6 +1789,14 @@ class DedupeIndexStats(BaseModel):
 
 
 # ============================================================================
+class CollectionMissingRequiresCrawls(BaseModel):
+    """Crawl ids required by deduped crawls in a collection
+    that are no longer present in the org."""
+
+    missingRequiresCrawls: list[str] = []
+
+
+# ============================================================================
 class Collection(BaseMongoModel):
     """Org collection structure"""
 
