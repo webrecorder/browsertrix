@@ -193,8 +193,15 @@ export class OrgsList extends BtrixElement {
     trailing: true,
   });
 
+  #pollTimerId?: number;
+
   protected firstUpdated() {
     this.fuse.setCollection(this.orgList ?? []);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    window.clearTimeout(this.#pollTimerId);
   }
 
   render() {
@@ -870,9 +877,12 @@ export class OrgsList extends BtrixElement {
 
   private async pollOrgDeletion(org: OrgData, jobId: string) {
     while (this.isConnected) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, ORG_DELETE_POLL_INTERVAL_MS),
-      );
+      await new Promise((resolve) => {
+        this.#pollTimerId = window.setTimeout(
+          resolve,
+          ORG_DELETE_POLL_INTERVAL_MS,
+        );
+      });
 
       let success: boolean | null = null;
 
