@@ -1,10 +1,12 @@
-import { isCrawl } from "../crawler";
-
 import { OrgTab, WorkflowTab } from "@/routes";
-import { type ArchivedItem, type ListArchivedItem } from "@/types/crawler";
+import { type ArchivedItem } from "@/types/crawler";
 
-export function pathForArchivedItem(item: ListArchivedItem) {
-  if (isCrawl(item as ArchivedItem)) {
+// TODO Use `urlForName` after refactoring routes to accept org tab as a parameter
+// See https://github.com/webrecorder/browsertrix/issues/3774
+export function pathForArchivedItem(
+  item: Partial<Pick<ArchivedItem, "id" | "cid" | "type">>,
+) {
+  if (item.cid) {
     return `${OrgTab.Workflows}/${item.cid}/${WorkflowTab.Crawls}/${item.id}`;
   }
 
