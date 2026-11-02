@@ -198,12 +198,20 @@
   ansible.builtin.set_fact:
     lb_ip: "{{ loadbalancer_ip_result.stdout_lines[1] }}"
 
+- name: d_ocean | dns | check main domain record exists
+  ansible.builtin.command: doctl compute domain records ls {{ domain }} -o json
+  register: check_main_domain
+  changed_when: false
+
 - name: d_ocean | dns | register the dns for browsertrix
   ansible.builtin.command: >-
       doctl compute domain records create --record-type A --record-name "{{ subdomain if subdomain else '@' }}" --record-data "{{ lb_ip }}" "{{ domain }}"
 
   changed_when: dns_result.rc == 0
   register: dns_result
+  when: "check_main_domain.stdout | from_json | json_query(name_query) | length < 1"
+  vars:
+    name_query: '[?name==`{{ subdomain if subdomain else "@" }}` && type==`A`]'
 
 
 # Signing + DNS
