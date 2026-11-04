@@ -19,7 +19,6 @@ from .models import (
     BaseFile,
     BgJobType,
     CleanupSeedFilesJob,
-    CopyBucketJob,
     CreateReplicaJob,
     DeleteOrgJob,
     DeleteReplicaJob,
@@ -29,6 +28,7 @@ from .models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
+    ReplicaBulkCopyJob,
     ReplicateFilesCronJob,
     RetryStuckUploadsJob,
     StorageRef,
@@ -197,7 +197,7 @@ class BackgroundJobOps:
             )
             return ""
 
-    async def create_copy_bucket_jobs(self):
+    async def create_replica_bulk_copy_jobs(self):
         """Create background jobs to copy primary storage to each default replica location
 
         Note that this replicates default storages only, and not any org-specific
@@ -215,14 +215,14 @@ class BackgroundJobOps:
         )
 
         for default_replica_ref in self.storage_ops.get_default_replicas():
-            await self.create_copy_bucket_job(
+            await self.create_replica_bulk_copy_job(
                 primary_storage_ref,
                 primary_endpoint,
                 primary_bucket_suffix,
                 default_replica_ref,
             )
 
-    async def create_copy_bucket_job(
+    async def create_replica_bulk_copy_job(
         self,
         primary_storage_ref: StorageRef,
         primary_endpoint: str,
@@ -241,7 +241,7 @@ class BackgroundJobOps:
                 replica_storage.endpoint_url
             )
 
-            job_id = await self.crawl_manager.run_copy_bucket_job(
+            job_id = await self.crawl_manager.run_replica_bulk_copy_job(
                 primary_storage=primary_storage_ref,
                 replica_storage=replica_ref,
                 primary_endpoint=primary_endpoint,
@@ -251,36 +251,36 @@ class BackgroundJobOps:
                 existing_job_id=existing_job_id,
             )
             if existing_job_id:
-                copy_bucket_job = await self.get_background_job(existing_job_id)
+                replica_bulk_copy_job = await self.get_background_job(existing_job_id)
                 previous_attempt = {
-                    "started": copy_bucket_job.started,
-                    "finished": copy_bucket_job.finished,
+                    "started": replica_bulk_copy_job.started,
+                    "finished": replica_bulk_copy_job.finished,
                 }
-                if copy_bucket_job.previousAttempts:
-                    copy_bucket_job.previousAttempts.append(previous_attempt)
+                if replica_bulk_copy_job.previousAttempts:
+                    replica_bulk_copy_job.previousAttempts.append(previous_attempt)
                 else:
-                    copy_bucket_job.previousAttempts = [previous_attempt]
-                copy_bucket_job.started = dt_now()
-                copy_bucket_job.finished = None
-                copy_bucket_job.success = None
+                    replica_bulk_copy_job.previousAttempts = [previous_attempt]
+                replica_bulk_copy_job.started = dt_now()
+                replica_bulk_copy_job.finished = None
+                replica_bulk_copy_job.success = None
             else:
-                copy_bucket_job = CopyBucketJob(
+                replica_bulk_copy_job = ReplicaBulkCopyJob(
                     id=job_id,
                     started=dt_now(),
                     replica_storage=replica_ref,
                 )
 
             await self.jobs.find_one_and_update(
-                {"_id": job_id}, {"$set": copy_bucket_job.to_dict()}, upsert=True
+                {"_id": job_id}, {"$set": replica_bulk_copy_job.to_dict()}, upsert=True
             )
 
-            replica_logger.info("copy_bucket_job_started", job_id=job_id)
+            replica_logger.info("replica_bulk_copy_job_started", job_id=job_id)
 
             return job_id
         # pylint: disable=broad-exception-caught
         except Exception:
             replica_logger.warning(
-                "copy_bucket_job_start_failed",
+                "replica_bulk_copy_job_start_failed",
                 exc_info=True,
                 existing_job_id=existing_job_id,
             )
@@ -721,7 +721,7 @@ class BackgroundJobOps:
         | PostProcessUploadJob
         | RetryStuckUploadsJob
         | ReplicateFilesCronJob
-        | CopyBucketJob
+        | ReplicaBulkCopyJob
     ):
         """Get background job"""
         query: dict[str, object] = {"_id": job_id}
@@ -768,8 +768,8 @@ class BackgroundJobOps:
         if data["type"] == BgJobType.REPLICATE_FILES_CRON:
             return ReplicateFilesCronJob.from_dict(data)
 
-        if data["type"] == BgJobType.COPY_BUCKET:
-            return CopyBucketJob.from_dict(data)
+        if data["type"] == BgJobType.REPLICA_BULK_COPY:
+            return ReplicaBulkCopyJob.from_dict(data)
 
         if data["type"] == BgJobType.DELETE_ORG:
             return DeleteOrgJob.from_dict(data)
@@ -884,8 +884,8 @@ class BackgroundJobOps:
             )
             return {"success": True}
 
-        if job.type == BgJobType.COPY_BUCKET:
-            job = cast(CopyBucketJob, job)
+        if job.type == BgJobType.REPLICA_BULK_COPY:
+            job = cast(ReplicaBulkCopyJob, job)
 
             primary_storage_ref = self.storage_ops.get_default_primary()
             primary_storage = self.storage_ops.get_default_s3_storage(
@@ -895,7 +895,7 @@ class BackgroundJobOps:
                 primary_storage.endpoint_url
             )
 
-            await self.create_copy_bucket_job(
+            await self.create_replica_bulk_copy_job(
                 primary_storage_ref,
                 primary_endpoint,
                 primary_bucket_suffix,
@@ -918,7 +918,7 @@ class BackgroundJobOps:
         if job.type in (BgJobType.CLEANUP_SEED_FILES, BgJobType.REPLICATE_FILES_CRON):
             raise HTTPException(status_code=400, detail="cron_job_retry_not_supported")
 
-        if job.type in (BgJobType.COPY_BUCKET, BgJobType.OPTIMIZE_PAGES):
+        if job.type in (BgJobType.REPLICA_BULK_COPY, BgJobType.OPTIMIZE_PAGES):
             raise HTTPException(
                 status_code=400, detail="non_org_specific_job_retry_not_supported"
             )

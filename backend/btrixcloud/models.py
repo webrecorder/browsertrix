@@ -3281,7 +3281,7 @@ class BgJobType(StrEnum):
     # New replication job that spins up rclone copy jobs as needed
     REPLICATE_FILES_CRON = "replicate-files-cron"
     # Per-bucket replication job
-    COPY_BUCKET = "copy-bucket"
+    REPLICA_BULK_COPY = "replica-bulk-copy"
 
 
 # ============================================================================
@@ -3375,10 +3375,10 @@ class ReplicateFilesCronJob(BackgroundJob):
 
 
 # ============================================================================
-class CopyBucketJob(BackgroundJob):
+class ReplicaBulkCopyJob(BackgroundJob):
     """Model for tracking job to copy primary storage bucket to replica storage"""
 
-    type: Literal[BgJobType.COPY_BUCKET] = BgJobType.COPY_BUCKET
+    type: Literal[BgJobType.REPLICA_BULK_COPY] = BgJobType.REPLICA_BULK_COPY
     replica_storage: StorageRef
 
 
@@ -3423,7 +3423,7 @@ AnyJob = RootModel[
     | PostProcessUploadJob
     | RetryStuckUploadsJob
     | ReplicateFilesCronJob
-    | CopyBucketJob
+    | ReplicaBulkCopyJob
 ]
 
 

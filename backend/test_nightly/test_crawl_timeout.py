@@ -42,10 +42,10 @@ def test_crawl_timeout(admin_auth_headers, default_org_id, timeout_crawl):
 def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_crawl):
     crawl_complete = dt_now()
 
-    # Verify copy bucket job has run and succeeded since crawl completed
+    # Verify bulk replica job has run and succeeded since crawl completed
     job_id = None
 
-    # Give copy bucket job (which is kicked off by cron replication job)
+    # Give bulk replica job (which is kicked off by cron replication job)
     # up to 20 minutes to start and then complete
     attempts = 0
     while attempts < 60:
@@ -58,7 +58,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
         for job in jobs:
             try:
                 if (
-                    job.get("type") == "copy-bucket"
+                    job.get("type") == "replica-bulk-copy"
                     and str_to_date(job.get("started")) >= crawl_complete
                     and job.get("success")
                 ):

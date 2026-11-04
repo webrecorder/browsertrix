@@ -109,7 +109,7 @@ async def main():
 
     if job_type == BgJobType.REPLICATE_FILES_CRON:
         try:
-            await bg_job_ops.create_copy_bucket_jobs()
+            await bg_job_ops.create_replica_bulk_copy_jobs()
             return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:

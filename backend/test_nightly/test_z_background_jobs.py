@@ -104,7 +104,7 @@ def test_get_background_job(admin_auth_headers, default_org_id, deleted_crawl_id
     assert data["id"]
     assert data["type"] in (
         "replicate-files-cron",
-        "copy-bucket",
+        "replica-bulk-copy",
         "delete-replica",
         "cleanup-seed-files",
     )
@@ -115,7 +115,7 @@ def test_get_background_job(admin_auth_headers, default_org_id, deleted_crawl_id
     assert data["file_path"]
     assert data["object_type"]
     assert data["object_id"]
-    if data["type"] in ("delete-replica", "copy-bucket"):
+    if data["type"] in ("delete-replica", "replica-bulk-copy"):
         assert data["replica_storage"]
 
 
