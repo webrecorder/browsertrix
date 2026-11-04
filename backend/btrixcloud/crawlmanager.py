@@ -81,7 +81,7 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
-    async def run_replica_bulk_copy_job(
+    async def run_copy_replicas_job(
         self,
         primary_storage: StorageRef,
         replica_storage: StorageRef,
@@ -92,7 +92,7 @@ class CrawlManager(K8sAPI):
         existing_job_id: str | None = None,
     ) -> str:
         """run job to replicate primary storage to replica location"""
-        job_type = BgJobType.REPLICA_BULK_COPY.value
+        job_type = BgJobType.COPY_REPLICAS.value
 
         if existing_job_id:
             job_id = existing_job_id

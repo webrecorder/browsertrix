@@ -12,6 +12,7 @@ from btrixcloud.background_jobs import BackgroundJobOps
 from btrixcloud.models import (
     BgJobType,
     CleanupSeedFilesJob,
+    CopyReplicasJob,
     CreateReplicaJob,
     DeleteOrgJob,
     DeleteReplicaJob,
@@ -19,7 +20,6 @@ from btrixcloud.models import (
     PostProcessUploadJob,
     ReAddOrgPagesJob,
     RecalculateOrgStatsJob,
-    ReplicaBulkCopyJob,
     ReplicateFilesCronJob,
     RetryStuckUploadsJob,
     UpdateCollStatsJob,
@@ -37,7 +37,7 @@ JOB_TYPE_TO_CLASS = {
     BgJobType.POSTPROCESS_UPLOAD: PostProcessUploadJob,
     BgJobType.RETRY_STUCK_UPLOADS: RetryStuckUploadsJob,
     BgJobType.REPLICATE_FILES_CRON: ReplicateFilesCronJob,
-    BgJobType.REPLICA_BULK_COPY: ReplicaBulkCopyJob,
+    BgJobType.COPY_REPLICAS: CopyReplicasJob,
 }
 
 _TYPE_EXTRAS = {
@@ -53,7 +53,7 @@ _TYPE_EXTRAS = {
         "object_id": "test-object",
         "replica_storage": {"name": "test-storage"},
     },
-    BgJobType.REPLICA_BULK_COPY: {
+    BgJobType.COPY_REPLICAS: {
         "replica_storage": {"name": "test-storage"},
     },
 }

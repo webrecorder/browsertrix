@@ -56,7 +56,7 @@ def test_upload_file_replicated(admin_auth_headers, default_org_id):
         for job in jobs:
             try:
                 if (
-                    job.get("type") == "replica-bulk-copy"
+                    job.get("type") == "copy-replicas"
                     and str_to_date(job.get("started")) >= upload_complete
                     and job.get("success")
                 ):

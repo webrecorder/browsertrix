@@ -58,7 +58,7 @@ def test_crawl_files_replicated(admin_auth_headers, default_org_id, timeout_craw
         for job in jobs:
             try:
                 if (
-                    job.get("type") == "replica-bulk-copy"
+                    job.get("type") == "copy-replicas"
                     and str_to_date(job.get("started")) >= crawl_complete
                     and job.get("success")
                 ):
