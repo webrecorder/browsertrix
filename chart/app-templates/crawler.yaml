@@ -6,10 +6,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: {{ name | tojson }}
+  namespace: {{ namespace | tojson }}
   labels:
-    crawl: {{ id }}
+    crawl: {{ id | tojson }}
     role: crawler
 
 spec:
@@ -34,19 +34,19 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: {{ name | tojson }}
+  namespace: {{ namespace | tojson }}
   labels:
-    crawl: {{ id }}
+    crawl: {{ id | tojson }}
     role: crawler
     network-policy: limit-crawler-egress
 
 spec:
-  hostname: {{ name }}
+  hostname: {{ name | tojson }}
   subdomain: crawler
 
   {% if priorityClassName %}
-  priorityClassName: {{ priorityClassName }}
+  priorityClassName: {{ priorityClassName | tojson }}
   {% endif %}
 
   restartPolicy: OnFailure
@@ -61,16 +61,16 @@ spec:
   volumes:
     - name: crawl-config
       configMap:
-        name: crawl-config-{{ id }}
+        name: {{ ("crawl-config-" ~ id) | tojson }}
     {% if qa_source_crawl_id %}
     - name: qa-config
       configMap:
-        name: qa-replay-{{ qa_source_crawl_id }}
+        name: {{ ("qa-replay-" ~ qa_source_crawl_id) | tojson }}
     {% endif %}
     - name: crawl-data
     {% if not no_pvc %}
       persistentVolumeClaim:
-        claimName: {{ name }}
+        claimName: {{ name | tojson }}
     {% else %}
       emptyDir: {}
     {% endif %}
@@ -96,7 +96,7 @@ spec:
             - key: nodeType
               operator: In
               values:
-                - "{{ crawler_node_type }}"
+                - {{ crawler_node_type | tojson }}
 {% endif %}
 
     podAffinity:
@@ -109,7 +109,7 @@ spec:
               - key: crawl
                 operator: In
                 values:
-                - {{ id }}
+                - {{ id | tojson }}
 
   tolerations:
     - key: nodeType
@@ -127,8 +127,8 @@ spec:
 
   containers:
     - name: crawler
-      image: {{ crawler_image }}
-      imagePullPolicy: {{ crawler_image_pull_policy }}
+      image: {{ crawler_image | tojson }}
+      imagePullPolicy: {{ crawler_image_pull_policy | tojson }}
       command:
         - {{ "crawl" if not qa_source_crawl_id else "qa" }}
         - --config
@@ -136,18 +136,18 @@ spec:
         - --workers
         - "{{ workers }}"
         - --redisStoreUrl
-        - {{ redis_url }}
+        - {{ redis_url | tojson }}
       {% if qa_source_crawl_id %}
         - --qaSource
         - /tmp/qa/qa-config.json
       {% else %}
       {% if redis_dedupe_url %}
         - --redisDedupeUrl
-        - {{ redis_dedupe_url }}
+        - {{ redis_dedupe_url | tojson }}
       {% endif %}
       {% if profile_filename %}
         - --profile
-        - "@{{ profile_filename }}"
+        - {{ ("@" ~ profile_filename) | tojson }}
       {% endif %}
       {% if profile_filename and save_profile %}
         - --saveProfile
@@ -156,15 +156,15 @@ spec:
       {% if add_proxies %}
       {% if proxy_url %}
         - --proxyServer
-        - "{{ proxy_url }}"
+        - {{ proxy_url | tojson }}
       {% endif %}
       {% if proxy_id and proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
-        - /tmp/proxies/{{ proxy_id }}-private-key
+        - {{ ("/tmp/proxies/" ~ proxy_id ~ "-private-key") | tojson }}
       {% endif %}
       {% if proxy_id and proxy_ssh_host_public_key %}
         - --sshProxyKnownHostsFile
-        - /tmp/proxies/{{ proxy_id }}-known-hosts
+        - {{ ("/tmp/proxies/" ~ proxy_id ~ "-known-hosts") | tojson }}
       {% endif %}
         - --proxyServerConfig
         - /tmp/proxies/host-proxies.json
@@ -203,11 +203,11 @@ spec:
             name: shared-crawler-config
 
         - secretRef:
-            name: {{ storage_secret }}
+            name: {{ storage_secret | tojson }}
 
       {% if signing_secret %}
         - secretRef:
-            name: {{ signing_secret }}
+            name: {{ signing_secret | tojson }}
       {% endif %}
 
       env:
@@ -215,22 +215,22 @@ spec:
           value: /crawls/home
 
         - name: CRAWL_ID
-          value: "{{ id }}"
+          value: {{ id | tojson }}
 
         - name: WEBHOOK_URL
-          value: "{{ redis_url }}/crawls-done"
+          value: {{ (redis_url ~ "/crawls-done") | tojson }}
 
         - name: STORE_PATH
-          value: "{{ storage_path }}"
+          value: {{ storage_path | tojson }}
 
         - name: STORE_FILENAME
-          value: "{{ storage_filename }}"
+          value: {{ storage_filename | tojson }}
 
         - name: STORE_USER
-          value: "{{ userid }}"
+          value: {{ userid | tojson }}
 
         - name: WARC_PREFIX
-          value: "{{ warc_prefix }}"
+          value: {{ warc_prefix | tojson }}
 
       resources:
         limits:

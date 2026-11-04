@@ -5,12 +5,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ name }}
+  name: {{ name | tojson }}
   labels:
     role: index-import-job
-    type: {{ job_type }}
-    coll: {{ id }}
-    oid: {{ oid }}
+    type: {{ job_type | tojson }}
+    coll: {{ id | tojson }}
+    oid: {{ oid | tojson }}
 
 spec:
   ttlSecondsAfterFinished: 300
@@ -29,9 +29,9 @@ spec:
     metadata:
       labels:
         role: index-import-job
-        type: {{ job_type }}
-        coll: {{ id }}
-        oid: {{ oid }}
+        type: {{ job_type | tojson }}
+        coll: {{ id | tojson }}
+        oid: {{ oid | tojson }}
 
     spec:
       restartPolicy: OnFailure
@@ -41,7 +41,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ name }}
+            name: {{ name | tojson }}
 
         - name: tmpdir
           emptyDir: {}
@@ -49,12 +49,12 @@ spec:
 
       containers:
         - name: indexer
-          image: {{ crawler_image }}
-          imagePullPolicy: {{ crawler_image_pull_policy }}
+          image: {{ crawler_image | tojson }}
+          imagePullPolicy: {{ crawler_image_pull_policy | tojson }}
           command:
             - indexer
             - --redisDedupeUrl
-            - {{ redis_url }}
+            - {{ redis_url | tojson }}
 
           {% if job_type == "import" %}
             - --sourceUrl

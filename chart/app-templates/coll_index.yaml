@@ -1,18 +1,18 @@
 apiVersion: btrix.cloud/v1
 kind: CollIndex
 metadata:
-  name: collindex-{{ id }}
+  name: {{ ("collindex-" ~ id) | tojson }}
   finalizers:
     - metacontroller.io/compositecontroller-collindexes-operator
   labels:
     role: "collindex"
-    oid: {{ oid }}
-    coll: {{ id }}
+    oid: {{ oid | tojson }}
+    coll: {{ id | tojson }}
 
 spec:
   selector:
     matchLabels:
-      coll: "{{ id }}"
+      coll: {{ id | tojson }}
 
-  id: "{{ id }}"
-  oid: "{{ oid }}"
+  id: {{ id | tojson }}
+  oid: {{ oid | tojson }}
