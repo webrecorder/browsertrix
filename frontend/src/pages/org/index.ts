@@ -386,7 +386,7 @@ export class Org extends BtrixElement {
               : [
                   tw`mx-auto`,
                   extraWidth
-                    ? tw`max-w-[calc(var(--btrix-page-width)+17.5rem)]`
+                    ? tw`max-w-[--btrix-page-extra-width]`
                     : tw`max-w-screen-desktop`,
                 ],
           )}
