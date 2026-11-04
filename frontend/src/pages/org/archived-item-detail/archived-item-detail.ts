@@ -8,6 +8,8 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
 
+import { type Page } from "../archived-item-qa/types";
+
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
 import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
@@ -15,7 +17,7 @@ import { runAnalysisButton } from "./templates/run-analysis-button";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
-import { type PageChangeEvent } from "@/components/ui/pagination";
+import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
@@ -79,6 +81,7 @@ type SectionName = (typeof SECTIONS)[number];
 
 const POLL_INTERVAL_SECONDS = 5;
 const DEPENDENCY_PAGE_SIZE = 20;
+const PAGE_LIST_PAGE_SIZE = 10;
 
 export type { SectionName as ArchivedItemSectionName };
 
@@ -246,6 +249,31 @@ export class ArchivedItemDetail extends BtrixElement {
       );
     },
     args: () => [this.item, this.dependenciesPage] as const,
+  });
+
+  private readonly pagesTask = new Task(this, {
+    task: async ([itemId, page], { signal }) => {
+      if (!itemId) throw "itemId required";
+
+      const queryData: APISortQuery<Page> & APIPaginationQuery = {
+        sortBy: "ts",
+        sortDirection: SortDirection.Descending,
+        page,
+        pageSize: PAGE_LIST_PAGE_SIZE,
+      };
+
+      const query = queryString.stringify(queryData);
+
+      return this.api.fetch<APIPaginatedList<Page>>(
+        `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages?${query}`,
+        { signal },
+      );
+    },
+    args: () =>
+      [
+        this.itemId,
+        parsePage(new URLSearchParams(location.search).get("replayPage")),
+      ] as const,
   });
 
   willUpdate(changedProperties: PropertyValues<this>) {
@@ -563,7 +591,7 @@ export class ArchivedItemDetail extends BtrixElement {
               ${this.renderNav()}
             </div>
           </div>
-          <div class="col-span-14 min-w-0 md:col-span-11">
+          <div class="col-span-14 min-w-0 md:col-span-11 @container/content">
             ${sectionContent}
           </div>
         </section>
@@ -929,7 +957,12 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderReplay() {
     return html`
-      <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
+      <div
+        class="flex flex-col divide-y @4xl/content:divide-y-0 @4xl/content:divide-x border rounded-lg overflow-hidden @4xl/content:flex-row"
+      >
+        <div class="flex-1">${this.renderRWP()}</div>
+        <div class="@4xl/content:w-80">${this.renderPageList()}</div>
+      </div>
     `;
   }
 
@@ -949,11 +982,13 @@ export class ArchivedItemDetail extends BtrixElement {
       <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
       ${
         canReplay
-          ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
+          ? html`<div
+              id="replay-crawl"
+              class="@4xl/content:h-full @4xl/content:min-h-[calc(100vh-3.125rem)] aspect-4/3 @4xl/content:aspect-auto overflow-hidden"
+            >
               <replay-web-page
                 source="${replaySource}"
-                url="${(this.item.seedCount === 1 && this.item.firstSeed) ||
-                ""}"
+                url="${this.item.firstSeed || ""}"
                 coll="${ifDefined(this.item.id)}"
                 config="${config}"
                 replayBase="/replay/"
@@ -974,6 +1009,68 @@ export class ArchivedItemDetail extends BtrixElement {
       }
       </div>
     `;
+  }
+
+  private renderPageList() {
+    if (!this.item) return;
+
+    const loading = () =>
+      html`<div class="size-full flex items-center justify-center p-5">
+        <sl-spinner class="text-xl"></sl-spinner>
+      </div>`;
+    const pageList = ({ items }: APIPaginatedList<Page>) => {
+      return items.map(
+        (item) =>
+          html`<li class="not-last:outline">
+            <button
+              class="w-full text-left transition-all aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none py-1.5 px-3 hover:bg-cyan-50/50"
+            >
+              <div class="truncate leading-5">
+                ${item.title
+                  ? html`<strong class="font-semibold">${item.title}</strong>`
+                  : html`<span class="opacity-50"
+                      >${msg("No page title")}</span
+                    >`}
+              </div>
+              <div class="truncate text-xs leading-4 text-cyan-600">
+                ${item.url}
+              </div>
+            </button>
+          </li>`,
+      );
+    };
+
+    const pages = this.pagesTask.value;
+
+    return html`<div class="flex flex-col h-full">
+      <ul class="divide-y flex-1">
+        ${this.pagesTask.render({
+          initial: loading,
+          pending: () => (pages ? pageList(pages) : loading()),
+          complete: pageList,
+        })}
+      </ul>
+      ${when(
+        pages?.total &&
+          (pages.page > 1 || pages.total > pages.pageSize) &&
+          pages,
+        ({ page, total, pageSize }) =>
+          html`<footer class="p-3 flex justify-center">
+            <btrix-pagination
+              name="replayPage"
+              page=${page}
+              totalCount=${total}
+              size=${pageSize}
+              compact
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.pagesTask.run([this.itemId, e.detail.page]);
+                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+            </btrix-pagination>
+          </footer>`,
+      )}
+    </div>`;
   }
 
   private renderOverview() {
