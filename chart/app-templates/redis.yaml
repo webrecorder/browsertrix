@@ -6,10 +6,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: {{ name | tojson }}
+  namespace: {{ namespace | tojson }}
   labels:
-    {{ obj_type }}: {{ id }}
+    {{ obj_type | tojson }}: {{ id | tojson }}
     role: redis
 
 spec:
@@ -21,7 +21,7 @@ spec:
       storage: {{ redis_storage }}
 
   {% if volume_storage_class %}
-  storageClassName: {{ volume_storage_class }}
+  storageClassName: {{ volume_storage_class | tojson }}
   {% endif %}
 {% endif %}
 
@@ -33,16 +33,16 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ name }}
-  namespace: {{ namespace }}
+  name: {{ name | tojson }}
+  namespace: {{ namespace | tojson }}
   labels:
-    {{ obj_type }}: {{ id }}
+    {{ obj_type | tojson }}: {{ id | tojson }}
     role: redis
 
 spec:
   # Redis doesn't call the Kubernetes API
   automountServiceAccountToken: false
-  hostname: {{ name }}
+  hostname: {{ name | tojson }}
   subdomain: redis
   securityContext:
     runAsNonRoot: true
@@ -54,7 +54,7 @@ spec:
   restartPolicy: {{ "OnFailure" if save_dump else "Always" }}
 
   {% if priorityClassName %}
-  priorityClassName: {{ priorityClassName }}
+  priorityClassName: {{ priorityClassName | tojson }}
   {% endif %}
 
   volumes:
@@ -65,7 +65,7 @@ spec:
     - name: redis-data
       {% if not no_pvc %}
       persistentVolumeClaim:
-        claimName: {{ name }}
+        claimName: {{ name | tojson }}
       {% else %}
       emptyDir: {}
       {% endif %}
@@ -79,7 +79,7 @@ spec:
             - key: nodeType
               operator: In
               values:
-                - "{{ redis_node_type }}"
+                - {{ redis_node_type | tojson }}
 
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -88,7 +88,7 @@ spec:
             topologyKey: "failure-domain.beta.kubernetes.io/zone"
             labelSelector:
               matchLabels:
-                {{ obj_type }}: {{ id }}
+                {{ obj_type | tojson }}: {{ id | tojson }}
 
   tolerations:
     - key: nodeType
@@ -106,8 +106,8 @@ spec:
 
   containers:
     - name: redis
-      image: {{ redis_image }}
-      imagePullPolicy: {{ redis_image_pull_policy }}
+      image: {{ redis_image | tojson }}
+      imagePullPolicy: {{ redis_image_pull_policy | tojson }}
 
       {% if use_kvrocks %}
       args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data"]
@@ -220,29 +220,29 @@ spec:
       - name: RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID
         valueFrom:
           secretKeyRef:
-            name: "{{ storage_secret_name }}"
+            name: {{ storage_secret_name | tojson }}
             key: STORE_ACCESS_KEY
 
       - name: RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY
         valueFrom:
           secretKeyRef:
-            name: "{{ storage_secret_name }}"
+            name: {{ storage_secret_name | tojson }}
             key: STORE_SECRET_KEY
 
       - name: RCLONE_CONFIG_REMOTE_REGION
         valueFrom:
           secretKeyRef:
-            name: "{{ storage_secret_name }}"
+            name: {{ storage_secret_name | tojson }}
             key: STORE_REGION
 
       - name: RCLONE_CONFIG_REMOTE_PROVIDER
         valueFrom:
           secretKeyRef:
-            name: "{{ storage_secret_name }}"
+            name: {{ storage_secret_name | tojson }}
             key: STORE_S3_PROVIDER
 
       - name: RCLONE_CONFIG_REMOTE_ENDPOINT
-        value: "{{ storage_endpoint }}"
+        value: {{ storage_endpoint | tojson }}
 
       resources: &rclone_resources
         limits:

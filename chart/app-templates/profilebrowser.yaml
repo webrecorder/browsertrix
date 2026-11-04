@@ -2,17 +2,17 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: browser-{{ id }}
-  namespace: {{ namespace }}
+  name: {{ ("browser-" ~ id) | tojson }}
+  namespace: {{ namespace | tojson }}
   labels:
-    browser: {{ id }}
+    browser: {{ id | tojson }}
     role: browser
     network-policy: limit-crawler-egress
 
 spec:
   # Browser profiles render untrusted sites and never call the Kubernetes API.
   automountServiceAccountToken: false
-  hostname: browser-{{ id }}
+  hostname: {{ ("browser-" ~ id) | tojson }}
   subdomain: browser
 
   securityContext:
@@ -38,7 +38,7 @@ spec:
     {% endif %}
 
   {% if priorityClassName %}
-  priorityClassName: {{ priorityClassName }}
+  priorityClassName: {{ priorityClassName | tojson }}
   {% endif %}
 
   restartPolicy: OnFailure
@@ -52,7 +52,7 @@ spec:
             - key: nodeType
               operator: In
               values:
-                - "{{ crawler_node_type }}"
+                - {{ crawler_node_type | tojson }}
 {% endif %}
 
   tolerations:
@@ -71,8 +71,8 @@ spec:
 
   containers:
     - name: browser
-      image: {{ crawler_image }}
-      imagePullPolicy: {{ crawler_image_pull_policy }}
+      image: {{ crawler_image | tojson }}
+      imagePullPolicy: {{ crawler_image_pull_policy | tojson }}
       command:
         - create-login-profile
         - --interactive
@@ -82,11 +82,11 @@ spec:
         - {{ url | tojson }}
       {%- if profile_filename %}
         - --profile
-        - "@{{ profile_filename }}"
+        - {{ ("@" ~ profile_filename) | tojson }}
       {%- endif %}
       {% if proxy_id %}
         - --proxyServer
-        - "{{ proxy_url }}"
+        - {{ proxy_url | tojson }}
       {% if proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
         - /tmp/ssh-proxy/private-key
@@ -104,13 +104,13 @@ spec:
       {% if proxy_ssh_private_key %}
         - name: proxies
           mountPath: /tmp/ssh-proxy/private-key
-          subPath: {{ proxy_id }}-private-key
+          subPath: {{ (proxy_id ~ "-private-key") | tojson }}
           readOnly: true
       {% endif %}
       {% if proxy_ssh_host_public_key %}
         - name: proxies
           mountPath: /tmp/ssh-proxy/known-hosts
-          subPath: {{ proxy_id }}-known-hosts
+          subPath: {{ (proxy_id ~ "-known-hosts") | tojson }}
           readOnly: true
       {% endif %}
         - name: force-user-and-group-name
@@ -125,21 +125,21 @@ spec:
 
       envFrom:
         - secretRef:
-            name: {{ storage_secret }}
+            name: {{ storage_secret | tojson }}
 
       env:
         - name: HOME
           value: /tmp/home
 
         - name: STORE_PATH
-          value: {{ storage_path }}
+          value: {{ storage_path | tojson }}
 
         - name: VNC_PASS
-          value: {{ vnc_password }}
+          value: {{ vnc_password | tojson }}
 
       {% if crawler_socks_proxy_host %}
         - name: CHROME_FLAGS
-          value: "--proxy-server=socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port | default('9050') }}"
+          value: {{ ("--proxy-server=socks5://" ~ crawler_socks_proxy_host ~ ":" ~ (crawler_socks_proxy_port | default("9050"))) | tojson }}
       {% endif %}
 
       resources:

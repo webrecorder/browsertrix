@@ -17,6 +17,7 @@ from btrixcloud.crawl_validator import validate_crawl_filename_template
 from btrixcloud.cron_validator import validate_cron_schedule
 from btrixcloud.db import BaseMongoModel
 from btrixcloud.models import (
+    BgJobType,
     CrawlConfigIn,
     CrawlFilenameTemplate,
     RawCrawlConfig,
@@ -178,6 +179,9 @@ def test_crawl_filename_template_none_and_empty_passthrough():
         "@ts\n---\nkind: Job",
         "line\nbreak.wacz",
         "tab\t.wacz",
+        "nel\x85.wacz",
+        "line\u2028break.wacz",
+        "line\u2029break.wacz",
         "nul\x00.wacz",
         "del\x7f.wacz",
         # path traversal/absolute paths
@@ -394,6 +398,13 @@ def test_cron_job_schedule_renders_as_single_document():
         "x\ny",
         'x"\n---\napiVersion: batch/v1\nkind: Pod',
         "https://example.com/path?q=1&r=2",
+        # Unicode line separators are YAML line breaks but are not in the
+        # C0/C1 ranges rejected by the filename template validator
+        "x\u2028y",
+        "x\u2029y",
+        'x"\u2028---\u2028apiVersion: batch/v1\u2028kind: Pod',
+        'x"\u2029---\u2029apiVersion: batch/v1\u2029kind: Pod',
+        "nel\x85break",
     ],
 )
 def test_tojson_renders_single_line_roundtrippable_yaml_scalar(value):
@@ -427,39 +438,39 @@ def _profile_browser_params(url):
 
 def test_profile_browser_url_stays_single_scalar_when_it_contains_newlines():
     holder = _TemplateHolder()
-    hostile_url = (
+    url_with_line_breaks = (
         "https://example.com/x\n---\napiVersion: batch/v1\nkind: Pod\n"
-        "metadata:\n  name: garbage\n"
+        "metadata:\n  name: example\n"
     )
 
     docs = BaseOperator.load_from_yaml(
         holder,
         "profilebrowser.yaml",
-        _profile_browser_params(hostile_url),
+        _profile_browser_params(url_with_line_breaks),
     )
 
     # the url remains a single command argument (data, not structure)
     assert len(docs) == 1
     command = docs[0]["spec"]["containers"][0]["command"]
-    assert command[command.index("--url") + 1] == hostile_url
+    assert command[command.index("--url") + 1] == url_with_line_breaks
 
 
 def test_background_job_crawl_id_stays_single_scalar_when_it_contains_newlines():
     holder = _TemplateHolder()
-    hostile_crawl_id = (
-        "manual-abc\n---\napiVersion: batch/v1\nkind: Job\nmetadata:\n  name: garbage\n"
+    crawl_id_with_line_breaks = (
+        "manual-abc\n---\napiVersion: batch/v1\nkind: Job\nmetadata:\n  name: example\n"
     )
 
     docs = BaseOperator.load_from_yaml(
         holder,
         "background_job.yaml",
-        {**BACKGROUND_JOB_PARAMS, "crawl_id": hostile_crawl_id},
+        {**BACKGROUND_JOB_PARAMS, "crawl_id": crawl_id_with_line_breaks},
     )
 
     assert len(docs) == 1
     env = docs[0]["spec"]["template"]["spec"]["containers"][0]["env"]
     crawl_id_env = [entry for entry in env if entry["name"] == "CRAWL_ID"][0]
-    assert crawl_id_env["value"] == hostile_crawl_id
+    assert crawl_id_env["value"] == crawl_id_with_line_breaks
 
 
 SIGNED_URL = (
@@ -515,41 +526,448 @@ def test_index_import_job_command_args_roundtrip_through_tojson(
         assert args[flag] == expected
 
 
-def test_crawl_job_cr_user_values_stay_single_scalar_when_they_contain_newlines():
-    holder = _TemplateHolder()
-    hostile = "x\n---\napiVersion: btrix.cloud/v1\nkind: CrawlJob\n"
+LINE_BREAK_VALUES = [
+    'x"\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: example\n',
+    'x"\u2028---\u2028apiVersion: v1\u2028kind: Pod\u2028metadata:\u2028  name: example\u2028',
+    'x"\u2029---\u2029apiVersion: v1\u2029kind: Pod\u2029metadata:\u2029  name: example\u2029',
+]
 
-    docs = BaseOperator.load_from_yaml(
-        holder,
+
+def _render_template(template, params):
+    holder = _TemplateHolder()
+    return BaseOperator.load_from_yaml(holder, template, params)
+
+
+def _container(doc, name):
+    return next(c for c in doc["spec"]["containers"] if c["name"] == name)
+
+
+def _env(container):
+    return {entry["name"]: entry.get("value") for entry in container.get("env", [])}
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_crawl_job_cr_user_values_stay_single_scalar_when_they_contain_line_breaks(
+    value,
+):
+    docs = _render_template(
         "crawl_job.yaml",
         {
-            "id": "manual-20260714225812-dc73dcee-99f",
-            "cid": str(uuid4()),
-            "userid": str(uuid4()),
-            "oid": str(uuid4()),
-            "storage_name": "default",
-            "crawler_channel": hostile,
+            "id": value,
+            "cid": value,
+            "userid": value,
+            "oid": value,
+            "storage_name": value,
+            "crawler_channel": value,
             "scale": 1,
             "browser_windows": 1,
             "timeout": 0,
             "max_crawl_size": 0,
             "manual": "1",
-            "warc_prefix": "colls/11111111-2222-3333-4444-555555555555",
-            "storage_filename": hostile,
-            "profile_filename": "profile-abc.tar.gz",
-            "profileid": "",
-            "qa_source": "",
-            "proxy_id": hostile,
-            "dedupe_coll_id": "",
+            "warc_prefix": value,
+            "storage_filename": value,
+            "profile_filename": value,
+            "profileid": value,
+            "qa_source": value,
+            "proxy_id": value,
+            "dedupe_coll_id": value,
             "is_single_page": "0",
-            "seed_file_url": "",
-            "pausedAt": "",
+            "seed_file_id": value,
+            "pausedAt": value,
         },
     )
 
     # the values remain single spec fields (data, not structure)
     assert len(docs) == 1
-    spec = docs[0]["spec"]
-    assert spec["storage_filename"] == hostile
-    assert spec["proxyId"] == hostile
-    assert spec["crawlerChannel"] == hostile
+    doc = docs[0]
+    assert doc["metadata"]["name"] == "crawljob-" + value
+    labels = doc["metadata"]["labels"]
+    assert labels["crawl"] == value
+    assert labels["btrix.org"] == value
+    assert labels["btrix.user"] == value
+    assert labels["btrix.storage"] == value
+    assert labels["btrix.crawlconfig"] == value
+    assert labels["dedupe_coll_id"] == value
+
+    spec = doc["spec"]
+    assert spec["selector"]["matchLabels"]["crawl"] == value
+    assert spec["id"] == value
+    assert spec["userid"] == value
+    assert spec["cid"] == value
+    assert spec["oid"] == value
+    assert spec["profile_filename"] == value
+    assert spec["storage_filename"] == value
+    assert spec["qaSourceCrawlId"] == value
+    assert spec["crawlerChannel"] == value
+    assert spec["warcPrefix"] == value
+    assert spec["storageName"] == value
+    assert spec["proxyId"] == value
+    assert spec["dedupeCollId"] == value
+    assert spec["pausedAt"] == value
+    assert spec["seedFileId"] == value
+    assert spec["isSinglePage"] == "0"
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_crawler_values_stay_single_scalars_when_they_contain_line_breaks(value):
+    docs = _render_template(
+        "crawler.yaml",
+        {
+            "no_pvc": False,
+            "init_crawler": True,
+            "name": value,
+            "namespace": value,
+            "id": value,
+            "userid": value,
+            "crawler_uid": 1000,
+            "crawler_gid": 1000,
+            "crawler_fsgroup": 1000,
+            "termination_grace_secs": 600,
+            "storage": "1Gi",
+            "volume_storage_class": "standard",
+            "priorityClassName": value,
+            "crawler_node_type": value,
+            "add_proxies": True,
+            "proxy_id": value,
+            "proxy_url": value,
+            "proxy_ssh_private_key": True,
+            "proxy_ssh_host_public_key": True,
+            "qa_source_crawl_id": "",
+            "profile_filename": value,
+            "save_profile": True,
+            "redis_dedupe_url": value,
+            "crawler_image": value,
+            "crawler_image_pull_policy": value,
+            "storage_secret": value,
+            "signing_secret": value,
+            "redis_url": value,
+            "storage_path": value,
+            "storage_filename": value,
+            "warc_prefix": value,
+            "workers": 2,
+            "memory_limit": "1Gi",
+            "cpu": "100m",
+            "memory": "512Mi",
+            "crawler_liveness_port": "",
+        },
+    )
+
+    assert len(docs) == 2
+    pvc, pod = docs
+    assert pvc["metadata"]["name"] == value
+    assert pvc["metadata"]["namespace"] == value
+    assert pvc["metadata"]["labels"]["crawl"] == value
+
+    assert pod["metadata"]["name"] == value
+    assert pod["metadata"]["namespace"] == value
+    assert pod["metadata"]["labels"]["crawl"] == value
+    assert pod["spec"]["hostname"] == value
+    assert pod["spec"]["priorityClassName"] == value
+
+    node_terms = pod["spec"]["affinity"]["nodeAffinity"][
+        "requiredDuringSchedulingIgnoredDuringExecution"
+    ]["nodeSelectorTerms"]
+    assert node_terms[0]["matchExpressions"][0]["values"] == [value]
+
+    pod_terms = pod["spec"]["affinity"]["podAffinity"][
+        "preferredDuringSchedulingIgnoredDuringExecution"
+    ][0]["podAffinityTerm"]["labelSelector"]["matchExpressions"]
+    assert pod_terms[0]["values"] == [value]
+
+    volumes = {volume["name"]: volume for volume in pod["spec"]["volumes"]}
+    assert volumes["crawl-config"]["configMap"]["name"] == "crawl-config-" + value
+    assert volumes["crawl-data"]["persistentVolumeClaim"]["claimName"] == value
+
+    container = pod["spec"]["containers"][0]
+    assert container["image"] == value
+    assert container["imagePullPolicy"] == value
+    assert value in container["command"]
+    assert "@" + value in container["command"]
+    assert "/tmp/proxies/" + value + "-private-key" in container["command"]
+    assert "/tmp/proxies/" + value + "-known-hosts" in container["command"]
+
+    env = _env(container)
+    assert env["CRAWL_ID"] == value
+    assert env["WEBHOOK_URL"] == value + "/crawls-done"
+    assert env["STORE_PATH"] == value
+    assert env["STORE_FILENAME"] == value
+    assert env["STORE_USER"] == value
+    assert env["WARC_PREFIX"] == value
+
+    secret_names = [
+        entry["secretRef"]["name"]
+        for entry in container["envFrom"]
+        if "secretRef" in entry
+    ]
+    assert secret_names == [value, value]
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_profile_job_values_stay_single_scalars_when_they_contain_line_breaks(value):
+    docs = _render_template(
+        "profile_job.yaml",
+        {
+            "id": value,
+            "userid": value,
+            "oid": value,
+            "storage_name": value,
+            "crawler_image": value,
+            "image_pull_policy": value,
+            "url": value,
+            "profile_filename": value,
+            "vnc_password": value,
+            "proxy_id": value,
+            "crawler_channel": value,
+            "base_profile": value,
+            "profileid": value,
+            "expire_time": value,
+        },
+    )
+
+    assert len(docs) == 1
+    doc = docs[0]
+    assert doc["metadata"]["name"] == "profilejob-" + value
+    labels = doc["metadata"]["labels"]
+    assert labels["browser"] == value
+    assert labels["btrix.org"] == value
+    assert labels["btrix.user"] == value
+    assert labels["btrix.baseprofile"] == value
+    assert labels["btrix.storage"] == value
+    assert labels["profileid"] == value
+    assert labels["proxyid"] == value
+    assert labels["crawlerChannel"] == value
+
+    spec = doc["spec"]
+    assert spec["selector"]["matchLabels"]["browser"] == value
+    assert spec["id"] == value
+    assert spec["userid"] == value
+    assert spec["oid"] == value
+    assert spec["storageName"] == value
+    assert spec["crawlerImage"] == value
+    assert spec["imagePullPolicy"] == value
+    assert spec["startUrl"] == value
+    assert spec["profileFilename"] == value
+    assert spec["vncPassword"] == value
+    assert spec["proxyId"] == value
+    assert spec["expireTime"] == value
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_redis_values_stay_single_scalars_when_they_contain_line_breaks(value):
+    docs = _render_template(
+        "redis.yaml",
+        {
+            "no_pvc": False,
+            "init_redis": True,
+            "name": value,
+            "namespace": value,
+            "id": value,
+            "obj_type": value,
+            "redis_storage": "1Gi",
+            "volume_storage_class": "standard",
+            "redis_node_type": value,
+            "priorityClassName": value,
+            "redis_image": value,
+            "redis_image_pull_policy": value,
+            "memory_limit": "1Gi",
+            "cpu": "100m",
+            "memory": "512Mi",
+            "save_dump": True,
+            "load_dump": True,
+            "use_kvrocks": False,
+            "local_file_src": "dump.rdb",
+            "local_file_dest": "dump.rdb",
+            "remote_file_path": "bucket/key",
+            "storage_secret_name": value,
+            "storage_endpoint": value,
+        },
+    )
+
+    assert len(docs) == 2
+    pvc, pod = docs
+    assert pvc["metadata"]["name"] == value
+    assert pvc["metadata"]["namespace"] == value
+    assert pvc["metadata"]["labels"][value] == value
+    assert pvc["spec"]["storageClassName"] == "standard"
+
+    assert pod["metadata"]["name"] == value
+    assert pod["metadata"]["namespace"] == value
+    assert pod["metadata"]["labels"][value] == value
+    assert pod["spec"]["hostname"] == value
+    assert pod["spec"]["priorityClassName"] == value
+
+    node_values = pod["spec"]["affinity"]["nodeAffinity"][
+        "preferredDuringSchedulingIgnoredDuringExecution"
+    ][0]["preference"]["matchExpressions"][0]["values"]
+    assert node_values == [value]
+
+    redis_container = _container(pod, "redis")
+    assert redis_container["image"] == value
+    assert redis_container["imagePullPolicy"] == value
+
+    for name in ("save", "load"):
+        if name == "load":
+            container = pod["spec"]["initContainers"][0]
+        else:
+            container = _container(pod, name)
+        env = _env(container)
+        assert env["RCLONE_CONFIG_REMOTE_ENDPOINT"] == value
+        secret_names = [
+            entry["valueFrom"]["secretKeyRef"]["name"]
+            for entry in container["env"]
+            if "valueFrom" in entry
+        ]
+        assert secret_names == [value, value, value, value]
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_background_cron_job_schedule_stays_single_scalar_when_it_contains_line_breaks(
+    value,
+):
+    docs = _render_template(
+        "background_cron_job.yaml",
+        {
+            "id": value,
+            "job_type": value,
+            "backend_image": value,
+            "pull_policy": value,
+            "schedule": value,
+            "larger_resources": True,
+        },
+    )
+
+    assert len(docs) == 1
+    doc = docs[0]
+    assert doc["metadata"]["name"] == value
+    assert doc["metadata"]["labels"]["job_type"] == value
+    assert doc["spec"]["schedule"] == value
+    assert doc["spec"]["jobTemplate"]["metadata"]["labels"]["job_id"] == value
+    assert doc["spec"]["jobTemplate"]["metadata"]["labels"]["job_type"] == value
+
+    container = doc["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    assert container["image"] == value
+    assert container["imagePullPolicy"] == value
+    assert _env(container)["BG_JOB_TYPE"] == value
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(value):
+    docs = _render_template(
+        "replica_job.yaml",
+        {
+            "id": value,
+            "oid": value,
+            "job_type": BgJobType.CREATE_REPLICA,
+            "BgJobType": BgJobType,
+            "replica_secret_name": value,
+            "replica_file_path": value,
+            "replica_endpoint": value,
+            "primary_secret_name": value,
+            "primary_file_path": value,
+            "primary_endpoint": value,
+        },
+    )
+
+    assert len(docs) == 1
+    doc = docs[0]
+    assert doc["metadata"]["name"] == value
+    assert doc["metadata"]["labels"]["job_type"] == BgJobType.CREATE_REPLICA.value
+    assert doc["metadata"]["labels"]["btrix.org"] == value
+
+    container = doc["spec"]["template"]["spec"]["containers"][0]
+    env = _env(container)
+    assert env["RCLONE_CONFIG_PRIMARY_ENDPOINT"] == value
+    assert env["RCLONE_CONFIG_REPLICA_ENDPOINT"] == value
+    secret_names = [
+        entry["valueFrom"]["secretKeyRef"]["name"]
+        for entry in container["env"]
+        if "valueFrom" in entry
+    ]
+    assert secret_names == [value] * 8
+    assert container["command"] == [
+        "rclone",
+        "-vv",
+        "copyto",
+        "--checksum",
+        "--error-on-no-transfer",
+        "primary:" + value,
+        "replica:" + value,
+    ]
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+def test_replica_deletion_cron_job_values_stay_single_scalars(value):
+    docs = _render_template(
+        "replica_deletion_cron_job.yaml",
+        {
+            "id": value,
+            "oid": value,
+            "job_type": BgJobType.DELETE_REPLICA,
+            "BgJobType": BgJobType,
+            "replica_secret_name": value,
+            "replica_file_path": value,
+            "replica_endpoint": value,
+            "schedule": value,
+        },
+    )
+
+    assert len(docs) == 1
+    doc = docs[0]
+    assert doc["metadata"]["name"] == value
+    assert doc["spec"]["schedule"] == value
+
+    container = doc["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]
+    env = _env(container)
+    assert env["RCLONE_CONFIG_REPLICA_ENDPOINT"] == value
+    secret_names = [
+        entry["valueFrom"]["secretKeyRef"]["name"]
+        for entry in container["env"]
+        if "valueFrom" in entry
+    ]
+    assert secret_names == [value] * 4
+    assert container["command"] == [
+        "rclone",
+        "-vv",
+        "delete",
+        "replica:" + value,
+    ]
+
+
+@pytest.mark.parametrize("value", LINE_BREAK_VALUES)
+@pytest.mark.parametrize(
+    ("template", "name_prefix", "label_keys"),
+    [
+        ("coll_index.yaml", "collindex-", ["oid", "coll"]),
+        ("crawl_configmap.yaml", "", ["crawl", "oid", "cid"]),
+        ("qa_configmap.yaml", "", ["crawl"]),
+        ("index-import-configmap.yaml", "", ["coll"]),
+    ],
+)
+def test_manifest_metadata_values_stay_single_scalars(
+    template, name_prefix, label_keys, value
+):
+    docs = _render_template(
+        template,
+        {
+            "name": value,
+            "namespace": value,
+            "id": value,
+            "oid": value,
+            "cid": value,
+            "config": '{"seeds": []}',
+            "qa_source_replay_json": '{"resources": []}',
+        },
+    )
+
+    assert len(docs) == 1
+    doc = docs[0]
+    assert doc["metadata"]["name"] == name_prefix + value
+    if template != "coll_index.yaml":
+        assert doc["metadata"]["namespace"] == value
+    for key in label_keys:
+        assert doc["metadata"]["labels"][key] == value
+
+    if template == "coll_index.yaml":
+        assert doc["spec"]["id"] == value
+        assert doc["spec"]["oid"] == value
+        assert doc["spec"]["selector"]["matchLabels"]["coll"] == value

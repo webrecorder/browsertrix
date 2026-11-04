@@ -1,12 +1,12 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "{{ id }}"
+  name: {{ id | tojson }}
   labels:
-    btrix.crawlconfig: "{{ cid }}"
-    btrix.org: "{{ oid }}"
+    btrix.crawlconfig: {{ cid | tojson }}
+    btrix.org: {{ oid | tojson }}
 {% if userid %}
-    btrix.userid: "{{ userid }}"
+    btrix.userid: {{ userid | tojson }}
 {% endif %}
     role: "cron-job"
 
@@ -20,7 +20,7 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        btrix.crawlconfig: "{{ cid }}"
+        btrix.crawlconfig: {{ cid | tojson }}
         role: "scheduled-crawljob"
 
     spec:
