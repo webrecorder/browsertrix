@@ -13,6 +13,7 @@ spec:
   backoffLimit: 6
   template:
     spec:
+      automountServiceAccountToken: false
       restartPolicy: Never
       priorityClassName: bg-job
       containers:
