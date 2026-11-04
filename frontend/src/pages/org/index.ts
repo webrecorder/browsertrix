@@ -364,7 +364,7 @@ export class Org extends BtrixElement {
 
   render() {
     const extraWidth =
-      (this.params as OrgParams["workflows"]).qaTab ||
+      (this.orgTab === OrgTab.Items || this.orgTab === OrgTab.Workflows) &&
       (this.params as OrgParams["items"]).itemId;
 
     return html`
