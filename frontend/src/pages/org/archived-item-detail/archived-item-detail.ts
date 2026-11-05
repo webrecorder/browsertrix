@@ -1215,7 +1215,10 @@ export class ArchivedItemDetail extends BtrixElement {
   private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
     const none = html`<span class="opacity-50">${stringFor.none}</span>`;
 
-    return html`<li>
+    return html`<li
+      class="flex overflow-hidden items-center transition-all aria-selected:bg-cyan-50 has-[button:hover]:bg-cyan-50/50"
+      aria-selected="${this.replayPage.value.url === page.url}"
+    >
       <btrix-popover
         class="part-[body]:w-64"
         placement="left"
@@ -1251,8 +1254,7 @@ export class ArchivedItemDetail extends BtrixElement {
         </btrix-desc-list>
 
         <button
-          class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
-          aria-selected="${this.replayPage.value.url === page.url}"
+          class="flex-1 block overflow-hidden text-left py-1.5 pl-3 pr-1.5"
           @click=${() => this.navigateReplayEmbed(page)}
         >
           <div class="truncate leading-5 pointer-events-none">
@@ -1269,23 +1271,24 @@ export class ArchivedItemDetail extends BtrixElement {
           ></btrix-code>
         </button>
       </btrix-popover>
+      ${this.renderPageListActions(page)}
     </li>`;
   };
 
   private renderPageListTable() {
     const pages = this.pagesTask.value;
-    const row = (item: ArchivedItemPage) =>
+    const row = (page: ArchivedItemPage) =>
       html`<btrix-table-row
         class="transition-colors duration-fast aria-selected:bg-cyan-50 hover:bg-cyan-50/50 first:rounded-t border-t last:border-b last:rounded-b bg-white border-x"
-        aria-selected="${this.replayPage.value.url === item.url}"
+        aria-selected="${this.replayPage.value.url === page.url}"
       >
         <btrix-table-cell rowClickTarget="button">
           <button
             class="text-left overflow-hidden"
-            @click=${() => this.navigateReplayEmbed(item)}
+            @click=${() => this.navigateReplayEmbed(page)}
           >
-            ${item.title
-              ? html`<div class="truncate font-medium">${item.title}</div>`
+            ${page.title
+              ? html`<div class="truncate font-medium">${page.title}</div>`
               : html`<div class="opacity-50">${msg("No page title")}</div>`}
           </button>
         </btrix-table-cell>
@@ -1293,15 +1296,15 @@ export class ArchivedItemDetail extends BtrixElement {
           <btrix-code
             class="block flex-1 overflow-hidden"
             language="url"
-            value=${item.url}
+            value=${page.url}
             noWrap
             truncate
           ></btrix-code>
-          ${pageHttpStatusBadge(item.status)}
+          ${pageHttpStatusBadge(page.status)}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap"
-          >${item.ts
-            ? this.localize.date(item.ts, {
+          >${page.ts
+            ? this.localize.date(page.ts, {
                 month: "2-digit",
                 day: "2-digit",
                 year: "2-digit",
@@ -1314,16 +1317,7 @@ export class ArchivedItemDetail extends BtrixElement {
               >`}</btrix-table-cell
         >
         <btrix-table-cell class="px-0">
-          <btrix-overflow-dropdown>
-            <sl-menu>
-              <btrix-menu-item-link
-                href=${`${this.reviewUrl}&itemPageId=${item.id}`}
-              >
-                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-                ${msg("Review Page")}
-              </btrix-menu-item-link>
-            </sl-menu>
-          </btrix-overflow-dropdown>
+          ${this.renderPageListActions(page)}
         </btrix-table-cell>
       </btrix-table-row>`;
 
@@ -1383,6 +1377,24 @@ export class ArchivedItemDetail extends BtrixElement {
           </footer>`,
       )} `;
   }
+
+  private readonly renderPageListActions = (page: ArchivedItemPage) => {
+    return html`<btrix-overflow-dropdown>
+      <sl-menu>
+        <btrix-menu-item-link href=${`${this.reviewUrl}&itemPageId=${page.id}`}>
+          <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+          ${msg("Review Page")}
+        </btrix-menu-item-link>
+        <sl-divider></sl-divider>
+        <sl-menu-item
+          @click=${() => ClipboardController.copyToClipboard(page.url)}
+        >
+          <sl-icon name="copy" slot="prefix"></sl-icon>
+          ${msg("Copy URL")}
+        </sl-menu-item>
+      </sl-menu>
+    </btrix-overflow-dropdown>`;
+  };
 
   private readonly navigateReplayEmbed = (page: ArchivedItemPage) => {
     if (!this.replayEmbed) {
