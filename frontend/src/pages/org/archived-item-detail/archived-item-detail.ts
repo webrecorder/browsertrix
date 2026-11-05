@@ -524,7 +524,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 )}`,
                 [
                   sidebarView &&
-                    tw`flex max-h-[--sidebar-view-height] flex-col shadow-lg @3xl/content:shadow-none`,
+                    tw`flex max-h-[--sidebar-view-height] flex-col`,
                 ],
               )}
             </div>
@@ -1067,8 +1067,13 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private renderPageListControls() {
+    const sidebarView = this.replayView.value === ReplayView.Sidebar;
+
     return html` <div
-      class="rounded-lg bg-neutral-50 border p-2 text-neutral-500 flex items-center gap-2 justify-between flex-wrap"
+      class=${clsx(
+        tw`flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-neutral-50 p-2 text-neutral-500`,
+        sidebarView ? tw`mb-2 shadow-md @3xl/content:shadow-none` : tw`mb-3`,
+      )}
     >
       <div class="flex items-center gap-4">
         <div class="flex gap-2 items-center whitespace-nowrap">
@@ -1115,7 +1120,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const pages = this.pagesTask.value;
 
     return html`<div
-      class="flex flex-1 flex-col border rounded-lg overflow-hidden bg-white mt-3"
+      class="flex flex-1 flex-col border rounded-lg overflow-hidden bg-white shadow-md @3xl/content:shadow-none"
     >
       <div class="overflow-auto flex-1">
         ${this.pagesTask.render({
