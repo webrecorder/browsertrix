@@ -14,7 +14,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 
     # Baseline - log current state of crawls in org
     r = requests.get(
-        f"{API_PREFIX}/orgs/all/crawls?sortBy=finished&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=finished&sortDirection=-1",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
@@ -73,7 +73,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 
     # Log current state of crawls in org after stopping
     r = requests.get(
-        f"{API_PREFIX}/orgs/all/crawls?sortBy=finished&sortDirection=-1",
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls?sortBy=finished&sortDirection=-1",
         headers=admin_auth_headers,
     )
     assert r.status_code == 200
