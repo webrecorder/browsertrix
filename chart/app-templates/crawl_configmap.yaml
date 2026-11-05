@@ -4,13 +4,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ name | tojson }}
-  namespace: {{ namespace | tojson }}
+  name: {{ name }}
+  namespace: {{ namespace }}
   labels:
-    crawl: {{ id | tojson }}
+    crawl: {{ id }}
     role: crawler
-    oid: {{ oid | tojson }}
-    cid: {{ cid | tojson }}
+    oid: {{ oid }}
+    cid: {{ cid }}
 
 data:
-  crawl-config.json: {{ config | tojson }}
+  crawl-config.json: {{ config }}

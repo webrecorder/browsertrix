@@ -16,6 +16,7 @@ from pydantic import TypeAdapter, ValidationError
 from btrixcloud.crawl_validator import validate_crawl_filename_template
 from btrixcloud.cron_validator import validate_cron_schedule
 from btrixcloud.db import BaseMongoModel
+from btrixcloud.k8sapi import finalize_template_value
 from btrixcloud.models import (
     BgJobType,
     CrawlConfigIn,
@@ -351,6 +352,7 @@ class _TemplateHolder:
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(APP_TEMPLATES_DIR)),
             autoescape=False,
+            finalize=finalize_template_value,
         )
         self.k8s = SimpleNamespace(templates=SimpleNamespace(env=env))
 
@@ -407,11 +409,11 @@ def test_cron_job_schedule_renders_as_single_document():
         "nel\x85break",
     ],
 )
-def test_tojson_renders_single_line_roundtrippable_yaml_scalar(value):
-    env = jinja2.Environment()
-    rendered = env.from_string("{{ value | tojson }}").render(value=value)
+def test_template_values_render_as_single_line_roundtrippable_yaml_scalars(value):
+    env = jinja2.Environment(finalize=finalize_template_value)
+    rendered = env.from_string("{{ value }}").render(value=value)
 
-    # the filter output must never span multiple lines or create structure
+    # the rendered scalar must never span multiple lines or create structure
     assert "\n" not in rendered
     assert yaml.safe_load(rendered) == value
 
@@ -451,8 +453,15 @@ def test_profile_browser_url_stays_single_scalar_when_it_contains_newlines():
 
     # the url remains a single command argument (data, not structure)
     assert len(docs) == 1
-    command = docs[0]["spec"]["containers"][0]["command"]
+    spec = docs[0]["spec"]
+    command = spec["containers"][0]["command"]
     assert command[command.index("--url") + 1] == url_with_line_breaks
+
+    security = spec["securityContext"]
+    assert security["runAsUser"] == 1000
+    assert security["runAsGroup"] == 1000
+    assert security["fsGroup"] == 1000
+    assert spec["containers"][0]["resources"]["limits"]["memory"] == "1Gi"
 
 
 def test_background_job_crawl_id_stays_single_scalar_when_it_contains_newlines():
@@ -488,7 +497,7 @@ SIGNED_URL = (
         ("cancel", {"--cancelCrawlId": "manual-20260714225812-dc73dcee-99f"}),
     ],
 )
-def test_index_import_job_command_args_roundtrip_through_tojson(
+def test_index_import_job_command_args_roundtrip_through_template_serialization(
     job_type, expected_args
 ):
     holder = _TemplateHolder()
@@ -622,7 +631,7 @@ def test_crawler_values_stay_single_scalars_when_they_contain_line_breaks(value)
             "crawler_uid": 1000,
             "crawler_gid": 1000,
             "crawler_fsgroup": 1000,
-            "termination_grace_secs": 600,
+            "termination_grace_secs": "600",
             "storage": "1Gi",
             "volume_storage_class": "standard",
             "priorityClassName": value,
@@ -663,6 +672,7 @@ def test_crawler_values_stay_single_scalars_when_they_contain_line_breaks(value)
     assert pod["metadata"]["labels"]["crawl"] == value
     assert pod["spec"]["hostname"] == value
     assert pod["spec"]["priorityClassName"] == value
+    assert pod["spec"]["terminationGracePeriodSeconds"] == 600
 
     node_terms = pod["spec"]["affinity"]["nodeAffinity"][
         "requiredDuringSchedulingIgnoredDuringExecution"

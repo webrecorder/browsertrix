@@ -1,51 +1,51 @@
 apiVersion: btrix.cloud/v1
 kind: CrawlJob
 metadata:
-  name: {{ ("crawljob-" ~ id) | tojson }}
+  name: {{ "crawljob-" ~ id }}
   finalizers:
     - metacontroller.io/compositecontroller-crawljobs-operator
   labels:
-    crawl: {{ id | tojson }}
+    crawl: {{ id }}
     role: {{ "qa-job" if qa_source else "job" }}
-    btrix.org: {{ oid | tojson }}
-    btrix.user: {{ userid | tojson }}
-    btrix.storage: {{ storage_name | tojson }}
-    btrix.crawlconfig: {{ cid | tojson }}
-    dedupe_coll_id: {{ dedupe_coll_id | tojson }}
+    btrix.org: {{ oid }}
+    btrix.user: {{ userid }}
+    btrix.storage: {{ storage_name }}
+    btrix.crawlconfig: {{ cid }}
+    dedupe_coll_id: {{ dedupe_coll_id }}
 
 spec:
   selector:
     matchLabels:
-      crawl: {{ id | tojson }}
+      crawl: {{ id }}
 
-  id: {{ id | tojson }}
-  userid: {{ userid | tojson }}
-  cid: {{ cid | tojson }}
-  oid: {{ oid | tojson }}
+  id: {{ id }}
+  userid: {{ userid }}
+  cid: {{ cid }}
+  oid: {{ oid }}
   scale: {{ scale }}
   browserWindows: {{ browser_windows }}
 
-  profile_filename: {{ profile_filename | tojson }}
-  profileId: {{ profileid | tojson }}
-  storage_filename: {{ storage_filename | tojson }}
+  profile_filename: {{ profile_filename }}
+  profileId: {{ profileid }}
+  storage_filename: {{ storage_filename }}
 
   maxCrawlSize: {{ max_crawl_size if not qa_source else 0 }}
   timeout: {{ timeout if not qa_source else 0 }}
-  qaSourceCrawlId: {{ qa_source | tojson }}
+  qaSourceCrawlId: {{ qa_source }}
 
-  manual: {{ manual }}
-  crawlerChannel: {{ crawler_channel | tojson }}
+  manual: {{ manual | int }}
+  crawlerChannel: {{ crawler_channel }}
   ttlSecondsAfterFinished: {{ 30 if not qa_source else 0 }}
-  warcPrefix: {{ warc_prefix | tojson }}
+  warcPrefix: {{ warc_prefix }}
 
-  storageName: {{ storage_name | tojson }}
+  storageName: {{ storage_name }}
 
-  proxyId: {{ proxy_id | tojson }}
+  proxyId: {{ proxy_id }}
 
-  dedupeCollId: {{ dedupe_coll_id | tojson }}
+  dedupeCollId: {{ dedupe_coll_id }}
 
-  pausedAt: {{ (pausedAt or "") | tojson }}
+  pausedAt: {{ pausedAt or "" }}
 
-  isSinglePage: {{ is_single_page | tojson }}
+  isSinglePage: {{ is_single_page }}
 
-  seedFileId: {{ (seed_file_id or "") | tojson }}
+  seedFileId: {{ seed_file_id or "" }}

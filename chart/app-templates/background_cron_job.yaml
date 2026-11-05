@@ -1,17 +1,17 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ id | tojson }}
+  name: {{ id }}
   labels:
     role: "cron-background-job"
-    job_type: {{ job_type | tojson }}
+    job_type: {{ job_type }}
 
 spec:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 2
 
-  schedule: {{ schedule | tojson }}
+  schedule: {{ schedule }}
 
   jobTemplate:
     metadata:
@@ -19,8 +19,8 @@ spec:
         - metacontroller.io/decoratorcontroller-background-job-operator
       labels:
         role: "background-job"
-        job_type: {{ job_type | tojson }}
-        job_id: {{ id | tojson }}
+        job_type: {{ job_type }}
+        job_id: {{ id }}
 
     spec:
       template:
@@ -73,8 +73,8 @@ spec:
 
           containers:
             - name: btrixbgjob
-              image: {{ backend_image | tojson }}
-              imagePullPolicy: {{ pull_policy | tojson }}
+              image: {{ backend_image }}
+              imagePullPolicy: {{ pull_policy }}
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
@@ -84,7 +84,7 @@ spec:
                   type: RuntimeDefault
               env:
               - name: BG_JOB_TYPE
-                value: {{ job_type | tojson }}
+                value: {{ job_type }}
 
               envFrom:
                 - configMapRef:

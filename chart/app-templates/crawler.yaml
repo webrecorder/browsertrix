@@ -6,10 +6,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ name | tojson }}
-  namespace: {{ namespace | tojson }}
+  name: {{ name }}
+  namespace: {{ namespace }}
   labels:
-    crawl: {{ id | tojson }}
+    crawl: {{ id }}
     role: crawler
 
 spec:
@@ -34,10 +34,10 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ name | tojson }}
-  namespace: {{ namespace | tojson }}
+  name: {{ name }}
+  namespace: {{ namespace }}
   labels:
-    crawl: {{ id | tojson }}
+    crawl: {{ id }}
     role: crawler
     network-policy: limit-crawler-egress
 
@@ -45,35 +45,35 @@ spec:
   # The crawler processes untrusted web content and never calls the Kubernetes
   # API; do not give it a service-account token.
   automountServiceAccountToken: false
-  hostname: {{ name | tojson }}
+  hostname: {{ name }}
   subdomain: crawler
 
   {% if priorityClassName %}
-  priorityClassName: {{ priorityClassName | tojson }}
+  priorityClassName: {{ priorityClassName }}
   {% endif %}
 
   restartPolicy: OnFailure
 
   securityContext:
     runAsNonRoot: true
-    runAsUser: {{ crawler_uid }}
-    runAsGroup: {{ crawler_gid }}
-    fsGroup: {{ crawler_fsgroup }}
+    runAsUser: {{ crawler_uid | int }}
+    runAsGroup: {{ crawler_gid | int }}
+    fsGroup: {{ crawler_fsgroup | int }}
 
-  terminationGracePeriodSeconds: {{ termination_grace_secs }}
+  terminationGracePeriodSeconds: {{ termination_grace_secs | int }}
   volumes:
     - name: crawl-config
       configMap:
-        name: {{ ("crawl-config-" ~ id) | tojson }}
+        name: {{ "crawl-config-" ~ id }}
     {% if qa_source_crawl_id %}
     - name: qa-config
       configMap:
-        name: {{ ("qa-replay-" ~ qa_source_crawl_id) | tojson }}
+        name: {{ "qa-replay-" ~ qa_source_crawl_id }}
     {% endif %}
     - name: crawl-data
     {% if not no_pvc %}
       persistentVolumeClaim:
-        claimName: {{ name | tojson }}
+        claimName: {{ name }}
     {% else %}
       emptyDir: {}
     {% endif %}
@@ -99,7 +99,7 @@ spec:
             - key: nodeType
               operator: In
               values:
-                - {{ crawler_node_type | tojson }}
+                - {{ crawler_node_type }}
 {% endif %}
 
     podAffinity:
@@ -112,7 +112,7 @@ spec:
               - key: crawl
                 operator: In
                 values:
-                - {{ id | tojson }}
+                - {{ id }}
 
   tolerations:
     - key: nodeType
@@ -130,8 +130,8 @@ spec:
 
   containers:
     - name: crawler
-      image: {{ crawler_image | tojson }}
-      imagePullPolicy: {{ crawler_image_pull_policy | tojson }}
+      image: {{ crawler_image }}
+      imagePullPolicy: {{ crawler_image_pull_policy }}
       command:
         - {{ "crawl" if not qa_source_crawl_id else "qa" }}
         - --config
@@ -139,18 +139,18 @@ spec:
         - --workers
         - "{{ workers }}"
         - --redisStoreUrl
-        - {{ redis_url | tojson }}
+        - {{ redis_url }}
       {% if qa_source_crawl_id %}
         - --qaSource
         - /tmp/qa/qa-config.json
       {% else %}
       {% if redis_dedupe_url %}
         - --redisDedupeUrl
-        - {{ redis_dedupe_url | tojson }}
+        - {{ redis_dedupe_url }}
       {% endif %}
       {% if profile_filename %}
         - --profile
-        - {{ ("@" ~ profile_filename) | tojson }}
+        - {{ "@" ~ profile_filename }}
       {% endif %}
       {% if profile_filename and save_profile %}
         - --saveProfile
@@ -159,15 +159,15 @@ spec:
       {% if add_proxies %}
       {% if proxy_url %}
         - --proxyServer
-        - {{ proxy_url | tojson }}
+        - {{ proxy_url }}
       {% endif %}
       {% if proxy_id and proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
-        - {{ ("/tmp/proxies/" ~ proxy_id ~ "-private-key") | tojson }}
+        - {{ "/tmp/proxies/" ~ proxy_id ~ "-private-key" }}
       {% endif %}
       {% if proxy_id and proxy_ssh_host_public_key %}
         - --sshProxyKnownHostsFile
-        - {{ ("/tmp/proxies/" ~ proxy_id ~ "-known-hosts") | tojson }}
+        - {{ "/tmp/proxies/" ~ proxy_id ~ "-known-hosts" }}
       {% endif %}
         - --proxyServerConfig
         - /tmp/proxies/host-proxies.json
@@ -206,11 +206,11 @@ spec:
             name: shared-crawler-config
 
         - secretRef:
-            name: {{ storage_secret | tojson }}
+            name: {{ storage_secret }}
 
       {% if signing_secret %}
         - secretRef:
-            name: {{ signing_secret | tojson }}
+            name: {{ signing_secret }}
       {% endif %}
 
       env:
@@ -218,36 +218,36 @@ spec:
           value: /crawls/home
 
         - name: CRAWL_ID
-          value: {{ id | tojson }}
+          value: {{ id }}
 
         - name: WEBHOOK_URL
-          value: {{ (redis_url ~ "/crawls-done") | tojson }}
+          value: {{ redis_url ~ "/crawls-done" }}
 
         - name: STORE_PATH
-          value: {{ storage_path | tojson }}
+          value: {{ storage_path }}
 
         - name: STORE_FILENAME
-          value: {{ storage_filename | tojson }}
+          value: {{ storage_filename }}
 
         - name: STORE_USER
-          value: {{ userid | tojson }}
+          value: {{ userid }}
 
         - name: WARC_PREFIX
-          value: {{ warc_prefix | tojson }}
+          value: {{ warc_prefix }}
 
       resources:
         limits:
-          memory: "{{ memory_limit }}"
+          memory: "{{ memory_limit | safe }}"
 
         requests:
-          cpu: "{{ cpu }}"
-          memory: "{{ memory }}"
+          cpu: "{{ cpu | safe }}"
+          memory: "{{ memory | safe }}"
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
         httpGet:
           path: /healthz
-          port: {{ crawler_liveness_port }}
+          port: {{ crawler_liveness_port | int }}
 
         initialDelaySeconds: 15
         periodSeconds: 120
