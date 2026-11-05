@@ -6383,6 +6383,7 @@ __metadata:
     html-loader: "npm:^3.0.1"
     html-webpack-plugin: "npm:^5.6.7"
     http-proxy-middleware: "npm:^2.0.7"
+    http-status-codes: "npm:^2.3.0"
     husky: "npm:^8.0.3"
     immutable: "npm:^4.3.8"
     ink-mde: "npm:~0.34.0"
@@ -9975,7 +9976,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"http-status-codes@npm:^2.1.4":
+"http-status-codes@npm:^2.1.4, http-status-codes@npm:^2.3.0":
   version: 2.3.0
   resolution: "http-status-codes@npm:2.3.0"
   checksum: 10c0/c2412188929e8eed6623eef468c62d0c3c082919c03e9b74fd79cfd060d11783dba44603e38a3cee52d26563fe32005913eaf6120aa8ba907da1238f3eaad5fe
