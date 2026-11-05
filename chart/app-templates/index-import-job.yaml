@@ -5,12 +5,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ name | tojson }}
+  name: {{ name }}
   labels:
     role: index-import-job
-    type: {{ job_type | tojson }}
-    coll: {{ id | tojson }}
-    oid: {{ oid | tojson }}
+    type: {{ job_type }}
+    coll: {{ id }}
+    oid: {{ oid }}
 
 spec:
   ttlSecondsAfterFinished: 300
@@ -29,9 +29,9 @@ spec:
     metadata:
       labels:
         role: index-import-job
-        type: {{ job_type | tojson }}
-        coll: {{ id | tojson }}
-        oid: {{ oid | tojson }}
+        type: {{ job_type }}
+        coll: {{ id }}
+        oid: {{ oid }}
 
     spec:
       # The indexer parses archived (untrusted) content and never calls the
@@ -44,7 +44,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ name | tojson }}
+            name: {{ name }}
 
         - name: tmpdir
           emptyDir: {}
@@ -52,29 +52,29 @@ spec:
 
       containers:
         - name: indexer
-          image: {{ crawler_image | tojson }}
-          imagePullPolicy: {{ crawler_image_pull_policy | tojson }}
+          image: {{ crawler_image }}
+          imagePullPolicy: {{ crawler_image_pull_policy }}
           command:
             - indexer
             - --redisDedupeUrl
-            - {{ redis_url | tojson }}
+            - {{ redis_url }}
 
           {% if job_type == "import" %}
             - --sourceUrl
-            - {{ import_source_url | tojson }}
+            - {{ import_source_url }}
 
           {% elif job_type == "purge" %}
             - --sourceUrl
-            - {{ import_source_url | tojson }}
+            - {{ import_source_url }}
             - --removing
 
           {% elif job_type == "commit" %}
             - --commitCrawlId
-            - {{ crawl_id | tojson }}
+            - {{ crawl_id }}
 
           {% elif job_type == "cancel" %}
             - --cancelCrawlId
-            - {{ crawl_id | tojson }}
+            - {{ crawl_id }}
 
           {% endif %}
 

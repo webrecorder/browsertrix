@@ -1,17 +1,17 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ id | tojson }}
+  name: {{ id }}
   finalizers:
     - metacontroller.io/decoratorcontroller-background-job-operator
   labels:
     role: "background-job"
-    job_type: {{ job_type | tojson }}
+    job_type: {{ job_type }}
 {% if oid %}
-    btrix.org: {{ oid | tojson }}
+    btrix.org: {{ oid }}
 {% endif %}
 {% if collection_id %}
-    btrix.collid: {{ collection_id | tojson }}
+    btrix.collid: {{ collection_id }}
 {% endif %}
 
 spec:
@@ -69,8 +69,8 @@ spec:
 
       containers:
         - name: btrixbgjob
-          image: {{ backend_image | tojson }}
-          imagePullPolicy: {{ pull_policy | tojson }}
+          image: {{ backend_image }}
+          imagePullPolicy: {{ pull_policy }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -80,23 +80,23 @@ spec:
               type: RuntimeDefault
           env:
           - name: BG_JOB_TYPE
-            value: {{ job_type | tojson }}
+            value: {{ job_type }}
 
 {% if oid %}
           - name: OID
-            value: {{ oid | tojson }}
+            value: {{ oid }}
 {% endif %}
           - name: CRAWL_TYPE
-            value: {{ (crawl_type or "") | tojson }}
+            value: {{ crawl_type or "" }}
 
 {% if crawl_id %}
           - name: CRAWL_ID
-            value: {{ crawl_id | tojson }}
+            value: {{ crawl_id }}
 {% endif %}
 
 {% if collection_id %}
           - name: COLLECTION_ID
-            value: {{ collection_id | tojson }}
+            value: {{ collection_id }}
 {% endif %}
 
           envFrom:

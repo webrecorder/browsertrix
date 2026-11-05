@@ -4,8 +4,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ name | tojson }}
-  namespace: {{ namespace | tojson }}
+  name: {{ name }}
+  namespace: {{ namespace }}
   labels:
-    coll: {{ id | tojson }}
+    coll: {{ id }}
     role: configmap

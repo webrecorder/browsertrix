@@ -409,14 +409,11 @@ def test_cron_job_schedule_renders_as_single_document():
         "nel\x85break",
     ],
 )
-@pytest.mark.parametrize("expression", ["{{ value }}", "{{ value | tojson }}"])
-def test_template_values_render_as_single_line_roundtrippable_yaml_scalars(
-    value, expression
-):
+def test_template_values_render_as_single_line_roundtrippable_yaml_scalars(value):
     env = jinja2.Environment(finalize=finalize_template_value)
-    rendered = env.from_string(expression).render(value=value)
+    rendered = env.from_string("{{ value }}").render(value=value)
 
-    # the filter output must never span multiple lines or create structure
+    # the rendered scalar must never span multiple lines or create structure
     assert "\n" not in rendered
     assert yaml.safe_load(rendered) == value
 
@@ -500,7 +497,7 @@ SIGNED_URL = (
         ("cancel", {"--cancelCrawlId": "manual-20260714225812-dc73dcee-99f"}),
     ],
 )
-def test_index_import_job_command_args_roundtrip_through_tojson(
+def test_index_import_job_command_args_roundtrip_through_template_serialization(
     job_type, expected_args
 ):
     holder = _TemplateHolder()

@@ -1,39 +1,39 @@
 apiVersion: btrix.cloud/v1
 kind: ProfileJob
 metadata:
-  name: {{ ("profilejob-" ~ id) | tojson }}
+  name: {{ "profilejob-" ~ id }}
   labels:
-    browser: {{ id | tojson }}
+    browser: {{ id }}
     role: "job"
-    btrix.org: {{ oid | tojson }}
-    btrix.user: {{ userid | tojson }}
+    btrix.org: {{ oid }}
+    btrix.user: {{ userid }}
     {%- if base_profile %}
-    btrix.baseprofile: {{ base_profile | tojson }}
+    btrix.baseprofile: {{ base_profile }}
     {%- endif %}
-    btrix.storage: {{ storage_name | tojson }}
-    profileid: {{ profileid | tojson }}
-    proxyid: {{ proxy_id | tojson }}
-    crawlerChannel: {{ crawler_channel | tojson }}
+    btrix.storage: {{ storage_name }}
+    profileid: {{ profileid }}
+    proxyid: {{ proxy_id }}
+    crawlerChannel: {{ crawler_channel }}
 
 spec:
   selector:
     matchLabels:
-      browser: {{ id | tojson }}
+      browser: {{ id }}
 
-  id: {{ id | tojson }}
-  userid: {{ userid | tojson }}
-  oid: {{ oid | tojson }}
+  id: {{ id }}
+  userid: {{ userid }}
+  oid: {{ oid }}
 
-  storageName: {{ storage_name | tojson }}
-  crawlerImage: {{ crawler_image | tojson }}
-  imagePullPolicy: {{ image_pull_policy | tojson }}
+  storageName: {{ storage_name }}
+  crawlerImage: {{ crawler_image }}
+  imagePullPolicy: {{ image_pull_policy }}
 
-  startUrl: {{ url | tojson }}
-  profileFilename: {{ profile_filename | tojson }}
-  vncPassword: {{ vnc_password | tojson }}
+  startUrl: {{ url }}
+  profileFilename: {{ profile_filename }}
+  vncPassword: {{ vnc_password }}
 
-  proxyId: {{ proxy_id | tojson }}
+  proxyId: {{ proxy_id }}
 
   {% if expire_time %}
-  expireTime: {{ expire_time | tojson }}
+  expireTime: {{ expire_time }}
   {% endif %}

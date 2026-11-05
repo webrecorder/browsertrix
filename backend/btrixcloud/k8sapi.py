@@ -27,7 +27,7 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 def finalize_template_value(value: Any) -> Any:
     """Render bare strings as JSON scalars, which YAML can parse losslessly."""
-    # Both tojson and safe return Markup, so their output needs no finalization.
+    # safe returns Markup, so explicitly raw output is fine.
     if isinstance(value, str) and not isinstance(value, Markup):
         return json.dumps(value)
     return value
