@@ -6,10 +6,12 @@ import { getReasonPhrase } from "http-status-codes";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
+import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
@@ -67,6 +69,7 @@ import {
   OnboardingStep,
 } from "@/utils/onboarding/onboardingEvents";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
 import { tw } from "@/utils/tailwind";
 
@@ -83,6 +86,10 @@ const SECTIONS = [
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
+type ReplayPage = {
+  url?: string;
+  ts?: string;
+};
 enum ReplayView {
   Sidebar = "sidebar",
   Stacked = "stacked",
@@ -176,6 +183,33 @@ export class ArchivedItemDetail extends BtrixElement {
     },
   );
 
+  private readonly replayPage = new SearchParamsValue<ReplayPage>(
+    this,
+    (value, params) => {
+      const keys = ["url", "ts"] satisfies (keyof ReplayPage)[];
+
+      keys.forEach((key) => {
+        if (value[key] == null) {
+          params.delete(key);
+        } else {
+          params.set(key, value[key]);
+        }
+      });
+      return params;
+    },
+    (params) => {
+      const keys = ["url", "ts"] satisfies (keyof ReplayPage)[];
+      const values: ReplayPage = {};
+
+      keys.forEach((key) => {
+        const value = params.get(key);
+        if (value !== null) values[key] = value;
+      });
+
+      return values;
+    },
+  );
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -184,6 +218,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @query("btrix-item-metadata-editor")
   private readonly editDialog?: CrawlMetadataEditor | null;
+
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   private readonly tabLabels: Omit<
     Record<SectionName, string>,
@@ -213,7 +250,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+    return `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}`;
   }
 
   private timerId?: number;
@@ -291,10 +328,17 @@ export class ArchivedItemDetail extends BtrixElement {
 
       const query = queryString.stringify(queryData);
 
-      return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
+      const pages = await this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
         `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages?${query}`,
         { signal },
       );
+
+      if (pages.items.length && !this.replayPage.value.url) {
+        const firstPage = pages.items[0];
+        this.replayPage.setValue(firstPage);
+      }
+
+      return pages;
     },
     args: () =>
       [
@@ -497,7 +541,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 ${sidebarView ? nothing : viewControls}`,
                 this.renderRWP(),
                 [
-                  tw`overflow-hidden rounded-lg border`,
+                  tw`replay-panel scroll-mt-2 overflow-hidden rounded-lg border`,
                   sidebarView
                     ? tw`h-[--sidebar-view-height]`
                     : tw`aspect-video`,
@@ -675,9 +719,7 @@ export class ArchivedItemDetail extends BtrixElement {
               ${this.renderNav()}
             </div>
           </div>
-          <div
-            class="col-span-14 min-w-0 md:col-span-11 @container/content scroll-mt-2"
-          >
+          <div class="col-span-14 min-w-0 md:col-span-11 @container/content">
             ${sectionContent}
           </div>
         </section>
@@ -1050,20 +1092,44 @@ export class ArchivedItemDetail extends BtrixElement {
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
 
-    return html`<replay-web-page
-      source="${replaySource}"
-      url="${this.item.firstSeed || ""}"
-      coll="${ifDefined(this.item.id)}"
-      config="${config}"
-      replayBase="/replay/"
-      noSandbox="true"
-      noCache="true"
-      @rwp-url-change=${() => {
-        if (this.itemType === "crawl") {
-          completeOnboardingStep(OnboardingStep.ReplayItem);
-        }
-      }}
-    ></replay-web-page>`;
+    // TODO Investigate in RWP why re-rendering with the same attributes causes `rwp-url-change` to fire again;
+    // guard should prevent this for now
+    return html`${guard(
+      [replaySource, this.replayPage.value.url],
+      () =>
+        html`<replay-web-page
+          source="${replaySource}"
+          coll="${this.itemId}"
+          url=${this.replayPage.value.url ||
+          /* TODO investigate if there's an RWP fix for preventing history manipulation when url is omitted: */ "about:blank"}
+          ts=${formatRwpTimestamp(this.replayPage.value.ts) ||
+          /* must be empty string to reset the attribute: */ ""}
+          config="${config}"
+          replayBase="/replay/"
+          noSandbox="true"
+          noCache="true"
+          hideMetadataSidebar
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            const url = e.detail.url;
+
+            console.log("rwp-url-change:", e.detail);
+
+            if (
+              !(
+                "replayNotFoundError" in e.detail &&
+                e.detail.replayNotFoundError
+              ) &&
+              url
+            ) {
+              this.replayPage.setValue(e.detail);
+            }
+
+            if (this.itemType === "crawl") {
+              completeOnboardingStep(OnboardingStep.ReplayItem);
+            }
+          }}
+        ></replay-web-page>`,
+    )}`;
   }
 
   private renderPageListControls() {
@@ -1097,20 +1163,26 @@ export class ArchivedItemDetail extends BtrixElement {
       return html`<ul class="divide-y flex-1">
         ${items.map(
           (item) =>
-            html`<li class="not-last:outline">
+            html`<li>
               <button
-                class="w-full text-left transition-all aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none py-1.5 px-3 hover:bg-cyan-50/50"
+                class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
+                aria-selected="${this.replayPage.value.url === item.url}"
+                @click=${() => this.navigateReplayEmbed(item)}
               >
-                <div class="truncate leading-5">
+                <div class="truncate leading-5 pointer-events-none">
                   ${item.title
-                    ? html`<strong class="font-semibold">${item.title}</strong>`
+                    ? html`<strong class="font-medium">${item.title}</strong>`
                     : html`<span class="opacity-50"
                         >${msg("No page title")}</span
                       >`}
                 </div>
-                <div class="truncate text-xs leading-4 text-cyan-600">
-                  ${item.url}
-                </div>
+                <btrix-code
+                  class="block flex-1 overflow-hidden text-xs pointer-events-none"
+                  language="url"
+                  value=${item.url}
+                  noWrap
+                  truncate
+                ></btrix-code>
               </button>
             </li>`,
         )}
@@ -1141,9 +1213,8 @@ export class ArchivedItemDetail extends BtrixElement {
               totalCount=${total}
               size=${pageSize}
               compact
-              @page-change=${async (e: PageChangeEvent) => {
-                await this.pagesTask.run([this.itemId, e.detail.page]);
-                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              @page-change=${(e: PageChangeEvent) => {
+                void this.pagesTask.run([this.itemId, e.detail.page]);
               }}
             >
             </btrix-pagination>
@@ -1156,15 +1227,19 @@ export class ArchivedItemDetail extends BtrixElement {
     const pages = this.pagesTask.value;
     const row = (item: ArchivedItemPage) =>
       html`<btrix-table-row
-        class="transition-colors duration-fast hover:bg-cyan-50/50 first:rounded-t border-t last:border-b last:rounded-b bg-white border-x"
+        class="transition-colors duration-fast aria-selected:bg-cyan-50 hover:bg-cyan-50/50 first:rounded-t border-t last:border-b last:rounded-b bg-white border-x"
+        aria-selected="${this.replayPage.value.url === item.url}"
       >
-        <btrix-table-cell class="overflow-hidden"
-          >${item.title
-            ? html`<span class="truncate">${item.title}</span>`
-            : html`<span class="opacity-50"
-                >${msg("No page title")}</span
-              >`}</btrix-table-cell
-        >
+        <btrix-table-cell rowClickTarget="button">
+          <button
+            class="text-left overflow-hidden"
+            @click=${() => this.navigateReplayEmbed(item)}
+          >
+            ${item.title
+              ? html`<div class="truncate font-medium">${item.title}</div>`
+              : html`<div class="opacity-50">${msg("No page title")}</div>`}
+          </button>
+        </btrix-table-cell>
         <btrix-table-cell class="overflow-hidden items-center gap-2">
           <btrix-code
             class="block flex-1 overflow-hidden"
@@ -1197,18 +1272,29 @@ export class ArchivedItemDetail extends BtrixElement {
                 >${stringFor.unknown}</span
               >`}</btrix-table-cell
         >
-        <btrix-table-cell>
-          <sl-icon-button class="text-base" name="play-btn"></sl-icon-button>
-          <sl-icon-button
-            class="text-base"
-            name="clipboard2-data"
-          ></sl-icon-button>
+        <btrix-table-cell class="px-0">
+          <btrix-overflow-dropdown>
+            <sl-menu>
+              <btrix-menu-item-link
+                href=${`${this.reviewUrl}&itemPageId=${item.id}`}
+              >
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                ${msg("Review Page")}
+              </btrix-menu-item-link>
+            </sl-menu>
+          </btrix-overflow-dropdown>
         </btrix-table-cell>
       </btrix-table-row>`;
 
     return html`<btrix-overflow-scroll>
         <btrix-table
-          class="[--btrix-table-cell-padding-x:--sl-spacing-x-small] [--btrix-table-grid-template-columns:30ch_minmax(30ch,1fr)_11rem_min-content]"
+          class="[--btrix-table-cell-padding-x:--sl-spacing-x-small]"
+          style="--btrix-table-grid-template-columns: ${[
+            "[clickable-start] 40ch",
+            "minmax(30ch, 1fr)",
+            "11rem [clickable-end]",
+            "min-content",
+          ].join(" ")}"
         >
           <btrix-table-head
             class="[--btrix-table-cell-padding-bottom:var(--sl-spacing-2x-small)]"
@@ -1240,15 +1326,32 @@ export class ArchivedItemDetail extends BtrixElement {
               totalCount=${total}
               size=${pageSize}
               compact
-              @page-change=${async (e: PageChangeEvent) => {
-                await this.pagesTask.run([this.itemId, e.detail.page]);
-                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              @page-change=${(e: PageChangeEvent) => {
+                void this.pagesTask.run([this.itemId, e.detail.page]);
               }}
             >
             </btrix-pagination>
           </footer>`,
       )} `;
   }
+
+  private readonly navigateReplayEmbed = (page: ArchivedItemPage) => {
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      page.url,
+      // Although the timestamp isn't necessary since the same URL won't be crawled twice,
+      // passing it during navigation prevents RWP from re-navigating to the latest timestamp
+      page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
+    );
+
+    this.shadowRoot
+      ?.querySelector(".replay-panel")
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  };
 
   private renderOverview() {
     return html`
