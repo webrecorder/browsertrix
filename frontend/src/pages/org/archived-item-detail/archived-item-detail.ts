@@ -8,6 +8,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
+import { repeat } from "lit/directives/repeat.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
@@ -16,6 +17,12 @@ import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
 import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
+import {
+  DEFAULT_SORT_BY,
+  pageListSortControl,
+  sortableFields,
+  type SortField,
+} from "./templates/page-list-sort-control";
 import { runAnalysisButton } from "./templates/run-analysis-button";
 
 import { BtrixElement } from "@/classes/BtrixElement";
@@ -71,6 +78,11 @@ import {
 import { pluralOf } from "@/utils/pluralize";
 import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 import "./templates/qa";
@@ -210,6 +222,12 @@ export class ArchivedItemDetail extends BtrixElement {
     },
   );
 
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
+    this,
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+  );
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -316,12 +334,12 @@ export class ArchivedItemDetail extends BtrixElement {
   });
 
   private readonly pagesTask = new Task(this, {
-    task: async ([itemId, page], { signal }) => {
+    task: async ([itemId, orderBy, page], { signal }) => {
       if (!itemId) throw "itemId required";
 
       const queryData: APISortQuery<ArchivedItemPage> & APIPaginationQuery = {
-        sortBy: "ts",
-        sortDirection: SortDirection.Descending,
+        sortBy: orderBy.field,
+        sortDirection: orderBy.direction,
         page,
         pageSize: PAGE_LIST_PAGE_SIZE,
       };
@@ -343,6 +361,7 @@ export class ArchivedItemDetail extends BtrixElement {
     args: () =>
       [
         this.itemId,
+        this.orderBy.value,
         parsePage(new URLSearchParams(location.search).get("replayPage")),
       ] as const,
   });
@@ -1141,16 +1160,7 @@ export class ArchivedItemDetail extends BtrixElement {
         sidebarView ? tw`mb-2 shadow-md @3xl/content:shadow-none` : tw`mb-3`,
       )}
     >
-      <div class="flex items-center gap-4">
-        <div class="flex gap-2 items-center whitespace-nowrap">
-          ${msg("Filter by:")}
-          <btrix-filter-chip>${msg("URL")}</btrix-filter-chip>
-        </div>
-      </div>
-      <div class="flex gap-2 items-center whitespace-nowrap">
-        ${msg("Sort by:")}
-        <sl-select size="small" pill></sl-select>
-      </div>
+      ${pageListSortControl(this.orderBy)}
     </div>`;
   }
 
@@ -1159,35 +1169,31 @@ export class ArchivedItemDetail extends BtrixElement {
       html`<div class="size-full flex items-center justify-center p-5">
         <sl-spinner class="text-xl"></sl-spinner>
       </div>`;
-    const pageList = ({ items }: APIPaginatedList<ArchivedItemPage>) => {
-      return html`<ul class="divide-y flex-1">
-        ${items.map(
-          (item) =>
-            html`<li>
-              <button
-                class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
-                aria-selected="${this.replayPage.value.url === item.url}"
-                @click=${() => this.navigateReplayEmbed(item)}
-              >
-                <div class="truncate leading-5 pointer-events-none">
-                  ${item.title
-                    ? html`<strong class="font-medium">${item.title}</strong>`
-                    : html`<span class="opacity-50"
-                        >${msg("No page title")}</span
-                      >`}
-                </div>
-                <btrix-code
-                  class="block flex-1 overflow-hidden text-xs pointer-events-none"
-                  language="url"
-                  value=${item.url}
-                  noWrap
-                  truncate
-                ></btrix-code>
-              </button>
-            </li>`,
-        )}
+    const row = (item: ArchivedItemPage) =>
+      html`<li>
+        <button
+          class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
+          aria-selected="${this.replayPage.value.url === item.url}"
+          @click=${() => this.navigateReplayEmbed(item)}
+        >
+          <div class="truncate leading-5 pointer-events-none">
+            ${item.title
+              ? html`<strong class="font-medium">${item.title}</strong>`
+              : html`<span class="opacity-50">${msg("No page title")}</span>`}
+          </div>
+          <btrix-code
+            class="block flex-1 overflow-hidden text-xs pointer-events-none"
+            language="url"
+            value=${item.url}
+            noWrap
+            truncate
+          ></btrix-code>
+        </button>
+      </li>`;
+    const pageList = ({ items }: APIPaginatedList<ArchivedItemPage>) =>
+      html`<ul class="divide-y flex-1">
+        ${repeat(items, ({ id }) => id, row)}
       </ul>`;
-    };
 
     const pages = this.pagesTask.value;
 
@@ -1214,7 +1220,11 @@ export class ArchivedItemDetail extends BtrixElement {
               size=${pageSize}
               compact
               @page-change=${(e: PageChangeEvent) => {
-                void this.pagesTask.run([this.itemId, e.detail.page]);
+                void this.pagesTask.run([
+                  this.itemId,
+                  this.orderBy.value,
+                  e.detail.page,
+                ]);
               }}
             >
             </btrix-pagination>
@@ -1305,12 +1315,16 @@ export class ArchivedItemDetail extends BtrixElement {
             <btrix-table-header-cell>
               ${msg("Page URL")}
             </btrix-table-header-cell>
-            <btrix-table-header-cell>${msg("Date")}</btrix-table-header-cell>
+            <btrix-table-header-cell
+              >${msg("Snapshot Time")}</btrix-table-header-cell
+            >
             <btrix-table-header-cell>
               <span class="sr-only">${msg("Actions")}</span>
             </btrix-table-header-cell>
           </btrix-table-head>
-          <btrix-table-body> ${pages?.items.map(row)} </btrix-table-body>
+          <btrix-table-body>
+            ${repeat(pages?.items || [], ({ id }) => id, row)}
+          </btrix-table-body>
         </btrix-table>
       </btrix-overflow-scroll>
 
@@ -1327,7 +1341,11 @@ export class ArchivedItemDetail extends BtrixElement {
               size=${pageSize}
               compact
               @page-change=${(e: PageChangeEvent) => {
-                void this.pagesTask.run([this.itemId, e.detail.page]);
+                void this.pagesTask.run([
+                  this.itemId,
+                  this.orderBy.value,
+                  e.detail.page,
+                ]);
               }}
             >
             </btrix-pagination>
