@@ -6,20 +6,26 @@ on:
 
 jobs:
   btrix-release:
+    name: Build ${{ matrix.image }}
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        image: [backend, emails, frontend]
+    env:
+      HUSKY: 0
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -30,46 +36,16 @@ jobs:
           echo GIT_COMMIT_HASH=`git rev-parse --short HEAD` >> $GITHUB_ENV
           echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
 
-      - name: Build Backend
-        uses: docker/build-push-action@v4
+      - name: Build ${{ matrix.image }}
+        uses: docker/build-push-action@v7
         with:
-          context: backend
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-backend:${{ env.VERSION }}, webrecorder/browsertrix-backend:latest
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,scope=backend,mode=max
-
-      - name: Build Emails
-        uses: docker/build-push-action@v4
-        with:
-          context: emails
+          context: ${{ matrix.image }}
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             VERSION=${{ env.VERSION }}
             GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
             GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-emails:${{ env.VERSION }}, webrecorder/browsertrix-emails:latest
-          cache-from: type=gha,scope=emails
-          cache-to: type=gha,scope=emails,mode=max
-
-      - name: Build Frontend
-        uses: docker/build-push-action@v4
-        env:
-          HUSKY: 0
-        with:
-          context: frontend
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            VERSION=${{ env.VERSION }}
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-
-          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-frontend:${{ env.VERSION }}, webrecorder/browsertrix-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
+          tags: ${{ env.REPO_PREFIX }}webrecorder/browsertrix-${{ matrix.image }}:${{ env.VERSION }}, webrecorder/browsertrix-${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max

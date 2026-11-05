@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       docs_source_url:
-        description: 'URL of Browsertrix Deployment to copy API docs from'
+        description: "URL of Browsertrix Deployment to copy API docs from"
         required: false
-        default: 'https://app.browsertrix.com'
+        default: "https://app.browsertrix.com"
 
   release:
     types: [published]
@@ -34,19 +34,21 @@ jobs:
           python-version: 3.x
       - run: pip install zensical requests pyyaml
 
-      - name: Generate Helm Chart Index
-        run: python ./scripts/generate-helm-index.py > ./frontend/docs/docs/helm-repo/index.yaml
+      # These write to different directories, helm-repo/ and api/, so they can run in parallel
+      - parallel:
+          - name: Generate Helm Chart Index
+            run: python ./scripts/generate-helm-index.py > ./frontend/docs/docs/helm-repo/index.yaml
 
-      - name: Copy Docs Files
-        run: frontend/docs/copy-api-docs.sh
-        env:
-          DOCS_SOURCE_URL: ${{ github.event.inputs.docs_source_url || 'https://app.browsertrix.com' }}
-          ENABLE_ANALYTICS: true
+          - name: Copy Docs Files
+            run: frontend/docs/copy-api-docs.sh
+            env:
+              DOCS_SOURCE_URL: ${{ github.event.inputs.docs_source_url || 'https://app.browsertrix.com' }}
+              ENABLE_ANALYTICS: true
 
       - name: Build Docs
         run: cd frontend/docs; zensical build --clean
         env:
-          DOCS_URL: 'https://docs.browsertrix.com'
+          DOCS_URL: "https://docs.browsertrix.com"
           ENABLE_ANALYTICS: true
 
       - uses: actions/upload-pages-artifact@v5
@@ -55,4 +57,3 @@ jobs:
 
       - uses: actions/deploy-pages@v5
         id: deployment
-
