@@ -60,6 +60,7 @@
     "highlight.js": "^11.11.1",
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.6.7",
+    "http-status-codes": "^2.3.0",
     "immutable": "^4.3.8",
     "ink-mde": "~0.34.0",
     "iso-639-1": "^2.1.15",
