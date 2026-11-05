@@ -33,7 +33,7 @@ spec:
   timeout: {{ timeout if not qa_source else 0 }}
   qaSourceCrawlId: {{ qa_source | tojson }}
 
-  manual: {{ manual }}
+  manual: {{ manual | int }}
   crawlerChannel: {{ crawler_channel | tojson }}
   ttlSecondsAfterFinished: {{ 30 if not qa_source else 0 }}
   warcPrefix: {{ warc_prefix | tojson }}

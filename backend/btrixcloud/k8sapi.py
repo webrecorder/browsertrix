@@ -1,5 +1,6 @@
 """K8S API Access"""
 
+import json
 import os
 from typing import Any
 
@@ -15,12 +16,21 @@ from kubernetes_asyncio.client.exceptions import ApiException
 from kubernetes_asyncio.client.models import V1CronJob
 from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.utils import create_from_dict
+from markupsafe import Markup
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
 from .utils import dt_now, get_templates_dir
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+
+def finalize_template_value(value: Any) -> Any:
+    """Render bare strings as JSON scalars, which YAML can parse losslessly."""
+    # Both tojson and safe return Markup, so their output needs no finalization.
+    if isinstance(value, str) and not isinstance(value, Markup):
+        return json.dumps(value)
+    return value
 
 
 # ============================================================================
@@ -41,6 +51,7 @@ class K8sAPI:
             env=jinja2.Environment(
                 autoescape=False,
                 loader=jinja2.FileSystemLoader(get_templates_dir()),
+                finalize=finalize_template_value,
             ),
         )
 

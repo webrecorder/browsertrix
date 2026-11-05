@@ -112,7 +112,7 @@ spec:
       {% if use_kvrocks %}
       args: ["-c", "/redis-conf/kvrocks.conf", "--dir", "/data"]
       {% else %}
-      args: ["/redis-conf/redis.conf", "--appendonly", "{{ 'no' if load_dump else 'yes' }}"]
+      args: ["/redis-conf/redis.conf", "--appendonly", "{{ ('no' if load_dump else 'yes') | safe }}"]
       {% endif %}
 
       volumeMounts:
@@ -173,30 +173,30 @@ spec:
           set -e
 
         {% if use_kvrocks %}
-          if [ ! -d /data/{{ local_file_src }} ]; then
-            echo "directory /data/{{ local_file_src }} doesn't exist, erroring"
+          if [ ! -d /data/{{ local_file_src | safe }} ]; then
+            echo "directory /data/{{ local_file_src | safe }} doesn't exist, erroring"
             exit 1
           fi
 
-          cd /data/{{ local_file_src }}
+          cd /data/{{ local_file_src | safe }}
 
           set -o pipefail
 
-          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path }}.tmp --s3-no-check-bucket --s3-chunk-size 64M --s3-upload-concurrency 4; do
+          until tar cvfz - . | tee >(sha256sum > /tmp/hash.txt) | tee >(wc -c > /tmp/size.txt) | rclone --config '' rcat remote:{{ remote_file_path | safe }}.tmp --s3-no-check-bucket --s3-chunk-size 64M --s3-upload-concurrency 4; do
             echo "retrying upload..."
             sleep 1;
           done
 
           # move to final location after upload, just in case
-          rclone moveto --config '' remote:{{ remote_file_path }}.tmp remote:{{ remote_file_path }}
+          rclone moveto --config '' remote:{{ remote_file_path | safe }}.tmp remote:{{ remote_file_path | safe }}
 
         {% else %}
-          if [ ! -f /data/{{ local_file_src }} ]; then
-            echo "/data/{{ local_file_src }} doesn't exist!"
+          if [ ! -f /data/{{ local_file_src | safe }} ]; then
+            echo "/data/{{ local_file_src | safe }} doesn't exist!"
             exit 1
           fi
 
-          until rclone -vv copyto --checksum /data/{{ local_file_src }} remote:{{ remote_file_path }} --s3-no-check-bucket --s3-chunk-size 64M --s3-upload-concurrency 4; do
+          until rclone -vv copyto --checksum /data/{{ local_file_src | safe }} remote:{{ remote_file_path | safe }} --s3-no-check-bucket --s3-chunk-size 64M --s3-upload-concurrency 4; do
             echo "retrying upload..."
             sleep 1;
           done
@@ -263,37 +263,37 @@ spec:
           set -e
 
           # if remote file doesn't exist, just return success (nothing to load)
-          if ! rclone lsf remote:{{ remote_file_path }} > /dev/null 2>&1; then
-            echo "Remote {{ remote_file_path }} does not exist, nothing to load, done"
+          if ! rclone lsf remote:{{ remote_file_path | safe }} > /dev/null 2>&1; then
+            echo "Remote {{ remote_file_path | safe }} does not exist, nothing to load, done"
             exit 0
           fi
 
         {% if use_kvrocks %}
           # only run if target dir doesn't exist yet
-          if [ ! -d "/data/{{ local_file_dest }}" ]; then
+          if [ ! -d "/data/{{ local_file_dest | safe }}" ]; then
 
             # remove existing + create new empty tmp dir
-            rm -rf /data/{{ local_file_dest }}.tmp
-            mkdir -p /data/{{ local_file_dest }}.tmp
+            rm -rf /data/{{ local_file_dest | safe }}.tmp
+            mkdir -p /data/{{ local_file_dest | safe }}.tmp
 
-            cd /data/{{ local_file_dest }}.tmp
+            cd /data/{{ local_file_dest | safe }}.tmp
 
-            echo "Downloading from {{ remote_file_path }}"
+            echo "Downloading from {{ remote_file_path | safe }}"
 
             set -o pipefail
 
-            rclone --config "" cat remote:{{ remote_file_path }} | tar xzf -
+            rclone --config "" cat remote:{{ remote_file_path | safe }} | tar xzf -
 
             # move to final dest only if tar extract succeeds
-            mv /data/{{ local_file_dest }}.tmp /data/{{ local_file_dest }}
+            mv /data/{{ local_file_dest | safe }}.tmp /data/{{ local_file_dest | safe }}
 
-            echo "Downloaded to /data/{{ local_file_dest }} successfully!"
+            echo "Downloaded to /data/{{ local_file_dest | safe }} successfully!"
           else
-            echo "/data/{{ local_file_dest }} already present (likely pod restarted), not overwriting"
+            echo "/data/{{ local_file_dest | safe }} already present (likely pod restarted), not overwriting"
           fi
 
         {% else %}
-          rclone --config "" copyto remote:{{ remote_file_path }} /data/{{ local_file_dest }}
+          rclone --config "" copyto remote:{{ remote_file_path | safe }} /data/{{ local_file_dest | safe }}
 
         {% endif %}
       volumeMounts: *rclone_volumes

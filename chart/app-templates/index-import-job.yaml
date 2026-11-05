@@ -100,7 +100,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ crawler_liveness_port }}
+              port: {{ crawler_liveness_port | int }}
 
             initialDelaySeconds: 15
             periodSeconds: 120

@@ -17,9 +17,9 @@ spec:
 
   securityContext:
     runAsNonRoot: true
-    runAsUser: {{ crawler_uid}}
-    runAsGroup: {{ crawler_gid}}
-    fsGroup: {{ crawler_fsgroup }}
+    runAsUser: {{ crawler_uid | int }}
+    runAsGroup: {{ crawler_gid | int }}
+    fsGroup: {{ crawler_fsgroup | int }}
 
   volumes:
     - name: tmpdir
@@ -144,11 +144,11 @@ spec:
 
       resources:
         limits:
-          memory: "{{ memory_limit }}"
+          memory: "{{ memory_limit | safe }}"
 
         requests:
-          cpu: "{{ profile_cpu }}"
-          memory: "{{ profile_memory }}"
+          cpu: "{{ profile_cpu | safe }}"
+          memory: "{{ profile_memory | safe }}"
 
       securityContext:
         allowPrivilegeEscalation: false

@@ -56,9 +56,9 @@ spec:
 
   securityContext:
     runAsNonRoot: true
-    runAsUser: {{ crawler_uid }}
-    runAsGroup: {{ crawler_gid }}
-    fsGroup: {{ crawler_fsgroup }}
+    runAsUser: {{ crawler_uid | int }}
+    runAsGroup: {{ crawler_gid | int }}
+    fsGroup: {{ crawler_fsgroup | int }}
 
   terminationGracePeriodSeconds: {{ termination_grace_secs }}
   volumes:
@@ -237,17 +237,17 @@ spec:
 
       resources:
         limits:
-          memory: "{{ memory_limit }}"
+          memory: "{{ memory_limit | safe }}"
 
         requests:
-          cpu: "{{ cpu }}"
-          memory: "{{ memory }}"
+          cpu: "{{ cpu | safe }}"
+          memory: "{{ memory | safe }}"
 
       {% if crawler_liveness_port and crawler_liveness_port != '0' %}
       livenessProbe:
         httpGet:
           path: /healthz
-          port: {{ crawler_liveness_port }}
+          port: {{ crawler_liveness_port | int }}
 
         initialDelaySeconds: 15
         periodSeconds: 120
