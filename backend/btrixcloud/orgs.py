@@ -1044,7 +1044,10 @@ class OrgOps(BaseOrgs):
             return
 
         logger.debug(
-            "crawl_finished_active_to_finished_bytes", oid=oid, crawl_id=crawl_id
+            "crawl_finished_active_to_finished_bytes",
+            oid=oid,
+            crawl_id=crawl_id,
+            size=crawl.fileSize,
         )
 
         await self.orgs.find_one_and_update(
