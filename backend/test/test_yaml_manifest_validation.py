@@ -863,11 +863,10 @@ def test_background_cron_job_schedule_stays_single_scalar_when_it_contains_line_
 @pytest.mark.parametrize("value", LINE_BREAK_VALUES)
 def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(value):
     docs = _render_template(
-        "replica_job.yaml",
+        "replica_bulk_copy_job.yaml",
         {
             "id": value,
-            "oid": value,
-            "job_type": BgJobType.CREATE_REPLICA,
+            "job_type": BgJobType.COPY_REPLICAS,
             "BgJobType": BgJobType,
             "replica_secret_name": value,
             "replica_file_path": value,
@@ -881,8 +880,7 @@ def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(valu
     assert len(docs) == 1
     doc = docs[0]
     assert doc["metadata"]["name"] == value
-    assert doc["metadata"]["labels"]["job_type"] == BgJobType.CREATE_REPLICA.value
-    assert doc["metadata"]["labels"]["btrix.org"] == value
+    assert doc["metadata"]["labels"]["job_type"] == BgJobType.COPY_REPLICAS.value
 
     container = doc["spec"]["template"]["spec"]["containers"][0]
     env = _env(container)
@@ -897,9 +895,8 @@ def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(valu
     assert container["command"] == [
         "rclone",
         "-vv",
-        "copyto",
+        "copy",
         "--checksum",
-        "--error-on-no-transfer",
         "primary:" + value,
         "replica:" + value,
     ]
