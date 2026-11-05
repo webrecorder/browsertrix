@@ -2,7 +2,6 @@ import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import clsx, { type ClassValue } from "clsx";
-import { getReasonPhrase } from "http-status-codes";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { cache } from "lit/directives/cache.js";
@@ -17,6 +16,7 @@ import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
 import { missingDependenciesPanel } from "./templates/missing-dependencies-panel";
+import { pageHttpStatusBadge } from "./templates/page-http-status-badge";
 import {
   DEFAULT_SORT_BY,
   pageListSortControl,
@@ -1169,30 +1169,9 @@ export class ArchivedItemDetail extends BtrixElement {
       html`<div class="size-full flex items-center justify-center p-5">
         <sl-spinner class="text-xl"></sl-spinner>
       </div>`;
-    const row = (item: ArchivedItemPage) =>
-      html`<li>
-        <button
-          class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
-          aria-selected="${this.replayPage.value.url === item.url}"
-          @click=${() => this.navigateReplayEmbed(item)}
-        >
-          <div class="truncate leading-5 pointer-events-none">
-            ${item.title
-              ? html`<strong class="font-medium">${item.title}</strong>`
-              : html`<span class="opacity-50">${msg("No page title")}</span>`}
-          </div>
-          <btrix-code
-            class="block flex-1 overflow-hidden text-xs pointer-events-none"
-            language="url"
-            value=${item.url}
-            noWrap
-            truncate
-          ></btrix-code>
-        </button>
-      </li>`;
     const pageList = ({ items }: APIPaginatedList<ArchivedItemPage>) =>
       html`<ul class="divide-y flex-1">
-        ${repeat(items, ({ id }) => id, row)}
+        ${repeat(items, ({ id }) => id, this.renderPageListSidebarRow)}
       </ul>`;
 
     const pages = this.pagesTask.value;
@@ -1233,6 +1212,66 @@ export class ArchivedItemDetail extends BtrixElement {
     </div>`;
   }
 
+  private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
+    const none = html`<span class="opacity-50">${stringFor.none}</span>`;
+
+    return html`<li>
+      <btrix-popover
+        class="part-[body]:w-64"
+        placement="left"
+        trigger="hover"
+        hoist
+      >
+        <btrix-desc-list slot="content">
+          <btrix-desc-list-item label=${msg("Page Title")}>
+            ${page.title
+              ? html`
+                  <div class="font-sans leading-relaxed text-neutral-600">
+                    ${page.title}
+                  </div>
+                `
+              : none}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Page URL")}>
+            ${page.url
+              ? html`<btrix-code language="url" value=${page.url}></btrix-code>`
+              : none}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("HTTP Status")}>
+            ${pageHttpStatusBadge(page.status)}
+          </btrix-desc-list-item>
+          <btrix-desc-list-item label=${msg("Snapshot Date")}>
+            ${page.ts
+              ? this.localize.date(page.ts, {
+                  dateStyle: "short",
+                  timeStyle: "long",
+                })
+              : stringFor.unknown}
+          </btrix-desc-list-item>
+        </btrix-desc-list>
+
+        <button
+          class="w-full text-left transition-all aria-selected:bg-cyan-50 py-1.5 px-3 hover:bg-cyan-50/50"
+          aria-selected="${this.replayPage.value.url === page.url}"
+          @click=${() => this.navigateReplayEmbed(page)}
+        >
+          <div class="truncate leading-5 pointer-events-none">
+            ${page.title
+              ? html`<strong class="font-medium">${page.title}</strong>`
+              : html`<span class="opacity-50">${msg("No page title")}</span>`}
+          </div>
+          <btrix-code
+            class="block flex-1 overflow-hidden text-xs pointer-events-none"
+            language="url"
+            value=${page.url}
+            noWrap
+            truncate
+          ></btrix-code>
+        </button>
+      </btrix-popover>
+    </li>`;
+  };
+
   private renderPageListTable() {
     const pages = this.pagesTask.value;
     const row = (item: ArchivedItemPage) =>
@@ -1258,15 +1297,7 @@ export class ArchivedItemDetail extends BtrixElement {
             noWrap
             truncate
           ></btrix-code>
-          ${item.status
-            ? html`<btrix-badge
-                variant=${item.status === 200 ? "success" : "danger"}
-                outline
-                >${item.status} ${getReasonPhrase(item.status)}</btrix-badge
-              >`
-            : html`<btrix-badge variant="neutral" outline
-                >${stringFor.unknown}</btrix-badge
-              >`}
+          ${pageHttpStatusBadge(item.status)}
         </btrix-table-cell>
         <btrix-table-cell class="whitespace-nowrap"
           >${item.ts
