@@ -60,7 +60,7 @@ spec:
     runAsGroup: {{ crawler_gid | int }}
     fsGroup: {{ crawler_fsgroup | int }}
 
-  terminationGracePeriodSeconds: {{ termination_grace_secs }}
+  terminationGracePeriodSeconds: {{ termination_grace_secs | int }}
   volumes:
     - name: crawl-config
       configMap:

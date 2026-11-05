@@ -631,7 +631,7 @@ def test_crawler_values_stay_single_scalars_when_they_contain_line_breaks(value)
             "crawler_uid": 1000,
             "crawler_gid": 1000,
             "crawler_fsgroup": 1000,
-            "termination_grace_secs": 600,
+            "termination_grace_secs": "600",
             "storage": "1Gi",
             "volume_storage_class": "standard",
             "priorityClassName": value,
@@ -672,6 +672,7 @@ def test_crawler_values_stay_single_scalars_when_they_contain_line_breaks(value)
     assert pod["metadata"]["labels"]["crawl"] == value
     assert pod["spec"]["hostname"] == value
     assert pod["spec"]["priorityClassName"] == value
+    assert pod["spec"]["terminationGracePeriodSeconds"] == 600
 
     node_terms = pod["spec"]["affinity"]["nodeAffinity"][
         "requiredDuringSchedulingIgnoredDuringExecution"
