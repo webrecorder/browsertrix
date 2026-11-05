@@ -545,6 +545,9 @@ class BaseCrawlOps:
             },
         )
         if deleted_file_size != 0:
+            logger.debug(
+                "crawl_failed_removing_from_org_active_bytes", size=deleted_file_size
+            )
             await self.orgs.inc_org_bytes_stored(
                 oid, -deleted_file_size, "crawl", active_crawl=True
             )

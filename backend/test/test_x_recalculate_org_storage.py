@@ -24,7 +24,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     for crawl in data["items"]:
         simplified_crawls.append(
             {
-                "id": crawl.get("_id"),
+                "id": crawl.get("id"),
                 "state": crawl.get("state"),
                 "finished": crawl.get("finished"),
                 "fileSize": crawl.get("fileSize"),
@@ -83,7 +83,7 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     for crawl in data["items"]:
         simplified_crawls.append(
             {
-                "id": crawl.get("_id"),
+                "id": crawl.get("id"),
                 "state": crawl.get("state"),
                 "finished": crawl.get("finished"),
                 "fileSize": crawl.get("fileSize"),

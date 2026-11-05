@@ -1043,7 +1043,7 @@ class OrgOps(BaseOrgs):
         if not crawl.fileSize > 0:
             return
 
-        logger.info(
+        logger.debug(
             "crawl_finished_active_to_finished_bytes", oid=oid, crawl_id=crawl_id
         )
 
