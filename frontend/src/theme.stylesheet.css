@@ -23,9 +23,6 @@
     --font-monospace-variation: "MONO" 1, "CASL" 0, "slnt" 0, "CRSV" 0;
     --font-size-base: 1rem;
 
-    /* Custom screen widths */
-    --btrix-screen-desktop: 82.5rem; /* Should match tailwind.config.screens.desktop */
-
     /* Offset toast notification stack */
     --btrix-toast-stack-offset: 0;
 
@@ -37,6 +34,7 @@
 
     /* Layout */
     --btrix-page-width: 82.5rem; /* 14 4.5rem columns with 1.5rem gutter (1320px) */
+    --btrix-page-extra-width: 96.5rem; /* 14 5.5rem columns with 1.5rem gutter (1544px) */
     --btrix-user-guide-width: 31rem;
     --btrix-full-without-user-guide-width: calc(
       100vw - var(--btrix-user-guide-width)

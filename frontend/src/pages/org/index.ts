@@ -363,7 +363,9 @@ export class Org extends BtrixElement {
   }
 
   render() {
-    const noMaxWidth = (this.params as OrgParams["workflows"]).qaTab;
+    const extraWidth =
+      (this.orgTab === OrgTab.Items || this.orgTab === OrgTab.Workflows) &&
+      (this.params as OrgParams["items"]).itemId;
 
     return html`
       <btrix-document-title
@@ -378,12 +380,15 @@ export class Org extends BtrixElement {
         ${this.renderOrgNavBar()}
         <main
           class=${clsx(
-            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-10 lg:pb-10`,
-            !noMaxWidth && [
-              this.appState.userGuideOpen
-                ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
-                : tw`mx-auto max-w-screen-desktop`,
-            ],
+            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-9 lg:pb-10`,
+            this.appState.userGuideOpen
+              ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
+              : [
+                  tw`mx-auto`,
+                  extraWidth
+                    ? tw`max-w-[--btrix-page-extra-width]`
+                    : tw`max-w-screen-desktop`,
+                ],
           )}
           aria-labelledby="${this.orgTab}-tab"
         >

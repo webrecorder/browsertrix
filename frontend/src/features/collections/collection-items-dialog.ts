@@ -331,7 +331,7 @@ export class CollectionItemsDialog extends BtrixElement {
   render() {
     return html` <btrix-dialog
       ?open=${this.open}
-      class="${dialogClassesForHeader} [--body-spacing:0] [--width:calc(var(--btrix-screen-desktop)-3.5rem)]"
+      class="${dialogClassesForHeader} [--body-spacing:0] [--width:calc(var(--btrix-page-width)-3.5rem)]"
       @sl-show=${() => (this.isReady = true)}
       @sl-after-hide=${() => this.reset()}
     >
