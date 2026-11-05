@@ -1,14 +1,15 @@
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
+import type { SlChangeEvent, SlRadioGroup } from "@shoelace-style/shoelace";
 import clsx, { type ClassValue } from "clsx";
+import { getReasonPhrase } from "http-status-codes";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { cache } from "lit/directives/cache.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
-
-import { type Page } from "../archived-item-qa/types";
 
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
@@ -19,6 +20,7 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -31,6 +33,7 @@ import {
 import { panelBody } from "@/layouts/panel";
 import { Tab as CollectionTab } from "@/pages/org/collection-detail/types";
 import { CommonTab, OrgTab, WorkflowTab } from "@/routes";
+import { stringFor } from "@/strings/ui";
 import {
   APIErrorDetail,
   type APIPaginatedList,
@@ -39,6 +42,7 @@ import {
 } from "@/types/api";
 import type {
   ArchivedItem,
+  ArchivedItemPage,
   Crawl,
   CrawlReplay,
   Seed,
@@ -79,9 +83,14 @@ const SECTIONS = [
 ] as const;
 type SectionName = (typeof SECTIONS)[number];
 
+enum ReplayView {
+  Sidebar = "sidebar",
+  Stacked = "stacked",
+}
+const DEFAULT_REPLAY_VIEW = ReplayView.Stacked;
+const PAGE_LIST_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 5;
 const DEPENDENCY_PAGE_SIZE = 20;
-const PAGE_LIST_PAGE_SIZE = 10;
 
 export type { SectionName as ArchivedItemSectionName };
 
@@ -148,6 +157,24 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @state()
   private missingDependenciesOpen = false;
+
+  private readonly replayView = new SearchParamsValue<ReplayView | undefined>(
+    this,
+    (value, params) => {
+      const key = "replayView";
+      if (!value || value === DEFAULT_REPLAY_VIEW) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+      return params;
+    },
+    (params) => {
+      return (
+        (params.get("replayView") as ReplayView | null) ?? DEFAULT_REPLAY_VIEW
+      );
+    },
+  );
 
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
@@ -255,7 +282,7 @@ export class ArchivedItemDetail extends BtrixElement {
     task: async ([itemId, page], { signal }) => {
       if (!itemId) throw "itemId required";
 
-      const queryData: APISortQuery<Page> & APIPaginationQuery = {
+      const queryData: APISortQuery<ArchivedItemPage> & APIPaginationQuery = {
         sortBy: "ts",
         sortDirection: SortDirection.Descending,
         page,
@@ -264,7 +291,7 @@ export class ArchivedItemDetail extends BtrixElement {
 
       const query = queryString.stringify(queryData);
 
-      return this.api.fetch<APIPaginatedList<Page>>(
+      return this.api.fetch<APIPaginatedList<ArchivedItemPage>>(
         `/orgs/${this.orgId}/all-crawls/${this.itemId}/pages?${query}`,
         { signal },
       );
@@ -453,12 +480,67 @@ export class ArchivedItemDetail extends BtrixElement {
         );
         break;
       }
-      case "replay":
+      case "replay": {
+        if (this.hasFiles) {
+          const sidebarView = this.replayView.value === ReplayView.Sidebar;
+          const viewControls = this.renderReplayViewControls();
+
+          sectionContent = html`<div
+            class=${clsx(
+              tw`relative flex gap-3 [--sidebar-view-height:calc(100svh-3.5rem)]`,
+              sidebarView ? tw`flex-row` : tw`flex-col`,
+            )}
+          >
+            <div class="flex-1">
+              ${this.renderPanel(
+                html`${this.renderTitle(msg("Replay"))}
+                ${sidebarView ? nothing : viewControls}`,
+                this.renderRWP(),
+                [
+                  tw`overflow-hidden rounded-lg border`,
+                  sidebarView
+                    ? tw`h-[--sidebar-view-height]`
+                    : tw`aspect-video`,
+                ],
+              )}
+            </div>
+            <div
+              class=${clsx(
+                sidebarView &&
+                  tw`absolute right-1.5 top-1.5 w-80 @3xl/content:relative @3xl/content:right-0 @3xl/content:top-0`,
+              )}
+            >
+              ${this.renderPanel(
+                html`${this.renderTitle(msg("Pages"), undefined, [
+                  sidebarView &&
+                    tw`pointer-events-none invisible @3xl/content:pointer-events-auto @3xl/content:visible`,
+                ])}
+                ${sidebarView ? viewControls : nothing}`,
+                html`${this.renderPageListControls()}
+                ${cache(
+                  sidebarView
+                    ? this.renderPageListSidebar()
+                    : this.renderPageListTable(),
+                )}`,
+                [
+                  sidebarView &&
+                    tw`flex max-h-[--sidebar-view-height] flex-col shadow-lg @3xl/content:shadow-none`,
+                ],
+              )}
+            </div>
+          </div>`;
+          break;
+        }
+
         sectionContent = this.renderPanel(
-          this.tabLabels.replay,
-          html` ${missingDepsNotice} ${this.renderReplay()} `,
+          msg("Replay"),
+          html`<p class="p-4 text-sm text-neutral-400">
+            ${msg("No files to replay.")}
+          </p>`,
         );
+
         break;
+      }
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
@@ -587,11 +669,15 @@ export class ArchivedItemDetail extends BtrixElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block">
+            <div
+              class="-mx-3 box-border flex overflow-x-auto px-3 md:block sticky top-0 h-min"
+            >
               ${this.renderNav()}
             </div>
           </div>
-          <div class="col-span-14 min-w-0 md:col-span-11 @container/content">
+          <div
+            class="col-span-14 min-w-0 md:col-span-11 @container/content scroll-mt-2"
+          >
             ${sectionContent}
           </div>
         </section>
@@ -734,7 +820,7 @@ export class ArchivedItemDetail extends BtrixElement {
     };
     return html`
       <nav
-        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
+        class="-mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -930,8 +1016,9 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderTitle(
     title: string | TemplateResult,
     { beta } = { beta: false },
+    classes: ClassValue[] = [],
   ) {
-    return html`<div class="flex items-center gap-2">
+    return html`<div class=${clsx(tw`flex items-center gap-2`, classes)}>
       <h2 class="text-lg font-medium leading-8">
         ${title}
         ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
@@ -955,101 +1042,88 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderReplay() {
-    return html`
-      <div
-        class="flex flex-col divide-y @4xl/content:divide-y-0 @4xl/content:divide-x border rounded-lg overflow-hidden @4xl/content:flex-row"
-      >
-        <div class="flex-1">${this.renderRWP()}</div>
-        <div class="@4xl/content:w-80">${this.renderPageList()}</div>
-      </div>
-    `;
-  }
-
   private renderRWP() {
     if (!this.item) return;
 
     const query = queryString.stringify({ withDependencies: true });
     const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?${query}`;
-
     const headers = this.authState?.headers;
-
     const config = JSON.stringify({ headers });
 
-    const canReplay = this.hasFiles;
-
-    return html`
-      <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-      ${
-        canReplay
-          ? html`<div
-              id="replay-crawl"
-              class="@4xl/content:h-full @4xl/content:min-h-[calc(100vh-3.125rem)] aspect-4/3 @4xl/content:aspect-auto overflow-hidden"
-            >
-              <replay-web-page
-                source="${replaySource}"
-                url="${this.item.firstSeed || ""}"
-                coll="${ifDefined(this.item.id)}"
-                config="${config}"
-                replayBase="/replay/"
-                noSandbox="true"
-                noCache="true"
-                @rwp-url-change=${() => {
-                  if (this.itemType === "crawl") {
-                    completeOnboardingStep(OnboardingStep.ReplayItem);
-                  }
-                }}
-              ></replay-web-page>
-            </div>`
-          : html`
-              <p class="p-4 text-sm text-neutral-400">
-                ${msg("No files to replay.")}
-              </p>
-            `
-      }
-      </div>
-    `;
+    return html`<replay-web-page
+      source="${replaySource}"
+      url="${this.item.firstSeed || ""}"
+      coll="${ifDefined(this.item.id)}"
+      config="${config}"
+      replayBase="/replay/"
+      noSandbox="true"
+      noCache="true"
+      @rwp-url-change=${() => {
+        if (this.itemType === "crawl") {
+          completeOnboardingStep(OnboardingStep.ReplayItem);
+        }
+      }}
+    ></replay-web-page>`;
   }
 
-  private renderPageList() {
-    if (!this.item) return;
+  private renderPageListControls() {
+    return html` <div
+      class="rounded-lg bg-neutral-50 border p-2 text-neutral-500 flex items-center gap-2 justify-between flex-wrap"
+    >
+      <div class="flex items-center gap-4">
+        <div class="flex gap-2 items-center whitespace-nowrap">
+          ${msg("Filter by:")}
+          <btrix-filter-chip>${msg("URL")}</btrix-filter-chip>
+        </div>
+      </div>
+      <div class="flex gap-2 items-center whitespace-nowrap">
+        ${msg("Sort by:")}
+        <sl-select size="small" pill></sl-select>
+      </div>
+    </div>`;
+  }
 
+  private renderPageListSidebar() {
     const loading = () =>
       html`<div class="size-full flex items-center justify-center p-5">
         <sl-spinner class="text-xl"></sl-spinner>
       </div>`;
-    const pageList = ({ items }: APIPaginatedList<Page>) => {
-      return items.map(
-        (item) =>
-          html`<li class="not-last:outline">
-            <button
-              class="w-full text-left transition-all aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none py-1.5 px-3 hover:bg-cyan-50/50"
-            >
-              <div class="truncate leading-5">
-                ${item.title
-                  ? html`<strong class="font-semibold">${item.title}</strong>`
-                  : html`<span class="opacity-50"
-                      >${msg("No page title")}</span
-                    >`}
-              </div>
-              <div class="truncate text-xs leading-4 text-cyan-600">
-                ${item.url}
-              </div>
-            </button>
-          </li>`,
-      );
+    const pageList = ({ items }: APIPaginatedList<ArchivedItemPage>) => {
+      return html`<ul class="divide-y flex-1">
+        ${items.map(
+          (item) =>
+            html`<li class="not-last:outline">
+              <button
+                class="w-full text-left transition-all aria-selected:border-cyan-500 aria-selected:bg-cyan-50 aria-selected:shadow aria-selected:shadow-cyan-800/20 aria-selected:transition-none py-1.5 px-3 hover:bg-cyan-50/50"
+              >
+                <div class="truncate leading-5">
+                  ${item.title
+                    ? html`<strong class="font-semibold">${item.title}</strong>`
+                    : html`<span class="opacity-50"
+                        >${msg("No page title")}</span
+                      >`}
+                </div>
+                <div class="truncate text-xs leading-4 text-cyan-600">
+                  ${item.url}
+                </div>
+              </button>
+            </li>`,
+        )}
+      </ul>`;
     };
 
     const pages = this.pagesTask.value;
 
-    return html`<div class="flex flex-col h-full">
-      <ul class="divide-y flex-1">
+    return html`<div
+      class="flex flex-1 flex-col border rounded-lg overflow-hidden bg-white mt-3"
+    >
+      <div class="overflow-auto flex-1">
         ${this.pagesTask.render({
           initial: loading,
           pending: () => (pages ? pageList(pages) : loading()),
           complete: pageList,
         })}
-      </ul>
+      </div>
       ${when(
         pages?.total &&
           (pages.page > 1 || pages.total > pages.pageSize) &&
@@ -1071,6 +1145,104 @@ export class ArchivedItemDetail extends BtrixElement {
           </footer>`,
       )}
     </div>`;
+  }
+
+  private renderPageListTable() {
+    const pages = this.pagesTask.value;
+    const row = (item: ArchivedItemPage) =>
+      html`<btrix-table-row
+        class="transition-colors duration-fast hover:bg-cyan-50/50 first:rounded-t border-t last:border-b last:rounded-b bg-white border-x"
+      >
+        <btrix-table-cell class="overflow-hidden"
+          >${item.title
+            ? html`<span class="truncate">${item.title}</span>`
+            : html`<span class="opacity-50"
+                >${msg("No page title")}</span
+              >`}</btrix-table-cell
+        >
+        <btrix-table-cell class="overflow-hidden items-center gap-2">
+          <btrix-code
+            class="block flex-1 overflow-hidden"
+            language="url"
+            value=${item.url}
+            noWrap
+            truncate
+          ></btrix-code>
+          ${item.status
+            ? html`<btrix-badge
+                variant=${item.status === 200 ? "success" : "danger"}
+                outline
+                >${item.status} ${getReasonPhrase(item.status)}</btrix-badge
+              >`
+            : html`<btrix-badge variant="neutral" outline
+                >${stringFor.unknown}</btrix-badge
+              >`}
+        </btrix-table-cell>
+        <btrix-table-cell class="whitespace-nowrap"
+          >${item.ts
+            ? this.localize.date(item.ts, {
+                month: "2-digit",
+                day: "2-digit",
+                year: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })
+            : html`<span class="opacity-50"
+                >${stringFor.unknown}</span
+              >`}</btrix-table-cell
+        >
+        <btrix-table-cell>
+          <sl-icon-button class="text-base" name="play-btn"></sl-icon-button>
+          <sl-icon-button
+            class="text-base"
+            name="clipboard2-data"
+          ></sl-icon-button>
+        </btrix-table-cell>
+      </btrix-table-row>`;
+
+    return html`<btrix-overflow-scroll>
+        <btrix-table
+          class="[--btrix-table-cell-padding-x:--sl-spacing-x-small] [--btrix-table-grid-template-columns:30ch_minmax(30ch,1fr)_11rem_min-content]"
+        >
+          <btrix-table-head
+            class="[--btrix-table-cell-padding-bottom:var(--sl-spacing-2x-small)]"
+          >
+            <btrix-table-header-cell>
+              ${msg("Page Title")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>
+              ${msg("Page URL")}
+            </btrix-table-header-cell>
+            <btrix-table-header-cell>${msg("Date")}</btrix-table-header-cell>
+            <btrix-table-header-cell>
+              <span class="sr-only">${msg("Actions")}</span>
+            </btrix-table-header-cell>
+          </btrix-table-head>
+          <btrix-table-body> ${pages?.items.map(row)} </btrix-table-body>
+        </btrix-table>
+      </btrix-overflow-scroll>
+
+      ${when(
+        pages?.total &&
+          (pages.page > 1 || pages.total > pages.pageSize) &&
+          pages,
+        ({ page, total, pageSize }) =>
+          html`<footer class="p-3 flex justify-center">
+            <btrix-pagination
+              name="replayPage"
+              page=${page}
+              totalCount=${total}
+              size=${pageSize}
+              compact
+              @page-change=${async (e: PageChangeEvent) => {
+                await this.pagesTask.run([this.itemId, e.detail.page]);
+                this.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+            </btrix-pagination>
+          </footer>`,
+      )} `;
   }
 
   private renderOverview() {
@@ -1578,6 +1750,38 @@ export class ArchivedItemDetail extends BtrixElement {
         </div>
       </btrix-dialog>
     `;
+  };
+
+  private readonly renderReplayViewControls = () => {
+    return html`<label class="flex gap-2 items-center text-neutral-500">
+      ${msg("View:")}
+      <sl-radio-group
+        value=${ifDefined(this.replayView.value)}
+        size="small"
+        @sl-change=${(e: SlChangeEvent) => {
+          this.replayView.setValue(
+            (e.target as SlRadioGroup).value as ReplayView,
+          );
+        }}
+      >
+        <sl-tooltip content=${msg("View Pages Below Replay")}>
+          <sl-radio-button pill value=${ReplayView.Stacked}>
+            <sl-icon
+              name="window-desktop"
+              label=${msg("Below Replay")}
+            ></sl-icon>
+          </sl-radio-button>
+        </sl-tooltip>
+        <sl-tooltip content=${msg("View Pages to Side")}>
+          <sl-radio-button pill value=${ReplayView.Sidebar}>
+            <sl-icon
+              name="layout-sidebar-inset-reverse"
+              label=${msg("Side of Replay")}
+            ></sl-icon>
+          </sl-radio-button>
+        </sl-tooltip>
+      </sl-radio-group>
+    </label>`;
   };
 
   private readonly renderLoading = () =>
