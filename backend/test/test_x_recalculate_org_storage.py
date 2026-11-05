@@ -12,6 +12,27 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 def test_recalculate_org_storage(admin_auth_headers, default_org_id):
     """Prior to deleting org, ensure recalculating storage works as expected"""
 
+    # Baseline - log current state of crawls in org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawls?sortBy=finished&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    simplified_crawls = []
+    for crawl in data["items"]:
+        simplified_crawls.append(
+            {
+                "id": crawl.get("_id"),
+                "state": crawl.get("state"),
+                "finished": crawl.get("finished"),
+                "fileSize": crawl.get("fileSize"),
+            }
+        )
+
+    logger.info("crawls_initial", crawls=simplified_crawls)
+
     # First, wait for all crawls to complete
     max_attempts = 18
     attempts = 1
@@ -49,6 +70,27 @@ def test_recalculate_org_storage(admin_auth_headers, default_org_id):
 
     # Give post-crawl tasks a little time
     time.sleep(30)
+
+    # Log current state of crawls in org after stopping
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawls?sortBy=finished&sortDirection=-1",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    simplified_crawls = []
+    for crawl in data["items"]:
+        simplified_crawls.append(
+            {
+                "id": crawl.get("_id"),
+                "state": crawl.get("state"),
+                "finished": crawl.get("finished"),
+                "fileSize": crawl.get("fileSize"),
+            }
+        )
+
+    logger.info("crawls_after_stopping", crawls=simplified_crawls)
 
     # Get our baseline values pre-recalculation
     r = requests.get(

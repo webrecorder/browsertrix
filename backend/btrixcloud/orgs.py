@@ -1042,6 +1042,11 @@ class OrgOps(BaseOrgs):
         crawl = await self.base_crawl_ops.get_base_crawl(crawl_id)
         if not crawl.fileSize > 0:
             return
+
+        logger.info(
+            "crawl_finished_active_to_finished_bytes", oid=oid, crawl_id=crawl_id
+        )
+
         await self.orgs.find_one_and_update(
             {"_id": oid},
             {
