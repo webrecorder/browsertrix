@@ -1,18 +1,18 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "{{ id }}"
+  name: {{ id | tojson }}
   labels:
     role: "cron-background-job"
-    job_type: {{ job_type }}
-    btrix.org: {{ oid }}
+    job_type: {{ job_type | tojson }}
+    btrix.org: {{ oid | tojson }}
 
 spec:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 2
 
-  schedule: "{{ schedule }}"
+  schedule: {{ schedule | tojson }}
 
   jobTemplate:
     metadata:
@@ -20,9 +20,9 @@ spec:
         - metacontroller.io/decoratorcontroller-background-job-operator
       labels:
         role: "background-job"
-        job_type: {{ job_type }}
-        job_id: {{ id }}
-        btrix.org: {{ oid }}
+        job_type: {{ job_type | tojson }}
+        job_id: {{ id | tojson }}
+        btrix.org: {{ oid | tojson }}
 
     spec:
       template:
@@ -49,31 +49,31 @@ spec:
               - name: RCLONE_CONFIG_REPLICA_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
-                    name: "{{ replica_secret_name }}"
+                    name: {{ replica_secret_name | tojson }}
                     key: STORE_ACCESS_KEY
 
               - name: RCLONE_CONFIG_REPLICA_SECRET_ACCESS_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: "{{ replica_secret_name }}"
+                    name: {{ replica_secret_name | tojson }}
                     key: STORE_SECRET_KEY
 
               - name: RCLONE_CONFIG_REPLICA_REGION
                 valueFrom:
                   secretKeyRef:
-                    name: "{{ replica_secret_name }}"
+                    name: {{ replica_secret_name | tojson }}
                     key: STORE_REGION
 
               - name: RCLONE_CONFIG_REPLICA_PROVIDER
                 valueFrom:
                   secretKeyRef:
-                    name: "{{ replica_secret_name }}"
+                    name: {{ replica_secret_name | tojson }}
                     key: STORE_S3_PROVIDER
 
               - name: RCLONE_CONFIG_REPLICA_ENDPOINT
-                value: "{{ replica_endpoint }}"
+                value: {{ replica_endpoint | tojson }}
 
-              command: ["rclone", "-vv", "delete", "replica:{{ replica_file_path }}"]
+              command: ["rclone", "-vv", "delete", {{ ("replica:" ~ replica_file_path) | tojson }}]
 
               resources:
                 limits:

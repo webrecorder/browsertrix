@@ -1,51 +1,51 @@
 apiVersion: btrix.cloud/v1
 kind: CrawlJob
 metadata:
-  name: crawljob-{{ id }}
+  name: {{ ("crawljob-" ~ id) | tojson }}
   finalizers:
     - metacontroller.io/compositecontroller-crawljobs-operator
   labels:
-    crawl: "{{ id }}"
+    crawl: {{ id | tojson }}
     role: {{ "qa-job" if qa_source else "job" }}
-    btrix.org: "{{ oid }}"
-    btrix.user: "{{ userid }}"
-    btrix.storage: "{{ storage_name }}"
-    btrix.crawlconfig: "{{ cid }}"
-    dedupe_coll_id: "{{ dedupe_coll_id }}"
+    btrix.org: {{ oid | tojson }}
+    btrix.user: {{ userid | tojson }}
+    btrix.storage: {{ storage_name | tojson }}
+    btrix.crawlconfig: {{ cid | tojson }}
+    dedupe_coll_id: {{ dedupe_coll_id | tojson }}
 
 spec:
   selector:
     matchLabels:
-      crawl: "{{ id }}"
+      crawl: {{ id | tojson }}
 
-  id: "{{ id }}"
-  userid: "{{ userid }}"
-  cid: "{{ cid }}"
-  oid: "{{ oid }}"
+  id: {{ id | tojson }}
+  userid: {{ userid | tojson }}
+  cid: {{ cid | tojson }}
+  oid: {{ oid | tojson }}
   scale: {{ scale }}
   browserWindows: {{ browser_windows }}
 
-  profile_filename: "{{ profile_filename }}"
+  profile_filename: {{ profile_filename | tojson }}
   profileId: {{ profileid | tojson }}
   storage_filename: {{ storage_filename | tojson }}
 
   maxCrawlSize: {{ max_crawl_size if not qa_source else 0 }}
   timeout: {{ timeout if not qa_source else 0 }}
-  qaSourceCrawlId: "{{ qa_source }}"
+  qaSourceCrawlId: {{ qa_source | tojson }}
 
   manual: {{ manual }}
   crawlerChannel: {{ crawler_channel | tojson }}
   ttlSecondsAfterFinished: {{ 30 if not qa_source else 0 }}
-  warcPrefix: "{{ warc_prefix }}"
+  warcPrefix: {{ warc_prefix | tojson }}
 
-  storageName: "{{ storage_name }}"
+  storageName: {{ storage_name | tojson }}
 
   proxyId: {{ proxy_id | tojson }}
 
   dedupeCollId: {{ dedupe_coll_id | tojson }}
 
-  pausedAt: "{{ pausedAt }}"
+  pausedAt: {{ (pausedAt or "") | tojson }}
 
-  isSinglePage: "{{ is_single_page }}"
+  isSinglePage: {{ is_single_page | tojson }}
 
-  seedFileId: "{{ seed_file_id }}"
+  seedFileId: {{ (seed_file_id or "") | tojson }}
