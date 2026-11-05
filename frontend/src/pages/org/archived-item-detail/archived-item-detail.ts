@@ -547,6 +547,10 @@ export class ArchivedItemDetail extends BtrixElement {
         if (this.hasFiles) {
           const sidebarView = this.replayView.value === ReplayView.Sidebar;
           const viewControls = this.renderReplayViewControls();
+          const pagesLoaded = this.pagesTask.value;
+          const singlePage =
+            (pagesLoaded && pagesLoaded.total === 1) ||
+            (this.item && this.item.pageCount === 1);
 
           sectionContent = html`<div
             class=${clsx(
@@ -574,12 +578,18 @@ export class ArchivedItemDetail extends BtrixElement {
               )}
             >
               ${this.renderPanel(
-                html`${this.renderTitle(msg("Pages"), undefined, [
-                  sidebarView &&
-                    tw`pointer-events-none invisible @3xl/content:pointer-events-auto @3xl/content:visible`,
-                ])}
+                html`${this.renderTitle(
+                  singlePage ? msg("Page Info") : msg("Pages"),
+                  undefined,
+                  [
+                    sidebarView &&
+                      tw`pointer-events-none invisible @3xl/content:pointer-events-auto @3xl/content:visible`,
+                  ],
+                )}
                 ${sidebarView ? viewControls : nothing}`,
-                html`${this.renderPageListControls()}
+                html`${when(this.pagesTask.value, ({ total }) =>
+                  total === 1 ? nothing : this.renderPageListControls(),
+                )}
                 ${cache(
                   sidebarView
                     ? this.renderPageListSidebar()
@@ -1169,10 +1179,20 @@ export class ArchivedItemDetail extends BtrixElement {
       html`<div class="size-full flex items-center justify-center p-5">
         <sl-spinner class="text-xl"></sl-spinner>
       </div>`;
-    const pageList = ({ items }: APIPaginatedList<ArchivedItemPage>) =>
-      html`<ul class="divide-y flex-1">
+    const pageList = ({ items, total }: APIPaginatedList<ArchivedItemPage>) => {
+      if (total === 1) {
+        const page = items[0];
+
+        return html`<div class="p-2 grid grid-cols-[1fr_auto] gap-3">
+          ${this.renderPageDetails(items[0])}
+          ${this.renderPageListActions(page)}
+        </div>`;
+      }
+
+      return html`<ul class="divide-y flex-1">
         ${repeat(items, ({ id }) => id, this.renderPageListSidebarRow)}
       </ul>`;
+    };
 
     const pages = this.pagesTask.value;
 
@@ -1212,46 +1232,50 @@ export class ArchivedItemDetail extends BtrixElement {
     </div>`;
   }
 
-  private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
+  private readonly renderPageDetails = (page: ArchivedItemPage) => {
     const none = html`<span class="opacity-50">${stringFor.none}</span>`;
 
+    return html`<btrix-desc-list>
+      <btrix-desc-list-item label=${msg("Page Title")}>
+        ${page.title
+          ? html`
+              <div class="font-sans leading-relaxed text-neutral-600">
+                ${page.title}
+              </div>
+            `
+          : none}
+      </btrix-desc-list-item>
+      <btrix-desc-list-item label=${msg("Page URL")}>
+        ${page.url
+          ? html`<btrix-code language="url" value=${page.url}></btrix-code>`
+          : none}
+      </btrix-desc-list-item>
+      <btrix-desc-list-item label=${msg("HTTP Status")}>
+        ${pageHttpStatusBadge(page.status)}
+      </btrix-desc-list-item>
+      <btrix-desc-list-item label=${msg("Snapshot Date")}>
+        ${page.ts
+          ? this.localize.date(page.ts, {
+              dateStyle: "short",
+              timeStyle: "long",
+            })
+          : stringFor.unknown}
+      </btrix-desc-list-item>
+    </btrix-desc-list>`;
+  };
+
+  private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
     return html`<li
-      class="flex overflow-hidden items-center transition-all aria-selected:bg-cyan-50 has-[button:hover]:bg-cyan-50/50"
+      class=${tw`flex items-center overflow-hidden transition-all has-[button:hover]:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
       aria-selected="${this.replayPage.value.url === page.url}"
     >
       <btrix-popover
         class="part-[body]:w-64"
-        placement="left"
+        placement=${this.pagesTask.value?.total === 1 ? "bottom" : "left-start"}
         trigger="hover"
         hoist
       >
-        <btrix-desc-list slot="content">
-          <btrix-desc-list-item label=${msg("Page Title")}>
-            ${page.title
-              ? html`
-                  <div class="font-sans leading-relaxed text-neutral-600">
-                    ${page.title}
-                  </div>
-                `
-              : none}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Page URL")}>
-            ${page.url
-              ? html`<btrix-code language="url" value=${page.url}></btrix-code>`
-              : none}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("HTTP Status")}>
-            ${pageHttpStatusBadge(page.status)}
-          </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Snapshot Date")}>
-            ${page.ts
-              ? this.localize.date(page.ts, {
-                  dateStyle: "short",
-                  timeStyle: "long",
-                })
-              : stringFor.unknown}
-          </btrix-desc-list-item>
-        </btrix-desc-list>
+        <div slot="content">${this.renderPageDetails(page)}</div>
 
         <button
           class="flex-1 block overflow-hidden text-left py-1.5 pl-3 pr-1.5"
@@ -1277,15 +1301,31 @@ export class ArchivedItemDetail extends BtrixElement {
 
   private renderPageListTable() {
     const pages = this.pagesTask.value;
+
+    if (pages?.total === 1) {
+      const page = pages.items[0];
+
+      return html`<div
+        class="border rounded-lg p-3 grid-cols-[1fr_auto] grid gap-3"
+      >
+        ${this.renderPageDetails(page)} ${this.renderPageListActions(page)}
+      </div>`;
+    }
+
     const row = (page: ArchivedItemPage) =>
       html`<btrix-table-row
-        class="transition-colors duration-fast aria-selected:bg-cyan-50 hover:bg-cyan-50/50 first:rounded-t border-t last:border-b last:rounded-b bg-white border-x"
+        class=${tw`border-x border-t bg-white transition-colors duration-fast first:rounded-t last:rounded-b last:border-b hover:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
         aria-selected="${this.replayPage.value.url === page.url}"
       >
         <btrix-table-cell rowClickTarget="button">
           <button
             class="text-left overflow-hidden"
-            @click=${() => this.navigateReplayEmbed(page)}
+            @click=${() => {
+              this.navigateReplayEmbed(page);
+              this.shadowRoot
+                ?.querySelector(".replay-panel")
+                ?.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
           >
             ${page.title
               ? html`<div class="truncate font-medium">${page.title}</div>`
@@ -1408,10 +1448,6 @@ export class ArchivedItemDetail extends BtrixElement {
       // passing it during navigation prevents RWP from re-navigating to the latest timestamp
       page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
     );
-
-    this.shadowRoot
-      ?.querySelector(".replay-panel")
-      ?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
   private renderOverview() {
