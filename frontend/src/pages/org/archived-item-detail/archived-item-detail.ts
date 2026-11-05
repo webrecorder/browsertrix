@@ -106,7 +106,7 @@ enum ReplayView {
   Sidebar = "sidebar",
   Stacked = "stacked",
 }
-const DEFAULT_REPLAY_VIEW = ReplayView.Stacked;
+const DEFAULT_REPLAY_VIEW = ReplayView.Sidebar;
 const PAGE_LIST_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 5;
 const DEPENDENCY_PAGE_SIZE = 20;
@@ -1890,19 +1890,19 @@ export class ArchivedItemDetail extends BtrixElement {
           );
         }}
       >
-        <sl-tooltip content=${msg("View Pages Below Replay")}>
-          <sl-radio-button pill value=${ReplayView.Stacked}>
-            <sl-icon
-              name="window-desktop"
-              label=${msg("Below Replay")}
-            ></sl-icon>
-          </sl-radio-button>
-        </sl-tooltip>
         <sl-tooltip content=${msg("View Pages to Side")}>
           <sl-radio-button pill value=${ReplayView.Sidebar}>
             <sl-icon
               name="layout-sidebar-inset-reverse"
               label=${msg("Side of Replay")}
+            ></sl-icon>
+          </sl-radio-button>
+        </sl-tooltip>
+        <sl-tooltip content=${msg("View Pages Below Replay")}>
+          <sl-radio-button pill value=${ReplayView.Stacked}>
+            <sl-icon
+              name="window-desktop"
+              label=${msg("Below Replay")}
             ></sl-icon>
           </sl-radio-button>
         </sl-tooltip>
