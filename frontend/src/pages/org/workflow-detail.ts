@@ -13,9 +13,9 @@ import { when } from "lit/directives/when.js";
 import omitBy from "lodash/fp/omitBy";
 import isNil from "lodash/isNil";
 import queryString from "query-string";
+import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 
 import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
-import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
@@ -27,7 +27,12 @@ import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type {
+  ReplayPage,
+  ReplayPageListSelectEvent,
+} from "@/features/archived-items/replay-page-list";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
+import { ReplayView } from "@/features/archived-items/templates/page-list-view-control";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
   Action,
@@ -44,6 +49,13 @@ import {
   type APIPaginatedList,
   type APIPaginationQuery,
 } from "@/types/api";
+import type {
+  ArchivedItemPage,
+  Crawl,
+  CrawlLog,
+  Seed,
+  Workflow,
+} from "@/types/crawler";
 import { type CrawlState } from "@/types/crawlState";
 import {
   workflowParamsSchema,
@@ -63,8 +75,14 @@ import {
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
+import { objectSearchParams } from "@/utils/searchParams/object";
 import { tw } from "@/utils/tailwind";
 import {
   isActivelyCrawling,
@@ -72,6 +90,8 @@ import {
   isRunningNotStopping,
   rangeBrowserWindows,
 } from "@/utils/workflow";
+
+import "@/features/archived-items/replay-page-list";
 
 export const EDIT_DIALOG_PARAM_NAME = "editDialog";
 export enum EditDialogValues {
@@ -148,8 +168,16 @@ export class WorkflowDetail extends BtrixElement {
     ),
   };
 
+  private readonly replayPage = new SearchParamsValue<ReplayPage>(
+    this,
+    ...objectSearchParams<ReplayPage>({ keys: ["url", "ts"] }),
+  );
+
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
+
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   // Keep previous values to use when editing
   private readonly prevValues: {
@@ -1828,12 +1856,9 @@ export class WorkflowDetail extends BtrixElement {
             })
           : nothing,
       )}
-
-      <div class="aspect-video overflow-hidden rounded-lg border">
-        ${guard([this.lastCrawlId], () =>
-          when(this.latestCrawlTask.value, this.renderReplay),
-        )}
-      </div>
+      ${guard([this.lastCrawlId], () =>
+        when(this.latestCrawlTask.value, this.renderReplay),
+      )}
     `;
   };
 
@@ -1909,15 +1934,58 @@ export class WorkflowDetail extends BtrixElement {
     const config = JSON.stringify({ headers });
 
     return html`
-      <replay-web-page
-        source="${replaySource}"
-        url="${(latestCrawl.seedCount === 1 && latestCrawl.firstSeed) || ""}"
-        config="${config}"
-        replayBase="/replay/"
-        noSandbox="true"
-        noCache="true"
-      ></replay-web-page>
+      <div class="aspect-video overflow-hidden rounded-lg border mb-3">
+        <replay-web-page
+          source="${replaySource}"
+          url=${this.replayPage.value.url ||
+          latestCrawl.firstSeed ||
+          /* must be empty string to reset the attribute: */ ""}
+          ts=${(this.replayPage.value.url &&
+            formatRwpTimestamp(this.replayPage.value.ts)) ||
+          /* must be empty string to reset the attribute: */ ""}
+          config="${config}"
+          replayBase="/replay/"
+          noSandbox="true"
+          noCache="true"
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            const url = e.detail.url;
+
+            if (
+              !(
+                "replayNotFoundError" in e.detail &&
+                e.detail.replayNotFoundError
+              ) &&
+              url
+            ) {
+              this.replayPage.setValue(e.detail);
+            }
+
+            completeOnboardingStep(OnboardingStep.ReplayItem);
+          }}
+        ></replay-web-page>
+      </div>
+      <btrix-archived-item-replay-page-list
+        view=${ReplayView.Stacked}
+        .itemId=${latestCrawl.id}
+        @btrix-select=${(e: ReplayPageListSelectEvent) => {
+          this.navigateReplayEmbed(e.detail.item);
+        }}
+      ></btrix-archived-item-replay-page-list>
     `;
+  };
+
+  private readonly navigateReplayEmbed = (page: ArchivedItemPage) => {
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      page.url,
+      // Although the timestamp isn't necessary since the same URL won't be crawled twice,
+      // passing it during navigation prevents RWP from re-navigating to the latest timestamp
+      page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
+    );
   };
 
   private readonly renderLogs = () => {
