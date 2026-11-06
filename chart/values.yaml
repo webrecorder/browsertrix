@@ -504,12 +504,40 @@ namespace_network_policy_api_ports:
   - 443
   - 6443
 
+# optional: additional egress rules for destinations a NetworkPolicy cannot
+# express, such as Cilium entity selectors (host, remote-node, kube-apiserver).
+#
+# namespace_network_policy_extra_egress_cilium:
+#   - toEntities:
+#       - host
+#       - remote-node
+#     toPorts:
+#       - ports:
+#           - port: "9100"
+#             protocol: TCP
+namespace_network_policy_extra_egress_cilium: []
+
 # optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
 # crawler_network_policy_additional_egress: []
 
 # optional: replace the default crawler egress policy with your own egress rules (See chart/templates/networkpolicies.yaml for an example)
 # see chart/templates/networkpolicies.yaml for an example
 # crawler_network_policy_egress: []
+
+# optional: additional crawler egress rules for destinations a NetworkPolicy
+# cannot express, such as Cilium entity selectors (host, remote-node).
+#
+# crawler_network_policy_extra_egress_cilium:
+#   - toEntities:
+#       - host
+#       - remote-node
+#     toPorts:
+#       - ports:
+#           - port: "53"
+#             protocol: UDP
+#           - port: "53"
+#             protocol: TCP
+crawler_network_policy_extra_egress_cilium: []
 
 # time to wait for graceful stop
 grace_period: 1000
