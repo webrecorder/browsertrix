@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { Task } from "@lit/task";
+import { Task, TaskStatus } from "@lit/task";
 import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -29,6 +29,7 @@ import {
   sortableFields,
   type SortField,
 } from "@/features/archived-items/templates/page-list-sort-control";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { stringFor } from "@/strings/ui";
 import {
   type APIPaginatedList,
@@ -120,6 +121,10 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       ] as const,
   });
 
+  private get hasFiltersSet() {
+    return Object.values(this.filterBy.value).some((v) => v);
+  }
+
   render() {
     const sidebarView = this.view === ReplayView.Sidebar;
 
@@ -153,11 +158,11 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   }
 
   private renderPageListSidebar() {
-    const loading = () =>
-      html`<div class="size-full flex items-center justify-center p-5">
-        <sl-spinner class="text-xl"></sl-spinner>
-      </div>`;
     const pageList = ({ items, total }: APIPaginatedList<ArchivedItemPage>) => {
+      if (!total) {
+        return this.renderEmptyState();
+      }
+
       if (total === 1) {
         return this.renderSinglePageInfo(items[0]);
       }
@@ -174,8 +179,8 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     >
       <div class="overflow-auto flex-1">
         ${this.pagesTask.render({
-          initial: loading,
-          pending: () => (pages ? pageList(pages) : loading()),
+          initial: this.renderLoading,
+          pending: () => (pages ? pageList(pages) : this.renderLoading()),
           complete: pageList,
         })}
       </div>
@@ -287,6 +292,10 @@ export class ArchivedItemReplayPageList extends BtrixElement {
 
   private renderPageListTable() {
     const pages = this.pagesTask.value;
+
+    if (pages && !pages.total) {
+      return this.renderEmptyState();
+    }
 
     if (pages?.total === 1) {
       return html`<div class="border rounded-lg">
@@ -431,4 +440,53 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       </sl-menu>
     </btrix-overflow-dropdown>`;
   };
+
+  private readonly renderLoading = () =>
+    html`<div class="size-full flex items-center justify-center p-5">
+      <sl-spinner class="text-xl"></sl-spinner>
+    </div>`;
+
+  private readonly renderEmptyState = () => {
+    if (this.pagesTask.status === TaskStatus.PENDING) {
+      return this.renderLoading();
+    }
+
+    if (this.hasFiltersSet) {
+      return html`
+        <div class="rounded-lg border bg-neutral-50 p-4">
+          <p class="text-center">
+            <span class="text-neutral-400"
+              >${msg("No matching pages found.")}</span
+            >
+            <button
+              class="font-medium text-neutral-500 underline hover:no-underline"
+              @click=${() => {
+                this.clearFilters();
+              }}
+            >
+              ${msg("Clear filters")}
+            </button>
+          </p>
+        </div>
+      `;
+    }
+
+    if (this.pagesTask.value?.page && this.pagesTask.value.page > 1) {
+      return html`
+        <div class="border-b border-t py-5">
+          <p class="text-center text-neutral-500">
+            ${msg("Could not find page.")}
+          </p>
+        </div>
+      `;
+    }
+
+    return emptyMessage({
+      message: msg("No pages found."),
+    });
+  };
+
+  private clearFilters() {
+    this.filterBy.setValue({});
+  }
 }
