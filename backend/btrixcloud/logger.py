@@ -27,6 +27,7 @@ from structlog.contextvars import (
 )
 from structlog.typing import EventDict, Processor
 
+from .utils import is_bool
 from .version import __branch__, __commit_hash__, __version__
 
 
@@ -196,6 +197,8 @@ def init_logging() -> None:
     log_level = os.environ.get("LOG_LEVEL", "DEBUG").upper()
     level = getattr(logging, log_level, logging.DEBUG)
 
+    log_colors = is_bool(os.environ.get("LOG_USE_COLORS", "0"))
+
     for noisy in (
         "aiohttp",
         "botocore",
@@ -229,7 +232,7 @@ def init_logging() -> None:
             foreign_pre_chain=SHARED_PROCESSORS,
             processors=[
                 structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                structlog.dev.ConsoleRenderer(colors=False),
+                structlog.dev.ConsoleRenderer(colors=log_colors),
             ],
         )
 

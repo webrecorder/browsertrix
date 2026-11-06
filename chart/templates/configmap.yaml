@@ -14,6 +14,8 @@ data:
 
   LOG_FORMAT: "{{ .Values.log_format }}"
 
+  LOG_USE_COLORS: "{{ .Values.log_colors }}"
+
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
   DEFAULT_NAMESPACE: {{ .Release.Namespace }}
