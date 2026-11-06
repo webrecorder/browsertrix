@@ -1640,8 +1640,14 @@ class OrgOps(BaseOrgs):
             await self.profile_ops.delete_profile(profile["_id"], org)
 
         # Delete collections
-        async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
-            await self.coll_ops.delete_collection(coll["_id"], org)
+        async for coll_raw in self.colls_db.find({"oid": org.id}, projection=["_id"]):
+            coll = await self.coll_ops.get_collection(coll_raw["_id"], org.id)
+
+            # delete_collection refuses to delete a collection with a dedupe index
+            if coll.indexState:
+                await self.coll_ops.delete_dedupe_index(coll, org)
+
+            await self.coll_ops.delete_collection(coll.id, org)
 
         # Delete users that only belong to this org
         for org_user_id in org.users.keys():
