@@ -16,6 +16,7 @@ from btrixcloud.models import (
     EmailStr,
     InvitePending,
     Organization,
+    OrgQuotas,
     StorageRef,
 )
 from btrixcloud.utils import dt_now
@@ -89,6 +90,9 @@ def sample_org():
         name="Test Organization",
         slug="test-org",
         storage=StorageRef(name="test-storage"),
+        # a realistic plan allowance, so emails that quote it do not render
+        # "0 GB"
+        quotas=OrgQuotas(storageQuota=500_000_000_000),
     )
 
 
@@ -244,6 +248,25 @@ async def test_send_subscription_cancellation(email_sender, sample_org, caplog):
     assert "email_created_not_sent_no_smtp" in caplog.text
     _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
     assert data.get("template_name") == "subscriptionCancel"
+    assert data.get("receiver") == "admin@example.com"
+
+
+@pytest.mark.asyncio
+async def test_send_storage_addon_change_reverted(email_sender, sample_org, caplog):
+    """Test the storage add-on revert notification uses the new template"""
+    caplog.set_level(logging.DEBUG)
+    await email_sender.send_storage_addon_change_reverted(
+        user_name="Test User",
+        receiver_email="admin@example.com",
+        requested_gb=50,
+        retained_gb=200,
+        org=sample_org,
+        headers={"Host": "app.browsertrix.com", "X-Forwarded-Proto": "https"},
+    )
+
+    assert "email_created_not_sent_no_smtp" in caplog.text
+    _, data = _get_log_event(caplog, "email_created_not_sent_no_smtp")
+    assert data.get("template_name") == "storageAddonReverted"
     assert data.get("receiver") == "admin@example.com"
 
 

@@ -9,6 +9,7 @@ import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { LocalizeController } from "@/controllers/localize";
 import {
   hasExecutionMinuteQuota,
   hasStorageQuota,
@@ -23,6 +24,25 @@ import {
 } from "@/utils/onboarding/onboardingEvents";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
+
+export const STORAGE_ADDON_GB = 1e9;
+
+/**
+ * Add-on size display, shared by every surface that mentions the storage
+ * add-on quantity (quota-line annotation, add-on row, confirm dialog,
+ * Keep action, pending state). Auto-scales to a larger unit when the GB
+ * amount is a clean multiple of 1,000 (so "1 TB" rather than "1,000 GB"),
+ * otherwise stays in GB so the number matches what was purchased.
+ */
+export function formatStorageAddonSize(
+  localize: LocalizeController,
+  sizeGB: number,
+): string {
+  if (sizeGB >= 1000 && sizeGB % 1000 === 0) {
+    return localize.bytes(sizeGB * STORAGE_ADDON_GB);
+  }
+  return msg(str`${localize.number(sizeGB)} GB`);
+}
 
 const linkClassList = tw`text-primary transition-colors hover:text-primary-600`;
 const manageLinkClasslist = clsx(
@@ -105,7 +125,15 @@ export class OrgSettingsBilling extends BtrixElement {
 
       return metrics;
     },
-    args: () => [this.orgId] as const,
+    // Depend on the storage quotas so the usage meter refreshes when a
+    // storage add-on change lands in the org (see the add-on component's
+    // catch-up poll, which updates the org in app state).
+    args: () =>
+      [
+        this.orgId,
+        this.appState.org?.quotas.storageQuota,
+        this.appState.org?.quotas.extraStorageQuota,
+      ] as const,
   });
 
   render() {
@@ -263,9 +291,12 @@ export class OrgSettingsBilling extends BtrixElement {
                 ${when(
                   this.env.billingEnabled,
                   () =>
-                    html`<btrix-org-settings-billing-addon-link
-                      class="mt-3 flex items-center border-t py-2"
-                    ></btrix-org-settings-billing-addon-link>`,
+                    html`<div class="mt-3 flex flex-col gap-1.5 border-t py-3">
+                      <btrix-org-settings-billing-addon-link
+                        class="flex items-center"
+                      ></btrix-org-settings-billing-addon-link>
+                      <btrix-org-settings-billing-storage-addon></btrix-org-settings-billing-storage-addon>
+                    </div>`,
                 )}
               </div>
             `,
@@ -505,6 +536,12 @@ export class OrgSettingsBilling extends BtrixElement {
         str`${this.localize.number(quotas.maxConcurrentCrawls)} concurrent ${pluralOf("crawls", quotas.maxConcurrentCrawls)}`,
       );
     const storageBytesText = this.localize.bytes(quotas.storageQuota);
+    const extraStorageText = quotas.extraStorageQuota
+      ? formatStorageAddonSize(
+          this.localize,
+          quotas.extraStorageQuota / STORAGE_ADDON_GB,
+        )
+      : null;
 
     return html`
       <ul class="leading-relaxed text-neutral-700">
@@ -519,7 +556,11 @@ export class OrgSettingsBilling extends BtrixElement {
         </li>
         <li>
           ${quotas.storageQuota
-            ? msg(str`${storageBytesText} of disk space`)
+            ? extraStorageText
+              ? msg(
+                  str`${storageBytesText} of disk space (+ ${extraStorageText} storage add-on)`,
+                )
+              : msg(str`${storageBytesText} of disk space`)
             : msg("Unlimited disk space")}
         </li>
         <li>

@@ -76,6 +76,19 @@ def admin_auth_headers():
             time.sleep(5)
 
 
+# Shared secret between Browsertrix and the external subscription app. Must
+# match the BTRIX_SUBS_APP_API_KEY the backend is deployed with; see the CI
+# secret setup in .github/workflows.
+SUBS_APP_API_KEY = "TEST_PRESHARED_SECRET_PASSWORD"
+
+
+@pytest.fixture(scope="session")
+def shared_secret_auth_headers():
+    """Auth headers using the shared secret the external subscription app
+    sends, rather than the superuser session the other tests use."""
+    return {"Authorization": f"bearer {SUBS_APP_API_KEY}"}
+
+
 @pytest.fixture(scope="session")
 def default_org_id(admin_auth_headers):
     while True:
