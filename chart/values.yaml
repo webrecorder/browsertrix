@@ -134,6 +134,8 @@ backend_password_secret: "PASSWORD!"
 # log format: uses a human-readable text format by default, set to "json" to emit structured JSON instead
 # log_format: "json"
 
+# log_colors: false
+
 # number of workers per pod
 backend_workers: 1
 
