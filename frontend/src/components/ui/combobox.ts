@@ -104,10 +104,6 @@ export class Combobox extends FormControl(TailwindElement) {
         position: relative;
         z-index: 3;
       }
-
-      ::slotted(btrix-popover) {
-        --show-delay: 300;
-      }
     `,
   ];
 
