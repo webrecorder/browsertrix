@@ -79,6 +79,8 @@ export class UrlInput extends SlInput {
   };
 
   private readonly onChange = () => {
+    this.setCustomValidity("");
+
     let value = this.value.trim();
 
     if (value && !validURL(value) && isSocialMediaPlatform(value)) {
