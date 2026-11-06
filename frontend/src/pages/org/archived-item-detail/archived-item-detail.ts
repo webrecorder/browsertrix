@@ -21,9 +21,9 @@ import { type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
-import {
-  type ReplayPage,
-  type ReplayPageListSelectEvent,
+import type {
+  ReplayPage,
+  ReplayPageListSelectEvent,
 } from "@/features/archived-items/replay-page-list";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
 import {
@@ -1061,8 +1061,6 @@ export class ArchivedItemDetail extends BtrixElement {
           hideMetadataSidebar
           @rwp-url-change=${(e: RwpUrlChangeEvent) => {
             const url = e.detail.url;
-
-            console.log("rwp-url-change:", e.detail);
 
             if (
               !(
