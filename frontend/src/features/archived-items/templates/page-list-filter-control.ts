@@ -2,6 +2,7 @@ import { msg } from "@lit/localize";
 import { html } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 
+import { type FilterChip } from "@/components/ui/filter-chip";
 import { type SearchParamsValue } from "@/controllers/searchParamsValue";
 
 enum FilterType {
@@ -34,6 +35,13 @@ export function pageListFilterControl(
             </div>
           </div>
           <form
+            @reset=${(e: Event) => {
+              const filterEl = (e.target as HTMLElement).closest<FilterChip>(
+                "btrix-filter-chip",
+              );
+
+              filterEl?.hideDropdown();
+            }}
             @submit=${(e: SubmitEvent) => {
               e.preventDefault();
             }}
