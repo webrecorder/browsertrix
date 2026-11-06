@@ -7,7 +7,7 @@ import {
 
 import { TailwindElement } from "@/classes/TailwindElement";
 
-export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label"] as const;
+export const ALLOWED_ROW_CLICK_TARGET_TAG = ["a", "label", "button"] as const;
 
 /**
  * @example Usage as row click target:
