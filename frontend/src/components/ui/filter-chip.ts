@@ -19,6 +19,8 @@ export type BtrixFilterChipChangeEvent = BtrixChangeEvent;
  *
  * @slot
  * @slot dropdown-content
+ * @cssPart dropdown
+ * @cssPart button
  *
  * @fires btrix-change
  */
@@ -57,6 +59,7 @@ export class FilterChip extends TailwindElement {
           ?stayOpenOnSelect=${this.stayOpenOnChange}
           class="group/dropdown"
           ?open=${this.open}
+          part="dropdown"
         >
           ${this.renderButton()}
 
@@ -79,12 +82,13 @@ export class FilterChip extends TailwindElement {
         outline
         pill
         class=${clsx([
-          tw`part-[] part-[suffix]:-mr-0.5`,
+          tw`part-[suffix]:-mr-0.5 part-[label]:truncate`,
           tw`hover:part-[base]:border-primary-300 hover:part-[base]:bg-transparent hover:part-[base]:text-primary-600`,
           tw`aria-checked:part-[base]:border-primary-300 aria-checked:part-[base]:bg-primary-50/80 aria-checked:part-[base]:text-primary-600`,
           tw`group-open/dropdown:part-[base]:border-primary-300 group-open/dropdown:part-[caret]:text-primary-600 group-open/dropdown:part-[label]:text-primary-600`,
         ])}
         @click=${this.onClick}
+        part="button"
       >
         <sl-icon
           class="size-4 text-base group-open/dropdown:text-primary-600"
