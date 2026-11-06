@@ -90,10 +90,13 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   );
 
   private readonly pagesTask = new Task(this, {
-    task: async ([itemId, orderBy, page], { signal }) => {
+    task: async ([itemId, orderBy, filterBy, page], { signal }) => {
       if (!itemId) throw "itemId required";
 
-      const queryData: APISortQuery<ArchivedItemPage> & APIPaginationQuery = {
+      const queryData: APISortQuery<ArchivedItemPage> &
+        APIPaginationQuery &
+        FilterPageListBy = {
+        ...filterBy,
         sortBy: orderBy.field,
         sortDirection: orderBy.direction,
         page,
@@ -121,6 +124,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       [
         this.itemId,
         this.orderBy.value,
+        this.filterBy.value,
         parsePage(new URLSearchParams(location.search).get("replayPage")),
       ] as const,
     argsEqual: deepArrayEquals,
@@ -211,6 +215,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
                 void this.pagesTask.run([
                   this.itemId,
                   this.orderBy.value,
+                  this.filterBy.value,
                   e.detail.page,
                 ]);
               }}
@@ -412,6 +417,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
                 void this.pagesTask.run([
                   this.itemId,
                   this.orderBy.value,
+                  this.filterBy.value,
                   e.detail.page,
                 ]);
               }}
