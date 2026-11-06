@@ -157,11 +157,10 @@ export function pageListFilterControl(
             ${when(
               active,
               () =>
-                html`<sl-tooltip content=${msg("Clear")}>
+                html`<sl-tooltip content=${msg("Remove Filter")}>
                   <sl-icon-button
                     class="text-base"
-                    name="x-lg"
-                    library="system"
+                    name="trash3"
                     @click=${(e: Event) => {
                       filterBy.setValue({});
                       closeDropdown(e);
