@@ -129,6 +129,13 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     </div>`;
   }
 
+  private renderSinglePageInfo(page: ArchivedItemPage) {
+    return html`<div class="flex gap-3 p-1">
+      <div class="p-2 flex-1">${this.renderPageDetails(page)}</div>
+      ${this.renderPageListActions(page)}
+    </div>`;
+  }
+
   private renderPageListSidebar() {
     const loading = () =>
       html`<div class="size-full flex items-center justify-center p-5">
@@ -136,12 +143,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       </div>`;
     const pageList = ({ items, total }: APIPaginatedList<ArchivedItemPage>) => {
       if (total === 1) {
-        const page = items[0];
-
-        return html`<div class="p-2 grid grid-cols-[1fr_auto] gap-3">
-          ${this.renderPageDetails(items[0])}
-          ${this.renderPageListActions(page)}
-        </div>`;
+        return this.renderSinglePageInfo(items[0]);
       }
 
       return html`<ul class="divide-y flex-1">
@@ -202,7 +204,11 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       </btrix-desc-list-item>
       <btrix-desc-list-item label=${msg("Page URL")}>
         ${page.url
-          ? html`<btrix-code language="url" value=${page.url}></btrix-code>`
+          ? html`<btrix-code
+              class="part-[base]:break-all"
+              language="url"
+              value=${page.url}
+            ></btrix-code>`
           : none}
       </btrix-desc-list-item>
       <btrix-desc-list-item label=${msg("HTTP Status")}>
@@ -266,12 +272,8 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     const pages = this.pagesTask.value;
 
     if (pages?.total === 1) {
-      const page = pages.items[0];
-
-      return html`<div
-        class="border rounded-lg p-3 grid-cols-[1fr_auto] grid gap-3"
-      >
-        ${this.renderPageDetails(page)} ${this.renderPageListActions(page)}
+      return html`<div class="border rounded-lg">
+        ${this.renderSinglePageInfo(pages.items[0])}
       </div>`;
     }
 
