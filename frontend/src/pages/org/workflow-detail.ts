@@ -491,6 +491,12 @@ export class WorkflowDetail extends BtrixElement {
     return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
   }
 
+  private get reviewUrl() {
+    return `${this.basePath}/crawls/${
+      this.lastCrawlId
+    }/review/screenshots?from=workflow`;
+  }
+
   connectedCallback(): void {
     this.redirectHash();
     super.connectedCallback();
@@ -1718,8 +1724,7 @@ export class WorkflowDetail extends BtrixElement {
               class="micro -ml-2"
               size="small"
               variant="text"
-              href="${this.basePath}/crawls/${this
-                .lastCrawlId}/review/screenshots?from=workflow"
+              href=${this.reviewUrl}
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
@@ -1967,6 +1972,7 @@ export class WorkflowDetail extends BtrixElement {
       <btrix-archived-item-replay-page-list
         view=${ReplayView.Stacked}
         .itemId=${latestCrawl.id}
+        .reviewUrl=${this.reviewUrl}
         @btrix-select=${(e: ReplayPageListSelectEvent) => {
           this.navigateReplayEmbed(e.detail.item);
         }}

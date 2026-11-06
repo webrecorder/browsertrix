@@ -389,17 +389,19 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   }
 
   private readonly renderPageListActions = (page: ArchivedItemPage) => {
-    return html`<btrix-overflow-dropdown>
+    return html`<btrix-overflow-dropdown
+      @btrix-select=${(e: CustomEvent) => e.stopPropagation()}
+    >
       <sl-menu>
         ${when(
           this.reviewUrl,
           (url) =>
-            html` <btrix-menu-item-link href=${`${url}&itemPageId=${page.id}`}>
-              <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
-              ${msg("Review Page")}
-            </btrix-menu-item-link>`,
+            html`<btrix-menu-item-link href=${`${url}&itemPageId=${page.id}`}>
+                <sl-icon slot="prefix" name="clipboard2-data"></sl-icon>
+                ${msg("Review Page")}
+              </btrix-menu-item-link>
+              <sl-divider></sl-divider>`,
         )}
-        <sl-divider></sl-divider>
         <sl-menu-item
           @click=${() => ClipboardController.copyToClipboard(page.url)}
         >
