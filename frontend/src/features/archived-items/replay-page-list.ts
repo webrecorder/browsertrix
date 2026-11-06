@@ -9,6 +9,10 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import {
+  pageListFilterControl,
+  type FilterPageListBy,
+} from "./templates/page-list-filter-control";
+import {
   DEFAULT_REPLAY_VIEW,
   ReplayView,
 } from "./templates/page-list-view-control";
@@ -72,6 +76,13 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     ...objectSearchParams<ReplayPage>({ keys: ["url", "ts"] }),
   );
 
+  private readonly filterBy = new SearchParamsValue<FilterPageListBy>(
+    this,
+    ...objectSearchParams<FilterPageListBy>({
+      keys: ["urlPrefix", "urlRegex"],
+    }),
+  );
+
   private readonly pagesTask = new Task(this, {
     task: async ([itemId, orderBy, page], { signal }) => {
       if (!itemId) throw "itemId required";
@@ -125,6 +136,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
         sidebarView ? tw`mb-2 shadow-md @3xl/content:shadow-none` : tw`mb-3`,
       )}
     >
+      ${pageListFilterControl(this.filterBy)}
       ${pageListSortControl(this.orderBy)}
     </div>`;
   }
