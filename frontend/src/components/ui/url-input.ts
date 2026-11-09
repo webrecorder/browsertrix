@@ -54,6 +54,7 @@ export class UrlInput extends SlInput {
   connectedCallback(): void {
     super.connectedCallback();
 
+    this.getForm()?.addEventListener("reset", this.onFormReset);
     this.#helpText = this.helpText;
   }
 
@@ -65,6 +66,7 @@ export class UrlInput extends SlInput {
   disconnectedCallback(): void {
     super.disconnectedCallback();
 
+    this.getForm()?.removeEventListener("reset", this.onFormReset);
     this.removeEventListener("sl-input", this.onInput);
     this.removeEventListener("sl-change", this.onChange);
   }
@@ -77,6 +79,8 @@ export class UrlInput extends SlInput {
   };
 
   private readonly onChange = () => {
+    this.setCustomValidity("");
+
     let value = this.value.trim();
 
     if (value && !validURL(value) && isSocialMediaPlatform(value)) {
@@ -99,6 +103,17 @@ export class UrlInput extends SlInput {
       !value.startsWith("http://")
     ) {
       this.value = `https://${value}`;
+    }
+  };
+
+  private readonly onFormReset = () => {
+    // Reset help text
+    if (
+      !this.hideHelpText &&
+      !this.validity.valid &&
+      this.validationMessage === this.helpText
+    ) {
+      this.helpText = this.#helpText || "";
     }
   };
 }
