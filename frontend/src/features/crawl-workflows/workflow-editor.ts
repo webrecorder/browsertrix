@@ -122,8 +122,8 @@ import {
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
 import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
+import { urlPrefixToRegex } from "@/utils/crawl-scope/urlPrefixToRegex";
 import { getDefaultProxyId, isDepthSupportedScopeType } from "@/utils/crawler";
-import { prefixToRegex } from "@/utils/crawlScope";
 import {
   getUTCSchedule,
   humanizeNextDate,
@@ -262,6 +262,7 @@ const urlListToArray = flow(
   (str?: string) => (str?.length ? str.trim().split(/\s+/g) : []),
   trimArray,
 );
+const urlToRegex = (url: string) => urlPrefixToRegex(url);
 
 //todo: make this customizable, perhaps at deploy time
 const URL_LIST_MAX_URLS = 100;
@@ -3049,7 +3050,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         formState.customIncludeList = urlListToArray(
           this.formState.customIncludeList,
         )
-          .map(prefixToRegex)
+          .map(urlToRegex)
           .join("\n");
       } else {
         formState.customIncludeList = this.customIncludeListFromSeed(
@@ -3084,7 +3085,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
-      ? prefixToRegex(prefixUrl)
+      ? urlPrefixToRegex(prefixUrl)
       : prefixUrl;
   }
 
@@ -3899,7 +3900,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
           ? includeUrlList
           : this.formState.scopeType === ScopeType.Custom
-            ? includeUrlList.map(prefixToRegex)
+            ? includeUrlList.map(urlToRegex)
             : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
