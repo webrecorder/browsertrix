@@ -14,7 +14,9 @@ import {
 } from "./templates/page-list-view-control";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
+import type { Popover } from "@/components/ui/popover";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixSelectEvent } from "@/events/btrix-select";
@@ -226,18 +228,17 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   };
 
   private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
-    return html`<li
-      class=${tw`flex items-center overflow-hidden transition-all has-[button:hover]:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
-      aria-selected="${this.replayPage.value.url === page.url}"
+    return html`<btrix-popover
+      class="part-[body]:w-64"
+      placement=${this.pagesTask.value?.total === 1 ? "bottom" : "right-start"}
+      trigger="hover"
+      hoist
     >
-      <btrix-popover
-        class="part-[body]:w-64"
-        placement=${this.pagesTask.value?.total === 1 ? "bottom" : "left-start"}
-        trigger="hover"
-        hoist
+      <div slot="content">${this.renderPageDetails(page)}</div>
+      <li
+        class=${tw`flex items-center overflow-hidden transition-all has-[button:hover]:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
+        aria-selected="${this.replayPage.value.url === page.url}"
       >
-        <div slot="content">${this.renderPageDetails(page)}</div>
-
         <button
           class="flex-1 block overflow-hidden text-left py-1.5 pl-3 pr-1.5"
           @click=${() =>
@@ -263,9 +264,9 @@ export class ArchivedItemReplayPageList extends BtrixElement {
             truncate
           ></btrix-code>
         </button>
-      </btrix-popover>
-      ${this.renderPageListActions(page)}
-    </li>`;
+        ${this.renderPageListActions(page)}
+      </li>
+    </btrix-popover>`;
   };
 
   private renderPageListTable() {
@@ -391,8 +392,15 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   }
 
   private readonly renderPageListActions = (page: ArchivedItemPage) => {
+    const closePopover = (e: Event) => {
+      const el = e.target as OverflowDropdown;
+      void el.closest<Popover>("btrix-popover")?.hide();
+    };
+
     return html`<btrix-overflow-dropdown
       @btrix-select=${(e: CustomEvent) => e.stopPropagation()}
+      @focus=${closePopover}
+      @click=${closePopover}
     >
       <sl-menu>
         ${when(
