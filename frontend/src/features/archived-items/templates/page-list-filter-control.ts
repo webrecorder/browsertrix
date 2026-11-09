@@ -10,7 +10,8 @@ import { when } from "lit/directives/when.js";
 
 import { type FilterChip } from "@/components/ui/filter-chip";
 import { type SearchParamsValue } from "@/controllers/searchParamsValue";
-import { regexEscape, regexUnescape } from "@/utils/string";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
+import { urlPrefixToRegex } from "@/utils/crawl-scope/urlPrefixToRegex";
 
 enum FilterType {
   Prefix = "prefix",
@@ -18,7 +19,6 @@ enum FilterType {
 }
 
 export type FilterPageListBy = {
-  urlPrefix?: string;
   urlRegex?: string;
 };
 
@@ -50,8 +50,8 @@ const handleTypeChange = (e: SlChangeEvent) => {
   if (inputEl.value) {
     inputEl.value =
       value === FilterType.Prefix
-        ? regexUnescape(inputEl.value)
-        : regexEscape(inputEl.value);
+        ? unescapeCustomPrefix(inputEl.value)
+        : urlPrefixToRegex(inputEl.value);
   }
 };
 
@@ -102,19 +102,18 @@ const submitHandler =
     const values = serialize(formEl) as Record<FormFieldName, string>;
 
     if (formEl.checkValidity()) {
-      const urlPrefix = (values.filterType as FilterType) === FilterType.Prefix;
       const value = values.filterValue.trim();
 
       if (value) {
-        filterBy.setValue(
-          urlPrefix
-            ? {
-                urlPrefix: value,
-              }
-            : { urlRegex: value },
-        );
+        filterBy.setValue({
+          ...filterBy.value,
+          urlRegex:
+            (values.filterType as FilterType) === FilterType.Prefix
+              ? urlPrefixToRegex(value)
+              : value,
+        });
       } else {
-        filterBy.setValue({});
+        filterBy.setValue({ ...filterBy.value, urlRegex: undefined });
       }
 
       closeDropdown(e);
@@ -124,10 +123,16 @@ const submitHandler =
 export function pageListFilterControl(
   filterBy: SearchParamsValue<FilterPageListBy>,
 ) {
-  const urlPrefix = filterBy.value.urlPrefix;
   const urlRegex = filterBy.value.urlRegex;
-  const active = Boolean(urlPrefix || urlRegex);
-  const filterType = urlRegex ? FilterType.Regex : FilterType.Prefix;
+  const urlPrefix =
+    (urlRegex &&
+      urlRegex.startsWith("^http") &&
+      unescapeCustomPrefix(urlRegex)) ||
+    "";
+  console.log("urlPrefix:", urlPrefix);
+  const active = Boolean(urlRegex);
+  const filterType =
+    urlPrefix || !urlRegex ? FilterType.Prefix : FilterType.Regex;
   const regex_pattern = html`<code class="font-medium">${urlRegex}</code>`;
   const url_prefix = html`<span class="font-medium">${urlPrefix}</span>`;
 
@@ -139,13 +144,13 @@ export function pageListFilterControl(
         selectFromDropdown
         ?checked=${active}
       >
-        ${urlRegex
+        ${urlPrefix
           ? html`<span class="font-normal"
-              >${msg(html`URL matches ${regex_pattern}`)}</span
+              >${msg(html`URL begins with ${url_prefix}`)}</span
             >`
-          : urlPrefix
+          : urlRegex
             ? html`<span class="font-normal"
-                >${msg(html`URL begins with ${url_prefix}`)}</span
+                >${msg(html`URL matches ${regex_pattern}`)}</span
               >`
             : msg("URL")}
 
@@ -162,7 +167,10 @@ export function pageListFilterControl(
                     class="text-base"
                     name="trash3"
                     @click=${(e: Event) => {
-                      filterBy.setValue({});
+                      filterBy.setValue({
+                        ...filterBy.value,
+                        urlRegex: undefined,
+                      });
                       closeDropdown(e);
                     }}
                   ></sl-icon-button>
@@ -194,9 +202,7 @@ export function pageListFilterControl(
                 placeholder=${placeholderFor[filterType]}
                 .minlength=${2}
                 .maxlength=${500}
-                value=${(urlRegex
-                  ? filterBy.value.urlRegex
-                  : filterBy.value.urlPrefix) ?? ""}
+                value=${urlPrefix || urlRegex || ""}
                 @sl-change=${handleValueChange}
               ></sl-input>
             </div>

@@ -86,7 +86,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   private readonly filterBy = new SearchParamsValue<FilterPageListBy>(
     this,
     ...objectSearchParams<FilterPageListBy>({
-      keys: ["urlPrefix", "urlRegex"],
+      keys: ["urlRegex"],
     }),
   );
 
@@ -149,7 +149,9 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     const sidebarView = this.view === ReplayView.Sidebar;
 
     return html`${when(this.pagesTask.value, ({ total }) =>
-      total === 1 ? nothing : this.renderPageListControls(),
+      total === 1 && !this.hasFiltersSet
+        ? nothing
+        : this.renderPageListControls(),
     )}
     ${cache(
       sidebarView ? this.renderPageListSidebar() : this.renderPageListTable(),
@@ -183,7 +185,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
         return this.renderEmptyState();
       }
 
-      if (total === 1) {
+      if (total === 1 && !this.hasFiltersSet) {
         return this.renderSinglePageInfo(items[0]);
       }
 
@@ -270,7 +272,9 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   private readonly renderPageListSidebarRow = (page: ArchivedItemPage) => {
     return html`<btrix-popover
       class="part-[body]:w-64"
-      placement=${this.pagesTask.value?.total === 1 ? "bottom" : "right-start"}
+      placement=${this.pagesTask.value?.total === 1 && !this.hasFiltersSet
+        ? "bottom"
+        : "right-start"}
       trigger="hover"
       hoist
     >
@@ -316,7 +320,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       return this.renderEmptyState();
     }
 
-    if (pages?.total === 1) {
+    if (pages?.total === 1 && !this.hasFiltersSet) {
       return html`<div class="border rounded-lg">
         ${this.renderSinglePageInfo(pages.items[0])}
       </div>`;
