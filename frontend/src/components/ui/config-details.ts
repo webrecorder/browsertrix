@@ -32,7 +32,7 @@ import {
   WorkflowScopeType,
   type StorageSeedFile,
 } from "@/types/workflow";
-import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
 import { isDepthSupportedScopeType } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { pluralOf } from "@/utils/pluralize";
