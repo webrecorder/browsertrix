@@ -121,7 +121,7 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
-import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
 import { getDefaultProxyId, isDepthSupportedScopeType } from "@/utils/crawler";
 import { prefixToRegex } from "@/utils/crawlScope";
 import {

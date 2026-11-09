@@ -21,7 +21,7 @@ import {
 import type { OrgData } from "@/types/org";
 import { NewWorkflowOnlyScopeType, WorkflowScopeType } from "@/types/workflow";
 import { BYTES_PER_GB } from "@/utils/bytes";
-import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
 import { DEFAULT_MAX_SCALE, isPaused, isRunning } from "@/utils/crawler";
 import { getNextDate, getScheduleInterval } from "@/utils/cron";
 import localize, { getDefaultLang } from "@/utils/localize";
