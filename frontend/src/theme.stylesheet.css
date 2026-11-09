@@ -175,6 +175,10 @@
 }
 
 @layer components {
+  sl-tooltip {
+    --show-delay: 300;
+  }
+
   sl-skeleton {
     --border-radius: var(--sl-border-radius-small);
     --color: var(--sl-color-neutral-50);

@@ -41,6 +41,7 @@ export class Popover extends SlTooltip {
     slTooltipStyles,
     css`
       :host {
+        --show-delay: 300;
         --btrix-border: 1px solid var(--sl-color-neutral-300);
         --sl-tooltip-border-radius: var(--sl-border-radius-large);
         --sl-tooltip-background-color: var(--sl-color-neutral-50);
