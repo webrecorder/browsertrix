@@ -1,5 +1,5 @@
-import { getReasonPhrase } from "http-status-codes";
-import { html } from "lit";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import { html, nothing } from "lit";
 
 import { stringFor } from "@/strings/ui";
 import { type ArchivedItemPage } from "@/types/crawler";
@@ -14,6 +14,7 @@ export function pageHttpStatusBadge(status: ArchivedItemPage["status"]) {
   return html`<btrix-badge
     variant=${status === 200 ? "success" : "danger"}
     outline
-    >${status} ${getReasonPhrase(status)}</btrix-badge
+    >${status}
+    ${StatusCodes[status] ? getReasonPhrase(status) : nothing}</btrix-badge
   >`;
 }
