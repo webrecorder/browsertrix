@@ -3,10 +3,12 @@ import { Task, TaskStatus } from "@lit/task";
 import clsx, { type ClassValue } from "clsx";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
+import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { when } from "lit/directives/when.js";
 import capitalize from "lodash/fp/capitalize";
 import queryString from "query-string";
+import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 
 import { badges, badgesSkeleton } from "./templates/badges";
 import { fileList } from "./templates/file-list";
@@ -17,8 +19,18 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { type PageChangeEvent } from "@/components/ui/pagination";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import type { CrawlMetadataEditor } from "@/features/archived-items/item-metadata-editor";
+import type {
+  ReplayPage,
+  ReplayPageListSelectEvent,
+} from "@/features/archived-items/replay-page-list";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
+import {
+  DEFAULT_REPLAY_VIEW,
+  pageListViewControl,
+  ReplayView,
+} from "@/features/archived-items/templates/page-list-view-control";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import {
   pageBack,
@@ -37,6 +49,7 @@ import {
 } from "@/types/api";
 import type {
   ArchivedItem,
+  ArchivedItemPage,
   Crawl,
   CrawlReplay,
   Seed,
@@ -61,9 +74,12 @@ import {
   OnboardingStep,
 } from "@/utils/onboarding/onboardingEvents";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
 import { richText } from "@/utils/rich-text";
+import { objectSearchParams } from "@/utils/searchParams/object";
 import { tw } from "@/utils/tailwind";
 
+import "@/features/archived-items/replay-page-list";
 import "./templates/qa";
 
 const SECTIONS = [
@@ -146,6 +162,29 @@ export class ArchivedItemDetail extends BtrixElement {
   @state()
   private missingDependenciesOpen = false;
 
+  private readonly replayView = new SearchParamsValue<ReplayView | undefined>(
+    this,
+    (value, params) => {
+      const key = "replayView";
+      if (!value || value === DEFAULT_REPLAY_VIEW) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+      return params;
+    },
+    (params) => {
+      return (
+        (params.get("replayView") as ReplayView | null) ?? DEFAULT_REPLAY_VIEW
+      );
+    },
+  );
+
+  private readonly replayPage = new SearchParamsValue<ReplayPage>(
+    this,
+    ...objectSearchParams<ReplayPage>({ keys: ["url", "ts"] }),
+  );
+
   @query("#stopQARunDialog")
   private readonly stopQARunDialog?: Dialog | null;
 
@@ -154,6 +193,9 @@ export class ArchivedItemDetail extends BtrixElement {
 
   @query("btrix-item-metadata-editor")
   private readonly editDialog?: CrawlMetadataEditor | null;
+
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   private readonly tabLabels: Omit<
     Record<SectionName, string>,
@@ -183,7 +225,7 @@ export class ArchivedItemDetail extends BtrixElement {
   }
 
   private get reviewUrl(): string {
-    return `${new URL(window.location.href).pathname}/review/screenshots${this.mostRecentSuccessQARun ? `?qaRunId=${this.mostRecentSuccessQARun.id}` : ""}`;
+    return `${new URL(window.location.href).pathname}/review/screenshots?qaRunId=${this.mostRecentSuccessQARun?.id || ""}`;
   }
 
   private timerId?: number;
@@ -392,10 +434,10 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
-    const ids = this.item?.missingRequiresCrawls;
-    const missingDepsNotice = ids?.length
+    const missingRequiresCrawls = this.item?.missingRequiresCrawls;
+    const missingDepsNotice = missingRequiresCrawls?.length
       ? missingDependenciesNotice({
-          ids,
+          ids: missingRequiresCrawls,
           viewMore: () => (this.missingDependenciesOpen = true),
         })
       : nothing;
@@ -425,12 +467,81 @@ export class ArchivedItemDetail extends BtrixElement {
         );
         break;
       }
-      case "replay":
+      case "replay": {
+        if (this.hasFiles) {
+          const sidebarView = this.replayView.value === ReplayView.Sidebar;
+          const viewControls = pageListViewControl(this.replayView);
+          const singlePage = this.item && this.item.pageCount === 1;
+
+          sectionContent = html`<div
+            class=${clsx(
+              tw`relative flex gap-3 [--sidebar-view-height:calc(100svh-3.5rem)]`,
+              sidebarView ? tw`flex-row` : tw`flex-col`,
+            )}
+          >
+            <div class="flex-1">
+              ${this.renderPanel(
+                html`${this.renderTitle(msg("Replay"))}
+                ${sidebarView ? nothing : viewControls}`,
+                html`${missingDepsNotice}
+                  <div
+                    class=${clsx(
+                      tw`replay-panel scroll-mt-2 overflow-hidden rounded-lg border`,
+                      sidebarView
+                        ? missingRequiresCrawls
+                          ? // 5rem - Rough height of missing deps banner for wider screens
+                            tw`h-[calc(var(--sidebar-view-height)-5rem)]`
+                          : tw`h-[--sidebar-view-height]`
+                        : tw`aspect-video`,
+                    )}
+                  >
+                    ${this.renderRWP()}
+                  </div>`,
+              )}
+            </div>
+            <div
+              class=${clsx(
+                sidebarView &&
+                  tw`absolute right-1.5 top-1.5 w-80 @3xl/content:relative @3xl/content:right-0 @3xl/content:top-0`,
+              )}
+            >
+              ${this.renderPanel(
+                html`${this.renderTitle(
+                  singlePage ? msg("Page Info") : msg("Pages"),
+                  undefined,
+                  [
+                    sidebarView &&
+                      tw`pointer-events-none invisible @3xl/content:pointer-events-auto @3xl/content:visible`,
+                  ],
+                )}
+                ${sidebarView ? viewControls : nothing}`,
+                html`<btrix-archived-item-replay-page-list
+                  view=${ifDefined(this.replayView.value)}
+                  .itemId=${this.itemId}
+                  .reviewUrl=${this.reviewUrl}
+                  @btrix-select=${(e: ReplayPageListSelectEvent) => {
+                    this.navigateReplayEmbed(e.detail.item);
+                  }}
+                ></btrix-archived-item-replay-page-list>`,
+                [
+                  sidebarView &&
+                    tw`flex max-h-[--sidebar-view-height] flex-col`,
+                ],
+              )}
+            </div>
+          </div>`;
+          break;
+        }
+
         sectionContent = this.renderPanel(
-          this.tabLabels.replay,
-          html` ${missingDepsNotice} ${this.renderReplay()} `,
+          msg("Replay"),
+          html`<p class="p-4 text-sm text-neutral-400">
+            ${msg("No files to replay.")}
+          </p>`,
         );
+
         break;
+      }
       case "files":
         sectionContent = this.renderPanel(
           html` ${this.renderTitle(this.tabLabels.files)}
@@ -559,11 +670,13 @@ export class ArchivedItemDetail extends BtrixElement {
           <div
             class="col-span-14 grid min-w-0 border-b md:col-span-3 md:border-b-0"
           >
-            <div class="-mx-3 box-border flex overflow-x-auto px-3 md:block">
+            <div
+              class="-mx-3 box-border flex overflow-x-auto px-3 md:block sticky top-0 h-min"
+            >
               ${this.renderNav()}
             </div>
           </div>
-          <div class="col-span-14 min-w-0 md:col-span-11">
+          <div class="col-span-14 min-w-0 md:col-span-11 @container/content">
             ${sectionContent}
           </div>
         </section>
@@ -706,7 +819,7 @@ export class ArchivedItemDetail extends BtrixElement {
     };
     return html`
       <nav
-        class="sticky top-0 -mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
+        class="-mx-3 flex flex-row gap-2 overflow-x-auto px-3 pb-4 text-center md:flex-col md:text-start"
         role="menu"
       >
         ${renderNavItem({
@@ -902,8 +1015,9 @@ export class ArchivedItemDetail extends BtrixElement {
   private renderTitle(
     title: string | TemplateResult,
     { beta } = { beta: false },
+    classes: ClassValue[] = [],
   ) {
-    return html`<div class="flex items-center gap-2">
+    return html`<div class=${clsx(tw`flex items-center gap-2`, classes)}>
       <h2 class="text-lg font-medium leading-8">
         ${title}
         ${when(beta, () => html`<btrix-beta-badge></btrix-beta-badge>`)}
@@ -927,54 +1041,65 @@ export class ArchivedItemDetail extends BtrixElement {
     `;
   }
 
-  private renderReplay() {
-    return html`
-      <div class="overflow-hidden rounded-lg border">${this.renderRWP()}</div>
-    `;
-  }
-
   private renderRWP() {
     if (!this.item) return;
 
     const query = queryString.stringify({ withDependencies: true });
     const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?${query}`;
-
     const headers = this.authState?.headers;
-
     const config = JSON.stringify({ headers });
 
-    const canReplay = this.hasFiles;
+    // TODO Investigate in RWP why re-rendering with the same attributes causes `rwp-url-change` to fire again;
+    // guard should prevent this for now
+    return html`${guard(
+      [replaySource, this.replayPage.value.url],
+      () =>
+        html`<replay-web-page
+          source="${replaySource}"
+          coll="${this.itemId}"
+          url=${this.replayPage.value.url ||
+          /* must be empty string to reset the attribute: */ ""}
+          ts=${formatRwpTimestamp(this.replayPage.value.ts) ||
+          /* must be empty string to reset the attribute: */ ""}
+          config="${config}"
+          replayBase="/replay/"
+          noSandbox="true"
+          noCache="true"
+          hideMetadataSidebar
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            const url = e.detail.url;
 
-    return html`
-      <!-- https://github.com/webrecorder/browsertrix-crawler/blob/9f541ab011e8e4bccf8de5bd7dc59b632c694bab/screencast/index.html -->
-      ${
-        canReplay
-          ? html`<div id="replay-crawl" class="aspect-4/3 overflow-hidden">
-              <replay-web-page
-                source="${replaySource}"
-                url="${(this.item.seedCount === 1 && this.item.firstSeed) ||
-                ""}"
-                coll="${ifDefined(this.item.id)}"
-                config="${config}"
-                replayBase="/replay/"
-                noSandbox="true"
-                noCache="true"
-                @rwp-url-change=${() => {
-                  if (this.itemType === "crawl") {
-                    completeOnboardingStep(OnboardingStep.ReplayItem);
-                  }
-                }}
-              ></replay-web-page>
-            </div>`
-          : html`
-              <p class="p-4 text-sm text-neutral-400">
-                ${msg("No files to replay.")}
-              </p>
-            `
-      }
-      </div>
-    `;
+            if (
+              !(
+                "replayNotFoundError" in e.detail &&
+                e.detail.replayNotFoundError
+              ) &&
+              url
+            ) {
+              this.replayPage.setValue(e.detail);
+            }
+
+            if (this.itemType === "crawl") {
+              completeOnboardingStep(OnboardingStep.ReplayItem);
+            }
+          }}
+        ></replay-web-page>`,
+    )}`;
   }
+
+  private readonly navigateReplayEmbed = (page: ArchivedItemPage) => {
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      page.url,
+      // Although the timestamp isn't necessary since the same URL won't be crawled twice,
+      // passing it during navigation prevents RWP from re-navigating to the latest timestamp
+      page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
+    );
+  };
 
   private renderOverview() {
     return html`
