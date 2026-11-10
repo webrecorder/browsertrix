@@ -150,7 +150,7 @@ export class WorkflowDetail extends BtrixElement {
   maxBrowserWindows = DEFAULT_MAX_SCALE;
 
   @state()
-  private lastCrawlId: Workflow["lastCrawlId"] = null;
+  private lastCrawlId?: Workflow["lastCrawlId"];
 
   @state()
   private isDialogVisible = false;
@@ -1861,7 +1861,7 @@ export class WorkflowDetail extends BtrixElement {
             })
           : nothing,
       )}
-      ${guard([this.lastCrawlId], () =>
+      ${guard([this.lastCrawlId, this.replayPage.value.url], () =>
         when(this.latestCrawlTask.value, this.renderReplay),
       )}
     `;
@@ -2571,6 +2571,8 @@ export class WorkflowDetail extends BtrixElement {
         },
       );
       this.lastCrawlId = data.started;
+
+      this.replayPage.setValue({});
 
       this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
 
