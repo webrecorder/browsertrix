@@ -434,10 +434,10 @@ export class ArchivedItemDetail extends BtrixElement {
   render() {
     const authToken = this.authState?.headers.Authorization.split(" ")[1];
     const isSuccess = this.item && isSuccessfullyFinished(this.item);
-    const ids = this.item?.missingRequiresCrawls;
-    const missingDepsNotice = ids?.length
+    const missingRequiresCrawls = this.item?.missingRequiresCrawls;
+    const missingDepsNotice = missingRequiresCrawls?.length
       ? missingDependenciesNotice({
-          ids,
+          ids: missingRequiresCrawls,
           viewMore: () => (this.missingDependenciesOpen = true),
         })
       : nothing;
@@ -483,13 +483,20 @@ export class ArchivedItemDetail extends BtrixElement {
               ${this.renderPanel(
                 html`${this.renderTitle(msg("Replay"))}
                 ${sidebarView ? nothing : viewControls}`,
-                this.renderRWP(),
-                [
-                  tw`replay-panel scroll-mt-2 overflow-hidden rounded-lg border`,
-                  sidebarView
-                    ? tw`h-[--sidebar-view-height]`
-                    : tw`aspect-video`,
-                ],
+                html`${missingDepsNotice}
+                  <div
+                    class=${clsx(
+                      tw`replay-panel scroll-mt-2 overflow-hidden rounded-lg border`,
+                      sidebarView
+                        ? missingRequiresCrawls
+                          ? // 5rem - Rough height of missing deps banner for wider screens
+                            tw`h-[calc(var(--sidebar-view-height)-5rem)]`
+                          : tw`h-[--sidebar-view-height]`
+                        : tw`aspect-video`,
+                    )}
+                  >
+                    ${this.renderRWP()}
+                  </div>`,
               )}
             </div>
             <div
