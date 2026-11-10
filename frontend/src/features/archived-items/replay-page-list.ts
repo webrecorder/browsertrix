@@ -1,5 +1,6 @@
 import { localized, msg } from "@lit/localize";
 import { Task } from "@lit/task";
+import { deepArrayEquals } from "@lit/task/deep-equals.js";
 import clsx from "clsx";
 import { html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -105,6 +106,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
         this.orderBy.value,
         parsePage(new URLSearchParams(location.search).get("replayPage")),
       ] as const,
+    argsEqual: deepArrayEquals,
   });
 
   render() {
