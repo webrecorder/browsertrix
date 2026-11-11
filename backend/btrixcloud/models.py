@@ -3276,6 +3276,7 @@ class BgJobType(StrEnum):
     UPDATE_COLL_STATS = "update-coll-stats"
     POSTPROCESS_UPLOAD = "postprocess-upload"
     RETRY_STUCK_UPLOADS = "retry-stuck-uploads"
+    DELETE_ORG_FILES = "delete-org-files"
     # Deprecated per-file replication jobs
     CREATE_REPLICA = "create-replica"
     # New replication job that spins up rclone copy jobs as needed
@@ -3408,6 +3409,17 @@ class RetryStuckUploadsJob(BackgroundJob):
 
 
 # ============================================================================
+class DeleteOrgFilesJob(BackgroundJob):
+    """Model for tracking jobs to delete org files"""
+
+    type: Literal[BgJobType.DELETE_ORG_FILES] = BgJobType.DELETE_ORG_FILES
+    oid: UUID
+    storage_ref: StorageRef
+    is_replica: bool = False
+    schedule: str | None = None
+
+
+# ============================================================================
 # Union of all job types, for response model
 
 AnyJob = RootModel[
@@ -3424,6 +3436,7 @@ AnyJob = RootModel[
     | RetryStuckUploadsJob
     | ReplicateFilesCronJob
     | CopyReplicasJob
+    | DeleteOrgFilesJob
 ]
 
 
