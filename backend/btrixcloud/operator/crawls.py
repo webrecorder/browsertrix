@@ -1804,9 +1804,12 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
-        await self.org_ops.inc_org_bytes_stored(
-            crawl.oid, filecomplete.size, "crawl", active_crawl=True
-        )
+        # Don't count QA WACZs against storage quota for now, same as
+        # execution minutes
+        if not crawl.is_qa:
+            await self.org_ops.inc_org_bytes_stored(
+                crawl.oid, filecomplete.size, "crawl", active_crawl=True
+            )
 
         return filecomplete.size
 
