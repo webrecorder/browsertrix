@@ -1,5 +1,5 @@
 """
-Migration 0059 - Separately track bytes stored for finished and active crawls on org
+Migration 0060 - Separately track bytes stored for finished and active crawls on org
 """
 
 import structlog
@@ -8,7 +8,7 @@ from btrixcloud.migrations import BaseMigration
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
-MIGRATION_VERSION = "0059"
+MIGRATION_VERSION = "0060"
 
 
 class Migration(BaseMigration):
@@ -59,16 +59,25 @@ class Migration(BaseMigration):
             try:
                 _ = await self.org_ops.get_org_by_id(oid)
 
-                _, _, finished_crawls_size, active_crawls_size, _ = (
-                    self.crawl_ops.calculate_org_crawl_file_storage(oid, type_="crawl")
-                )
+                # Recalculate all totals just to be safe, since we had some
+                # size bugs around QA WACZs and upload replacement
+                (
+                    total_size,
+                    crawls_size,
+                    finished_crawls_size,
+                    active_crawls_size,
+                    uploads_size,
+                ) = self.crawl_ops.calculate_org_crawl_file_storage(oid)
 
                 await orgs_db.find_one_and_update(
                     {"_id": oid},
                     {
                         "$set": {
+                            "bytesStored": total_size,
+                            "bytesStoredCrawls": crawls_size,
                             "bytesStoredFinishedCrawls": finished_crawls_size,
                             "bytesStoredActiveCrawls": active_crawls_size,
+                            "bytesStoredUploads": uploads_size,
                         }
                     },
                 )
