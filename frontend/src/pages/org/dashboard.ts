@@ -45,6 +45,7 @@ import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
+import { miscStorage } from "@/utils/org/metrics";
 import { hasUsage } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -489,11 +490,7 @@ export class Dashboard extends BtrixElement {
                   url: "/browser-profiles",
                 },
               })}
-              ${metrics.storageUsedSeedFiles ||
-              metrics.storageUsedThumbnails ||
-              metrics.storageUsedDedupeIndexes
-                ? this.renderMiscStorage(metrics)
-                : nothing}
+              ${when(miscStorage(metrics), this.renderMiscStorage)}
 
               <sl-divider class="my-4"></sl-divider>
               ${this.renderStat({
@@ -749,7 +746,9 @@ export class Dashboard extends BtrixElement {
       </div>`;
   }
 
-  private renderMiscStorage(metrics: Metrics) {
+  private readonly renderMiscStorage = (total: number) => {
+    if (total < 0) return;
+
     return html`
       <div class="mb-2 flex items-center gap-2 last:mb-0">
         <dt class="mr-auto flex items-center tabular-nums">
@@ -770,15 +769,11 @@ export class Dashboard extends BtrixElement {
           </btrix-popover>
         </dt>
         <dd class="font-monostyle text-xs text-neutral-500">
-          ${this.localize.bytes(
-            metrics.storageUsedSeedFiles +
-              metrics.storageUsedThumbnails +
-              metrics.storageUsedDedupeIndexes,
-          )}
+          ${this.localize.bytes(total)}
         </dd>
       </div>
     `;
-  }
+  };
 
   private renderNoPublicCollections() {
     if (!this.org || !this.metrics || !this.appState.isCrawler) return;

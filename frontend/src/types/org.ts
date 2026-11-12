@@ -65,8 +65,13 @@ export const orgDataSchema = z.object({
   quotas: orgQuotasSchema,
   bytesStored: z.number(),
   bytesStoredCrawls: z.number(),
+  bytesStoredFinishedCrawls: z.number(),
+  bytesStoredActiveCrawls: z.number(),
   bytesStoredUploads: z.number(),
   bytesStoredProfiles: z.number(),
+  bytesStoredSeedFiles: z.number(),
+  bytesStoredThumbnails: z.number(),
+  bytesStoredDedupeIndexes: z.number(),
   usage: z.record(yearMonthSchema, z.number()).nullable(),
   /* Actual total time used, including time to stop the crawl, gifted, and extra time */
   crawlExecSeconds: z.record(yearMonthSchema, z.number()).nullable().optional(),
@@ -126,6 +131,8 @@ export type PublicOrgCollections = z.infer<typeof publicOrgCollectionsSchema>;
 export type Metrics = {
   storageUsedBytes: number;
   storageUsedCrawls: number;
+  storageUsedFinishedCrawls: number;
+  storageUsedActiveCrawls: number;
   storageUsedUploads: number;
   storageUsedProfiles: number;
   storageUsedSeedFiles: number;

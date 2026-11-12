@@ -12,6 +12,7 @@ import { type Color } from "@/features/meters/utils/colors";
 import { renderLegendColor } from "@/features/meters/utils/legend";
 import { tooltipContent } from "@/features/meters/utils/tooltip";
 import { type Metrics } from "@/types/org";
+import { miscStorage } from "@/utils/org/metrics";
 
 const STORAGE_TYPES = ["crawls", "uploads", "browserProfiles", "misc"] as const;
 type StorageType = (typeof STORAGE_TYPES)[number];
@@ -31,10 +32,7 @@ export class StorageMeter extends BtrixElement {
     const hasQuota = Boolean(metrics.storageQuotaBytes);
     const isStorageFull =
       hasQuota && metrics.storageUsedBytes >= metrics.storageQuotaBytes;
-    const misc =
-      metrics.storageUsedSeedFiles +
-      metrics.storageUsedThumbnails +
-      metrics.storageUsedDedupeIndexes;
+    const misc = miscStorage(metrics);
 
     const values = {
       crawls: metrics.storageUsedCrawls,
