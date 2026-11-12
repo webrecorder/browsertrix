@@ -39,7 +39,7 @@ else:
     ) = object
 
 
-CURR_DB_VERSION = "0059"
+CURR_DB_VERSION = "0060"
 
 MIN_DB_VERSION = 7.0
 
