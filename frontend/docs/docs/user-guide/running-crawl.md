@@ -12,6 +12,10 @@ The **Crawling** > **Crawl Runs** page lists all active crawls. Individual crawl
 
 When a workflow run is initiated, the workflow status changes to <span class="status-violet-600">:bootstrap-hourglass-split: Waiting</span> or <span class="status-violet-600">:btrix-status-dot: Starting</span>, depending on whether the conditions for starting a crawl are in place (such as resource capacity.) The workflow status will change to <span class="status-green-600">:btrix-status-dot: Running</span> once the crawler loads the first crawl URL.
 
+A crawl is considered to be “active” from when the workflow run is initiated until when the crawl ends. This includes waiting, starting, running, and paused states.
+
+## Crawl Progress
+
 A running crawl in the **Crawling** > **Crawl Runs** list and [workflow > **Crawls**](./crawl-workflows.md#crawl-run-history) list will display a progress indicator in the place of a finish date. The progress indicator is based on the ratio of crawled to found pages. The indicator should be used as a rough estimate for how far along the crawl is; the ratio may change over the course of the crawl as the crawler discovers more pages, or if [page exclusions change](#live-exclusion-editing).
 
 ## Watch Crawl
@@ -70,7 +74,6 @@ If the crawl remains rate limited for an extended period of time (12 hours by de
 If a workflow run is scheduled to start and the previous crawl run had been paused due to rate limiting (<span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>), the paused crawl will stop automatically to allow the next scheduled crawl to start.
 This way, even if the new crawl is also rate limited eventually, some pages can still be crawled on schedule.
 The status of the previous stopped crawl will be set to: <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Crawl Started</span>.
-
 
 ## End a Crawl
 
