@@ -503,7 +503,13 @@ class BaseCrawlOps:
                 }
             },
         )
-        await self.orgs.inc_org_bytes_stored(oid, -deleted_file_size, "crawl")
+        if deleted_file_size != 0:
+            logger.debug(
+                "crawl_failed_removing_from_org_active_bytes", size=deleted_file_size
+            )
+            await self.orgs.inc_org_bytes_stored(
+                oid, -deleted_file_size, "crawl", active_crawl=True
+            )
 
     async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
         """Delete files for all qa runs in a crawl"""
@@ -1105,31 +1111,70 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: TYPE_CRAWL_TYPES | None = None
-    ) -> tuple[int, int, int]:
+    ) -> tuple[int, int, int, int, int]:
         """Calculate and return total size of crawl files in org.
 
-        Returns tuple of (total, crawls only, uploads only)
+        Optionally filterable by crawl type.
+
+        Returns tuple of (total, crawls only, finished crawls only,
+        active crawls only, uploads only).
         """
-        total_size = 0
         crawls_size = 0
+        crawls_finished_size = 0
+        crawls_active_size = 0
         uploads_size = 0
 
-        cursor = self.crawls.find({"oid": oid})
-        async for crawl_dict in cursor:
-            files = crawl_dict.get("files", [])
-            type_ = crawl_dict.get("type")
+        match_query: dict[str, UUID | str] = {"oid": oid}
 
-            item_size = 0
-            for file_ in files:
-                item_size += file_.get("size", 0)
+        calc_logger = logger.bind(oid=oid, crawl_type=type_)
 
-            total_size += item_size
-            if type_ == "crawl":
-                crawls_size += item_size
-            if type_ == "upload":
-                uploads_size += item_size
+        # Calculate crawls
+        if type_ != "upload":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "crawl"}},
+                        {"$group": {"_id": "$state", "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list()
 
-        return total_size, crawls_size, uploads_size
+                for state_dict in res:
+                    state = state_dict["_id"]
+                    size = state_dict.get("size", 0)
+
+                    crawls_size += size
+                    if state in RUNNING_AND_WAITING_STATES:
+                        crawls_active_size += size
+                    else:
+                        crawls_finished_size += size
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_crawl_bytes_stored_calculation_error")
+
+        # Calculate uploads
+        if type_ != "crawl":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "upload"}},
+                        {"$group": {"_id": None, "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list(length=1)
+                if res:
+                    uploads_size = res[0].get("size", 0)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_upload_bytes_stored_calculation_error")
+
+        total_size = crawls_size + uploads_size
+
+        return (
+            total_size,
+            crawls_size,
+            crawls_finished_size,
+            crawls_active_size,
+            uploads_size,
+        )
 
     async def get_org_last_crawl_finished(self, oid: UUID) -> datetime | None:
         """Get last crawl finished time for org"""

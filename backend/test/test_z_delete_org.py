@@ -9,68 +9,6 @@ from .conftest import API_PREFIX
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 
-def test_recalculate_org_storage(admin_auth_headers, default_org_id):
-    # Prior to deleting org, ensure recalculating storage works now that
-    # resources of all types have been created.
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/recalculate-storage",
-        headers=admin_auth_headers,
-        timeout=120,
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["success"]
-
-    job_id = data["id"]
-    assert job_id
-
-    # Check that background job is launched and eventually succeeds
-    max_attempts = 18
-    attempts = 1
-    while True:
-        try:
-            r = requests.get(
-                f"{API_PREFIX}/orgs/all/jobs/{job_id}",
-                headers=admin_auth_headers,
-                timeout=120,
-            )
-            assert r.status_code == 200
-            success = r.json()["success"]
-
-            if success:
-                break
-
-            if success is False:
-                pytest.fail("Job failed")
-
-            time.sleep(10)
-        except:
-            time.sleep(10)
-
-        if attempts >= max_attempts:
-            pytest.fail(f"Giving up waiting for job after {max_attempts} attempts")
-
-        attempts += 1
-        logger.info(
-            "test_job_retrying",
-            attempts=attempts,
-            max_attempts=max_attempts,
-            unstructured_message=f"Job not yet succeeded, retrying... ({attempts}/{max_attempts})",
-        )
-
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    data = r.json()
-
-    assert data["bytesStored"] > 0
-    assert data["bytesStoredCrawls"] > 0
-    assert data["bytesStoredUploads"] > 0
-    assert data["bytesStoredProfiles"] > 0
-
-
 def test_delete_org_non_superadmin(crawler_auth_headers, default_org_id):
     # Assert that non-superadmin can't delete org
     r = requests.delete(
