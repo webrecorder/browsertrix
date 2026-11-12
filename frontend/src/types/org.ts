@@ -131,6 +131,8 @@ export type PublicOrgCollections = z.infer<typeof publicOrgCollectionsSchema>;
 export type Metrics = {
   storageUsedBytes: number;
   storageUsedCrawls: number;
+  storageUsedFinishedCrawls: number;
+  storageUsedActiveCrawls: number;
   storageUsedUploads: number;
   storageUsedProfiles: number;
   storageUsedSeedFiles: number;
