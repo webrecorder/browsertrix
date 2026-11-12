@@ -139,7 +139,11 @@ class UploadOps(BaseCrawlOps):
 
         if prev_upload:
             try:
-                await self._delete_crawl_files(prev_upload, org)
+                deleted_file_size, _ = await self._delete_crawl_files(prev_upload, org)
+                if deleted_file_size != 0:
+                    await self.orgs.inc_org_bytes_stored(
+                        org.id, -deleted_file_size, "upload"
+                    )
                 await self.page_ops.delete_crawl_pages(prev_upload.id, org.id)
             # pylint: disable=broad-exception-caught
             except Exception:
