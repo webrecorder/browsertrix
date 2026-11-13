@@ -78,6 +78,7 @@ class PageOps:
     ):
         self.pages = mdb["pages"]
         self.crawls = mdb["crawls"]
+        self.text_qa = mdb["text_qa"]
         self.mdb = mdb
         self.crawl_ops = crawl_ops
         self.org_ops = org_ops
@@ -102,6 +103,10 @@ class PageOps:
             ]
         )
         await self.pages.create_index([("title", "text")])
+
+        await self.text_qa.create_index(
+            [("url", pymongo.ASCENDING), ("ts", pymongo.ASCENDING)], unique=True
+        )
 
     async def set_ops(self, background_job_ops: BackgroundJobOps):
         """Set ops classes as needed"""
@@ -267,6 +272,15 @@ class PageOps:
         oid: UUID,
     ):
         """Add page to database"""
+        if qa_run_id:
+            compare = PageQACompare(**page_dict.get("comparison", {}))
+            result = await self.text_qa.find_one_and_update(
+                {"url": page_dict.get("url"), "ts": page_dict.get("ts")},
+                {"$set": compare.dict()},
+                upsert=True,
+            )
+            return
+
         page = self._get_page_from_dict(page_dict, crawl_id, oid, new_uuid=False)
 
         page_logger = logger.bind(crawl_id=crawl_id, oid=oid, qa_run_id=qa_run_id)
@@ -291,7 +305,7 @@ class PageOps:
             await self.update_crawl_file_and_error_counts(crawl_id, [page])
 
         # qa data
-        if qa_run_id and page:
+        if qa_run_id:
             compare_dict = page_dict.get("comparison")
             if compare_dict is None:
                 page_logger.warning(
