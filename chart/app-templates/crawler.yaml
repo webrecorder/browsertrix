@@ -65,11 +65,6 @@ spec:
     - name: crawl-config
       configMap:
         name: {{ "crawl-config-" ~ id }}
-    {% if qa_source_crawl_id %}
-    - name: qa-config
-      configMap:
-        name: {{ "qa-replay-" ~ qa_source_crawl_id }}
-    {% endif %}
     - name: crawl-data
     {% if not no_pvc %}
       persistentVolumeClaim:
@@ -142,7 +137,7 @@ spec:
         - {{ redis_url }}
       {% if qa_source_crawl_id %}
         - --qaSource
-        - /tmp/qa/qa-config.json
+        - {{ qa_source_url }}
       {% else %}
       {% if redis_dedupe_url %}
         - --redisDedupeUrl
@@ -177,11 +172,6 @@ spec:
           mountPath: /tmp/config/
           readOnly: True
 
-      {% if qa_source_crawl_id %}
-        - name: qa-config
-          mountPath: /tmp/qa/
-          readOnly: True
-      {% endif %}
       {% if add_proxies %}
         - name: proxies
           mountPath: /tmp/proxies/
