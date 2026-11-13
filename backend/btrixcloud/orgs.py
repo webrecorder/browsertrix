@@ -135,10 +135,13 @@ class BaseOrgs:
     # pylint: disable=invalid-name
     def storage_quota_reached(self, org: Organization, extra_bytes: int = 0) -> bool:
         """Return boolean indicating if storage quota is met or exceeded."""
-        if not org.quotas.storageQuota:
+        storage_quota = (org.quotas.storageQuota or 0) + (
+            org.quotas.extraStorageQuota or 0
+        )
+        if not storage_quota:
             return False
 
-        if (org.bytesStored + extra_bytes) < org.quotas.storageQuota:
+        if (org.bytesStored + extra_bytes) < storage_quota:
             return False
 
         return True
@@ -670,6 +673,20 @@ class OrgOps(BaseOrgs):
         if update.renewalDate is not None:
             query["subscription.renewalDate"] = update.renewalDate
 
+        # Always assign these, including None. External subscription app leaves
+        # None values out of the JSON it sends (`exclude_defaults`), so a
+        # missing field here means "this is cleared now" rather than no change
+        query["subscription.storageAddonPendingGB"] = update.storageAddonPendingGB
+        query["subscription.pendingPlanId"] = update.pendingPlanId
+
+        query["subscription.billingInterval"] = update.billingInterval
+        query["subscription.billingIntervalCount"] = update.billingIntervalCount
+
+        # Same idea for the "we already emailed about this reduction" marker
+        query["subscription.storageAddonRevertedRequestedGB"] = (
+            update.storageAddonRequestedGB
+        )
+
         if update.status == SubscriptionStatus.PAUSED_PAYMENT_FAILED:
             query["readOnly"] = True
             query["readOnlyReason"] = REASON_PAUSED
@@ -677,6 +694,9 @@ class OrgOps(BaseOrgs):
             query["readOnly"] = False
             query["readOnlyReason"] = ""
 
+        # `ReturnDocument.BEFORE`: callers compare the pre-update state against
+        # stored fields to detect new notifications, the AFTER state would
+        # suppress them.
         org_data = await self.orgs.find_one_and_update(
             {"subscription.subId": update.subId},
             {"$set": query},
@@ -1146,7 +1166,12 @@ class OrgOps(BaseOrgs):
         ):
             return
 
-        monthly_remaining_time = monthly_quota_secs - monthly_exec_secs_used
+        # Recorded usage can be over quota due to a plan downgrade mid-month;
+        # a negative value would both subtract from `monthlyExecSeconds` and add
+        # the whole difference to `secs_over_quota`, draining the
+        # plan/gifted/extra pools by more than the crawl itself used. Clamping
+        # here prevents this.
+        monthly_remaining_time = max(0, monthly_quota_secs - monthly_exec_secs_used)
 
         # If adding duration won't pass monthly quota, add duration and return
         if duration <= monthly_remaining_time:
@@ -1228,7 +1253,9 @@ class OrgOps(BaseOrgs):
     async def get_org_metrics(self, org: Organization) -> dict[str, int]:
         """Calculate and return org metrics"""
         # pylint: disable=too-many-locals
-        storage_quota = org.quotas.storageQuota or 0
+        storage_quota = (org.quotas.storageQuota or 0) + (
+            org.quotas.extraStorageQuota or 0
+        )
         max_concurrent_crawls = org.quotas.maxConcurrentCrawls or 0
 
         # Calculate these counts in loop to avoid having db iterate through
