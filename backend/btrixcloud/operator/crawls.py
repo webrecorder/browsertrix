@@ -512,7 +512,9 @@ class CrawlOperator(BaseOperator):
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
-            children.extend(await self._load_qa_configmap(params, data.children))
+            params["qa_source_url"] = self.crawl_ops.get_internal_replay_json_url(
+                crawl.qa_source_crawl_id, f"crawljob-{crawl.id}", crawl.oid
+            )
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -653,36 +655,6 @@ class CrawlOperator(BaseOperator):
             )
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
-
-    async def _load_qa_configmap(self, params, children):
-        qa_source_crawl_id = params["qa_source_crawl_id"]
-        name = f"qa-replay-{qa_source_crawl_id}"
-
-        configmap = children[CMAP].get(name)
-        if configmap and self.is_configmap_update_needed("qa-config.json", configmap):
-            logger.debug(
-                "qa_configmap_refreshed",
-                name=name,
-                unstructured_message=f"Refreshing QA configmap for QA run: {name}",
-            )
-            configmap = None
-
-        if configmap:
-            metadata = configmap["metadata"]
-            configmap["metadata"] = {
-                "name": metadata["name"],
-                "namespace": metadata["namespace"],
-                "labels": metadata["labels"],
-            }
-            return [configmap]
-
-        crawl_replay = await self.crawl_ops.get_internal_crawl_out(
-            qa_source_crawl_id, with_dependencies=True
-        )
-
-        params["name"] = name
-        params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
-        return self.load_from_yaml("qa_configmap.yaml", params)
 
     # pylint: disable=too-many-arguments
     def _load_crawler(

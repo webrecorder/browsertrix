@@ -277,7 +277,7 @@ def main() -> None:
         crawl_log_ops,
     )
 
-    base_crawl_ops = init_base_crawls_api(*base_crawl_init)
+    base_crawl_ops = init_base_crawls_api(crawl_manager, *base_crawl_init)
 
     crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
