@@ -369,11 +369,26 @@ class K8sAPI:
             if exc.status != 404:
                 raise
 
-    async def has_job(self, name) -> bool:
+    async def has_job(self, name: str) -> bool:
         """return true/false if job exists"""
         try:
             await self.batch_api.read_namespaced_job(
                 name=name, namespace=self.namespace
+            )
+            return True
+        # pylint: disable=bare-except
+        except:
+            return False
+
+    async def has_custom_object(self, name: str, type_plural: str) -> bool:
+        """return true/false if custom ojbect exists"""
+        try:
+            await self.custom_api.get_namespaced_custom_object(
+                group="btrix.cloud",
+                version="v1",
+                namespace=self.namespace,
+                plural=type_plural,
+                name=name,
             )
             return True
         # pylint: disable=bare-except
