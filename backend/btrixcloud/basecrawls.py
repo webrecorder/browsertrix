@@ -10,10 +10,12 @@ from uuid import UUID
 
 import structlog
 import pymongo
-from fastapi import Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorDatabase
 
+from .auth import create_custom_jwt_token, get_custom_jwt_token
+from .crawlmanager import CrawlManager
 from .models import (
     CRAWL_TYPES,
     RUNNING_AND_WAITING_STATES,
@@ -32,6 +34,7 @@ from .models import (
     Organization,
     PaginatedCrawlOutResponse,
     QARun,
+    ResourcesOnly,
     StorageRef,
     TagsResponse,
     UpdateCrawl,
@@ -76,6 +79,8 @@ class BaseCrawlOps:
     crawl_log_ops: CrawlLogOps
     page_ops: PageOps
 
+    backend_origin: str
+
     def __init__(
         self,
         mdb: AsyncIOMotorDatabase,
@@ -99,6 +104,8 @@ class BaseCrawlOps:
         self.background_job_ops = background_job_ops
         self.crawl_log_ops = crawl_log_ops
         self.page_ops = cast(PageOps, None)
+
+        self.backend_origin = os.environ.get("BACKEND_ORIGIN", "")
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -238,18 +245,32 @@ class BaseCrawlOps:
 
         return crawl
 
-    async def get_internal_crawl_out(
-        self, crawl_id: str, with_dependencies: bool = False
+    def get_internal_replay_json_url(self, crawl_id: str, job_id: str, oid: UUID):
+        """get internal crawl replay url, accessible only from crawl/qa run"""
+        auth_bearer = create_custom_jwt_token(
+            crawl_id,
+            {"sub_type": "crawl", "scope_type": "crawljob", "scope": job_id},
+        )
+        return (
+            f"{self.backend_origin}/api/orgs/{oid}/all-crawls/{crawl_id}"
+            + f"/internal/replay.json?withDependencies=1&auth_bearer={auth_bearer}"
+        )
+
+    async def get_internal_crawl_resources(
+        self, crawl_id: str, oid: UUID, with_dependencies: bool = False
     ):
         """add internal prefix for relative paths"""
+
+        org = await self.orgs.get_org_by_id(oid)
+
         crawl_out = await self.get_crawl_out(
-            crawl_id, with_dependencies=with_dependencies
+            crawl_id, org=org, with_dependencies=with_dependencies
         )
         resources = crawl_out.resources or []
         for file_ in resources:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
-        return crawl_out
+        return ResourcesOnly(resources=resources)
 
     async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
         """returns a list of crawl ids that are no longer in the db from a given list"""
@@ -1173,7 +1194,10 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args
+    crawl_manager: CrawlManager,
+    app: APIRouter,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
+    *args,
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
@@ -1182,6 +1206,20 @@ def init_base_crawls_api(
 
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
+
+    async def crawl_internal_access_dep(
+        crawl_id: str, token_data: dict[str, str] = Depends(get_custom_jwt_token)
+    ) -> str:
+        # first, check that this is a valid crawl
+        if token_data.get("sub_type") == "crawl" and token_data.get("sub") == crawl_id:
+            # second, check that the k8s object access is scoped to exists
+            if await crawl_manager.validate_k8s_obj_exists(
+                token_data.get("scope_type", ""), token_data.get("scope", "")
+            ):
+                return crawl_id
+
+        # otherwise, deny access
+        raise HTTPException(status_code=403, detail="access_denied")
 
     @app.get(
         "/orgs/{oid}/all-crawls",
@@ -1355,6 +1393,20 @@ def init_base_crawls_api(
             org,
             headers=dict(request.headers),
             with_dependencies=withDependencies,
+        )
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/internal/replay.json",
+        tags=["all-crawls"],
+        response_model=ResourcesOnly,
+    )
+    async def get_internal_replay(
+        oid: UUID,
+        crawl_id: str = Depends(crawl_internal_access_dep),
+        withDependencies: bool = False,
+    ):
+        return await ops.get_internal_crawl_resources(
+            crawl_id, oid, with_dependencies=withDependencies
         )
 
     @app.get(
