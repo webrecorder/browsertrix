@@ -276,7 +276,7 @@ class PageOps:
             compare = PageQACompare(**page_dict.get("comparison", {}))
             result = await self.text_qa.find_one_and_update(
                 {"url": page_dict.get("url"), "ts": page_dict.get("ts")},
-                {"$set": compare.dict()},
+                {"$set": {"crawl_id": crawl_id, **compare.dict()}},
                 upsert=True,
             )
             return
