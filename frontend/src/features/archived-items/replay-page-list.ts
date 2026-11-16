@@ -35,6 +35,7 @@ import {
   type APISortQuery,
 } from "@/types/api";
 import { type ArchivedItemPage } from "@/types/crawler";
+import { formatRwpTimestamp } from "@/utils/replay";
 import { objectSearchParams } from "@/utils/searchParams/object";
 import { sortBySearchParams, type SortBy } from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
@@ -43,6 +44,8 @@ export type ReplayPageListSelectEvent = BtrixSelectEvent<ArchivedItemPage>;
 
 export type ReplayPage = {
   url?: string;
+  // Timestamp should be in the RWP format.
+  // Use `formatRwpTimestamp` to convert timestamps from the Browsertrix API
   ts?: string;
 };
 
@@ -95,7 +98,10 @@ export class ArchivedItemReplayPageList extends BtrixElement {
 
       if (pages.items.length && !this.replayPage.value.url) {
         const firstPage = pages.items[0];
-        this.replayPage.setValue(firstPage);
+        this.replayPage.setValue({
+          url: firstPage.url,
+          ts: formatRwpTimestamp(firstPage.ts),
+        });
       }
 
       return pages;
@@ -108,6 +114,16 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       ] as const,
     argsEqual: deepArrayEquals,
   });
+
+  private pageSelected(currPage: Pick<ArchivedItemPage, "url" | "ts">) {
+    const replayPage = this.replayPage.value;
+
+    return Boolean(
+      replayPage.url &&
+      replayPage.url === currPage.url &&
+      replayPage.ts === formatRwpTimestamp(currPage.ts),
+    );
+  }
 
   render() {
     const sidebarView = this.view === ReplayView.Sidebar;
@@ -239,7 +255,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
       <div slot="content">${this.renderPageDetails(page)}</div>
       <li
         class=${tw`flex items-center overflow-hidden transition-all has-[button:hover]:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
-        aria-selected="${this.replayPage.value.url === page.url}"
+        aria-selected="${this.pageSelected(page)}"
       >
         <button
           class="flex-1 block overflow-hidden text-left py-1.5 pl-3 pr-1.5"
@@ -283,7 +299,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
     const row = (page: ArchivedItemPage) =>
       html`<btrix-table-row
         class=${tw`border-x border-t bg-white transition-colors duration-fast first:rounded-t last:rounded-b last:border-b hover:bg-cyan-50/50 aria-selected:[&:not(:only-child)]:bg-cyan-50`}
-        aria-selected="${this.replayPage.value.url === page.url}"
+        aria-selected="${this.pageSelected(page)}"
       >
         <btrix-table-cell rowClickTarget="button">
           <button

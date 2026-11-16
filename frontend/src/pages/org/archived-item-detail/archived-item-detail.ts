@@ -488,7 +488,7 @@ export class ArchivedItemDetail extends BtrixElement {
                     class=${clsx(
                       tw`replay-panel scroll-mt-2 overflow-hidden rounded-lg border`,
                       sidebarView
-                        ? missingRequiresCrawls
+                        ? missingRequiresCrawls?.length
                           ? // 5rem - Rough height of missing deps banner for wider screens
                             tw`h-[calc(var(--sidebar-view-height)-5rem)]`
                           : tw`h-[--sidebar-view-height]`
@@ -1052,14 +1052,14 @@ export class ArchivedItemDetail extends BtrixElement {
     // TODO Investigate in RWP why re-rendering with the same attributes causes `rwp-url-change` to fire again;
     // guard should prevent this for now
     return html`${guard(
-      [replaySource, this.replayPage.value.url],
+      [replaySource, this.replayPage.value.url, this.replayPage.value.ts],
       () =>
         html`<replay-web-page
           source="${replaySource}"
           coll="${this.itemId}"
           url=${this.replayPage.value.url ||
           /* must be empty string to reset the attribute: */ ""}
-          ts=${formatRwpTimestamp(this.replayPage.value.ts) ||
+          ts=${this.replayPage.value.ts ||
           /* must be empty string to reset the attribute: */ ""}
           config="${config}"
           replayBase="/replay/"
@@ -1095,8 +1095,6 @@ export class ArchivedItemDetail extends BtrixElement {
 
     this.replayEmbed.mainElement?.navigateReplayTo(
       page.url,
-      // Although the timestamp isn't necessary since the same URL won't be crawled twice,
-      // passing it during navigation prevents RWP from re-navigating to the latest timestamp
       page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
     );
   };

@@ -149,8 +149,8 @@ export class WorkflowDetail extends BtrixElement {
   @property({ type: Number })
   maxBrowserWindows = DEFAULT_MAX_SCALE;
 
-  @state()
-  private lastCrawlId?: Workflow["lastCrawlId"];
+  @property({ type: String, useDefault: true })
+  lastCrawlId?: Workflow["lastCrawlId"];
 
   @state()
   private isDialogVisible = false;
@@ -518,6 +518,9 @@ export class WorkflowDetail extends BtrixElement {
     }
     if (changedProperties.has("openDialogName") && this.openDialogName) {
       this.closeEditDialog();
+    }
+    if (changedProperties.has("lastCrawlId")) {
+      this.replayPage.setValue({});
     }
   }
 
@@ -1861,8 +1864,9 @@ export class WorkflowDetail extends BtrixElement {
             })
           : nothing,
       )}
-      ${guard([this.lastCrawlId, this.replayPage.value.url], () =>
-        when(this.latestCrawlTask.value, this.renderReplay),
+      ${guard(
+        [this.lastCrawlId, this.replayPage.value.url, this.replayPage.value.ts],
+        () => when(this.latestCrawlTask.value, this.renderReplay),
       )}
     `;
   };
@@ -1945,8 +1949,7 @@ export class WorkflowDetail extends BtrixElement {
           url=${this.replayPage.value.url ||
           latestCrawl.firstSeed ||
           /* must be empty string to reset the attribute: */ ""}
-          ts=${(this.replayPage.value.url &&
-            formatRwpTimestamp(this.replayPage.value.ts)) ||
+          ts=${(this.replayPage.value.url && this.replayPage.value.ts) ||
           /* must be empty string to reset the attribute: */ ""}
           config="${config}"
           replayBase="/replay/"
@@ -2571,8 +2574,6 @@ export class WorkflowDetail extends BtrixElement {
         },
       );
       this.lastCrawlId = data.started;
-
-      this.replayPage.setValue({});
 
       this.navigate.to(`${this.basePath}/${WorkflowTab.LatestCrawl}`);
 
