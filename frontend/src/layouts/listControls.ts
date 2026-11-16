@@ -65,7 +65,7 @@ export function listControls({
             ${renderBulkActionsControl
               ? html`<div
                   class=${clsx(
-                    tw`peer hidden items-center gap-2 text-neutral-500 @3xl/controls:absolute @3xl/controls:flex @3xl/controls:h-full @3xl/controls:translate-y-full @3xl/controls:opacity-0 @3xl/controls:delay-75 @3xl/controls:motion-safe:transition-all`,
+                    tw`peer hidden items-center gap-0.5 text-neutral-500 @3xl/controls:absolute @3xl/controls:flex @3xl/controls:h-full @3xl/controls:translate-y-full @3xl/controls:opacity-0 @3xl/controls:delay-75 @3xl/controls:motion-safe:transition-all`,
                     tw`@3xl/controls:hover:translate-y-0 @3xl/controls:hover:opacity-100`,
                     tw`@3xl/controls:has-[sl-checkbox[checked]]:translate-y-0 @3xl/controls:has-[sl-checkbox[checked]]:opacity-100`,
                     tw`@3xl/controls:has-[sl-checkbox[indeterminate]]:translate-y-0 @3xl/controls:has-[sl-checkbox[indeterminate]]:opacity-100`,

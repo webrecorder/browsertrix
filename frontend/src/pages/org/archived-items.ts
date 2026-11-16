@@ -297,7 +297,12 @@ export class CrawlsList extends BtrixElement {
   private itemToDelete: ArchivedItem | null = null;
 
   @state()
-  private openDialog?: "edit" | "delete" | "bulkDelete" | "upload";
+  private openDialog?:
+    | "edit"
+    | "delete"
+    | "bulkDelete"
+    | "bulkAddToCollection"
+    | "upload";
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
@@ -925,12 +930,23 @@ export class CrawlsList extends BtrixElement {
       </div>
 
       ${anySelected
-        ? html`<sl-icon-button
-            class="text-base hover:text-danger focus:text-danger"
-            name="trash3"
-            label=${msg("Delete Items")}
-            @click=${() => (this.openDialog = "bulkDelete")}
-          ></sl-icon-button>`
+        ? html`<sl-divider class="ml-3 mr-1 h-6" vertical></sl-divider>
+            <sl-tooltip content=${msg("Add to Collection")} hoist>
+              <sl-icon-button
+                class="text-base"
+                name="collection"
+                label=${msg("Add to Collection")}
+                @click=${() => (this.openDialog = "bulkAddToCollection")}
+              ></sl-icon-button>
+            </sl-tooltip>
+            <sl-tooltip content=${msg("Delete Items")} hoist>
+              <sl-icon-button
+                class="text-base hover:text-danger focus:text-danger"
+                name="trash3"
+                label=${msg("Delete Items")}
+                @click=${() => (this.openDialog = "bulkDelete")}
+              ></sl-icon-button>
+            </sl-tooltip>`
         : nothing} `;
   };
 
@@ -1092,7 +1108,9 @@ export class CrawlsList extends BtrixElement {
   };
 
   private renderBulkActionsDialog() {
-    const dialog = () => {
+    const deletionInProgress =
+      this.deleteItemsTask.status === TaskStatus.PENDING;
+    const dialogs = () => {
       const selected = true;
       const notSelected = false;
       const group = Map.groupBy([...this.visibleItems.values()], (item) =>
@@ -1103,7 +1121,7 @@ export class CrawlsList extends BtrixElement {
       return html`<btrix-bulk-delete-items-dialog
         .items=${items || []}
         ?open=${this.openDialog === "bulkDelete"}
-        ?inProgress=${this.deleteItemsTask.status === TaskStatus.PENDING}
+        ?inProgress=${deletionInProgress}
         @sl-after-hide=${() => (this.openDialog = undefined)}
         @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
           const { itemIds } = e.detail;
@@ -1120,9 +1138,9 @@ export class CrawlsList extends BtrixElement {
       [
         this.selectedItemIds,
         this.openDialog === "bulkDelete",
-        this.deleteItemsTask.status === TaskStatus.PENDING,
+        deletionInProgress,
       ],
-      dialog,
+      dialogs,
     );
   }
 
