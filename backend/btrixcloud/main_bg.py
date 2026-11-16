@@ -146,7 +146,7 @@ async def main():
 
     if job_type == BgJobType.RECALCULATE_ORG_STATS:
         try:
-            await org_ops.recalculate_storage(org)
+            await org_ops.recalculate_and_update_storage(org)
             return ExitCode.SUCCESS
         # pylint: disable=broad-exception-caught
         except Exception:

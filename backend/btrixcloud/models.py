@@ -2898,6 +2898,28 @@ class OrgImportResponse(BaseModel):
 
 
 # ============================================================================
+class OrgCrawlFileStorageResults(BaseModel):
+    """Model for org crawlfile storage calculation results, in bytes"""
+
+    total_crawlfiles: int = 0
+    crawls: int = 0
+    crawls_finished: int = 0
+    crawls_active: int = 0
+    uploads: int = 0
+
+
+# ============================================================================
+class OrgStorageResults(OrgCrawlFileStorageResults):
+    """Model for complete org storage calculation results, in bytes"""
+
+    total_org: int = 0
+    profiles: int = 0
+    seed_files: int = 0
+    thumbnails: int = 0
+    dedupe_indexes: int = 0
+
+
+# ============================================================================
 
 ### PAGINATION ###
 

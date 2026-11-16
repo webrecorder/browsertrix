@@ -30,6 +30,7 @@ from .models import (
     DeletedResponseQuota,
     ListFilterType,
     Organization,
+    OrgCrawlFileStorageResults,
     PaginatedCrawlOutResponse,
     QARun,
     StorageRef,
@@ -1111,13 +1112,10 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: TYPE_CRAWL_TYPES | None = None
-    ) -> tuple[int, int, int, int, int]:
+    ) -> OrgCrawlFileStorageResults:
         """Calculate and return total size of crawl files in org.
 
         Optionally filterable by crawl type.
-
-        Returns tuple of (total, crawls only, finished crawls only,
-        active crawls only, uploads only).
         """
         crawls_size = 0
         crawls_finished_size = 0
@@ -1168,12 +1166,12 @@ class BaseCrawlOps:
 
         total_size = crawls_size + uploads_size
 
-        return (
-            total_size,
-            crawls_size,
-            crawls_finished_size,
-            crawls_active_size,
-            uploads_size,
+        return OrgCrawlFileStorageResults(
+            total_crawlfiles=total_size,
+            crawls=crawls_size,
+            crawls_finished=crawls_finished_size,
+            crawls_active=crawls_active_size,
+            uploads=uploads_size,
         )
 
     async def get_org_last_crawl_finished(self, oid: UUID) -> datetime | None:
