@@ -1759,9 +1759,7 @@ class OrgOps(BaseOrgs):
 
         user_file_size = seed_file_size + thumbnail_size + dedupe_index_size
 
-        org_size = (
-            org_crawl_storage.total_crawlfiles_size + profile_size + user_file_size
-        )
+        org_size = org_crawl_storage.total_crawlfiles + profile_size + user_file_size
 
         return OrgStorageResults(
             total_org=org_size,
