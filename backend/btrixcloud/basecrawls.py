@@ -347,6 +347,33 @@ class BaseCrawlOps:
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """placeholder, implemented in crawls, base version does nothing"""
 
+    async def unset_deleting_timestamp(self, crawl_id: str, oid: UUID):
+        """Unset deleting timestamp for crawl"""
+        res = await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "oid": oid},
+            {"$set": {"deleting": None}},
+        )
+        return res is not None
+
+    async def assert_crawl_deletion_permissions(
+        self,
+        org: Organization,
+        delete_list: DeleteCrawlList,
+        type_: TYPE_CRAWL_TYPES,
+        user: User | None = None,
+    ):
+        """Check that user has permission to delete all crawls or throw
+
+        - Crawler users can delete their own crawls
+        - Org owners can delete any crawls in org
+        """
+        for crawl_id in delete_list.crawl_ids:
+            crawl = await self.get_base_crawl(crawl_id, org, type_)
+            if user and (crawl.userid != user.id) and not org.is_owner(user):
+                await self.unset_deleting_timestamp(crawl_id, org.id)
+                # TODO: Return which crawl_id is the problem?
+                raise HTTPException(status_code=403, detail="not_allowed")
+
     # pylint: disable=too-many-statements
     async def delete_crawls(
         self,
@@ -362,17 +389,32 @@ class BaseCrawlOps:
         size = 0
         all_file_failures: list[str] = []
 
+        deleted_crawl_ids = []
+
+        # First, check all permissions before deleting anything
+        await self.assert_crawl_deletion_permissions(org, delete_list, type_, user)
+
         for crawl_id in delete_list.crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id, org)
-            if crawl.type != type_:
+            # Only attempt to delete if deletion is not already in progress
+            # TODO: Check if deleting timestamp is None or older than some expiry (30s?)
+            res = await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "oid": org.id, "type": type_, "deleting": None},
+                {"$set": {"deleting": dt_now()}},
+                return_document=pymongo.ReturnDocument.AFTER,
+            )
+            if not res:
+                logger.warning(
+                    "archived_item_deletion_lock_not_acquired",
+                    crawl_id=crawl_id,
+                    type=type_,
+                    oid=org.id,
+                )
                 continue
 
-            # Ensure user has appropriate permissions for all crawls in list:
-            # - Crawler users can delete their own crawls
-            # - Org owners can delete any crawls in org
-            if user and (crawl.userid != user.id) and not org.is_owner(user):
-                raise HTTPException(status_code=403, detail="not_allowed")
+            crawl = BaseCrawl.from_dict(res)
 
+            # TODO: See if we can merge these two - looks like `deleted` was
+            # only added to UploadedCrawl model, as is a bool
             # Mark as deleted before removing files so in-flight background
             # processing (e.g. upload post-processing) aborts
             await self.crawls.find_one_and_update(
@@ -384,6 +426,16 @@ class BaseCrawlOps:
                 try:
                     await self.shutdown_crawl(crawl_id, org, graceful=False)
                 except Exception as exc:
+                    logger.warning(
+                        "crawl_shutdown_failed_on_deletion_request",
+                        crawl_id=crawl_id,
+                        type=type_,
+                        oid=org.id,
+                    )
+                    await self.unset_deleting_timestamp(crawl_id, org.id)
+                    # TODO: Maybe we want to just continue here instead of raising
+                    # an exception for the whole request?
+                    # continue
                     # pylint: disable=raise-missing-from
                     raise HTTPException(
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
@@ -423,6 +475,10 @@ class BaseCrawlOps:
                     else:
                         cids_to_update[cid]["successful"] = 0
 
+            # Now that everything else is deleted from the database, we're safe
+            # to delete the crawl record itself
+            deleted_crawl_ids.append(crawl_id)
+
             if type_ == "crawl":
                 run_async_task(
                     self.event_webhook_ops.create_crawl_deleted_notification(
@@ -436,7 +492,12 @@ class BaseCrawlOps:
                     )
                 )
 
-        query = {"_id": {"$in": delete_list.crawl_ids}, "oid": org.id, "type": type_}
+        quota_reached = self.orgs.storage_quota_reached(org)
+
+        if not deleted_crawl_ids:
+            return 0, {}, quota_reached
+
+        query = {"_id": {"$in": deleted_crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
         await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
@@ -446,8 +507,7 @@ class BaseCrawlOps:
         for coll_id, coll_crawl_ids in colls_to_update.items():
             await self.colls.update_collection_post_remove(coll_id, coll_crawl_ids, org)
 
-        quota_reached = self.orgs.storage_quota_reached(org)
-
+        # TODO: Is this the behavior we want?
         if all_file_failures:
             raise HTTPException(status_code=400, detail="file_deletion_error")
 
