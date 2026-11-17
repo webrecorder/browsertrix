@@ -27,6 +27,9 @@ export class LinkedCollectionsList extends TailwindElement {
   @property({ type: Boolean })
   removable?: boolean;
 
+  @property({ type: Boolean, useDefault: true })
+  openInNewTab = false;
+
   render() {
     if (!this.collections.length) {
       return;
@@ -42,6 +45,7 @@ export class LinkedCollectionsList extends TailwindElement {
           baseUrl=${ifDefined(this.baseUrl)}
           ?dedupeSource=${Boolean(this.dedupeId && item.id === this.dedupeId)}
           ?removable=${this.removable}
+          ?openInNewTab=${this.openInNewTab}
           ?loading=${until(
             request.then(() => false),
             true,

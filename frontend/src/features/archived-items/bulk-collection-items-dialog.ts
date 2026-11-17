@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { html, type PropertyValues } from "lit";
+import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
@@ -62,15 +62,20 @@ export class BulkCollectionItemsDialog extends BtrixElement {
   private readonly renderContent = (items: ListArchivedItem[]) => {
     const inProgress = false; // TODO
 
-    return html`<div class="min-h-64">
+    return html`<div class="min-h-48">
         <btrix-collections-add
-          label=${msg("Collections")}
+          label=${msg("Collection")}
           limit=${1}
           .collectionIds=${this.collectionId ? [this.collectionId] : []}
           @collections-change=${(e: CollectionsChangeEvent) => {
             this.collectionId = e.detail.collections[0];
           }}
         ></btrix-collections-add>
+        ${this.collectionId
+          ? nothing
+          : html`<div class="mt-2 rounded-lg border p-3 text-neutral-500">
+              <p class="text-center">${msg("No collections selected.")}</p>
+            </div>`}
       </div>
 
       <div slot="footer" class="flex justify-between">

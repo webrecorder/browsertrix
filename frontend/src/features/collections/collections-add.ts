@@ -127,6 +127,7 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
                   .collections=${collections}
                   .dedupeId=${this.dedupeId}
                   removable
+                  openInNewTab
                   @btrix-loaded=${(e: BtrixLoadedLinkedCollectionEvent) => {
                     const { item } = e.detail;
 
