@@ -54,6 +54,9 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
   @property({ type: String })
   label?: string;
 
+  @property({ type: Number, useDefault: true })
+  limit?: number;
+
   @state({ hasChanged: isNotEqual })
   private collections: CollectionLikeItem[] = [];
 
@@ -167,7 +170,9 @@ export class CollectionsAdd extends WithSearchOrgContext(BtrixElement) {
           const coll = await this.getCollectionByName(name);
 
           if (coll && this.findCollectionIndexById(coll.id) === -1) {
-            this.collections = [...this.collections, coll];
+            this.collections = [...this.collections, coll].slice(
+              this.limit ? -1 * this.limit : 0,
+            );
             void this.dispatchChange();
 
             this.nameSearchMap.set(coll.id, coll.name);
