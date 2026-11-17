@@ -664,7 +664,8 @@ class BackgroundJobOps:
 
         # If org deletion failed, the org still exists, so unlock it
         if job_type == BgJobType.DELETE_ORG and oid and not success:
-            await self.org_ops.clear_read_only_deleting(oid)
+            org = await self.org_ops.get_org_by_id(oid)
+            await self.org_ops.update_read_only(org, False, "", REASON_DELETING)
 
         job = await self.get_background_job(job_id)
         if job.finished:
