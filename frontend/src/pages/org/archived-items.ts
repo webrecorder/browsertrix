@@ -38,13 +38,14 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
-import { type ItemsAddEvent } from "@/features/archived-items/bulk-collection-items-dialog";
+import { type AddItemsSuccessEvent } from "@/features/archived-items/bulk-collection-items-dialog";
 import { type ConfirmBulkDeleteEvent } from "@/features/archived-items/bulk-delete-items-dialog";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import { pluralOfItemsSelected } from "@/plurals/items-selected";
+import { CommonTab, OrgTab } from "@/routes";
 import {
   APIErrorDetail,
   type APIPaginatedList,
@@ -1123,8 +1124,27 @@ export class CrawlsList extends BtrixElement {
           .items=${items || []}
           ?open=${this.openDialog === "bulkAddToCollection"}
           @sl-after-hide=${() => (this.openDialog = undefined)}
-          @btrix-items-added=${(e: ItemsAddEvent) => {
-            console.log("e", e);
+          @btrix-success=${(e: AddItemsSuccessEvent) => {
+            this.notify.toast({
+              title: msg("Successfully added items"),
+              message: html`<btrix-link
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${e
+                  .detail.collectionId}"
+                >${msg("View collection")}</btrix-link
+              >`,
+              variant: "success",
+              icon: "check2-circle",
+              id: "bulk-collection-items-status",
+            });
+          }}
+          @btrix-abort=${() => {
+            this.notify.toast({
+              message: msg("Canceled adding items to collection."),
+              variant: "warning",
+              icon: "exclamation-circle",
+              id: "bulk-collection-items-status",
+            });
           }}
         ></btrix-bulk-collection-items-dialog>
 

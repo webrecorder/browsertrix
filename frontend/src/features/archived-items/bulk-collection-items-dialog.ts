@@ -1,4 +1,5 @@
 import { localized, msg } from "@lit/localize";
+import { Task, TaskStatus } from "@lit/task";
 import { html, nothing, type PropertyValues } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
@@ -12,13 +13,13 @@ import { isNotEqual } from "@/utils/is-not-equal";
 
 import "@/features/collections/collections-add";
 
-export type ItemsAddEvent = CustomEvent<{
-  itemIds: string[] | null;
-}>;
+export type AddItemsSuccessEvent = CustomEvent<{ collectionId: string }>;
 
 /**
  * @fires btrix-cancel
- * @fires btrix-items-added
+ * @fires btrix-success
+ * @fires btrix-error
+ * @fires btrix-abort
  */
 @customElement("btrix-bulk-collection-items-dialog")
 @localized()
@@ -37,6 +38,45 @@ export class BulkCollectionItemsDialog extends BtrixElement {
 
   private initialCollectionId?: string | null;
 
+  private readonly addItemsTask = new Task(this, {
+    autoRun: false,
+    task: async ([collectionId, items], { signal }) => {
+      if (!collectionId || !items?.length) return;
+
+      try {
+        await this.api.fetch(
+          `/orgs/${this.orgId}/collections/${collectionId}/add`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              crawlIds: items.map(({ id }) => id),
+            }),
+            signal,
+          },
+        );
+
+        await this.dialog?.hide();
+
+        this.dispatchEvent(
+          new CustomEvent<AddItemsSuccessEvent["detail"]>("btrix-success", {
+            detail: { collectionId },
+          }),
+        );
+      } catch (err) {
+        if (signal.aborted) {
+          await this.dialog?.hide();
+
+          this.dispatchEvent(new CustomEvent("btrix-abort"));
+        } else {
+          this.dispatchEvent(new CustomEvent("btrix-error"));
+
+          throw err;
+        }
+      }
+    },
+    args: () => [this.collectionId, this.items] as const,
+  });
+
   protected willUpdate(changedProperties: PropertyValues): void {
     if (
       changedProperties.has("collectionId") &&
@@ -51,8 +91,17 @@ export class BulkCollectionItemsDialog extends BtrixElement {
       class="[--width:40rem]"
       .label=${msg("Add Archived Items to Collection")}
       .open=${this.open}
+      @sl-request-close=${() => {
+        if (this.addItemsTask.status === TaskStatus.PENDING) {
+          this.addItemsTask.abort();
+        }
+      }}
       @sl-after-hide=${() => {
         this.collectionId = this.initialCollectionId ?? undefined;
+
+        // HACK Lit task doesn't support reset; run without args to reset error
+        // See https://github.com/lit/lit/issues/5352
+        void this.addItemsTask.run([undefined, undefined]);
       }}
     >
       ${when(this.items, this.renderContent)}
@@ -60,7 +109,7 @@ export class BulkCollectionItemsDialog extends BtrixElement {
   }
 
   private readonly renderContent = (items: ListArchivedItem[]) => {
-    const inProgress = false; // TODO
+    const inProgress = this.addItemsTask.status === TaskStatus.PENDING;
 
     return html`<div class="min-h-48">
         <btrix-collections-add
@@ -78,26 +127,36 @@ export class BulkCollectionItemsDialog extends BtrixElement {
             </div>`}
       </div>
 
-      <div slot="footer" class="flex justify-between">
+      <div slot="footer" class="flex items-center justify-end gap-2">
         <sl-button
+          class="mr-auto"
           size="small"
           .autofocus=${true}
           @click=${() => {
-            void this.dialog?.hide();
+            if (this.addItemsTask.status === TaskStatus.PENDING) {
+              this.addItemsTask.abort();
+            } else {
+              this.dispatchEvent(new CustomEvent("btrix-cancel"));
+            }
 
-            this.dispatchEvent(new CustomEvent("btrix-cancel"));
+            void this.dialog?.hide();
           }}
           >${msg("Cancel")}</sl-button
         >
+
+        ${this.addItemsTask.render({
+          error: () =>
+            html`<p class="text-danger">
+              ${msg("Something went wrong, couldn’t add items.")}
+            </p>`,
+        })}
         <sl-button
           size="small"
           variant="primary"
           ?disabled=${inProgress}
           ?loading=${inProgress}
           @click=${() => {
-            this.dispatchEvent(
-              new CustomEvent<ItemsAddEvent["detail"]>("btrix-items-added"),
-            );
+            void this.addItemsTask.run();
           }}
         >
           <sl-icon name="plus-lg" slot="prefix"></sl-icon>
