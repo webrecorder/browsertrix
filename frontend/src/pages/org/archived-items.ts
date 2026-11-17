@@ -38,6 +38,7 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
+import { type ItemsAddEvent } from "@/features/archived-items/bulk-collection-items-dialog";
 import { type ConfirmBulkDeleteEvent } from "@/features/archived-items/bulk-delete-items-dialog";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { emptyMessage } from "@/layouts/emptyMessage";
@@ -1118,26 +1119,36 @@ export class CrawlsList extends BtrixElement {
       );
       const items = group.get(selected);
 
-      return html`<btrix-bulk-delete-items-dialog
-        .items=${items || []}
-        ?open=${this.openDialog === "bulkDelete"}
-        ?inProgress=${deletionInProgress}
-        @sl-after-hide=${() => (this.openDialog = undefined)}
-        @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
-          const { itemIds } = e.detail;
+      return html`<btrix-bulk-collection-items-dialog
+          .items=${items || []}
+          ?open=${this.openDialog === "bulkAddToCollection"}
+          @sl-after-hide=${() => (this.openDialog = undefined)}
+          @btrix-items-added=${(e: ItemsAddEvent) => {
+            console.log("e", e);
+          }}
+        ></btrix-bulk-collection-items-dialog>
 
-          if (itemIds?.length) {
-            await this.deleteItemsTask.run([itemIds]);
-          }
-          this.openDialog = undefined;
-        }}
-      ></btrix-bulk-delete-items-dialog>`;
+        <btrix-bulk-delete-items-dialog
+          .items=${items || []}
+          ?open=${this.openDialog === "bulkDelete"}
+          ?inProgress=${deletionInProgress}
+          @sl-after-hide=${() => (this.openDialog = undefined)}
+          @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
+            const { itemIds } = e.detail;
+
+            if (itemIds?.length) {
+              await this.deleteItemsTask.run([itemIds]);
+            }
+            this.openDialog = undefined;
+          }}
+        ></btrix-bulk-delete-items-dialog>`;
     };
 
     return guard(
       [
         this.selectedItemIds,
-        this.openDialog === "bulkDelete",
+        this.openDialog === "bulkAddToCollection" ||
+          this.openDialog === "bulkDelete",
         deletionInProgress,
       ],
       dialogs,
