@@ -10,7 +10,7 @@ export const defaultFuseOptions: Fuse.IFuseOptions<unknown> = {
   useExtendedSearch: true,
   includeMatches: true,
   includeScore: true,
-  shouldSort: false,
+  shouldSort: true,
 };
 
 export function connectFuse(values: SearchQuery[]) {
