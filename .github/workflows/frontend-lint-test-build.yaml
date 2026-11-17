@@ -67,8 +67,7 @@ jobs:
         working-directory: frontend
         id: playwright-version
         run: |
-          yarn add @yarnpkg/lockfile
-          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+          echo "PLAYWRIGHT_VERSION=$(yarn info @playwright/test --json | jq .children.Version -r)" >> $GITHUB_ENV
 
       - name: Cache playwright binaries
         uses: actions/cache@v6
@@ -135,8 +134,7 @@ jobs:
         working-directory: frontend
         id: playwright-version
         run: |
-          yarn add @yarnpkg/lockfile
-          echo "PLAYWRIGHT_VERSION=$(node scripts/get-resolved-playwright-version.js)" >> $GITHUB_ENV
+          echo "PLAYWRIGHT_VERSION=$(yarn info @playwright/test --json | jq .children.Version -r)" >> $GITHUB_ENV
 
       - name: Cache playwright binaries
         uses: actions/cache@v6

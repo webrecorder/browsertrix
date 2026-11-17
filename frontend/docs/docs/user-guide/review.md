@@ -6,7 +6,7 @@ The archived item **Review** page provides a streamlined interface for quality a
 
 ---
 
-To review a crawl, select the completed crawl run from a workflow’s **Crawls** tab or the **Crawling** > **Crawl Runs** page, or select a crawled item from **Archived Items** > **Crawled Items**. Then, go to the **Quality Assurance** tab and tap the **Review Crawl** button.
+To review a crawl, select the completed crawl run from a workflow’s **Crawls** tab or the **Crawling** > **Crawl Runs** page, or select a crawled item from **Archived Items** > **Crawled Items**. Then, go to the **Quality Assurance** tab and tap the **Review Pages** button.
 
 QA tools are available to org admins and members with “crawler” permissions.
 

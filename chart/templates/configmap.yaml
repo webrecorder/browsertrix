@@ -14,6 +14,8 @@ data:
 
   LOG_FORMAT: "{{ .Values.log_format }}"
 
+  LOG_USE_COLORS: "{{ .Values.log_colors }}"
+
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
   DEFAULT_NAMESPACE: {{ .Release.Namespace }}
@@ -124,6 +126,8 @@ data:
   PRESIGN_BATCH_SIZE: "{{ .Values.presign_batch_size | default 8 }}"
 
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
+
+  REPLICATION_JOB_CRON_SCHEDULE: "{{ .Values.replication_job_cron_schedule }}"
 
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
 

@@ -1,6 +1,6 @@
 {
   "name": "browsertrix-frontend",
-  "version": "1.26.4",
+  "version": "1.27.0",
   "main": "index.ts",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
@@ -60,6 +60,7 @@
     "highlight.js": "^11.11.1",
     "html-loader": "^3.0.1",
     "html-webpack-plugin": "^5.6.7",
+    "http-status-codes": "^2.3.0",
     "immutable": "^4.3.8",
     "ink-mde": "~0.34.0",
     "iso-639-1": "^2.1.15",
@@ -175,7 +176,7 @@
     "node": ">=22 <25"
   },
   "resolutions": {
-    "playwright": "1.60.0",
+    "playwright": "1.61.0",
     "lit": "~3.3.3",
     "@web/dev-server-core": "^0.7.5",
     "koa": "^2.16.1"

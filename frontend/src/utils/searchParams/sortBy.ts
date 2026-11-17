@@ -38,41 +38,56 @@ function decodeSortDirection(dir: EncodedSortDirection) {
   return SortDirection.Ascending;
 }
 
-export function orderByEncoder<T extends string>({
-  defaultSort,
-  sortableFields,
-}: {
+export type SortBySearchParamsOptions<T extends string> = {
+  sortFieldKey?: string;
+  sortDirKey?: string;
   defaultSort: SortBy<T>;
   sortableFields: SortableFields<T>;
-}): ConstructorParameters<typeof SearchParamsValue<SortBy<T>>>[1] {
+};
+
+export function sortBySearchParams<T extends string>(
+  opts: SortBySearchParamsOptions<T>,
+) {
+  return [orderByEncoder(opts), orderByDecoder(opts)] as const;
+}
+
+export function orderByEncoder<T extends string>({
+  sortFieldKey = "sortBy",
+  sortDirKey = "sortDir",
+  defaultSort,
+  sortableFields,
+}: SortBySearchParamsOptions<T>): ConstructorParameters<
+  typeof SearchParamsValue<SortBy<T>>
+>[1] {
   return (value, params) => {
     if (value.field === defaultSort.field) {
-      params.delete("sortBy");
+      params.delete(sortFieldKey);
     } else {
-      params.set("sortBy", value.field);
+      params.set(sortFieldKey, value.field);
     }
     if (value.direction === sortableFields[value.field].defaultDirection) {
-      params.delete("sortDir");
+      params.delete(sortDirKey);
     } else {
-      params.set("sortDir", encodeSortDirection(value.direction));
+      params.set(sortDirKey, encodeSortDirection(value.direction));
     }
     return params;
   };
 }
 export function orderByDecoder<T extends string>({
+  sortFieldKey = "sortBy",
+  sortDirKey = "sortDir",
   defaultSort,
   sortableFields,
-}: {
-  defaultSort: SortBy<T>;
-  sortableFields: SortableFields<T>;
-}): ConstructorParameters<typeof SearchParamsValue<SortBy<T>>>[2] {
+}: SortBySearchParamsOptions<T>): ConstructorParameters<
+  typeof SearchParamsValue<SortBy<T>>
+>[2] {
   return (params) => {
-    let field = params.get("sortBy") as SortBy<T>["field"] | null;
+    let field = params.get(sortFieldKey) as SortBy<T>["field"] | null;
 
     if (!field) {
       field = defaultSort.field;
     }
-    const sortDir = params.get("sortDir") as ReturnType<
+    const sortDir = params.get(sortDirKey) as ReturnType<
       typeof encodeSortDirection
     > | null;
     let direction =

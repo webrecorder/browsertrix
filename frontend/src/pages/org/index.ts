@@ -95,7 +95,9 @@ export type OrgParams = {
   };
   [OrgTab.Items]: ArchivedItemPageParams & {
     itemType?: string;
+    itemPageId?: string;
     qaTab?: QATab;
+    qaRunId?: string;
   };
   [OrgTab.BrowserProfiles]: {
     profileId?: string;
@@ -361,7 +363,9 @@ export class Org extends BtrixElement {
   }
 
   render() {
-    const noMaxWidth = (this.params as OrgParams["workflows"]).qaTab;
+    const extraWidth =
+      (this.orgTab === OrgTab.Items || this.orgTab === OrgTab.Workflows) &&
+      (this.params as OrgParams["items"]).itemId;
 
     return html`
       <btrix-document-title
@@ -376,12 +380,15 @@ export class Org extends BtrixElement {
         ${this.renderOrgNavBar()}
         <main
           class=${clsx(
-            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-10 lg:pb-10`,
-            !noMaxWidth && [
-              this.appState.userGuideOpen
-                ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
-                : tw`mx-auto max-w-screen-desktop`,
-            ],
+            tw`box-border flex w-full flex-1 flex-col p-3 @container/org lg:px-9 lg:pb-10`,
+            this.appState.userGuideOpen
+              ? tw`mr-auto lg:max-w-[--btrix-full-without-user-guide-width] 3xl:ml-[--btrix-3xl-with-user-guide-margin] 3xl:max-w-screen-desktop`
+              : [
+                  tw`mx-auto`,
+                  extraWidth
+                    ? tw`max-w-[--btrix-page-extra-width]`
+                    : tw`max-w-screen-desktop`,
+                ],
           )}
           aria-labelledby="${this.orgTab}-tab"
         >
@@ -591,6 +598,23 @@ export class Org extends BtrixElement {
     const params = this.params as OrgParams["items"];
 
     if (params.itemId) {
+      if (params.qaTab) {
+        if (!this.appState.isCrawler) {
+          return html`<btrix-not-found
+            class="flex items-center justify-center"
+          ></btrix-not-found>`;
+        }
+
+        return html`<btrix-archived-item-qa
+          class="flex-1"
+          itemId=${params.itemId}
+          itemType=${params.itemType || "crawl"}
+          itemPageId=${ifDefined(params.itemPageId)}
+          qaRunId=${ifDefined(params.qaRunId)}
+          tab=${params.qaTab}
+        ></btrix-archived-item-qa>`;
+      }
+
       return html` <btrix-archived-item-detail
         itemId=${params.itemId}
         collectionId=${params.collectionId || ""}
@@ -627,6 +651,7 @@ export class Org extends BtrixElement {
             class="flex-1"
             workflowId=${workflowId}
             itemId=${params.itemId}
+            itemType="crawl"
             itemPageId=${ifDefined(params.itemPageId)}
             qaRunId=${ifDefined(params.qaRunId)}
             tab=${params.qaTab}

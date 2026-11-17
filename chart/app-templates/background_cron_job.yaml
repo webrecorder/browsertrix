@@ -1,17 +1,17 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "{{ id }}"
+  name: {{ id }}
   labels:
     role: "cron-background-job"
     job_type: {{ job_type }}
 
 spec:
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 0
+  successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
 
-  schedule: "{{ schedule }}"
+  schedule: {{ schedule }}
 
   jobTemplate:
     metadata:
@@ -25,8 +25,8 @@ spec:
     spec:
       template:
         spec:
-          # For trusted backend code that only talks to the Kubernetes API, 
-          # mount a root-only token instead of the world-readable auto-injected 
+          # For trusted backend code that only talks to the Kubernetes API,
+          # mount a root-only token instead of the world-readable auto-injected
           # one.
           automountServiceAccountToken: false
           restartPolicy: Never

@@ -1,39 +1,39 @@
 apiVersion: btrix.cloud/v1
 kind: ProfileJob
 metadata:
-  name: profilejob-{{ id }}
+  name: {{ "profilejob-" ~ id }}
   labels:
-    browser: "{{ id }}"
+    browser: {{ id }}
     role: "job"
     btrix.org: {{ oid }}
     btrix.user: {{ userid }}
     {%- if base_profile %}
-    btrix.baseprofile: "{{ base_profile }}"
+    btrix.baseprofile: {{ base_profile }}
     {%- endif %}
-    btrix.storage: "{{ storage_name }}"
+    btrix.storage: {{ storage_name }}
     profileid: {{ profileid }}
-    proxyid: "{{ proxy_id }}"
-    crawlerChannel: "{{ crawler_channel }}"
+    proxyid: {{ proxy_id }}
+    crawlerChannel: {{ crawler_channel }}
 
 spec:
   selector:
     matchLabels:
-      browser: "{{ id }}"
+      browser: {{ id }}
 
-  id: "{{ id }}"
-  userid: "{{ userid }}"
-  oid: "{{ oid }}"
+  id: {{ id }}
+  userid: {{ userid }}
+  oid: {{ oid }}
 
-  storageName: "{{ storage_name }}"
-  crawlerImage: "{{ crawler_image }}"
-  imagePullPolicy: "{{ image_pull_policy }}"
+  storageName: {{ storage_name }}
+  crawlerImage: {{ crawler_image }}
+  imagePullPolicy: {{ image_pull_policy }}
 
-  startUrl: "{{ url }}"
-  profileFilename: "{{ profile_filename }}"
-  vncPassword: "{{ vnc_password }}"
+  startUrl: {{ url }}
+  profileFilename: {{ profile_filename }}
+  vncPassword: {{ vnc_password }}
 
-  proxyId: "{{ proxy_id }}"
+  proxyId: {{ proxy_id }}
 
   {% if expire_time %}
-  expireTime: "{{ expire_time }}"
+  expireTime: {{ expire_time }}
   {% endif %}

@@ -287,6 +287,23 @@ class StorageOps:
             refs.append(StorageRef(name=name, custom=True))
         return refs
 
+    def get_default_primary(self) -> StorageRef:
+        """return default primary storageref"""
+        if not self.default_primary:
+            raise HTTPException(status_code=400, detail="no_primary_storage")
+        return self.default_primary
+
+    def get_default_replicas(self) -> list[StorageRef]:
+        """return default replica storage locations"""
+        return self.default_replicas
+
+    def get_default_s3_storage(self, ref: StorageRef) -> S3Storage:
+        """return s3storage object for default storage ref (not org specific)"""
+        storage = self.default_storages.get(ref.name)
+        if not storage:
+            raise KeyError(f"Storage ref {ref.name} not found")
+        return storage
+
     @asynccontextmanager
     async def get_s3_client(
         self, storage: S3Storage, for_presign=False

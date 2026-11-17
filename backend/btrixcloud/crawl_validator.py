@@ -13,7 +13,8 @@ from .db import is_lenient_read
 # that are valid in an S3 key are allowed, except control characters
 # (including line breaks). The crawler's @-placeholders (@ts, @hostname,
 # @hostsuffix, @id) are plain characters and need no special handling.
-CRAWL_FILENAME_TEMPLATE_RE = re.compile(r"^[^\x00-\x1f\x7f-\x9f]+$")
+# YAML 1.1 line breaks: LF, CR, NEL, LS, PS (see https://yaml.org/spec/1.1/current.html#id871136)
+CRAWL_FILENAME_TEMPLATE_RE = re.compile(r"^[^\x00-\x1f\x7f-\x9f\u2028\u2029]+$")
 
 
 def validate_crawl_filename_template(value: str | None) -> str | None:
