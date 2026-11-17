@@ -985,6 +985,9 @@ class BaseCrawl(CoreCrawlable, BaseMongoModel):
     requiresCrawls: list[str] | None = []
     requiredByCrawls: list[str] | None = []
 
+    # Timestamp when deletion is attempted
+    deleting: datetime | None = None
+
 
 # ============================================================================
 class CollIdName(BaseModel):
