@@ -31,7 +31,6 @@ from .logger import clear_log_context, set_log_context
 from .models import (
     MAX_BROWSER_WINDOWS,
     MAX_CRAWL_SCALE,
-    REASON_DELETING,
     REASON_PAUSED,
     RUNNING_STATES,
     SUCCESSFUL_STATES,
@@ -1234,34 +1233,24 @@ class OrgOps(BaseOrgs):
         return slug_id_map
 
     async def update_read_only(
-        self, org: Organization, readOnly: bool, readOnlyReason=""
+        self,
+        org: Organization,
+        read_only: bool,
+        read_only_reason: str = "",
+        existing_reason_filter: str = "",
     ) -> bool:
         """Set readOnly field for Organization"""
-        if not readOnly:
+        if not read_only:
             # Set reason to empty string if readOnly is false
-            readOnlyReason = ""
+            read_only_reason = ""
+
+        query_filter = {"_id": org.id}
+        if existing_reason_filter:
+            query_filter["readOnlyReason"] = existing_reason_filter
 
         res = await self.orgs.find_one_and_update(
-            {"_id": org.id},
-            {"$set": {"readOnly": readOnly, "readOnlyReason": readOnlyReason}},
-        )
-        return res is not None
-
-    async def clear_read_only_deleting(self, oid: UUID) -> bool:
-        """Unset readOnly if it was set by org deletion, e.g. after it failed"""
-        res = await self.orgs.find_one_and_update(
-            {"_id": oid, "readOnlyReason": REASON_DELETING},
-            {"$set": {"readOnly": False, "readOnlyReason": ""}},
-        )
-        return res is not None
-
-    async def update_read_only_on_cancel(
-        self, org: Organization, update: OrgReadOnlyOnCancel
-    ) -> bool:
-        """Set to readOnly on subscription cancelation, instead of deleting"""
-        res = await self.orgs.find_one_and_update(
-            {"_id": org.id, "subscription.readOnlyOnCancel": False},
-            {"$set": {"subscription.readOnlyOnCancel": update.readOnlyOnCancel}},
+            query_filter,
+            {"$set": {"readOnly": read_only, "readOnlyReason": read_only_reason}},
         )
         return res is not None
 
