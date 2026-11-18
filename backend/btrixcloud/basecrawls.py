@@ -431,12 +431,14 @@ class BaseCrawlOps:
             if type_ == "crawl" and not crawl.finished:
                 try:
                     await self.shutdown_crawl(crawl_id, org, graceful=False)
-                except Exception as exc:
+                # pylint: disable=broad-exception-caught
+                except Exception:
                     logger.warning(
                         "crawl_shutdown_failed_on_deletion_request",
                         crawl_id=crawl_id,
                         type=type_,
                         oid=org.id,
+                        exc_info=True,
                     )
                     await self.unset_deleting_timestamp(crawl_id, org.id)
                     continue
