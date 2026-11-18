@@ -933,22 +933,18 @@ export class CrawlsList extends BtrixElement {
 
       ${anySelected
         ? html`<sl-divider class="ml-3 mr-1 h-6" vertical></sl-divider>
-            <sl-tooltip content=${msg("Add to Collection")} hoist>
-              <sl-icon-button
-                class="text-base"
-                name="collection"
-                label=${msg("Add to Collection")}
-                @click=${() => (this.openDialog = "bulkAddToCollection")}
-              ></sl-icon-button>
-            </sl-tooltip>
-            <sl-tooltip content=${msg("Delete Items")} hoist>
-              <sl-icon-button
-                class="text-base hover:text-danger focus:text-danger"
-                name="trash3"
-                label=${msg("Delete Items")}
-                @click=${() => (this.openDialog = "bulkDelete")}
-              ></sl-icon-button>
-            </sl-tooltip>`
+            <sl-icon-button
+              class="text-base"
+              name="folder-plus"
+              label=${msg("Add to Collection")}
+              @click=${() => (this.openDialog = "bulkAddToCollection")}
+            ></sl-icon-button>
+            <sl-icon-button
+              class="text-base hover:text-danger focus:text-danger"
+              name="trash3"
+              label=${msg("Delete Items")}
+              @click=${() => (this.openDialog = "bulkDelete")}
+            ></sl-icon-button>`
         : nothing} `;
   };
 
