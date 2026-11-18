@@ -4,7 +4,7 @@ import asyncio
 import os
 import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterable, Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Annotated, Any, cast
 from uuid import UUID
 
@@ -418,9 +418,18 @@ class BaseCrawlOps:
 
         for crawl_id in delete_list.crawl_ids:
             # Only attempt to delete if deletion is not already in progress
-            # TODO: Check if deleting timestamp is None or older than some expiry (30s?)
+            # (deleting timestamp is None or older than 2 minutes)
+            deleting_timestamp_expiry = dt_now() - timedelta(minutes=2)
             res = await self.crawls.find_one_and_update(
-                {"_id": crawl_id, "oid": org.id, "type": type_, "deleting": None},
+                {
+                    "_id": crawl_id,
+                    "oid": org.id,
+                    "type": type_,
+                    "$or": [
+                        {"deleting": None},
+                        {"deleting": {"$lt": deleting_timestamp_expiry}},
+                    ],
+                },
                 {"$set": {"deleting": dt_now()}},
                 return_document=pymongo.ReturnDocument.AFTER,
             )
