@@ -441,6 +441,7 @@ class BaseCrawlOps:
                         status_code=400, detail=f"Error Stopping Crawl: {exc}"
                     )
 
+            # Delete associated data from the database
             await self.page_ops.delete_crawl_pages(crawl_id, org.id)
             await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id)
 
@@ -475,10 +476,11 @@ class BaseCrawlOps:
                     else:
                         cids_to_update[cid]["successful"] = 0
 
-            # Now that everything else is deleted from the database, we're safe
-            # to delete the crawl record itself
+            # Now that everything else associated with this crawl is deleted,
+            # we're safe to include it in the crawls mdb delete_many
             deleted_crawl_ids.append(crawl_id)
 
+            # Send webhook notification here
             if type_ == "crawl":
                 run_async_task(
                     self.event_webhook_ops.create_crawl_deleted_notification(
@@ -497,9 +499,11 @@ class BaseCrawlOps:
         if not deleted_crawl_ids:
             return 0, {}, quota_reached
 
+        # Delete the crawls from the database
         query = {"_id": {"$in": deleted_crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
+        # Make associated post-deletion updates
         await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
 
         await self.orgs.set_last_crawl_finished(org.id)
@@ -507,7 +511,8 @@ class BaseCrawlOps:
         for coll_id, coll_crawl_ids in colls_to_update.items():
             await self.colls.update_collection_post_remove(coll_id, coll_crawl_ids, org)
 
-        # TODO: Is this the behavior we want?
+        # TODO: Is this the behavior we want when there's been an issue with
+        # deleting a file? The user can't actually do anything about it
         if all_file_failures:
             raise HTTPException(status_code=400, detail="file_deletion_error")
 
