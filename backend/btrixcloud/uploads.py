@@ -300,7 +300,7 @@ class UploadOps(BaseCrawlOps):
         try:
             upload = await self.get_upload(crawl_id, org)
 
-            if upload.deleted:
+            if upload.deleting:
                 pp_logger.info("post_process_upload", state="upload_deleted_aborting")
                 return
 
@@ -330,7 +330,7 @@ class UploadOps(BaseCrawlOps):
 
                 async def _check_and_maybe_split(file: CrawlFile) -> None:
                     upload = await self.get_upload(crawl_id, org)
-                    if upload.deleted:
+                    if upload.deleting:
                         pp_logger.info(
                             "post_process_upload",
                             state="upload_deleted_aborting",
@@ -425,7 +425,7 @@ class UploadOps(BaseCrawlOps):
             "type": "upload",
             "state": "processing-upload",
             "started": {"$lt": dt_now() - STUCK_UPLOAD_GRACE_PERIOD},
-            "deleted": {"$ne": True},
+            "deleting": None,
         }
 
         failures = 0
@@ -618,7 +618,7 @@ class UploadOps(BaseCrawlOps):
             result = await self.crawls.find_one_and_update(
                 {
                     "_id": crawl_id,
-                    "deleted": {"$ne": True},
+                    "deleting": None,
                     "files.filename": original_file.filename,
                 },
                 [
