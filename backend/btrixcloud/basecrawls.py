@@ -435,15 +435,6 @@ class BaseCrawlOps:
 
             crawl = BaseCrawl.from_dict(res)
 
-            # TODO: See if we can merge these two - looks like `deleted` was
-            # only added to UploadedCrawl model, as is a bool
-            # Mark as deleted before removing files so in-flight background
-            # processing (e.g. upload post-processing) aborts
-            await self.crawls.find_one_and_update(
-                {"_id": crawl_id, "oid": org.id, "type": type_},
-                {"$set": {"deleted": True}},
-            )
-
             if type_ == "crawl" and not crawl.finished:
                 try:
                     await self.shutdown_crawl(crawl_id, org, graceful=False)
