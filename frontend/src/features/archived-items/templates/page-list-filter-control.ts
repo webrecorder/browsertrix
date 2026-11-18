@@ -10,11 +10,10 @@ import { when } from "lit/directives/when.js";
 
 import { type FilterChip } from "@/components/ui/filter-chip";
 import { type SearchParamsValue } from "@/controllers/searchParamsValue";
-import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
-import { urlPrefixToRegex } from "@/utils/crawl-scope/urlPrefixToRegex";
+import { regexEscape, regexUnescape } from "@/utils/string";
 
 enum FilterType {
-  Prefix = "prefix",
+  Text = "text",
   Regex = "regex",
 }
 
@@ -28,44 +27,51 @@ enum FormFieldName {
 }
 
 const placeholderFor = {
-  [FilterType.Prefix]: msg("Enter beginning of URL"),
+  [FilterType.Text]: msg("Enter text to match"),
   [FilterType.Regex]: msg("Enter regular expression pattern"),
 } as const;
+
+function isTextType(urlRegex?: string) {
+  if (!urlRegex) return;
+  return regexEscape(regexUnescape(urlRegex)) === urlRegex;
+}
 
 const handleTypeChange = (e: SlChangeEvent) => {
   const el = e.target as SlRadioGroup;
   const formEl = el.closest("form");
-  const inputEl = formEl?.querySelector<HTMLInputElement>(
+  const valueInputEl = formEl?.querySelector<HTMLInputElement>(
     `[name="${FormFieldName.Value}"]`,
   );
   const value = el.value as FilterType;
 
-  if (!inputEl) {
+  if (!valueInputEl) {
     console.debug(`no input with [name="${FormFieldName.Value}"]`);
     return;
   }
 
-  inputEl.setAttribute("placeholder", placeholderFor[value]);
+  valueInputEl.setAttribute("placeholder", placeholderFor[value]);
 
-  if (inputEl.value) {
-    inputEl.value =
-      value === FilterType.Prefix
-        ? unescapeCustomPrefix(inputEl.value)
-        : urlPrefixToRegex(inputEl.value);
+  const inputValue = valueInputEl.value;
+
+  if (inputValue) {
+    valueInputEl.value =
+      value === FilterType.Text
+        ? regexUnescape(inputValue)
+        : regexEscape(regexUnescape(inputValue));
   }
 };
 
 const handleValueChange = (e: SlChangeEvent) => {
   const el = e.target as SlInput;
   const formEl = el.closest("form");
-  const radioEl = formEl?.querySelector<HTMLInputElement>(
+  const typeInputEl = formEl?.querySelector<HTMLInputElement>(
     `[name="${FormFieldName.Type}"]`,
   );
   const value = el.value.trim();
 
   el.setCustomValidity("");
 
-  if ((radioEl?.value as FilterType) === FilterType.Regex) {
+  if ((typeInputEl?.value as FilterType) === FilterType.Regex) {
     try {
       // Check if valid regex
       new RegExp(value);
@@ -108,8 +114,8 @@ const submitHandler =
         filterBy.setValue({
           ...filterBy.value,
           urlRegex:
-            (values.filterType as FilterType) === FilterType.Prefix
-              ? urlPrefixToRegex(value)
+            (values.filterType as FilterType) === FilterType.Text
+              ? regexEscape(value)
               : value,
         });
       } else {
@@ -124,17 +130,17 @@ export function pageListFilterControl(
   filterBy: SearchParamsValue<FilterPageListBy>,
 ) {
   const urlRegex = filterBy.value.urlRegex;
-  const urlPrefix =
-    (urlRegex &&
-      urlRegex.startsWith("^http") &&
-      unescapeCustomPrefix(urlRegex)) ||
-    "";
-  console.log("urlPrefix:", urlPrefix);
+  const textType = isTextType(urlRegex);
+  const urlText = regexUnescape(urlRegex);
   const active = Boolean(urlRegex);
-  const filterType =
-    urlPrefix || !urlRegex ? FilterType.Prefix : FilterType.Regex;
-  const regex_pattern = html`<code class="font-medium">${urlRegex}</code>`;
-  const url_prefix = html`<span class="font-medium">${urlPrefix}</span>`;
+  const filterType = textType || !urlRegex ? FilterType.Text : FilterType.Regex;
+  const inputValue = (textType ? urlText : urlRegex) || "";
+  const pattern = textType
+    ? html`<span class="font-medium">${urlText}</span>`
+    : html`<btrix-regex
+        class="font-medium"
+        value=${urlRegex || ""}
+      ></btrix-regex>`;
 
   return html`<div class="flex items-center gap-4 overflow-hidden">
     <div class="flex gap-2 items-center whitespace-nowrap overflow-hidden">
@@ -144,15 +150,11 @@ export function pageListFilterControl(
         selectFromDropdown
         ?checked=${active}
       >
-        ${urlPrefix
+        ${urlRegex
           ? html`<span class="font-normal"
-              >${msg(html`URL begins with ${url_prefix}`)}</span
+              >${msg(html`URL matches ${pattern}`)}</span
             >`
-          : urlRegex
-            ? html`<span class="font-normal"
-                >${msg(html`URL matches ${regex_pattern}`)}</span
-              >`
-            : msg("URL")}
+          : msg("URL")}
 
         <div slot="dropdown-content" class="border rounded shadow-lg bg-white">
           <div class="flex flex-wrap justify-between items-center p-1">
@@ -187,11 +189,11 @@ export function pageListFilterControl(
                 value=${filterType}
                 @sl-change=${handleTypeChange}
               >
-                <sl-radio-button value=${FilterType.Prefix}
-                  >${msg("Begins With")}</sl-radio-button
+                <sl-radio-button value=${FilterType.Text}
+                  >${msg("Matches Text")}</sl-radio-button
                 >
                 <sl-radio-button value=${FilterType.Regex}
-                  >${msg("Matches Pattern")}</sl-radio-button
+                  >${msg("Regex")}</sl-radio-button
                 >
               </sl-radio-group>
               <sl-input
@@ -202,7 +204,7 @@ export function pageListFilterControl(
                 placeholder=${placeholderFor[filterType]}
                 .minlength=${2}
                 .maxlength=${500}
-                value=${urlPrefix || urlRegex || ""}
+                value=${inputValue}
                 @sl-change=${handleValueChange}
               ></sl-input>
             </div>

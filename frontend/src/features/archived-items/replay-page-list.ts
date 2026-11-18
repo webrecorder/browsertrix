@@ -472,7 +472,7 @@ export class ArchivedItemReplayPageList extends BtrixElement {
   };
 
   private readonly renderLoading = () =>
-    html`<div class="size-full flex items-center justify-center p-5">
+    html`<div class="size-full flex items-center justify-center p-4">
       <sl-spinner class="text-xl"></sl-spinner>
     </div>`;
 
