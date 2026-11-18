@@ -455,13 +455,7 @@ class BaseCrawlOps:
                         oid=org.id,
                     )
                     await self.unset_deleting_timestamp(crawl_id, org.id)
-                    # TODO: Maybe we want to just continue here instead of raising
-                    # an exception for the whole request?
-                    # continue
-                    # pylint: disable=raise-missing-from
-                    raise HTTPException(
-                        status_code=400, detail=f"Error Stopping Crawl: {exc}"
-                    )
+                    continue
 
             # Delete associated data from the database
             await self.page_ops.delete_crawl_pages(crawl_id, org.id)
