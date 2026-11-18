@@ -128,7 +128,6 @@ export class SelectCollectionThumbnail extends BtrixElement {
         } else {
           this.#fuse = new Fuse<PageUrlCount>(items, {
             ...defaultFuseOptions,
-            shouldSort: true,
             keys: ["url"],
           });
         }
