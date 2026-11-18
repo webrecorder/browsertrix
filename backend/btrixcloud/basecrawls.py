@@ -394,7 +394,6 @@ class BaseCrawlOps:
         colls_to_update: dict[UUID, list[str]] = {}
 
         size = 0
-        all_file_failures: list[str] = []
 
         deleted_crawl_ids = []
 
@@ -456,9 +455,8 @@ class BaseCrawlOps:
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
-            crawl_size, file_failures = await self._delete_crawl_files(crawl, org)
+            crawl_size, _ = await self._delete_crawl_files(crawl, org)
             size += crawl_size
-            all_file_failures.extend(file_failures)
 
             cid = crawl.cid
             successful = crawl.state in SUCCESSFUL_STATES
@@ -511,11 +509,6 @@ class BaseCrawlOps:
 
         for coll_id, coll_crawl_ids in colls_to_update.items():
             await self.colls.update_collection_post_remove(coll_id, coll_crawl_ids, org)
-
-        # TODO: Is this the behavior we want when there's been an issue with
-        # deleting a file? The user can't actually do anything about it
-        if all_file_failures:
-            raise HTTPException(status_code=400, detail="file_deletion_error")
 
         return res.deleted_count, cids_to_update, quota_reached
 
