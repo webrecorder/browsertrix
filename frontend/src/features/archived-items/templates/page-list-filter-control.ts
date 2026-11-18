@@ -36,6 +36,84 @@ function isTextType(urlRegex?: string) {
   return regexEscape(regexUnescape(urlRegex)) === urlRegex;
 }
 
+const closeDropdownHandler =
+  ({ resetOnClose } = { resetOnClose: false }) =>
+  (e: Event) => {
+    const filterChipEl = (e.target as HTMLElement).closest<FilterChip>(
+      "btrix-filter-chip",
+    );
+
+    if (!filterChipEl) {
+      console.debug("no `btrix-filter-chip` to close");
+      return;
+    }
+
+    if (!resetOnClose) {
+      // Stop sl-after-hide to prevent form reset
+      filterChipEl.addEventListener(
+        "sl-after-hide",
+        (e) => {
+          e.stopImmediatePropagation();
+        },
+        { once: true, capture: true },
+      );
+    }
+
+    filterChipEl.hideDropdown();
+  };
+
+const closeAndReset = closeDropdownHandler({ resetOnClose: true });
+const close = closeDropdownHandler();
+
+const submitHandler =
+  (filterBy: SearchParamsValue<FilterPageListBy>) => (e: SubmitEvent) => {
+    e.preventDefault();
+
+    const formEl = e.target as HTMLFormElement;
+    const values = serialize(formEl) as Record<FormFieldName, string>;
+
+    if (formEl.checkValidity()) {
+      const value = values.filterValue.trim();
+
+      if (value) {
+        filterBy.setValue({
+          ...filterBy.value,
+          urlRegex:
+            (values.filterType as FilterType) === FilterType.Text
+              ? regexEscape(value)
+              : value,
+        });
+      } else {
+        filterBy.setValue({ ...filterBy.value, urlRegex: undefined });
+      }
+
+      close(e);
+    }
+  };
+
+const afterHideHandler =
+  (filterBy: SearchParamsValue<FilterPageListBy>) => (e: CustomEvent) => {
+    const formEl = (e.currentTarget as HTMLElement).querySelector("form");
+    const typeInputEl = formEl?.querySelector<HTMLInputElement>(
+      `[name="${FormFieldName.Type}"]`,
+    );
+    const valueInputEl = formEl?.querySelector<HTMLInputElement>(
+      `[name="${FormFieldName.Value}"]`,
+    );
+
+    const urlRegex = filterBy.value.urlRegex;
+    const textType = isTextType(urlRegex);
+    const filterType =
+      textType || !urlRegex ? FilterType.Text : FilterType.Regex;
+
+    // Reset to saved value
+    typeInputEl?.setAttribute("value", filterType);
+    valueInputEl?.setAttribute(
+      "value",
+      urlRegex ? (textType ? regexUnescape(urlRegex) : urlRegex) : "",
+    );
+  };
+
 const handleTypeChange = (e: SlChangeEvent) => {
   const el = e.target as SlRadioGroup;
   const formEl = el.closest("form");
@@ -83,49 +161,6 @@ const handleValueChange = (e: SlChangeEvent) => {
   }
 };
 
-const closeDropdown = (e: Event) => {
-  const filterEl = (e.target as HTMLElement).closest<FilterChip>(
-    "btrix-filter-chip",
-  );
-
-  if (!filterEl) {
-    console.debug("no `btrix-filter-chip` to close");
-    return;
-  }
-
-  filterEl.hideDropdown();
-};
-
-const handleReset = (e: Event) => {
-  closeDropdown(e);
-};
-
-const submitHandler =
-  (filterBy: SearchParamsValue<FilterPageListBy>) => (e: SubmitEvent) => {
-    e.preventDefault();
-
-    const formEl = e.target as HTMLFormElement;
-    const values = serialize(formEl) as Record<FormFieldName, string>;
-
-    if (formEl.checkValidity()) {
-      const value = values.filterValue.trim();
-
-      if (value) {
-        filterBy.setValue({
-          ...filterBy.value,
-          urlRegex:
-            (values.filterType as FilterType) === FilterType.Text
-              ? regexEscape(value)
-              : value,
-        });
-      } else {
-        filterBy.setValue({ ...filterBy.value, urlRegex: undefined });
-      }
-
-      closeDropdown(e);
-    }
-  };
-
 export function pageListFilterControl(
   filterBy: SearchParamsValue<FilterPageListBy>,
 ) {
@@ -149,6 +184,7 @@ export function pageListFilterControl(
         class="overflow-hidden inline-block part-[dropdown]:max-w-full part-[button]:max-w-full"
         selectFromDropdown
         ?checked=${active}
+        @sl-after-hide=${afterHideHandler(filterBy)}
       >
         ${urlRegex
           ? html`<span class="font-normal"
@@ -173,13 +209,13 @@ export function pageListFilterControl(
                         ...filterBy.value,
                         urlRegex: undefined,
                       });
-                      closeDropdown(e);
+                      close(e);
                     }}
                   ></sl-icon-button>
                 </sl-tooltip>`,
             )}
           </div>
-          <form @reset=${handleReset} @submit=${submitHandler(filterBy)}>
+          <form @submit=${submitHandler(filterBy)}>
             <div class="px-3 pb-3 border-b">
               <sl-radio-group
                 name=${FormFieldName.Type}
@@ -212,9 +248,9 @@ export function pageListFilterControl(
             <div class="flex justify-between gap-2 flex-wrap p-3">
               <sl-button
                 class="part-[label]:px-0"
-                type="reset"
                 variant="text"
                 size="small"
+                @click=${closeAndReset}
                 >${msg("Cancel")}</sl-button
               >
               <sl-button type="submit" variant="primary" size="small"
