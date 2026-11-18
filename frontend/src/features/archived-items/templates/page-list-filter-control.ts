@@ -219,7 +219,7 @@ export function pageListFilterControl(
             <div class="px-3 pb-3 border-b">
               <sl-radio-group
                 name=${FormFieldName.Type}
-                class="mb-3 part-[form-control-label]:sr-only"
+                class="mb-2 part-[form-control-label]:sr-only"
                 label=${msg("Filter type")}
                 size="small"
                 value=${filterType}
@@ -245,7 +245,7 @@ export function pageListFilterControl(
               ></sl-input>
             </div>
 
-            <div class="flex justify-between gap-2 flex-wrap p-3">
+            <div class="flex justify-between gap-2 flex-wrap px-3 py-2">
               <sl-button
                 class="part-[label]:px-0"
                 variant="text"
