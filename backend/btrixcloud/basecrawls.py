@@ -378,7 +378,6 @@ class BaseCrawlOps:
                     crawl_user=crawl.userid,
                     user=user.id,
                 )
-                await self.unset_deleting_timestamp(crawl_id, org.id)
                 raise HTTPException(status_code=403, detail="not_allowed")
 
     # pylint: disable=too-many-statements
