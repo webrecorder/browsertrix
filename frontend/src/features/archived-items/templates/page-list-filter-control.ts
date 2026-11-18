@@ -181,7 +181,7 @@ export function pageListFilterControl(
     <div class="flex gap-2 items-center whitespace-nowrap overflow-hidden">
       ${msg("Filter by:")}
       <btrix-filter-chip
-        class="overflow-hidden inline-block part-[dropdown]:max-w-full part-[button]:max-w-full"
+        class="overflow-hidden inline-block"
         selectFromDropdown
         ?checked=${active}
         @sl-after-hide=${afterHideHandler(filterBy)}
