@@ -2128,7 +2128,9 @@ class SubscriptionStatus(StrEnum):
 REASON_PAUSED = "subscriptionPaused"
 REASON_CANCELED = "subscriptionCanceled"
 
-SubscriptionEventType = Literal["create", "import", "update", "cancel", "add-minutes"]
+SubscriptionEventType = Literal[
+    "create", "import", "update", "cancel", "add-minutes", "refill"
+]
 
 
 # ============================================================================
@@ -2136,11 +2138,13 @@ class OrgQuotas(BaseModel):
     """Organization quotas (settable by superadmin)"""
 
     storageQuota: int = 0
-    maxExecMinutesPerMonth: int = 0
+    maxExecMinutesPerMonth: Annotated[int, Field(deprecated=True)] = 0
+    """Deprecated: will be removed in favor of `planExecMinutes`"""
 
     maxConcurrentCrawls: int = 0
     maxPagesPerCrawl: int = 0
 
+    planExecMinutes: int = 0
     extraExecMinutes: int = 0
     giftedExecMinutes: int = 0
 
@@ -2150,11 +2154,13 @@ class OrgQuotasIn(BaseModel):
     """Update for existing OrgQuotas"""
 
     storageQuota: int | None = None
-    maxExecMinutesPerMonth: int | None = None
+    maxExecMinutesPerMonth: Annotated[int | None, Field(deprecated=True)] = None
+    """Deprecated: will be removed in favor of `planExecMinutes`"""
 
     maxConcurrentCrawls: int | None = None
     maxPagesPerCrawl: int | None = None
 
+    planExecMinutes: int | None = None
     extraExecMinutes: int | None = None
     giftedExecMinutes: int | None = None
 
@@ -2195,6 +2201,7 @@ class SubscriptionCreate(BaseModel):
 
     firstAdminInviteEmail: EmailStr
     quotas: OrgQuotas | None = None
+    renewalDate: datetime | None = None
 
 
 # ============================================================================
@@ -2213,6 +2220,8 @@ class SubscriptionImport(BaseModel):
     planId: str
     oid: UUID
 
+    renewalDate: datetime | None = None
+
 
 # ============================================================================
 class SubscriptionImportOut(SubscriptionImport, SubscriptionEventOut):
@@ -2230,6 +2239,7 @@ class SubscriptionUpdate(BaseModel):
     planId: str
 
     futureCancelDate: datetime | None = None
+    renewalDate: datetime | None = None
     quotas: OrgQuotasIn | None = None
 
 
@@ -2272,6 +2282,21 @@ class SubscriptionAddMinutesOut(SubscriptionAddMinutes, SubscriptionEventOut):
     type: Literal["add-minutes"] = "add-minutes"
 
 
+class SubscriptionRefill(BaseModel):
+    """Represents a refill of plan execution minutes at renewal"""
+
+    subId: str
+    minutes: int
+    renewalDate: datetime | None = None
+
+
+# ============================================================================
+class SubscriptionRefillOut(SubscriptionRefill, SubscriptionEventOut):
+    """SubscriptionRefill output model"""
+
+    type: Literal["refill"] = "refill"
+
+
 # ============================================================================
 SubscriptionEventAny = (
     SubscriptionCreate
@@ -2279,6 +2304,7 @@ SubscriptionEventAny = (
     | SubscriptionCancel
     | SubscriptionImport
     | SubscriptionAddMinutes
+    | SubscriptionRefill
 )
 
 SubscriptionEventAnyOut = (
@@ -2287,6 +2313,7 @@ SubscriptionEventAnyOut = (
     | SubscriptionCancelOut
     | SubscriptionImportOut
     | SubscriptionAddMinutesOut
+    | SubscriptionRefillOut
 )
 
 
@@ -2355,6 +2382,9 @@ class Subscription(BaseModel):
     futureCancelDate: datetime | None = None
     # pylint: disable=C0301
     """When in a trial, future cancel date is the trial end date; when not in a trial, future cancel date is the date the subscription will be canceled, if set."""
+
+    renewalDate: datetime | None = None
+    """When the subscription next renews and plan execution minutes refill, if known."""
 
     readOnlyOnCancel: bool = False
 
@@ -2606,9 +2636,11 @@ class OrgOut(BaseMongoModel):
 
     # exec time limits
     monthlyExecSeconds: dict[str, int] = {}
+    planExecSeconds: dict[str, int] = {}
     extraExecSeconds: dict[str, int] = {}
     giftedExecSeconds: dict[str, int] = {}
 
+    planExecSecondsAvailable: int = 0
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 
@@ -2672,9 +2704,11 @@ class Organization(BaseMongoModel):
 
     # exec time limits
     monthlyExecSeconds: dict[str, int] = {}
+    planExecSeconds: dict[str, int] = {}
     extraExecSeconds: dict[str, int] = {}
     giftedExecSeconds: dict[str, int] = {}
 
+    planExecSecondsAvailable: int = 0
     extraExecSecondsAvailable: int = 0
     giftedExecSecondsAvailable: int = 0
 

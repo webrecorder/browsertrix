@@ -12,10 +12,12 @@ import { renderLegendColor } from "@/features/meters/utils/legend";
 import { type Metrics } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
 
-export type Bucket = "monthly" | "gifted" | "extra";
+export type Bucket = "monthly" | "plan" | "gifted" | "extra";
 
+/** Ordered by the sequence in which the backend drains each pool. */
 const EXEC_MINUTE_ORDER = [
   "monthly",
+  "plan",
   "gifted",
   "extra",
 ] as const satisfies Bucket[];
@@ -39,29 +41,30 @@ export class ExecutionMinuteMeter extends BtrixElement {
     const currentMonth = String(now.getUTCMonth() + 1).padStart(2, "0");
     const currentPeriod = `${currentYear}-${currentMonth}`;
 
+    /** Plan pool size in seconds; refilled externally at renewal */
+    const planQuotaSeconds = this.org.quotas.planExecMinutes * 60;
+
     /** Usages in seconds */
     const usage = {
       monthly: this.org.monthlyExecSeconds?.[currentPeriod] ?? 0,
+      // The plan pool spans the whole subscription period, so derive total
+      // usage from what's left rather than summing per-month records
+      plan: Math.max(0, planQuotaSeconds - this.org.planExecSecondsAvailable),
       extra: this.org.extraExecSeconds?.[currentPeriod] ?? 0,
       gifted: this.org.giftedExecSeconds?.[currentPeriod] ?? 0,
-      total:
-        (this.org.monthlyExecSeconds?.[currentPeriod] ?? 0) +
-        (this.org.extraExecSeconds?.[currentPeriod] ?? 0) +
-        (this.org.giftedExecSeconds?.[currentPeriod] ?? 0),
+      total: 0,
     };
+    usage.total = usage.monthly + usage.plan + usage.extra + usage.gifted;
 
     /** Quotas in seconds */
     const quotas = {
       monthly: this.org.quotas.maxExecMinutesPerMonth * 60,
+      plan: planQuotaSeconds,
       extra: this.org.extraExecSecondsAvailable + usage.extra,
       gifted: this.org.giftedExecSecondsAvailable + usage.gifted,
-      total:
-        this.org.quotas.maxExecMinutesPerMonth * 60 +
-        this.org.extraExecSecondsAvailable +
-        usage.extra +
-        this.org.giftedExecSecondsAvailable +
-        usage.gifted,
+      total: 0,
     };
+    quotas.total = quotas.monthly + quotas.plan + quotas.extra + quotas.gifted;
 
     if (Math.abs(quotas.extra - this.org.quotas.extraExecMinutes * 60) > 0) {
       console.debug("WARN extra minutes doesn't match quotas", {
@@ -84,6 +87,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
     /** Width values in reference to the total width of the value bar (usage.total) */
     const usedValues = {
       monthly: usage.total === 0 ? 0 : usage.monthly / usage.total,
+      plan: usage.total === 0 ? 0 : usage.plan / usage.total,
       extra: usage.total === 0 ? 0 : usage.extra / usage.total,
       gifted: usage.total === 0 ? 0 : usage.gifted / usage.total,
     };
@@ -91,6 +95,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
     /** Width values in reference to the total width of the meter (quotas.total) */
     const backgroundValues = {
       monthly: (quotas.monthly - usage.monthly) / quotas.total,
+      plan: (quotas.plan - usage.plan) / quotas.total,
       extra: (quotas.extra - usage.extra) / quotas.total,
       gifted: (quotas.gifted - usage.gifted) / quotas.total,
       total: usage.total / quotas.total,
@@ -98,6 +103,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
 
     const hasQuota =
       this.org.quotas.maxExecMinutesPerMonth > 0 ||
+      this.org.quotas.planExecMinutes > 0 ||
       this.org.quotas.extraExecMinutes > 0 ||
       this.org.quotas.giftedExecMinutes > 0;
     const isReached = hasQuota && usage.total >= quotas.total;
@@ -110,6 +116,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
           tooltipRow(
             {
               monthly: msg("Monthly"),
+              plan: msg("Plan"),
               extra: msg("Extra"),
               gifted: msg("Gifted"),
             }[bucket],
@@ -132,6 +139,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
           tooltipRow(
             {
               monthly: msg("Monthly Remaining"),
+              plan: msg("Plan Remaining"),
               extra: msg("Extra Remaining"),
               gifted: msg("Gifted Remaining"),
             }[bucket],
@@ -156,6 +164,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
         executionMinuteColors[bucket].foreground,
       )}${{
         monthly: msg("Used Monthly Execution Time"),
+        plan: msg("Used Plan Execution Time"),
         extra: msg("Used Extra Execution Time"),
         gifted: msg("Used Gifted Execution Time"),
       }[bucket]}`,
@@ -178,6 +187,7 @@ export class ExecutionMinuteMeter extends BtrixElement {
         executionMinuteColors[bucket].background,
       )}${{
         monthly: msg("Remaining Monthly Execution Time"),
+        plan: msg("Remaining Plan Execution Time"),
         extra: msg("Remaining Extra Execution Time"),
         gifted: msg("Remaining Gifted Execution Time"),
       }[bucket]}`,

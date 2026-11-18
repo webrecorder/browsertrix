@@ -27,8 +27,10 @@ export const orgQuotasSchema = z.object({
   extraExecMinutes: z.number(),
   giftedExecMinutes: z.number(),
   maxConcurrentCrawls: z.number(),
+  /** @deprecated will be removed in favor of `planExecMinutes` */
   maxExecMinutesPerMonth: z.number(),
   maxPagesPerCrawl: z.number(),
+  planExecMinutes: z.number(),
   storageQuota: z.number(),
 });
 export type OrgQuotas = z.infer<typeof orgQuotasSchema>;
@@ -76,10 +78,12 @@ export const orgDataSchema = z.object({
     .nullable()
     .optional(),
   extraExecSeconds: z.record(yearMonthSchema, z.number()).nullable().optional(),
+  planExecSeconds: z.record(yearMonthSchema, z.number()).nullable().optional(),
   giftedExecSeconds: z
     .record(yearMonthSchema, z.number())
     .nullable()
     .optional(),
+  planExecSecondsAvailable: z.number(),
   extraExecSecondsAvailable: z.number(),
   giftedExecSecondsAvailable: z.number(),
   storageQuotaReached: z.boolean().optional(),
