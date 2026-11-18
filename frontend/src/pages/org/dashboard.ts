@@ -642,7 +642,7 @@ export class Dashboard extends BtrixElement {
                   <sl-icon-button
                     href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
                     class="size-8 text-base"
-                    name="link"
+                    name=${this.org?.enablePublicProfile ? "link" : "eye-fill"}
                     @click=${this.navigate.link}
                   ></sl-icon-button>
                 </sl-tooltip>

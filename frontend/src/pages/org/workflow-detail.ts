@@ -1388,7 +1388,7 @@ export class WorkflowDetail extends BtrixElement {
                 ${msg("Replay")}
               `
             : html`
-                <sl-icon name="eye-fill"></sl-icon>
+                <sl-icon name="collection-play-fill"></sl-icon>
                 ${msg("Watch")}
               `}
         </btrix-tab-group-tab>
