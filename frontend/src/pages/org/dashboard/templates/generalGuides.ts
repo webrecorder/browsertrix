@@ -90,7 +90,7 @@ export function generalGuides({
         </btrix-dashboard-guide-card>
         <btrix-dashboard-guide-card
           class="block part-[icon-background]:bg-lime-50 part-[icon]:text-lime-500"
-          icon="archive"
+          icon="folder"
           path="collection"
         >
           <span slot="title">${msg("Collections")}</span>

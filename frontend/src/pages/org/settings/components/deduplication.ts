@@ -202,7 +202,7 @@ export class OrgSettingsDeduplication extends BtrixElement {
             <div class="truncate">${item.name}</div>
             ${detail(html`
               <span class="inline-flex items-center">
-                <sl-icon name="collection" class="mr-1.5"></sl-icon>
+                <sl-icon name="folder" class="mr-1.5"></sl-icon>
                 ${msg("Collection")}
               </span>
             `)}
