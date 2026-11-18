@@ -392,8 +392,15 @@ class BaseCrawlOps:
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_base_crawl(crawl_id, org, type_)
             if user and (crawl.userid != user.id) and not org.is_owner(user):
+                logger.warning(
+                    "insufficient_permissions_to_delete_crawl",
+                    crawl_id=crawl.id,
+                    type=type_,
+                    oid=org.id,
+                    crawl_user=crawl.userid,
+                    user=user.id,
+                )
                 await self.unset_deleting_timestamp(crawl_id, org.id)
-                # TODO: Return which crawl_id is the problem?
                 raise HTTPException(status_code=403, detail="not_allowed")
 
     # pylint: disable=too-many-statements
