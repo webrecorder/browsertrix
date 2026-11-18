@@ -141,7 +141,7 @@ export class PublicOrg extends BtrixElement {
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/dashboard"
                   class="size-8 text-base"
-                  name="speedometer"
+                  name="speedometer2"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
@@ -149,7 +149,7 @@ export class PublicOrg extends BtrixElement {
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
-                  name="gear"
+                  name="building-gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
@@ -212,7 +212,7 @@ export class PublicOrg extends BtrixElement {
               <sl-icon-button
                 href=${`${this.navigate.orgBasePath}/collections`}
                 class="size-8 text-base"
-                name="collection"
+                name="gear"
                 @click=${this.navigate.link}
               ></sl-icon-button>
             </sl-tooltip>`,
