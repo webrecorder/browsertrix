@@ -121,7 +121,8 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
-import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
+import { urlPrefixToRegex } from "@/utils/crawl-scope/urlPrefixToRegex";
 import { getDefaultProxyId, isDepthSupportedScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -141,7 +142,6 @@ import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
-import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
   apiScopeType,
@@ -262,6 +262,7 @@ const urlListToArray = flow(
   (str?: string) => (str?.length ? str.trim().split(/\s+/g) : []),
   trimArray,
 );
+const urlToRegex = (url: string) => urlPrefixToRegex(url);
 
 //todo: make this customizable, perhaps at deploy time
 const URL_LIST_MAX_URLS = 100;
@@ -3049,7 +3050,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         formState.customIncludeList = urlListToArray(
           this.formState.customIncludeList,
         )
-          .map((url) => `^${regexEscape(url)}`)
+          .map(urlToRegex)
           .join("\n");
       } else {
         formState.customIncludeList = this.customIncludeListFromSeed(
@@ -3084,7 +3085,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
-      ? `^${regexEscape(prefixUrl)}`
+      ? urlPrefixToRegex(prefixUrl)
       : prefixUrl;
   }
 
@@ -3899,7 +3900,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
           ? includeUrlList
           : this.formState.scopeType === ScopeType.Custom
-            ? includeUrlList.map((url) => "^" + regexEscape(url))
+            ? includeUrlList.map(urlToRegex)
             : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
