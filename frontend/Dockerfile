@@ -57,7 +57,7 @@ COPY --link ./docs/docs ./docs
 RUN API_DOCS_URL=/api/redoc zensical build
 RUN zensical build --config-file mkdocs.embed.yml
 
-FROM docker.io/library/nginx:1.31.8
+FROM docker.io/library/nginx:1.31.9
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
 
