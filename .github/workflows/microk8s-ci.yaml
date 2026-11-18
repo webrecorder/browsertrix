@@ -79,7 +79,10 @@ jobs:
           cache-to: type=gha,scope=frontend,mode=max
 
       - name: Create Secret
-        run: sudo microk8s kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}
+        run: |
+          sudo microk8s kubectl create secret generic btrix-subs-app-secret \
+            --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }} \
+            --from-literal=BTRIX_SUBS_APP_API_KEY=TEST_PRESHARED_SECRET_PASSWORD
 
       - name: Start Cluster with Helm
         run: |

@@ -167,6 +167,41 @@ async def test_update_quotas_add(org_ops: OrgOps):
         "planExecMinutes": 0,
         "extraExecMinutes": 550,
         "giftedExecMinutes": 350,
+        "extraStorageQuota": 0,
     }
     assert update_dict_2["$push"]["quotaUpdates"]["subEventId"] is None
+    assert update_dict_2["$inc"] == {}
+
+
+@pytest.mark.asyncio
+async def test_update_quotas_add_extra_storage(org_ops: OrgOps):
+    """mode="add" increments extraStorageQuota via the generic clamp, and the
+    change is recorded in quotaUpdates like any other quota change."""
+    org = get_org(base_quotas)
+    assert org.quotas.extraStorageQuota == 0
+
+    org_ops.orgs.find_one = AsyncMock(return_value=org.to_dict())
+    # first find_one_and_update (the $inc) returns the updated org, as the
+    # real update_quotas uses return_document=AFTER with a quotas projection
+    updated_org = get_org(
+        base_quotas.model_copy(update={"extraStorageQuota": 100_000_000_000})
+    )
+    org_ops.orgs.find_one_and_update = AsyncMock(return_value=updated_org.to_dict())
+
+    new_quotas = OrgQuotasIn(extraStorageQuota=100_000_000_000)
+    await org_ops.update_quotas(org, new_quotas, "add")
+
+    # first call: the $inc for the add-on quota
+    first_update_call = org_ops.orgs.find_one_and_update.call_args_list[0]
+    assert first_update_call[0][0] == {"_id": org.id}
+    update_dict_1 = first_update_call[0][1]
+    assert update_dict_1["$inc"] == {"quotas.extraStorageQuota": 100_000_000_000}
+
+    # second call: the quotaUpdates record (contains the new add-on quota)
+    second_update_call = org_ops.orgs.find_one_and_update.call_args_list[1]
+    update_dict_2 = second_update_call[0][1]
+    assert (
+        update_dict_2["$push"]["quotaUpdates"]["update"]["extraStorageQuota"]
+        == 100_000_000_000
+    )
     assert update_dict_2["$inc"] == {}

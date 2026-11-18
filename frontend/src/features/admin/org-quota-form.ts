@@ -17,6 +17,7 @@ import { tw } from "@/utils/tailwind";
 
 export const emptyQuotas: OrgQuotas = {
   extraExecMinutes: 0,
+  extraStorageQuota: 0,
   giftedExecMinutes: 0,
   maxConcurrentCrawls: 0,
   // Deprecated: will be removed in favor of `planExecMinutes`
@@ -64,6 +65,12 @@ export const LABELS: {
   giftedExecMinutes: {
     label: msg("Gifted Execution Minutes"),
     type: "number",
+    adjustmentOnly: true,
+  },
+  extraStorageQuota: {
+    label: msg("Extra Storage Quota"),
+    type: "bytes",
+    scale: 1e9,
     adjustmentOnly: true,
   },
 };

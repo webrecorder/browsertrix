@@ -1838,7 +1838,7 @@ class CrawlOperator(BaseOperator):
             return self.request_pause_crawl("paused_org_readonly", crawl)
 
         # pause crawl if storage quota is reached
-        if org.quotas.storageQuota:
+        if (org.quotas.storageQuota or 0) + (org.quotas.extraStorageQuota or 0):
             # include not-yet-uploaded pending data from all active crawls
             active_crawls_pending_size = (
                 await self.crawl_ops.get_active_crawls_pending_size(crawl.oid)

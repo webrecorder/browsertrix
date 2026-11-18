@@ -97,6 +97,7 @@ export default {
     planExecMinutes: 0,
     extraExecMinutes: 0,
     giftedExecMinutes: 0,
+    extraStorageQuota: 0,
   },
   quotaUpdates: [
     {
@@ -108,6 +109,7 @@ export default {
         maxPagesPerCrawl: 0,
         extraExecMinutes: 0,
         giftedExecMinutes: 0,
+        extraStorageQuota: 0,
       },
     },
     {
@@ -119,6 +121,7 @@ export default {
         maxPagesPerCrawl: 0,
         extraExecMinutes: 0,
         giftedExecMinutes: 0,
+        extraStorageQuota: 0,
       },
     },
     {
@@ -130,6 +133,7 @@ export default {
         maxPagesPerCrawl: 0,
         extraExecMinutes: 0,
         giftedExecMinutes: 0,
+        extraStorageQuota: 0,
       },
     },
   ],
