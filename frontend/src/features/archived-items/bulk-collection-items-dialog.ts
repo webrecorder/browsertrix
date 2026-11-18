@@ -123,7 +123,7 @@ export class BulkCollectionItemsDialog extends BtrixElement {
         ${this.collectionId
           ? nothing
           : html`<div class="mt-2 rounded-lg border p-3 text-neutral-500">
-              <p class="text-center">${msg("No collections selected.")}</p>
+              <p class="text-center">${msg("No collection selected.")}</p>
             </div>`}
       </div>
 
@@ -159,7 +159,6 @@ export class BulkCollectionItemsDialog extends BtrixElement {
             void this.addItemsTask.run();
           }}
         >
-          <sl-icon name="plus-lg" slot="prefix"></sl-icon>
           ${pluralOfAddItems(items.length)}
         </sl-button>
       </div>`;
