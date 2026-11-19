@@ -7,6 +7,8 @@ export const stringFor: Record<string, string> = {
   notSpecified: msg("Not specified"),
   none: msg("None"),
   unknown: msg("Unknown"),
+  yes: msg("Yes"),
+  no: msg("No"),
 };
 
 export const noData = stringFor.noData;
