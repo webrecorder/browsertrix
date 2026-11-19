@@ -2586,6 +2586,8 @@ class OrgOut(BaseMongoModel):
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int
     bytesStoredProfiles: int
     bytesStoredSeedFiles: int = 0
@@ -2656,6 +2658,8 @@ class Organization(BaseMongoModel):
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
     bytesStoredSeedFiles: int = 0
@@ -2812,6 +2816,8 @@ class OrgMetrics(BaseModel):
 
     storageUsedBytes: int
     storageUsedCrawls: int
+    storageUsedFinishedCrawls: int
+    storageUsedActiveCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
     storageUsedSeedFiles: int
@@ -2889,6 +2895,28 @@ class OrgImportResponse(BaseModel):
     """Model for org import response"""
 
     imported: bool
+
+
+# ============================================================================
+class OrgCrawlFileStorageResults(BaseModel):
+    """Model for org crawlfile storage calculation results, in bytes"""
+
+    total_crawlfiles: int = 0
+    crawls: int = 0
+    crawls_finished: int = 0
+    crawls_active: int = 0
+    uploads: int = 0
+
+
+# ============================================================================
+class OrgStorageResults(OrgCrawlFileStorageResults):
+    """Model for complete org storage calculation results, in bytes"""
+
+    total_org: int = 0
+    profiles: int = 0
+    seed_files: int = 0
+    thumbnails: int = 0
+    dedupe_indexes: int = 0
 
 
 # ============================================================================
