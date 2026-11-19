@@ -29,9 +29,6 @@ export class LinkedCollectionsListItem extends TailwindElement {
   @property({ type: Boolean })
   removable?: boolean;
 
-  @property({ type: Boolean, useDefault: true })
-  openInNewTab = false;
-
   @property({ type: Boolean })
   loading = false;
 
@@ -65,25 +62,15 @@ export class LinkedCollectionsListItem extends TailwindElement {
     }
 
     if (this.baseUrl) {
-      const href = `${this.baseUrl}/${item.id}`;
-
       content.push(
         html`<div class="flex-none">
-          ${this.openInNewTab
-            ? html`<sl-icon-button
-                name="arrow-up-right"
-                href=${href}
-                target="_blank"
-                label=${msg("Open in New Tab")}
-              >
-              </sl-icon-button>`
-            : html`<sl-icon-button
-                name="link"
-                href=${href}
-                label=${msg("Visit Link")}
-                @click=${this.navigate.link}
-              >
-              </sl-icon-button>`}
+          <sl-icon-button
+            name="link"
+            href="${this.baseUrl}/${item.id}"
+            label=${msg("Visit Link")}
+            @click=${this.navigate.link}
+          >
+          </sl-icon-button>
         </div>`,
       );
     }

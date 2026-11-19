@@ -37,9 +37,6 @@ export class LinkedCollections extends BtrixElement {
   @property({ type: Boolean })
   removable?: boolean;
 
-  @property({ type: Boolean, useDefault: true })
-  openInNewTab = false;
-
   // Use a custom abort controller rather than the one provided by `Task`
   // to only abort on disconnect
   private collectionsTaskController = new AbortController();
@@ -123,7 +120,6 @@ export class LinkedCollections extends BtrixElement {
       baseUrl="${this.navigate.orgBasePath}/collections/view"
       .dedupeId=${this.dedupeId}
       ?removable=${this.removable}
-      ?openInNewTab=${this.openInNewTab}
     ></btrix-linked-collections-list>`;
   }
 
