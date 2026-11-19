@@ -168,7 +168,7 @@ export class DashboardGuides extends BtrixElement {
           <li>
             ${this.renderGuideLink({
               label: msg("Watch pages in real-time"),
-              icon: "eye-fill",
+              icon: "collection-play-fill",
               path: "running-crawl/#watch-crawl",
             })}
           </li>

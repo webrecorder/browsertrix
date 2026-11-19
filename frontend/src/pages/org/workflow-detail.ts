@@ -1388,7 +1388,7 @@ export class WorkflowDetail extends BtrixElement {
                 ${msg("Replay")}
               `
             : html`
-                <sl-icon name="eye-fill"></sl-icon>
+                <sl-icon name="collection-play-fill"></sl-icon>
                 ${msg("Watch")}
               `}
         </btrix-tab-group-tab>
@@ -1430,7 +1430,7 @@ export class WorkflowDetail extends BtrixElement {
                 <btrix-menu-item-link
                   href="${this.basePath}/crawls/${id}#files"
                 >
-                  <sl-icon name="folder-fill" slot="prefix"></sl-icon>
+                  <sl-icon name="file-earmark-zip-fill" slot="prefix"></sl-icon>
                   ${msg("View WACZ Files")}
                 </btrix-menu-item-link>
               </sl-menu>

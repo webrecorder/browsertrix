@@ -844,7 +844,7 @@ export class ArchivedItemDetail extends BtrixElement {
                 ${renderNavItem({
                   section: "files",
                   iconLibrary: "default",
-                  icon: "folder-fill",
+                  icon: "file-earmark-zip-fill",
                 })}
               `
             : nothing,

@@ -642,7 +642,7 @@ export class Dashboard extends BtrixElement {
                   <sl-icon-button
                     href=${`/${RouteNamespace.PublicOrgs}/${this.orgSlugState}`}
                     class="size-8 text-base"
-                    name="link"
+                    name=${this.org?.enablePublicProfile ? "link" : "eye"}
                     @click=${this.navigate.link}
                   ></sl-icon-button>
                 </sl-tooltip>
@@ -656,7 +656,7 @@ export class Dashboard extends BtrixElement {
                       <sl-icon-button
                         href=${`${this.navigate.orgBasePath}/settings`}
                         class="size-8 text-base"
-                        name="gear"
+                        name="building-gear"
                         @click=${this.navigate.link}
                       ></sl-icon-button>
                     </sl-tooltip>`,
@@ -669,7 +669,7 @@ export class Dashboard extends BtrixElement {
                 <sl-icon-button
                   href=${`${this.navigate.orgBasePath}/collections`}
                   class="size-8 text-base"
-                  name="collection"
+                  name="gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
