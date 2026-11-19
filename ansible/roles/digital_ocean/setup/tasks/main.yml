@@ -16,6 +16,9 @@
 # ===========================================
 - name: d_ocean | db | test for existing mongodb
   ansible.builtin.command: doctl db list -o json
+  environment:
+    # doctl >= 2.0.0 masks passwords in connection URIs unless CI is set
+    CI: "true"
   changed_when: false
   failed_when: false
   register: db_check
@@ -38,6 +41,9 @@
 
 - name: d_ocean | db | reset db user password
   ansible.builtin.command: doctl databases user reset {{ db_uuid }} doadmin -o json
+  environment:
+    # doctl >= 2.0.0 masks the new password unless CI is set
+    CI: "true"
   register: db_user
   when: not db_create.changed
   changed_when: true
