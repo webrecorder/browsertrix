@@ -5,11 +5,13 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pymongo
 import pytest
 from fastapi import HTTPException
 
-from btrixcloud.models import DeleteCrawlList
+from btrixcloud.models import BaseCrawl, DeleteCrawlList
 from btrixcloud.uploads import STUCK_UPLOAD_GRACE_PERIOD, UploadOps
+from btrixcloud.utils import dt_now
 
 
 class AsyncCursor:
@@ -160,7 +162,7 @@ async def test_query_scopes_to_stuck_processing_uploads(upload_ops):
     query = queries[0]
     assert query["type"] == "upload"
     assert query["state"] == "processing-upload"
-    assert query["deleted"] == {"$ne": True}
+    assert query["deleting"] is None
     cutoff = query["started"]["$lt"]
     # dt_now() truncates to whole seconds, so allow a second of slack
     assert before - timedelta(seconds=1) <= cutoff <= after
@@ -201,8 +203,9 @@ async def test_delete_crawls_unauthorized_does_not_mark_deleted(upload_ops: Uplo
 
 @pytest.mark.asyncio
 async def test_delete_crawls_owner_marks_deleted(upload_ops: UploadOps):
-    """Delete sets the deleted marker before files are removed"""
+    """Delete sets the deleting timestamp before files are removed"""
     org = SimpleNamespace(id=uuid4(), is_owner=lambda u: True)
+
     upload_ops.get_base_crawl = AsyncMock(return_value=make_crawl(userid=uuid4()))
     upload_ops.crawls.find_one_and_update = AsyncMock()
     upload_ops.crawls.delete_many = AsyncMock(
@@ -216,13 +219,28 @@ async def test_delete_crawls_owner_marks_deleted(upload_ops: UploadOps):
     upload_ops.orgs.storage_quota_reached = MagicMock(return_value=False)
     upload_ops.event_webhook_ops.create_upload_deleted_notification = AsyncMock()
 
-    await upload_ops.delete_crawls(
-        org, DeleteCrawlList(crawl_ids=["upload-abc"]), "upload"
-    )
+    BaseCrawl.from_dict = MagicMock()
+
+    fixed_now = dt_now()
+
+    with patch("btrixcloud.basecrawls.dt_now") as mocked_dt_now:
+        mocked_dt_now.return_value = fixed_now
+        await upload_ops.delete_crawls(
+            org, DeleteCrawlList(crawl_ids=["upload-abc"]), "upload"
+        )
 
     upload_ops.crawls.find_one_and_update.assert_awaited_once_with(
-        {"_id": "upload-abc", "oid": org.id, "type": "upload"},
-        {"$set": {"deleted": True}},
+        {
+            "_id": "upload-abc",
+            "oid": org.id,
+            "type": "upload",
+            "$or": [
+                {"deleting": None},
+                {"deleting": {"$lt": fixed_now - timedelta(minutes=2)}},
+            ],
+        },
+        {"$set": {"deleting": fixed_now}},
+        return_document=pymongo.ReturnDocument.AFTER,
     )
 
 
