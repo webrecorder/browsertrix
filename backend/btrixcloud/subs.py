@@ -196,7 +196,7 @@ class SubOps:
         deleted = False
 
         await self.org_ops.update_read_only(
-            org, readOnly=True, readOnlyReason=REASON_CANCELED
+            org, read_only=True, read_only_reason=REASON_CANCELED
         )
 
         if not org.subscription.readOnlyOnCancel:
