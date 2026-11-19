@@ -38,12 +38,14 @@ import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { type ArchivedItemCheckedEvent } from "@/features/archived-items/archived-item-list/types";
 import { type BtrixChangeArchivedItemStateFilterEvent } from "@/features/archived-items/archived-item-state-filter";
+import { type AddItemsSuccessEvent } from "@/features/archived-items/bulk-collection-items-dialog";
 import { type ConfirmBulkDeleteEvent } from "@/features/archived-items/bulk-delete-items-dialog";
 import { type BtrixChangeQARatingFilterEvent } from "@/features/archived-items/qa-rating-filter";
 import { emptyMessage } from "@/layouts/emptyMessage";
 import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import { pluralOfItemsSelected } from "@/plurals/items-selected";
+import { CommonTab, OrgTab } from "@/routes";
 import {
   APIErrorDetail,
   type APIPaginatedList,
@@ -297,7 +299,12 @@ export class CrawlsList extends BtrixElement {
   private itemToDelete: ArchivedItem | null = null;
 
   @state()
-  private openDialog?: "edit" | "delete" | "bulkDelete" | "upload";
+  private openDialog?:
+    | "edit"
+    | "delete"
+    | "bulkDelete"
+    | "bulkAddToCollection"
+    | "upload";
 
   @query("#stateSelect")
   stateSelect?: SlSelect;
@@ -925,12 +932,19 @@ export class CrawlsList extends BtrixElement {
       </div>
 
       ${anySelected
-        ? html`<sl-icon-button
-            class="text-base hover:text-danger focus:text-danger"
-            name="trash3"
-            label=${msg("Delete Items")}
-            @click=${() => (this.openDialog = "bulkDelete")}
-          ></sl-icon-button>`
+        ? html`<sl-divider class="ml-3 mr-1 h-6" vertical></sl-divider>
+            <sl-icon-button
+              class="text-base"
+              name="folder-plus"
+              label=${msg("Add to Collection")}
+              @click=${() => (this.openDialog = "bulkAddToCollection")}
+            ></sl-icon-button>
+            <sl-icon-button
+              class="text-base hover:text-danger focus:text-danger"
+              name="trash3"
+              label=${msg("Delete Items")}
+              @click=${() => (this.openDialog = "bulkDelete")}
+            ></sl-icon-button>`
         : nothing} `;
   };
 
@@ -1092,7 +1106,9 @@ export class CrawlsList extends BtrixElement {
   };
 
   private renderBulkActionsDialog() {
-    const dialog = () => {
+    const deletionInProgress =
+      this.deleteItemsTask.status === TaskStatus.PENDING;
+    const dialogs = () => {
       const selected = true;
       const notSelected = false;
       const group = Map.groupBy([...this.visibleItems.values()], (item) =>
@@ -1100,29 +1116,58 @@ export class CrawlsList extends BtrixElement {
       );
       const items = group.get(selected);
 
-      return html`<btrix-bulk-delete-items-dialog
-        .items=${items || []}
-        ?open=${this.openDialog === "bulkDelete"}
-        ?inProgress=${this.deleteItemsTask.status === TaskStatus.PENDING}
-        @sl-after-hide=${() => (this.openDialog = undefined)}
-        @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
-          const { itemIds } = e.detail;
+      return html`<btrix-bulk-collection-items-dialog
+          .items=${items || []}
+          ?open=${this.openDialog === "bulkAddToCollection"}
+          @sl-after-hide=${() => (this.openDialog = undefined)}
+          @btrix-success=${(e: AddItemsSuccessEvent) => {
+            this.notify.toast({
+              title: msg("Successfully added items"),
+              message: html`<btrix-link
+                href="${this.navigate
+                  .orgBasePath}/${OrgTab.Collections}/${CommonTab.View}/${e
+                  .detail.collectionId}"
+                >${msg("View collection")}</btrix-link
+              >`,
+              variant: "success",
+              icon: "check2-circle",
+              id: "bulk-collection-items-status",
+            });
+          }}
+          @btrix-abort=${() => {
+            this.notify.toast({
+              message: msg("Canceled adding items to collection."),
+              variant: "warning",
+              icon: "exclamation-circle",
+              id: "bulk-collection-items-status",
+            });
+          }}
+        ></btrix-bulk-collection-items-dialog>
 
-          if (itemIds?.length) {
-            await this.deleteItemsTask.run([itemIds]);
-          }
-          this.openDialog = undefined;
-        }}
-      ></btrix-bulk-delete-items-dialog>`;
+        <btrix-bulk-delete-items-dialog
+          .items=${items || []}
+          ?open=${this.openDialog === "bulkDelete"}
+          ?inProgress=${deletionInProgress}
+          @sl-after-hide=${() => (this.openDialog = undefined)}
+          @btrix-confirm=${async (e: ConfirmBulkDeleteEvent) => {
+            const { itemIds } = e.detail;
+
+            if (itemIds?.length) {
+              await this.deleteItemsTask.run([itemIds]);
+            }
+            this.openDialog = undefined;
+          }}
+        ></btrix-bulk-delete-items-dialog>`;
     };
 
     return guard(
       [
         this.selectedItemIds,
-        this.openDialog === "bulkDelete",
-        this.deleteItemsTask.status === TaskStatus.PENDING,
+        this.openDialog === "bulkAddToCollection" ||
+          this.openDialog === "bulkDelete",
+        deletionInProgress,
       ],
-      dialog,
+      dialogs,
     );
   }
 

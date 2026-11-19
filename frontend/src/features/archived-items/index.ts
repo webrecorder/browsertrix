@@ -1,6 +1,7 @@
 import("./archived-item-list");
 import("./archived-item-state-filter");
 import("./bulk-delete-items-dialog");
+import("./bulk-collection-items-dialog");
 import("./crawl-log-table");
 import("./crawl-logs");
 import("./delete-item-dialog");
