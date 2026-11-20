@@ -32,7 +32,15 @@ spec:
           - fc00::/7
           - fe80::/10
 
-    # allow frontend access for QA runs
+    # allow backend and frontend access for QA runs
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ .Release.Namespace }}
+        podSelector:
+          matchLabels:
+            role: backend
+
     - to:
       - namespaceSelector:
           matchLabels:

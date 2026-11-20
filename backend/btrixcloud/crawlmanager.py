@@ -359,7 +359,7 @@ class CrawlManager(K8sAPI):
         if obj_type == "job":
             return await self.has_job(name)
 
-        return False
+        return await self.has_custom_object(name, obj_type + "s")
 
     async def delete_dedupe_index_resources(self, oid: str, coll_id: str) -> None:
         """Delete dedupe index-related jobs and index itself"""
