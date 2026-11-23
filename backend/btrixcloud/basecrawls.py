@@ -1057,7 +1057,13 @@ class BaseCrawlOps:
         uploads: list[str] = []
 
         for crawl_id in delete_list.crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id, org)
+            try:
+                crawl = await self.get_base_crawl(crawl_id, org)
+            # Gracefully allow for any particular crawl to not exist, as it
+            # might have been deleted in a concurrent/similarly timed request
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                continue
             if crawl.type == "crawl":
                 crawls.append(crawl_id)
             if crawl.type == "upload":
