@@ -766,15 +766,12 @@ class BackgroundJobOps:
         if job.type != job_type:
             raise HTTPException(status_code=400, detail="invalid_job_type")
 
-        if job_type == BgJobType.DELETE_REPLICA:
-            await self.handle_delete_replica_files_job_finished(
-                cast(DeleteReplicaJob, job)
-            )
-
-        if job_type == BgJobType.DELETE_ORG_FILES:
-            await self.handle_delete_replica_files_job_finished(
-                cast(DeleteOrgFilesJob, job)
-            )
+        if job_type in (BgJobType.DELETE_REPLICA, BgJobType.DELETE_ORG_FILES):
+            if job_type == BgJobType.DELETE_REPLICA:
+                cast_job = cast(DeleteReplicaJob, job)
+            else:
+                cast_job = cast(DeleteOrgFilesJob, job)
+            await self.handle_delete_replica_files_job_finished(cast_job)
 
         await self.jobs.find_one_and_update(
             {"_id": job_id, "oid": oid},
