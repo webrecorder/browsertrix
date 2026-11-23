@@ -390,7 +390,13 @@ class BaseCrawlOps:
         - Org owners can delete any crawls in org
         """
         for crawl_id in delete_list.crawl_ids:
-            crawl = await self.get_base_crawl(crawl_id, org, type_)
+            try:
+                crawl = await self.get_base_crawl(crawl_id, org, type_)
+            # Gracefully allow for any particular crawl to not exist, as it
+            # might have been deleted in a concurrent/similarly timed request
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                continue
             if user and (crawl.userid != user.id) and not org.is_owner(user):
                 logger.warning(
                     "insufficient_permissions_to_delete_crawl",
