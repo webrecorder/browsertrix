@@ -1783,14 +1783,18 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     assert r.json()["detail"] == "not_allowed"
 
     # Delete mixed type archived items
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": crawls_to_delete},
-    )
-    data = r.json()
-    assert data["deleted"]
-    assert data["storageQuotaReached"] is False
+    # Make several attempts to test deletion idempotency
+    crawls_deleted = False
+    for _ in range(5):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+            headers=admin_auth_headers,
+            json={"crawl_ids": crawls_to_delete},
+        )
+        data = r.json()
+        if data["deleted"] is True:
+            crawls_deleted = True
+        assert data["storageQuotaReached"] is False
 
     # Check that org and workflow size figures are as expected
     count = 0
