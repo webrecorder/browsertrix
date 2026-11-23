@@ -769,7 +769,9 @@ class BackgroundJobOps:
 
         if job_type in (BgJobType.DELETE_REPLICA, BgJobType.DELETE_ORG_FILES):
             if job_type == BgJobType.DELETE_REPLICA:
-                cast_job = cast(DeleteReplicaJob, job)
+                cast_job: DeleteReplicaJob | DeleteOrgFilesJob = cast(
+                    DeleteReplicaJob, job
+                )
             else:
                 cast_job = cast(DeleteOrgFilesJob, job)
             await self.handle_delete_replica_files_job_finished(cast_job)
