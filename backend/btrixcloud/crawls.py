@@ -1008,20 +1008,16 @@ class CrawlOps(BaseCrawlOps):
 
         self.orgs.can_write_data(org)
 
-        crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
-
         try:
             qa_run_id = await self.crawl_manager.create_qa_crawl_job(
-                crawlconfig,
+                crawl,
                 org.storage,
                 userid=str(user.id),
                 qa_source=crawl_id,
                 storage_filename=self.crawl_configs.default_filename_template,
             )
 
-            image = self.crawl_configs.get_channel_crawler_image(
-                crawlconfig.crawlerChannel
-            )
+            image = self.crawl_configs.get_channel_crawler_image(crawl.crawlerChannel)
 
             qa_run = QARun(
                 id=qa_run_id,

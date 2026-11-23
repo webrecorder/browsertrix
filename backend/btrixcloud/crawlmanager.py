@@ -13,6 +13,7 @@ from .k8sapi import ApiException, K8sAPI
 from .models import (
     TYPE_INDEX_JOB_TYPES,
     BgJobType,
+    Crawl,
     CrawlConfig,
     ProfileBrowserMetadata,
     StorageRef,
@@ -545,16 +546,16 @@ class CrawlManager(K8sAPI):
 
     async def create_qa_crawl_job(
         self,
-        crawlconfig: CrawlConfig,
+        crawl: Crawl,
         storage: StorageRef,
         userid: str,
         storage_filename: str,
         qa_source: str,
     ) -> str:
         """create new QA Run crawl job with qa source crawl id"""
-        cid = str(crawlconfig.id)
+        cid = str(crawl.cid)
 
-        storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
+        storage_secret = storage.get_storage_secret_name(str(crawl.oid))
 
         await self.has_storage_secret(storage_secret)
 
@@ -564,9 +565,9 @@ class CrawlManager(K8sAPI):
         return await self.new_crawl_job(
             cid,
             userid,
-            str(crawlconfig.oid),
+            str(crawl.oid),
             str(storage),
-            crawlconfig.crawlerChannel,
+            crawl.crawlerChannel,
             1,
             0,
             0,
