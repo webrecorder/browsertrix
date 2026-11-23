@@ -1657,7 +1657,7 @@ class OrgOps(BaseOrgs):
             await self.base_crawl_ops.delete_crawls_all_types(
                 delete_list=DeleteCrawlList(crawl_ids=item_ids),
                 org=org,
-                skip_deleting_replicas=True,
+                skip_per_file_replica_deletion=True,
             )
 
             items = await cursor.to_list(length=DEL_ITEMS)
@@ -1681,7 +1681,7 @@ class OrgOps(BaseOrgs):
             await self.profile_ops.delete_profile(
                 profile["_id"],
                 org,
-                skip_deleting_replicas=True,
+                skip_per_file_replica_deletion=True,
             )
 
         # Delete collections
