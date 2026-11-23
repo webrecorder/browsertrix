@@ -696,6 +696,7 @@ class BackgroundJobOps:
             bool(self.storage_ops.get_default_replicas())
         )
 
+    # pylint: disable=too-many-branches
     async def job_finished(
         self,
         job_id: str,
