@@ -1792,9 +1792,11 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
             json={"crawl_ids": crawls_to_delete},
         )
         data = r.json()
-        if data["deleted"] is True:
+        if data["deleted"]:
             crawls_deleted = True
         assert data["storageQuotaReached"] is False
+
+    assert crawls_deleted
 
     # Check that org and workflow size figures are as expected
     count = 0
