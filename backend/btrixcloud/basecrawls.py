@@ -485,13 +485,11 @@ class BaseCrawlOps:
                         if successful:
                             cids_to_update[cid]["successful"] += 1
                     else:
-                        cids_to_update[cid] = {}
-                        cids_to_update[cid]["inc"] = 1
-                        cids_to_update[cid]["size"] = crawl_size
-                        if successful:
-                            cids_to_update[cid]["successful"] = 1
-                        else:
-                            cids_to_update[cid]["successful"] = 0
+                        cids_to_update[cid] = {
+                            "inc": 1,
+                            "size": crawl_size,
+                            "successful": 1 if successful else 0,
+                        }
             # pylint: disable=broad-exception-caught
             except Exception:
                 logger.exception(
