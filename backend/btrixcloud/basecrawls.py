@@ -491,7 +491,7 @@ class BaseCrawlOps:
                             "successful": 1 if successful else 0,
                         }
             # pylint: disable=broad-exception-caught
-            except Exception:
+            except Exception as exc:
                 logger.exception(
                     "crawl_deletion_failure",
                     crawl_id=crawl_id,
@@ -499,7 +499,9 @@ class BaseCrawlOps:
                     oid=org.id,
                 )
                 await self.unset_deleting_timestamp(crawl_id, org.id)
-                raise HTTPException(status_code=400, detail="file_deletion_error")
+                raise HTTPException(
+                    status_code=400, detail="file_deletion_error"
+                ) from exc
 
             # Now that everything else associated with this crawl is deleted,
             # we're safe to include it in the crawls mdb delete_many
