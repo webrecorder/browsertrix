@@ -408,6 +408,40 @@ class BaseCrawlOps:
                 )
                 raise HTTPException(status_code=403, detail="not_allowed")
 
+    async def get_crawl_for_deletion(
+        self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
+    ) -> BaseCrawl | None:
+        """Acquire crawl for deletion
+
+        If the crawl has already been marked as deleting within the
+        previous 2 minutes, return None instead, as another deletion
+        attempt is likely in-progress.
+        """
+        deleting_timestamp_expiry = dt_now() - timedelta(minutes=2)
+        res = await self.crawls.find_one_and_update(
+            {
+                "_id": crawl_id,
+                "oid": org.id,
+                "type": type_,
+                "$or": [
+                    {"deleting": None},
+                    {"deleting": {"$lt": deleting_timestamp_expiry}},
+                ],
+            },
+            {"$set": {"deleting": dt_now()}},
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+        if not res:
+            logger.warning(
+                "archived_item_deletion_lock_not_acquired",
+                crawl_id=crawl_id,
+                type=type_,
+                oid=org.id,
+            )
+            return None
+
+        return BaseCrawl.from_dict(res)
+
     # pylint: disable=too-many-statements
     async def delete_crawls(
         self,
@@ -429,32 +463,9 @@ class BaseCrawlOps:
 
         for crawl_id in delete_list.crawl_ids:
             try:
-                # Only attempt to delete if deletion is not already in progress
-                # (deleting timestamp is None or older than 2 minutes)
-                deleting_timestamp_expiry = dt_now() - timedelta(minutes=2)
-                res = await self.crawls.find_one_and_update(
-                    {
-                        "_id": crawl_id,
-                        "oid": org.id,
-                        "type": type_,
-                        "$or": [
-                            {"deleting": None},
-                            {"deleting": {"$lt": deleting_timestamp_expiry}},
-                        ],
-                    },
-                    {"$set": {"deleting": dt_now()}},
-                    return_document=pymongo.ReturnDocument.AFTER,
-                )
-                if not res:
-                    logger.warning(
-                        "archived_item_deletion_lock_not_acquired",
-                        crawl_id=crawl_id,
-                        type=type_,
-                        oid=org.id,
-                    )
+                crawl = await self.acquire_crawl_for_deletion(crawl_id, org, type_)
+                if not crawl:
                     continue
-
-                crawl = BaseCrawl.from_dict(res)
 
                 if type_ == "crawl" and not crawl.finished:
                     await self.shutdown_crawl(crawl_id, org, graceful=False)
@@ -463,18 +474,20 @@ class BaseCrawlOps:
                 await self.page_ops.delete_crawl_pages(crawl_id, org.id)
                 await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id)
 
+                # Delete crawl files
+                crawl_size, _ = await self._delete_crawl_files(crawl, org)
+                size += crawl_size
+
+                if type_ == "crawl":
+                    await self.delete_all_crawl_qa_files(crawl_id, org)
+
+                # Prepare collection and workflow updates
                 if crawl.collectionIds:
                     for coll_id in crawl.collectionIds:
                         if coll_id in colls_to_update:
                             colls_to_update[coll_id].append(crawl_id)
                         else:
                             colls_to_update[coll_id] = [crawl_id]
-
-                if type_ == "crawl":
-                    await self.delete_all_crawl_qa_files(crawl_id, org)
-
-                crawl_size, _ = await self._delete_crawl_files(crawl, org)
-                size += crawl_size
 
                 cid = crawl.cid
                 successful = crawl.state in SUCCESSFUL_STATES
@@ -507,7 +520,6 @@ class BaseCrawlOps:
             # we're safe to include it in the crawls mdb delete_many
             deleted_crawl_ids.append(crawl_id)
 
-            # Send webhook notification here
             if type_ == "crawl":
                 run_async_task(
                     self.event_webhook_ops.create_crawl_deleted_notification(
@@ -526,15 +538,13 @@ class BaseCrawlOps:
         if not deleted_crawl_ids:
             return 0, {}, quota_reached
 
-        # Delete the crawls from the database
+        # Delete the crawl records from the database
         query = {"_id": {"$in": deleted_crawl_ids}, "oid": org.id, "type": type_}
         res = await self.crawls.delete_many(query)
 
         # Make associated post-deletion updates
         await self.orgs.inc_org_bytes_stored(org.id, -size, type_)
-
         await self.orgs.set_last_crawl_finished(org.id)
-
         for coll_id, coll_crawl_ids in colls_to_update.items():
             await self.colls.update_collection_post_remove(coll_id, coll_crawl_ids, org)
 
