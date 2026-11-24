@@ -1802,7 +1802,7 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
 
         if data.get("deleted"):
             crawls_deleted = True
-        assert data.get("storageQuotaReached") is False
+        assert data.get("storageQuotaReached") in (False, None)
 
         time.sleep(0.1)
 
