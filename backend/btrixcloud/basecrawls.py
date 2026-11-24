@@ -408,7 +408,7 @@ class BaseCrawlOps:
                 )
                 raise HTTPException(status_code=403, detail="not_allowed")
 
-    async def get_crawl_for_deletion(
+    async def acquire_crawl_for_deletion(
         self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
     ) -> BaseCrawl | None:
         """Acquire crawl for deletion
