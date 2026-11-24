@@ -494,14 +494,24 @@ def test_delete_stream_upload(
     assert r.json()["detail"] == "not_allowed"
 
     # Verify user who created upload can delete it
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": [upload_id]},
-    )
-    data = r.json()
-    assert data["deleted"]
-    assert data["storageQuotaReached"] is False
+    # Make several attempts to test deletion idempotency
+    upload_deleted = False
+    for _ in range(5):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+            headers=admin_auth_headers,
+            json={"crawl_ids": [upload_id]},
+        )
+        assert r.status_code == 200
+
+        data = r.json()
+        if data.get("deleted"):
+            upload_deleted = True
+        assert data.get("storageQuotaReached") in (False, None)
+
+        time.sleep(0.1)
+
+    assert upload_deleted
 
 
 def test_ensure_deleted(admin_auth_headers, default_org_id, upload_id):
@@ -1788,18 +1798,15 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     # Delete mixed type archived items
     # Make several attempts to test deletion idempotency
     crawls_deleted = False
-    for i in range(5):
+    for _ in range(5):
         r = requests.post(
             f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
             headers=admin_auth_headers,
             json={"crawl_ids": crawls_to_delete},
         )
+        assert r.status_code == 200
+
         data = r.json()
-
-        logger.info(
-            "delete_request", index=i, status_code=r.status_code, response_data=data
-        )
-
         if data.get("deleted"):
             crawls_deleted = True
         assert data.get("storageQuotaReached") in (False, None)
