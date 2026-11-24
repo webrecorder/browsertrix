@@ -37,10 +37,11 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { type Tab as SettingsTab } from "@/pages/org/settings/settings";
 import { pluralOfTrialDaysRemaining } from "@/plurals/trial-days-remaining";
-import { OrgTab, RouteNamespace } from "@/routes";
+import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
+import { type Crawl } from "@/types/crawler";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
@@ -449,7 +450,20 @@ export class Dashboard extends BtrixElement {
             <dl>
               ${this.renderStat({
                 value: metrics.crawlCount,
-                secondaryValue: this.localize.bytes(metrics.storageUsedCrawls),
+                secondaryValue: html`${this.localize.bytes(
+                  metrics.storageUsedFinishedCrawls,
+                )}${when(
+                  metrics.storageUsedActiveCrawls,
+                  (v) =>
+                    html`<sl-tooltip hoist content=${msg("Pending")}>
+                      <span class="text-success">
+                        +
+                        ${this.localize.bytes(v, {
+                          unitDisplay: "narrow",
+                        })}</span
+                      >
+                    </sl-tooltip>`,
+                )}`,
                 singleLabel: msg("Crawl"),
                 pluralLabel: msg("Crawls"),
 
@@ -458,7 +472,9 @@ export class Dashboard extends BtrixElement {
                   class: storageColorClasses.crawls,
                 },
                 button: {
-                  url: "/items/crawl",
+                  url: metrics.storageUsedActiveCrawls
+                    ? `/${OrgTab.Workflows}/${WorkflowTab.Crawls}`
+                    : `/${OrgTab.Items}/${"crawl" satisfies Crawl["type"]}`,
                 },
               })}
               ${this.renderStat({
