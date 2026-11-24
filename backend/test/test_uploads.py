@@ -4,6 +4,7 @@ from tempfile import TemporaryFile
 from urllib.parse import urljoin
 from zipfile import ZIP_STORED, ZipFile
 
+import structlog
 import pytest
 import requests
 
@@ -11,6 +12,8 @@ from .conftest import API_PREFIX
 from .utils import read_in_chunks, wait_for_upload_processed_sync
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MAX_ATTEMPTS = 24
 
@@ -1785,16 +1788,23 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     # Delete mixed type archived items
     # Make several attempts to test deletion idempotency
     crawls_deleted = False
-    for _ in range(5):
+    for i in range(5):
         r = requests.post(
             f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
             headers=admin_auth_headers,
             json={"crawl_ids": crawls_to_delete},
         )
         data = r.json()
-        if data["deleted"]:
+
+        logger.info(
+            "delete_request", index=i, status_code=r.status_code, response_data=data
+        )
+
+        if data.get("deleted"):
             crawls_deleted = True
-        assert data["storageQuotaReached"] is False
+        assert data.get("storageQuotaReached") is False
+
+        time.sleep(0.1)
 
     assert crawls_deleted
 
