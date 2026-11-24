@@ -428,81 +428,80 @@ class BaseCrawlOps:
         await self.assert_crawl_deletion_permissions(org, delete_list, type_, user)
 
         for crawl_id in delete_list.crawl_ids:
-            # Only attempt to delete if deletion is not already in progress
-            # (deleting timestamp is None or older than 2 minutes)
-            deleting_timestamp_expiry = dt_now() - timedelta(minutes=2)
-            res = await self.crawls.find_one_and_update(
-                {
-                    "_id": crawl_id,
-                    "oid": org.id,
-                    "type": type_,
-                    "$or": [
-                        {"deleting": None},
-                        {"deleting": {"$lt": deleting_timestamp_expiry}},
-                    ],
-                },
-                {"$set": {"deleting": dt_now()}},
-                return_document=pymongo.ReturnDocument.AFTER,
-            )
-            if not res:
-                logger.warning(
-                    "archived_item_deletion_lock_not_acquired",
+            try:
+                # Only attempt to delete if deletion is not already in progress
+                # (deleting timestamp is None or older than 2 minutes)
+                deleting_timestamp_expiry = dt_now() - timedelta(minutes=2)
+                res = await self.crawls.find_one_and_update(
+                    {
+                        "_id": crawl_id,
+                        "oid": org.id,
+                        "type": type_,
+                        "$or": [
+                            {"deleting": None},
+                            {"deleting": {"$lt": deleting_timestamp_expiry}},
+                        ],
+                    },
+                    {"$set": {"deleting": dt_now()}},
+                    return_document=pymongo.ReturnDocument.AFTER,
+                )
+                if not res:
+                    logger.warning(
+                        "archived_item_deletion_lock_not_acquired",
+                        crawl_id=crawl_id,
+                        type=type_,
+                        oid=org.id,
+                    )
+                    continue
+
+                crawl = BaseCrawl.from_dict(res)
+
+                if type_ == "crawl" and not crawl.finished:
+                    await self.shutdown_crawl(crawl_id, org, graceful=False)
+
+                # Delete associated data from the database
+                await self.page_ops.delete_crawl_pages(crawl_id, org.id)
+                await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id)
+
+                if crawl.collectionIds:
+                    for coll_id in crawl.collectionIds:
+                        if coll_id in colls_to_update:
+                            colls_to_update[coll_id].append(crawl_id)
+                        else:
+                            colls_to_update[coll_id] = [crawl_id]
+
+                if type_ == "crawl":
+                    await self.delete_all_crawl_qa_files(crawl_id, org)
+
+                crawl_size, _ = await self._delete_crawl_files(crawl, org)
+                size += crawl_size
+
+                cid = crawl.cid
+                successful = crawl.state in SUCCESSFUL_STATES
+                if cid:
+                    if cids_to_update.get(cid):
+                        cids_to_update[cid]["inc"] += 1
+                        cids_to_update[cid]["size"] += crawl_size
+                        if successful:
+                            cids_to_update[cid]["successful"] += 1
+                    else:
+                        cids_to_update[cid] = {}
+                        cids_to_update[cid]["inc"] = 1
+                        cids_to_update[cid]["size"] = crawl_size
+                        if successful:
+                            cids_to_update[cid]["successful"] = 1
+                        else:
+                            cids_to_update[cid]["successful"] = 0
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                logger.exception(
+                    "crawl_deletion_failure",
                     crawl_id=crawl_id,
                     type=type_,
                     oid=org.id,
                 )
-                continue
-
-            crawl = BaseCrawl.from_dict(res)
-
-            if type_ == "crawl" and not crawl.finished:
-                try:
-                    await self.shutdown_crawl(crawl_id, org, graceful=False)
-                # pylint: disable=broad-exception-caught
-                except Exception:
-                    logger.warning(
-                        "crawl_shutdown_failed_on_deletion_request",
-                        crawl_id=crawl_id,
-                        type=type_,
-                        oid=org.id,
-                        exc_info=True,
-                    )
-                    await self.unset_deleting_timestamp(crawl_id, org.id)
-                    continue
-
-            # Delete associated data from the database
-            await self.page_ops.delete_crawl_pages(crawl_id, org.id)
-            await self.crawl_log_ops.delete_crawl_logs(crawl_id, org.id)
-
-            if crawl.collectionIds:
-                for coll_id in crawl.collectionIds:
-                    if coll_id in colls_to_update:
-                        colls_to_update[coll_id].append(crawl_id)
-                    else:
-                        colls_to_update[coll_id] = [crawl_id]
-
-            if type_ == "crawl":
-                await self.delete_all_crawl_qa_files(crawl_id, org)
-
-            crawl_size, _ = await self._delete_crawl_files(crawl, org)
-            size += crawl_size
-
-            cid = crawl.cid
-            successful = crawl.state in SUCCESSFUL_STATES
-            if cid:
-                if cids_to_update.get(cid):
-                    cids_to_update[cid]["inc"] += 1
-                    cids_to_update[cid]["size"] += crawl_size
-                    if successful:
-                        cids_to_update[cid]["successful"] += 1
-                else:
-                    cids_to_update[cid] = {}
-                    cids_to_update[cid]["inc"] = 1
-                    cids_to_update[cid]["size"] = crawl_size
-                    if successful:
-                        cids_to_update[cid]["successful"] = 1
-                    else:
-                        cids_to_update[cid]["successful"] = 0
+                await self.unset_deleting_timestamp(crawl_id, org.id)
+                raise HTTPException(status_code=400, detail="file_deletion_error")
 
             # Now that everything else associated with this crawl is deleted,
             # we're safe to include it in the crawls mdb delete_many
@@ -1069,17 +1068,11 @@ class BaseCrawlOps:
             if crawl.type == "upload":
                 uploads.append(crawl_id)
 
-        crawls_length = len(crawls)
-        uploads_length = len(uploads)
-
-        if crawls_length + uploads_length == 0:
-            raise HTTPException(status_code=400, detail="nothing_to_delete")
-
         deleted_count = 0
         # Value is set in delete calls, but initialize to keep linter happy.
         quota_reached = False
 
-        if crawls_length:
+        if crawls:
             crawl_delete_list = DeleteCrawlList(crawl_ids=crawls)
             deleted, cids_to_update, quota_reached = await self.delete_crawls(
                 org, crawl_delete_list, "crawl", user
@@ -1094,15 +1087,12 @@ class BaseCrawlOps:
                     cid, -cid_size, -cid_inc, -cid_successful
                 )
 
-        if uploads_length:
+        if uploads:
             upload_delete_list = DeleteCrawlList(crawl_ids=uploads)
             deleted, _, quota_reached = await self.delete_crawls(
                 org, upload_delete_list, "upload", user
             )
             deleted_count += deleted
-
-        if deleted_count < 1:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 

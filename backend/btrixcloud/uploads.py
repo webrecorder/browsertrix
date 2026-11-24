@@ -741,12 +741,7 @@ class UploadOps(BaseCrawlOps):
         user: User | None = None,
     ):
         """Delete uploaded crawls"""
-        deleted_count, _, quota_reached = await self.delete_crawls(
-            org, delete_list, "upload", user
-        )
-
-        if deleted_count < 1:
-            raise HTTPException(status_code=404, detail="uploaded_crawl_not_found")
+        _, _, quota_reached = await self.delete_crawls(org, delete_list, "upload", user)
 
         return {"deleted": True, "storageQuotaReached": quota_reached}
 

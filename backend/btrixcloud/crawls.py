@@ -439,9 +439,6 @@ class CrawlOps(BaseCrawlOps):
             org, delete_list, type_, user
         )
 
-        if count < 1:
-            raise HTTPException(status_code=404, detail="crawl_not_found")
-
         for cid, cid_dict in cids_to_update.items():
             cid_size = cid_dict["size"]
             cid_inc = cid_dict["inc"]
