@@ -63,7 +63,7 @@ spec:
               - name: RCLONE_CONFIG_TARGET_ENDPOINT
                 value: {{ storage_endpoint }}
 
-              command: ["rclone", "-vv", "purge", {{ "target:" ~ {{ org_files_prefix }}]
+              command: ["rclone", "-vv", "purge", {{ "target:" ~ org_files_prefix }}]
 
               resources:
                 limits:
