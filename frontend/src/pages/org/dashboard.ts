@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type {
@@ -6,7 +7,7 @@ import type {
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -26,6 +27,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsEmail } from "@/constants/docs-email";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import PollTask from "@/controllers/poll";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import {
@@ -61,12 +66,13 @@ enum CollectionGridView {
 }
 
 const PAGE_SIZE = 12;
+const POLL_INTERVAL_SECONDS = 60;
 
 @customElement("btrix-dashboard")
 @localized()
 export class Dashboard extends BtrixElement {
-  @state()
-  private metrics?: Metrics;
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  private readonly activeCrawlsCount?: ActiveCrawlsCountContext;
 
   @state()
   collectionRefreshing: string | null = null;
@@ -113,16 +119,21 @@ export class Dashboard extends BtrixElement {
       ] as const,
   });
 
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("appState.orgSlug") && this.orgId) {
-      void this.fetchMetrics();
-    }
-  }
+  readonly #metricsPoll = new PollTask(this, {
+    task: async ([orgId, activeCrawlsCount], { signal }) => {
+      if (!orgId || activeCrawlsCount === undefined) return;
 
-  firstUpdated() {
-    if (this.orgId) {
-      void this.fetchMetrics();
-    }
+      return await this.api.fetch<Metrics | undefined>(
+        `/orgs/${this.orgId}/metrics`,
+        { signal },
+      );
+    },
+    args: () => [this.orgId, this.activeCrawlsCount?.userOrg] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
+
+  get metrics() {
+    return this.#metricsPoll.value;
   }
 
   render() {
@@ -923,23 +934,6 @@ export class Dashboard extends BtrixElement {
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
   `;
-
-  private async fetchMetrics() {
-    try {
-      const data = await this.api.fetch<Metrics | undefined>(
-        `/orgs/${this.orgId}/metrics`,
-      );
-
-      this.metrics = data;
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve org metrics at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "metrics-retrieve-error",
-      });
-    }
-  }
 
   private async getCollections({
     orgId,
