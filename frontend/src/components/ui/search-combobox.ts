@@ -80,7 +80,7 @@ export class SearchCombobox<T> extends TailwindElement {
   validateNew?: (value: string) => boolean;
 
   private get hasSearchStr() {
-    return this.searchByValue.length >= MIN_SEARCH_LENGTH;
+    return this.searchByValue && this.searchByValue.length >= MIN_SEARCH_LENGTH;
   }
 
   @state()

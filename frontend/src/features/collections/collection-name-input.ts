@@ -41,6 +41,7 @@ export type CollectionNameInputChangeEvent = BtrixChangeEvent<
  * @attr placeholder
  * @attr size
  * @attr disableSearch
+ * @attr searchByValue
  * @fires btrix-change
  * @fires btrix-loaded
  */
