@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type {
@@ -6,7 +7,7 @@ import type {
   SlSelectEvent,
 } from "@shoelace-style/shoelace";
 import clsx from "clsx";
-import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
+import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { guard } from "lit/directives/guard.js";
 import { ifDefined } from "lit/directives/if-defined.js";
@@ -26,6 +27,10 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { type Dialog } from "@/components/ui/dialog";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import { docsEmail } from "@/constants/docs-email";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import PollTask from "@/controllers/poll";
 import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { storageColorClasses } from "@/features/meters/storage/colors";
 import {
@@ -37,14 +42,16 @@ import { pageHeader } from "@/layouts/pageHeader";
 import type { CollectionSavedEvent } from "@/pages/org/collection-detail/types";
 import { type Tab as SettingsTab } from "@/pages/org/settings/settings";
 import { pluralOfTrialDaysRemaining } from "@/plurals/trial-days-remaining";
-import { OrgTab, RouteNamespace } from "@/routes";
+import { OrgTab, RouteNamespace, WorkflowTab } from "@/routes";
 import { AnalyticsTrackEvent } from "@/trackEvents";
 import type { APIPaginatedList, APISortQuery } from "@/types/api";
 import { CollectionAccess, type Collection } from "@/types/collection";
+import { type Crawl } from "@/types/crawler";
 import { type Metrics } from "@/types/org";
 import { SortDirection } from "@/types/utils";
 import { track, type AnalyticsTrackProps } from "@/utils/analytics";
 import { onboardingSteps } from "@/utils/onboarding/onboardingEvents";
+import { miscStorage } from "@/utils/org/metrics";
 import { hasUsage } from "@/utils/orgs";
 import { AppStateService } from "@/utils/state";
 import { tw } from "@/utils/tailwind";
@@ -59,12 +66,13 @@ enum CollectionGridView {
 }
 
 const PAGE_SIZE = 12;
+const POLL_INTERVAL_SECONDS = 60;
 
 @customElement("btrix-dashboard")
 @localized()
 export class Dashboard extends BtrixElement {
-  @state()
-  private metrics?: Metrics;
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  private readonly activeCrawlsCount?: ActiveCrawlsCountContext;
 
   @state()
   collectionRefreshing: string | null = null;
@@ -111,16 +119,21 @@ export class Dashboard extends BtrixElement {
       ] as const,
   });
 
-  willUpdate(changedProperties: PropertyValues<this> & Map<string, unknown>) {
-    if (changedProperties.has("appState.orgSlug") && this.orgId) {
-      void this.fetchMetrics();
-    }
-  }
+  readonly #metricsPoll = new PollTask(this, {
+    task: async ([orgId, activeCrawlsCount], { signal }) => {
+      if (!orgId || activeCrawlsCount === undefined) return;
 
-  firstUpdated() {
-    if (this.orgId) {
-      void this.fetchMetrics();
-    }
+      return await this.api.fetch<Metrics | undefined>(
+        `/orgs/${this.orgId}/metrics`,
+        { signal },
+      );
+    },
+    args: () => [this.orgId, this.activeCrawlsCount?.userOrg] as const,
+    timeoutSeconds: POLL_INTERVAL_SECONDS,
+  });
+
+  get metrics() {
+    return this.#metricsPoll.value;
   }
 
   render() {
@@ -448,7 +461,20 @@ export class Dashboard extends BtrixElement {
             <dl>
               ${this.renderStat({
                 value: metrics.crawlCount,
-                secondaryValue: this.localize.bytes(metrics.storageUsedCrawls),
+                secondaryValue: html`${this.localize.bytes(
+                  metrics.storageUsedFinishedCrawls,
+                )}${when(
+                  metrics.storageUsedActiveCrawls,
+                  (v) =>
+                    html`<sl-tooltip hoist content=${msg("Pending")}>
+                      <span class="text-success">
+                        +
+                        ${this.localize.bytes(v, {
+                          unitDisplay: "narrow",
+                        })}</span
+                      >
+                    </sl-tooltip>`,
+                )}`,
                 singleLabel: msg("Crawl"),
                 pluralLabel: msg("Crawls"),
 
@@ -457,7 +483,9 @@ export class Dashboard extends BtrixElement {
                   class: storageColorClasses.crawls,
                 },
                 button: {
-                  url: "/items/crawl",
+                  url: metrics.storageUsedActiveCrawls
+                    ? `/${OrgTab.Workflows}/${WorkflowTab.Crawls}`
+                    : `/${OrgTab.Items}/${"crawl" satisfies Crawl["type"]}`,
                 },
               })}
               ${this.renderStat({
@@ -489,11 +517,7 @@ export class Dashboard extends BtrixElement {
                   url: "/browser-profiles",
                 },
               })}
-              ${metrics.storageUsedSeedFiles ||
-              metrics.storageUsedThumbnails ||
-              metrics.storageUsedDedupeIndexes
-                ? this.renderMiscStorage(metrics)
-                : nothing}
+              ${when(miscStorage(metrics), this.renderMiscStorage)}
 
               <sl-divider class="my-4"></sl-divider>
               ${this.renderStat({
@@ -749,7 +773,9 @@ export class Dashboard extends BtrixElement {
       </div>`;
   }
 
-  private renderMiscStorage(metrics: Metrics) {
+  private readonly renderMiscStorage = (total: number) => {
+    if (total < 0) return;
+
     return html`
       <div class="mb-2 flex items-center gap-2 last:mb-0">
         <dt class="mr-auto flex items-center tabular-nums">
@@ -770,15 +796,11 @@ export class Dashboard extends BtrixElement {
           </btrix-popover>
         </dt>
         <dd class="font-monostyle text-xs text-neutral-500">
-          ${this.localize.bytes(
-            metrics.storageUsedSeedFiles +
-              metrics.storageUsedThumbnails +
-              metrics.storageUsedDedupeIndexes,
-          )}
+          ${this.localize.bytes(total)}
         </dd>
       </div>
     `;
-  }
+  };
 
   private renderNoPublicCollections() {
     if (!this.org || !this.metrics || !this.appState.isCrawler) return;
@@ -912,23 +934,6 @@ export class Dashboard extends BtrixElement {
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
     <sl-skeleton class="mb-3" effect="sheen"></sl-skeleton>
   `;
-
-  private async fetchMetrics() {
-    try {
-      const data = await this.api.fetch<Metrics | undefined>(
-        `/orgs/${this.orgId}/metrics`,
-      );
-
-      this.metrics = data;
-    } catch (e) {
-      this.notify.toast({
-        message: msg("Sorry, couldn't retrieve org metrics at this time."),
-        variant: "danger",
-        icon: "exclamation-octagon",
-        id: "metrics-retrieve-error",
-      });
-    }
-  }
 
   private async getCollections({
     orgId,
