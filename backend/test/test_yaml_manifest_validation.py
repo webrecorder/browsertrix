@@ -896,6 +896,7 @@ def test_replica_job_paths_stay_single_values_when_they_contain_line_breaks(valu
         "rclone",
         "-vv",
         "copy",
+        "--s3-no-check-bucket",
         "--checksum",
         "primary:" + value,
         "replica:" + value,
