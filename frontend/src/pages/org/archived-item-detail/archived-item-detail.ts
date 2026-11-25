@@ -1048,6 +1048,7 @@ export class ArchivedItemDetail extends BtrixElement {
     const replaySource = `/api/orgs/${this.item.oid}/all-crawls/${this.itemId}/replay.json?${query}`;
     const headers = this.authState?.headers;
     const config = JSON.stringify({ headers });
+    const crawlType = isCrawl(this.item);
 
     // TODO Investigate in RWP why re-rendering with the same attributes causes `rwp-url-change` to fire again;
     // guard should prevent this for now
@@ -1055,6 +1056,12 @@ export class ArchivedItemDetail extends BtrixElement {
       [replaySource, this.replayPage.value.url, this.replayPage.value.ts],
       () =>
         html`<replay-web-page
+          style=${ifDefined(
+            crawlType
+              ? undefined
+              : // Light theme is set for crawls using theme stylesheet
+                "--rwp-replay-theme: light dark",
+          )}
           source="${replaySource}"
           coll="${this.itemId}"
           url=${this.replayPage.value.url ||

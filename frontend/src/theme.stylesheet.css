@@ -694,3 +694,7 @@ html {
 [class*=" hover\:text-"]::part(base):hover {
   color: inherit;
 }
+
+replay-web-page {
+  --rwp-replay-theme: light;
+}
