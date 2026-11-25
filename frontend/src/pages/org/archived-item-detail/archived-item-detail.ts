@@ -1055,6 +1055,9 @@ export class ArchivedItemDetail extends BtrixElement {
       [replaySource, this.replayPage.value.url, this.replayPage.value.ts],
       () =>
         html`<replay-web-page
+          style="${isCrawl(this.item!)
+            ? nothing
+            : "--rwp-replay-theme: light dark"}"
           source="${replaySource}"
           coll="${this.itemId}"
           url=${this.replayPage.value.url ||
