@@ -33,6 +33,56 @@ export const SEED_LIST_FILE_EXT = "txt";
 export const MAX_SEED_LIST_STRING_BYTES = 500 * 1000;
 export const MAX_SEED_LIST_FILE_BYTES = 25 * 1e6;
 
+/**
+ * Filename used after the storage folder, same as the default
+ * `default_crawl_filename_template` in the Helm chart.
+ */
+export const STORAGE_FOLDER_FILENAME = "@ts-@hostsuffix.wacz";
+
+/**
+ * One or more folder names separated by `/`, each made of
+ * lowercase letters, digits and dashes, not starting with a dash.
+ * Written for the HTML `pattern` attribute, which uses the `v` flag.
+ */
+export const STORAGE_FOLDER_PATTERN =
+  "[a-z0-9][a-z0-9\\-]*(/[a-z0-9][a-z0-9\\-]*)*";
+
+const storageFolderTemplateRegex = new RegExp(
+  `^(${STORAGE_FOLDER_PATTERN})/${STORAGE_FOLDER_FILENAME.replace(/\./g, "\\.")}$`,
+  "u",
+);
+
+/**
+ * Split a workflow's `crawlFilenameTemplate` into the storage folder field.
+ * A template the field can't represent is kept in `customFilenameTemplate`.
+ */
+export function storageFolderFromTemplate(
+  template: string | null | undefined,
+): Pick<FormState, "storageFolder" | "customFilenameTemplate"> {
+  if (!template) {
+    return { storageFolder: "", customFilenameTemplate: null };
+  }
+  const match = storageFolderTemplateRegex.exec(template);
+  if (match) {
+    return { storageFolder: match[1], customFilenameTemplate: null };
+  }
+  return { storageFolder: "", customFilenameTemplate: template };
+}
+
+const storageFolderRegex = new RegExp(`^(?:${STORAGE_FOLDER_PATTERN})$`, "u");
+
+/**
+ * Build `crawlFilenameTemplate` from the storage folder field.
+ * Returns `null` for an empty or invalid folder, which lets the backend
+ * use its default template.
+ */
+export function templateFromStorageFolder(folder: string): string | null {
+  const trimmed = folder.trim();
+  return storageFolderRegex.test(trimmed)
+    ? `${trimmed}/${STORAGE_FOLDER_FILENAME}`
+    : null;
+}
+
 export const SECTIONS = [
   "scope",
   "limits",
@@ -296,6 +346,12 @@ export type FormState = {
   tags: Tags;
   autoAddCollections: string[];
   description: WorkflowSettings["description"];
+  storageFolder: string;
+  /**
+   * Filename template set through the API that the storage folder field
+   * can't represent. Kept as-is and not sent back when saving.
+   */
+  customFilenameTemplate: string | null;
   autoscrollBehavior: boolean;
   autoclickBehavior: boolean;
   customBehavior: boolean;
@@ -362,6 +418,8 @@ export const getDefaultFormState = (): FormState => ({
   tags: [],
   autoAddCollections: [],
   description: null,
+  storageFolder: "",
+  customFilenameTemplate: null,
   autoscrollBehavior: true,
   autoclickBehavior: false,
   userAgent: null,
@@ -520,6 +578,7 @@ export function getInitialFormState(params: {
     autoAddCollections: params.initialWorkflow.autoAddCollections,
     jobName: params.initialWorkflow.name || defaultFormState.jobName,
     description: params.initialWorkflow.description,
+    ...storageFolderFromTemplate(params.initialWorkflow.crawlFilenameTemplate),
     browserProfile: params.initialWorkflow.profileid
       ? ({
           id: params.initialWorkflow.profileid,

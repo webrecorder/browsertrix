@@ -164,6 +164,9 @@ import {
   SECTIONS,
   SEED_LIST_FILE_EXT,
   SeedListFormat,
+  STORAGE_FOLDER_FILENAME,
+  STORAGE_FOLDER_PATTERN,
+  templateFromStorageFolder,
   WORKFLOW_PAGE_SCOPES,
   WORKFLOW_SITE_SCOPES,
   workflowTabToGuideHash,
@@ -2886,6 +2889,50 @@ https://archiveweb.page/images/${"logo.svg"}`}
         msg(`Create or assign this crawl (and its outputs) to one or more tags
         to help organize your archived items.`),
       )}
+      ${this.renderStorageFolder()}
+    `;
+  }
+
+  private renderStorageFolder() {
+    // A template set through the API in a shape this field can't show is
+    // displayed as-is and left alone
+    const custom = this.formState.customFilenameTemplate;
+
+    return html`
+      ${inputCol(html`
+        <sl-input
+          name="storageFolder"
+          label=${msg("Storage Folder")}
+          autocomplete="off"
+          placeholder=${msg("our-website")}
+          value=${custom ?? this.formState.storageFolder}
+          ?disabled=${!!custom}
+          pattern=${STORAGE_FOLDER_PATTERN}
+          @sl-input=${(e: Event) =>
+            this.updateFormState({
+              storageFolder: (e.target as SlInput).value,
+            })}
+          maxlength="200"
+          help-text=${msg(
+            "Lowercase letters, numbers and dashes. Use / for subfolders.",
+          )}
+        ></sl-input>
+      `)}
+      ${this.renderHelpTextCol(
+        custom
+          ? msg(
+              "This workflow uses a custom filename template set through the API. Change it through the API.",
+            )
+          : html`${msg(
+              html`Store the files of this workflow's crawls in their own
+                folder, named
+                <code
+                  >${templateFromStorageFolder(this.formState.storageFolder) ??
+                  `${msg("folder")}/${STORAGE_FOLDER_FILENAME}`}</code
+                >. If empty, files are stored with the rest of the org's files.
+                Changes only apply to future crawls.`,
+            )}`,
+      )}
     `;
   }
 
@@ -3786,6 +3833,13 @@ https://archiveweb.page/images/${"logo.svg"}`}
               : this.formState.scheduleCustom) || "",
       crawlTimeout: this.formState.crawlTimeoutMinutes * 60,
       maxCrawlSize: this.formState.maxCrawlSizeGB * BYTES_PER_GB,
+      ...(this.formState.customFilenameTemplate
+        ? {}
+        : {
+            crawlFilenameTemplate: templateFromStorageFolder(
+              this.formState.storageFolder,
+            ),
+          }),
       tags: this.formState.tags,
       autoAddCollections: this.formState.autoAddCollections,
       dedupeCollId:

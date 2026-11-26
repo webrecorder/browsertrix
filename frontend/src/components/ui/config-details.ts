@@ -42,6 +42,7 @@ import {
   getServerDefaults,
   isUrlListScopeType,
   regexScopeConfig,
+  storageFolderFromTemplate,
 } from "@/utils/workflow";
 
 const isWorkflow = (data?: CrawlReplay | Workflow): data is Workflow =>
@@ -400,6 +401,7 @@ export class ConfigDetails extends BtrixElement {
                       `
                     : undefined,
                 )}
+                ${this.renderStorageFolder(crawlConfig.crawlFilenameTemplate)}
                 ${this.renderSetting(
                   msg("Tags"),
                   crawlConfig.tags.length
@@ -414,6 +416,23 @@ export class ConfigDetails extends BtrixElement {
           `
         : nothing}
     `;
+  }
+
+  private renderStorageFolder(template: string | null | undefined) {
+    const { storageFolder, customFilenameTemplate } =
+      storageFolderFromTemplate(template);
+
+    if (customFilenameTemplate) {
+      return this.renderSetting(
+        msg("Filename Template"),
+        html`<code>${customFilenameTemplate}</code>`,
+      );
+    }
+
+    return this.renderSetting(
+      msg("Storage Folder"),
+      storageFolder ? html`<code>${storageFolder}</code>` : none,
+    );
   }
 
   private renderSection({
