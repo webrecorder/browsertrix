@@ -87,6 +87,7 @@ export const workflowSettingsSchema = z.object({
   crawlerChannel: z.string(),
   proxyId: z.string().nullable(),
   dedupeCollId: z.string().nullable().optional(),
+  crawlFilenameTemplate: z.string().nullable().optional(),
   config: seedConfigSchema,
 });
 export type WorkflowSettings = z.infer<typeof workflowSettingsSchema>;
@@ -215,6 +216,7 @@ export type Crawl = ArchivedItemBase &
     | "schedule"
     | "crawlTimeout"
     | "maxCrawlSize"
+    | "crawlFilenameTemplate"
   > & {
     type: "crawl";
     cid: string;

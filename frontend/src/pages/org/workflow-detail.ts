@@ -2358,6 +2358,7 @@ export class WorkflowDetail extends BtrixElement {
       tags: this.workflow.tags,
       crawlTimeout: this.workflow.crawlTimeout,
       maxCrawlSize: this.workflow.maxCrawlSize,
+      crawlFilenameTemplate: this.workflow.crawlFilenameTemplate,
       description: this.workflow.description,
       autoAddCollections: this.workflow.autoAddCollections,
       crawlerChannel: this.workflow.crawlerChannel,
