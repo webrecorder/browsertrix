@@ -2,7 +2,7 @@ import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task, TaskStatus } from "@lit/task";
 import type { SlDropdown } from "@shoelace-style/shoelace";
-import clsx from "clsx";
+import { addMinutes } from "date-fns/fp";
 import { html, nothing, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { choose } from "lit/directives/choose.js";
@@ -13,29 +13,49 @@ import { when } from "lit/directives/when.js";
 import omitBy from "lodash/fp/omitBy";
 import isNil from "lodash/isNil";
 import queryString from "query-string";
+import { type ReplayWebPage, type RwpUrlChangeEvent } from "replaywebpage";
 
 import type { ArchivedItemSectionName } from "./archived-item-detail/archived-item-detail";
-import { type Crawl, type CrawlLog, type Seed, type Workflow } from "./types";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { Alert } from "@/components/ui/alert";
 import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import { ClipboardController } from "@/controllers/clipboard";
+import { SearchParamsValue } from "@/controllers/searchParamsValue";
 import { CrawlStatus } from "@/features/archived-items/crawl-status";
+import type {
+  ReplayPage,
+  ReplayPageListSelectEvent,
+} from "@/features/archived-items/replay-page-list";
 import { missingDependenciesNotice } from "@/features/archived-items/templates/missing-dependencies-notice";
-import { ExclusionEditor } from "@/features/crawl-workflows/exclusion-editor";
+import { ReplayView } from "@/features/archived-items/templates/page-list-view-control";
 import { ShareableNotice } from "@/features/crawl-workflows/templates/shareable-notice";
 import {
   Action,
   type BtrixSelectActionEvent,
 } from "@/features/crawl-workflows/workflow-action-menu/types";
 import type { BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
+import { dialogLabel } from "@/layouts/dialogHeader";
 import { pageError } from "@/layouts/pageError";
 import { pageNav, type Breadcrumb } from "@/layouts/pageHeader";
 import { OrgTab, WorkflowTab } from "@/routes";
 import { deleteConfirmation, noData, notApplicable } from "@/strings/ui";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+} from "@/types/api";
+import type {
+  ArchivedItemPage,
+  Crawl,
+  CrawlLog,
+  Seed,
+  Workflow,
+} from "@/types/crawler";
 import { type CrawlState } from "@/types/crawlState";
 import {
   workflowParamsSchema,
@@ -48,16 +68,35 @@ import {
   DEFAULT_MAX_SCALE,
   isActive,
   isPaused,
+  isRateLimited,
   isSkipped,
   isSuccessfullyFinished,
   renderName,
 } from "@/utils/crawler";
 import { humanizeSchedule } from "@/utils/cron";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
+import { formatRwpTimestamp } from "@/utils/replay";
+import { objectSearchParams } from "@/utils/searchParams/object";
 import { tw } from "@/utils/tailwind";
-import { rangeBrowserWindows } from "@/utils/workflow";
+import {
+  isActivelyCrawling,
+  isRunningNotPaused,
+  isRunningNotStopping,
+  rangeBrowserWindows,
+} from "@/utils/workflow";
+
+import "@/features/archived-items/replay-page-list";
+
+export const EDIT_DIALOG_PARAM_NAME = "editDialog";
+export enum EditDialogValues {
+  Exclusions = "exclusions",
+}
 
 const POLL_INTERVAL_SECONDS = 10;
 const CRAWLS_PAGINATION_NAME = "crawlsPage";
@@ -76,6 +115,9 @@ const omitNil = omitBy(isNil);
 @customElement("btrix-workflow-detail")
 @localized()
 export class WorkflowDetail extends BtrixElement {
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  activeCrawlsCount?: ActiveCrawlsCountContext;
+
   @property({ type: String })
   workflowId!: string;
 
@@ -89,19 +131,26 @@ export class WorkflowDetail extends BtrixElement {
   isCrawler!: boolean;
 
   @property({ type: String })
-  openDialogName?:
-    | "scale"
-    | "exclusions"
-    | "cancel"
-    | "stop"
-    | "delete"
-    | "deleteCrawl";
+  openDialogName?: "scale" | "cancel" | "stop" | "delete" | "deleteCrawl";
+
+  private readonly editDialog = new SearchParamsValue<null | EditDialogValues>(
+    this,
+    (value, params) => {
+      if (value) {
+        params.set(EDIT_DIALOG_PARAM_NAME, value);
+      } else {
+        params.delete(EDIT_DIALOG_PARAM_NAME);
+      }
+      return params;
+    },
+    (params) => params.get(EDIT_DIALOG_PARAM_NAME) as EditDialogValues | null,
+  );
 
   @property({ type: Number })
   maxBrowserWindows = DEFAULT_MAX_SCALE;
 
-  @state()
-  private lastCrawlId: Workflow["lastCrawlId"] = null;
+  @property({ type: String, useDefault: true })
+  lastCrawlId?: Workflow["lastCrawlId"];
 
   @state()
   private isDialogVisible = false;
@@ -119,11 +168,16 @@ export class WorkflowDetail extends BtrixElement {
     ),
   };
 
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
+  private readonly replayPage = new SearchParamsValue<ReplayPage>(
+    this,
+    ...objectSearchParams<ReplayPage>({ keys: ["url", "ts"] }),
+  );
 
   @query("#pausedNotice")
   private readonly pausedNotice?: Alert | null;
+
+  @query("replay-web-page")
+  private readonly replayEmbed?: ReplayWebPage | null;
 
   // Keep previous values to use when editing
   private readonly prevValues: {
@@ -261,9 +315,9 @@ export class WorkflowDetail extends BtrixElement {
           if (
             wasActive &&
             (this.openDialogName === "scale" ||
-              this.openDialogName === "exclusions")
+              this.editDialog.value == EditDialogValues.Exclusions)
           ) {
-            this.openDialogName = undefined;
+            this.closeDialogs();
           }
         }
       }, POLL_INTERVAL_SECONDS * 1000);
@@ -276,6 +330,13 @@ export class WorkflowDetail extends BtrixElement {
       this.stopPoll();
 
       await this.runNow(signal);
+
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: (this.activeCrawlsCount?.userOrg ?? 0) + 1,
+        }),
+      );
 
       await this.workflowTask.run();
 
@@ -327,6 +388,13 @@ export class WorkflowDetail extends BtrixElement {
 
       await this.cancel(signal);
 
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
+        }),
+      );
+
       void this.crawlsTask.run();
       await this.workflowTask.run();
 
@@ -367,7 +435,8 @@ export class WorkflowDetail extends BtrixElement {
 
   // Workflow is active and not paused
   private get isRunning() {
-    return this.workflow?.isCrawlRunning && !this.isPaused;
+    if (!this.workflow) return;
+    return isRunningNotPaused(this.workflow);
   }
 
   private get isSkippedOrCanceled() {
@@ -381,12 +450,8 @@ export class WorkflowDetail extends BtrixElement {
 
   // Crawl is explicitly running
   private get isCrawling() {
-    return (
-      this.workflow?.isCrawlRunning &&
-      !this.workflow.lastCrawlStopping &&
-      this.workflow.lastCrawlState &&
-      ["running", "rate-limited"].includes(this.workflow.lastCrawlState)
-    );
+    if (!this.workflow) return;
+    return isActivelyCrawling(this.workflow);
   }
 
   private get isPaused() {
@@ -426,6 +491,12 @@ export class WorkflowDetail extends BtrixElement {
     return `${this.navigate.orgBasePath}/workflows/${this.workflowId}`;
   }
 
+  private get reviewUrl() {
+    return `${this.basePath}/crawls/${
+      this.lastCrawlId
+    }/review/screenshots?from=workflow`;
+  }
+
   connectedCallback(): void {
     this.redirectHash();
     super.connectedCallback();
@@ -445,14 +516,19 @@ export class WorkflowDetail extends BtrixElement {
     ) {
       this.workflowTab = WorkflowTab.LatestCrawl;
     }
+    if (changedProperties.has("openDialogName") && this.openDialogName) {
+      this.closeEditDialog();
+    }
+    if (changedProperties.has("lastCrawlId")) {
+      this.replayPage.setValue({});
+    }
   }
 
   firstUpdated() {
-    if (
-      this.openDialogName &&
-      (this.openDialogName === "scale" || this.openDialogName === "exclusions")
-    ) {
+    if (this.openDialogName === "scale") {
       void this.showDialog();
+    } else if (this.editDialog.value === EditDialogValues.Exclusions) {
+      this.openEditDialog();
     }
   }
 
@@ -1052,7 +1128,7 @@ export class WorkflowDetail extends BtrixElement {
         this.openDialogName = "scale";
         break;
       case Action.EditExclusions:
-        this.openDialogName = "exclusions";
+        this.openEditDialog();
         break;
       case Action.Duplicate:
         void this.duplicateConfig();
@@ -1132,7 +1208,10 @@ export class WorkflowDetail extends BtrixElement {
     renderContent: (workflow: Workflow) => TemplateResult | string | number,
   ) {
     return html`
-      <btrix-desc-list-item label=${label}>
+      <btrix-desc-list-item
+        label=${label}
+        ?live=${this.workflow?.isCrawlRunning}
+      >
         ${when(
           this.workflow,
           renderContent,
@@ -1143,6 +1222,8 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderCrawls() {
+    const showReplay = !this.isRunning;
+
     return html`
       <section>
         <div
@@ -1184,25 +1265,6 @@ export class WorkflowDetail extends BtrixElement {
           </div>
         </div>
 
-        ${when(
-          this.workflow?.isCrawlRunning,
-          () =>
-            html`<div class="mb-4">
-              <btrix-alert variant="success">
-                ${this.isRunning
-                  ? msg("Workflow crawl is currently in progress.")
-                  : msg("This workflow has an active crawl.")}
-                <a
-                  href="${this.basePath}/${WorkflowTab.LatestCrawl}"
-                  class="underline hover:no-underline"
-                  @click=${this.navigate.link}
-                >
-                  ${this.isRunning ? msg("Watch Crawl") : msg("View Crawl")}
-                </a>
-              </btrix-alert>
-            </div>`,
-        )}
-
         <div class="mx-2">
           <btrix-crawl-list workflowId=${this.workflowId}>
             ${when(
@@ -1211,14 +1273,9 @@ export class WorkflowDetail extends BtrixElement {
                 crawls.items.map(
                   (crawl: Crawl) =>
                     html` <btrix-crawl-list-item
-                      class=${clsx(
-                        isActive(crawl) && tw`cursor-default text-neutral-500`,
-                      )}
-                      href=${ifDefined(
-                        isActive(crawl)
-                          ? undefined
-                          : `${this.basePath}/crawls/${crawl.id}`,
-                      )}
+                      href="${this.basePath}/${isActive(crawl) && !showReplay
+                        ? WorkflowTab.LatestCrawl
+                        : `${WorkflowTab.Crawls}/${crawl.id}`}"
                       .crawl=${crawl}
                     >
                       <sl-menu slot="menu">
@@ -1310,7 +1367,8 @@ export class WorkflowDetail extends BtrixElement {
     }
 
     const logTotals = this.logTotalsTask.value;
-    const showReplay = !this.isRunning;
+    const watchable = this.isRunning;
+    const showReplay = !watchable;
 
     return html`
       <div class="mb-3 rounded-lg border px-4 py-2">
@@ -1326,11 +1384,11 @@ export class WorkflowDetail extends BtrixElement {
         >
           ${showReplay
             ? html`
-                <sl-icon name="replaywebpage" library="app"></sl-icon>
+                <sl-icon name="collection-play"></sl-icon>
                 ${msg("Replay")}
               `
             : html`
-                <sl-icon name="eye-fill"></sl-icon>
+                <sl-icon name="collection-play-fill"></sl-icon>
                 ${msg("Watch")}
               `}
         </btrix-tab-group-tab>
@@ -1372,7 +1430,7 @@ export class WorkflowDetail extends BtrixElement {
                 <btrix-menu-item-link
                   href="${this.basePath}/crawls/${id}#files"
                 >
-                  <sl-icon name="folder-fill" slot="prefix"></sl-icon>
+                  <sl-icon name="file-earmark-zip-fill" slot="prefix"></sl-icon>
                   ${msg("View WACZ Files")}
                 </btrix-menu-item-link>
               </sl-menu>
@@ -1508,9 +1566,17 @@ export class WorkflowDetail extends BtrixElement {
   };
 
   private renderRateLimitedNotice() {
-    if (this.workflow?.lastCrawlState !== "rate-limited") {
-      return html``;
+    const latestCrawl = this.latestCrawlTask.value;
+
+    if (!latestCrawl || !isRateLimited(latestCrawl)) {
+      return;
     }
+
+    const expiryDate = this.appState.settings?.rateLimitDurationMinutes
+      ? addMinutes(this.appState.settings.rateLimitDurationMinutes)(
+          latestCrawl.rateLimitedAt,
+        )
+      : null;
 
     return html`
       <btrix-alert class="sticky top-2 z-50 part-[base]:mb-5" variant="warning">
@@ -1530,10 +1596,22 @@ export class WorkflowDetail extends BtrixElement {
             ${msg(
               "This crawl is running slower due to being rate limited by a website being crawled.",
             )}
+            ${when(expiryDate, (date) => {
+              const date_to_pause = html`<strong class="font-medium"
+                >${this.localize.date(date)}</strong
+              >`;
+              return msg(
+                html`The crawl will automatically pause after ${date_to_pause}
+                if rate limiting continues.`,
+                {
+                  desc: "`date_to_pause` example: '01/01/2036, 01:00 PM'",
+                },
+              );
+            })}
             <a
               target="_blank"
-              href="${this
-                .docsUrl}user-guide/running-crawl/#rate-limit-detection"
+              href="${this.env.docsUrl ??
+              ""}user-guide/running-crawl/#rate-limit-detection"
             >
               <strong class="font-semibold"
                 >${msg("More Information")}</strong
@@ -1548,10 +1626,13 @@ export class WorkflowDetail extends BtrixElement {
   private renderLatestCrawlAction() {
     if (!this.workflow || !this.lastCrawlId) return;
 
-    if (this.isRunning) {
+    const watchable = this.isRunning;
+
+    if (watchable) {
       if (!this.isCrawler) return;
 
-      const enableEditBrowserWindows = !this.workflow.lastCrawlStopping;
+      const canEditBrowserWindows =
+        isRunningNotStopping(this.workflow) && !this.isCancelingRun;
       const windowCount = this.workflow.browserWindows || 1;
 
       return html`
@@ -1560,27 +1641,27 @@ export class WorkflowDetail extends BtrixElement {
           ${pluralOf("browserWindows", windowCount)}
         </div>
 
-        <sl-tooltip
-          content=${enableEditBrowserWindows
-            ? msg("Edit Browser Windows")
-            : msg(
-                "Browser windows can only be edited while a crawl is starting or running",
-              )}
+        <btrix-popover
+          content=${msg(
+            "Browser windows can only be edited while a crawl is starting or running",
+          )}
+          ?disabled=${canEditBrowserWindows}
         >
           <sl-icon-button
             name="plus-slash-minus"
             label=${msg("Increase or decrease")}
-            ?disabled=${!enableEditBrowserWindows}
+            ?disabled=${!canEditBrowserWindows}
             @click=${() => (this.openDialogName = "scale")}
           >
           </sl-icon-button>
-        </sl-tooltip>
+        </btrix-popover>
       `;
     }
   }
 
   private readonly renderCrawlDetails = () => {
     const latestCrawl = this.latestCrawlTask.value;
+    const rateLimited = latestCrawl && isRateLimited(latestCrawl);
     const skeleton = html`<sl-skeleton class="w-full"></sl-skeleton>`;
 
     const duration = (workflow: Workflow) => {
@@ -1594,6 +1675,16 @@ export class WorkflowDetail extends BtrixElement {
       );
     };
 
+    const rateLimitedTime = () => {
+      if (!rateLimited) return skeleton;
+
+      return html`<span class="text-warning">
+        ${this.localize.humanizeDuration(
+          new Date().valueOf() - new Date(latestCrawl.rateLimitedAt).valueOf(),
+        )}
+      </span>`;
+    };
+
     const execTime = () => {
       if (!latestCrawl) return skeleton;
 
@@ -1602,33 +1693,26 @@ export class WorkflowDetail extends BtrixElement {
       });
     };
 
-    const pages = (workflow: Workflow) => {
+    const crawledPages = (workflow: Workflow) => {
       if (!latestCrawl) return skeleton;
 
       if (workflow.isCrawlRunning) {
-        return [
-          this.localize.number(+(latestCrawl.stats?.done || 0)),
-          this.localize.number(+(latestCrawl.stats?.found || 0)),
-        ].join(` ${msg("of")} `);
+        return this.localize.number(+(latestCrawl.stats?.done || 0));
       }
 
       return this.localize.number(latestCrawl.pageCount || 0);
     };
 
+    const foundPages = () => {
+      if (!latestCrawl) return skeleton;
+
+      const found = +(latestCrawl.stats?.found || 0);
+
+      return this.localize.number(found);
+    };
+
     const qa = (workflow: Workflow) => {
       if (!latestCrawl) return html`<sl-skeleton class="w-24"></sl-skeleton>`;
-
-      if (workflow.isCrawlRunning) {
-        return html`<span class="text-neutral-400">
-          ${noData}
-          <btrix-popover
-            content=${msg("QA will be enabled once this crawl is complete.")}
-            distance="12"
-          >
-            <sl-icon name="question-circle"></sl-icon>
-          </btrix-popover>
-        </span>`;
-      }
 
       if (!isSuccessfullyFinished({ state: workflow.lastCrawlState })) {
         return notApplicable;
@@ -1643,12 +1727,11 @@ export class WorkflowDetail extends BtrixElement {
               class="micro -ml-2"
               size="small"
               variant="text"
-              href="${this.basePath}/crawls/${this
-                .lastCrawlId}/review/screenshots?from=workflow"
+              href=${this.reviewUrl}
               @click=${this.navigate.link}
             >
               <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-              ${msg("Review Crawl")}
+              ${msg("Review Pages")}
             </sl-button> `}
       </div> `;
     };
@@ -1665,6 +1748,9 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : duration(workflow),
         )}
+        ${rateLimited
+          ? this.renderDetailItem(msg("Rate Limited Time"), rateLimitedTime)
+          : nothing}
         ${this.renderDetailItem(msg("Execution Time"), () =>
           isLoading(this.runNowTask)
             ? html`${until(
@@ -1675,13 +1761,18 @@ export class WorkflowDetail extends BtrixElement {
               )}`
             : execTime(),
         )}
-        ${this.renderDetailItem(msg("Pages Crawled"), pages)}
+        ${this.renderDetailItem(msg("Pages Crawled"), crawledPages)}
+        ${this.workflow && this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("Pages Found"), foundPages)
+          : nothing}
         ${this.renderDetailItem(msg("Size"), (workflow) =>
           this.localize.bytes(workflow.lastCrawlSize || 0, {
             unitDisplay: "narrow",
           }),
         )}
-        ${this.renderDetailItem(msg("QA Rating"), qa)}
+        ${this.workflow && !this.workflow.isCrawlRunning
+          ? this.renderDetailItem(msg("QA Rating"), qa)
+          : nothing}
       </btrix-desc-list>
     `;
   };
@@ -1714,25 +1805,23 @@ export class WorkflowDetail extends BtrixElement {
           waitingMsg = msg("Crawl waiting for deduplication index...");
           break;
 
-        case "pending-wait":
-        case "generate-wacz":
-        case "uploading-wacz":
-          waitingMsg = msg("Crawl finishing...");
-          break;
-
         default:
-          if (this.workflow.lastCrawlStopping) {
-            waitingMsg = msg("Crawl stopping...");
+          if (this.isCancelingRun) {
+            waitingMsg = msg("Canceling crawl run...");
+          } else {
+            // TODO Handle finishing by checking if there are any URLs left in the queue
+            console.debug("crawl may be finishing");
           }
           break;
       }
     }
 
+    const watchable = this.isRunning && !this.isCancelingRun;
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       ${when(
-        this.isCrawling && this.workflow,
+        watchable && this.workflow,
         (workflow) => html`
           <div id="screencast-crawl">
             <btrix-screencast
@@ -1775,12 +1864,10 @@ export class WorkflowDetail extends BtrixElement {
             })
           : nothing,
       )}
-
-      <div class="aspect-video overflow-hidden rounded-lg border">
-        ${guard([this.lastCrawlId], () =>
-          when(this.latestCrawlTask.value, this.renderReplay),
-        )}
-      </div>
+      ${guard(
+        [this.lastCrawlId, this.replayPage.value.url, this.replayPage.value.ts],
+        () => when(this.latestCrawlTask.value, this.renderReplay),
+      )}
     `;
   };
 
@@ -1856,15 +1943,58 @@ export class WorkflowDetail extends BtrixElement {
     const config = JSON.stringify({ headers });
 
     return html`
-      <replay-web-page
-        source="${replaySource}"
-        url="${(latestCrawl.seedCount === 1 && latestCrawl.firstSeed) || ""}"
-        config="${config}"
-        replayBase="/replay/"
-        noSandbox="true"
-        noCache="true"
-      ></replay-web-page>
+      <div class="aspect-video overflow-hidden rounded-lg border mb-3">
+        <replay-web-page
+          source="${replaySource}"
+          url=${this.replayPage.value.url ||
+          latestCrawl.firstSeed ||
+          /* must be empty string to reset the attribute: */ ""}
+          ts=${(this.replayPage.value.url && this.replayPage.value.ts) ||
+          /* must be empty string to reset the attribute: */ ""}
+          config="${config}"
+          replayBase="/replay/"
+          noSandbox="true"
+          noCache="true"
+          @rwp-url-change=${(e: RwpUrlChangeEvent) => {
+            const url = e.detail.url;
+
+            if (
+              !(
+                "replayNotFoundError" in e.detail &&
+                e.detail.replayNotFoundError
+              ) &&
+              url
+            ) {
+              this.replayPage.setValue(e.detail);
+            }
+
+            completeOnboardingStep(OnboardingStep.ReplayItem);
+          }}
+        ></replay-web-page>
+      </div>
+      <btrix-archived-item-replay-page-list
+        view=${ReplayView.Stacked}
+        .itemId=${latestCrawl.id}
+        .reviewUrl=${this.reviewUrl}
+        @btrix-select=${(e: ReplayPageListSelectEvent) => {
+          this.navigateReplayEmbed(e.detail.item);
+        }}
+      ></btrix-archived-item-replay-page-list>
     `;
+  };
+
+  private readonly navigateReplayEmbed = (page: ArchivedItemPage) => {
+    if (!this.replayEmbed) {
+      console.debug("no this.replayEmbed");
+      return;
+    }
+
+    this.replayEmbed.mainElement?.navigateReplayTo(
+      page.url,
+      // Although the timestamp isn't necessary since the same URL won't be crawled twice,
+      // passing it during navigation prevents RWP from re-navigating to the latest timestamp
+      page.ts ? { ts: formatRwpTimestamp(page.ts) || "" } : undefined,
+    );
   };
 
   private readonly renderLogs = () => {
@@ -1927,19 +2057,32 @@ export class WorkflowDetail extends BtrixElement {
   }
 
   private renderExclusions() {
+    const canEditExclusions =
+      this.workflow &&
+      isActivelyCrawling(this.workflow) &&
+      !this.isCancelingRun;
+    const openExclusionsDialog =
+      this.editDialog.value === EditDialogValues.Exclusions;
+    const exclusionRules = this.workflow?.config.exclude;
+
     return html`
       <header class="flex items-center justify-between">
         <h3 class="mb-2 text-base font-semibold leading-none">
           ${msg("Upcoming Pages")}
         </h3>
-        <sl-button
-          size="small"
-          variant="primary"
-          @click=${() => (this.openDialogName = "exclusions")}
+        <btrix-popover
+          content=${msg("Enabled when crawl starts running.")}
+          ?disabled=${canEditExclusions}
         >
-          <sl-icon slot="prefix" name="table"></sl-icon>
-          ${msg("Edit Exclusions")}
-        </sl-button>
+          <sl-button
+            size="small"
+            @click=${() => this.openEditDialog()}
+            ?disabled=${!canEditExclusions}
+          >
+            <sl-icon slot="prefix" name="file-earmark-diff"></sl-icon>
+            ${msg("Edit Exclusion Rules")}
+          </sl-button>
+        </btrix-popover>
       </header>
 
       ${when(
@@ -1947,38 +2090,34 @@ export class WorkflowDetail extends BtrixElement {
         () => html`
           <btrix-crawl-queue
             .crawlId=${this.lastCrawlId ?? undefined}
+            .exclusions=${exclusionRules || []}
+            ?starting=${this.workflow?.lastCrawlState === "starting"}
+            ?noPoll=${openExclusionsDialog}
           ></btrix-crawl-queue>
         `,
       )}
 
-      <btrix-dialog
-        class="[--body-spacing:0] part-[body]:flex part-[panel]:h-screen part-[body]:content-stretch part-[body]:justify-stretch part-[body]:overflow-hidden"
-        .label=${msg("Crawl Queue Editor")}
-        .open=${this.openDialogName === "exclusions"}
-        style=${`--width: var(--btrix-screen-desktop)`}
-        @sl-request-close=${() => (this.openDialogName = undefined)}
-        @sl-show=${this.showDialog}
-        @sl-after-hide=${() => (this.isDialogVisible = false)}
+      <btrix-exclusion-editor-dialog
+        crawlId=${ifDefined(this.lastCrawlId || undefined)}
+        .exclusions=${exclusionRules}
+        ?activeCrawl=${this.workflow?.lastCrawlState
+          ? isActive({
+              state: this.workflow.lastCrawlState,
+              stopping: this.workflow.lastCrawlStopping,
+            })
+          : false}
+        ?open=${openExclusionsDialog}
+        @sl-hide=${(e: CustomEvent) => {
+          e.stopPropagation();
+          this.closeEditDialog();
+        }}
+        @btrix-saved=${this.handleExclusionChange}
       >
-        ${this.workflow && this.isDialogVisible
-          ? html`<btrix-exclusion-editor
-              .crawlId=${this.lastCrawlId ?? undefined}
-              .config=${this.workflow.config}
-              ?isActiveCrawl=${this.workflow.lastCrawlState
-                ? isActive({
-                    state: this.workflow.lastCrawlState,
-                    stopping: this.workflow.lastCrawlStopping,
-                  })
-                : false}
-              @on-success=${this.handleExclusionChange}
-            ></btrix-exclusion-editor>`
-          : ""}
-        <div slot="footer">
-          <sl-button size="small" @click=${this.onCloseExclusions}
-            >${msg("Done Editing")}</sl-button
-          >
-        </div>
-      </btrix-dialog>
+        ${dialogLabel({
+          title: msg("Edit Exclusion Rules"),
+          subtitle: renderName(this.workflow),
+        })}
+      </btrix-exclusion-editor-dialog>
     `;
   }
 
@@ -2054,6 +2193,23 @@ export class WorkflowDetail extends BtrixElement {
       <sl-spinner></sl-spinner>
     </div>`;
 
+  /**
+   * @note Only supports exclusions dialog at this time
+   */
+  private openEditDialog() {
+    this.openDialogName = undefined;
+    this.editDialog.setValue(EditDialogValues.Exclusions);
+  }
+
+  private closeEditDialog() {
+    this.editDialog.setValue(null);
+  }
+
+  private closeDialogs() {
+    this.openDialogName = undefined;
+    this.closeEditDialog();
+  }
+
   private readonly showDialog = async () => {
     await this.workflowTask.taskComplete;
     this.isDialogVisible = true;
@@ -2104,14 +2260,6 @@ export class WorkflowDetail extends BtrixElement {
       { signal },
     );
     return data;
-  }
-
-  private async onCloseExclusions() {
-    const editor = this.querySelector("btrix-exclusion-editor");
-    if (editor && editor instanceof ExclusionEditor) {
-      await editor.onClose();
-    }
-    this.openDialogName = undefined;
   }
 
   private async getSeeds(workflowId: string, signal: AbortSignal) {
@@ -2495,7 +2643,7 @@ export class WorkflowDetail extends BtrixElement {
         str`Sorry, couldn't delete archived item at this time.`,
       );
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(
             str`Only org owners can delete other users' archived items.`,
           );

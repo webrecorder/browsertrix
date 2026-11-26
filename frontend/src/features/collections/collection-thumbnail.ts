@@ -17,26 +17,37 @@ export enum Thumbnail {
 
 export const DEFAULT_THUMBNAIL = Thumbnail.Cyan;
 
+/**
+ * @cssPart base
+ */
 @localized()
 @customElement("btrix-collection-thumbnail")
 export class CollectionThumbnail extends BtrixElement {
-  static readonly Variants: Record<Thumbnail, { path: string }> = {
-    [Thumbnail.Cyan]: {
-      path: thumbnailCyanSrc,
-    },
-    [Thumbnail.Green]: {
-      path: thumbnailGreenSrc,
-    },
-    [Thumbnail.Orange]: {
-      path: thumbnailOrangeSrc,
-    },
-    [Thumbnail.Yellow]: {
-      path: thumbnailYellowSrc,
-    },
-  };
+  static readonly Variants: Record<Thumbnail, { path: string; label: string }> =
+    {
+      [Thumbnail.Cyan]: {
+        path: thumbnailCyanSrc,
+        label: msg("Cyan"),
+      },
+      [Thumbnail.Green]: {
+        path: thumbnailGreenSrc,
+        label: msg("Lime"),
+      },
+      [Thumbnail.Orange]: {
+        path: thumbnailOrangeSrc,
+        label: msg("Rust"),
+      },
+      [Thumbnail.Yellow]: {
+        path: thumbnailYellowSrc,
+        label: msg("Amber"),
+      },
+    };
 
   @property({ type: String })
   src?: string;
+
+  @property({ type: String })
+  alt?: string;
 
   @property({ type: String })
   collectionName?: string;
@@ -45,10 +56,12 @@ export class CollectionThumbnail extends BtrixElement {
     return html`
       <img
         class="aspect-video size-full rounded-lg bg-slate-50 object-cover"
-        alt=${this.collectionName
+        alt=${this.alt ||
+        (this.collectionName
           ? msg(str`Thumbnail image for “${this.collectionName}” collection`)
-          : msg("Thumbnail image")}
+          : msg("Thumbnail image"))}
         src=${this.src || DEFAULT_THUMBNAIL_VARIANT.path}
+        part="base"
       />
     `;
   }

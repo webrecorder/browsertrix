@@ -424,10 +424,6 @@ class SubOps:
 
     async def get_execution_minutes_price(self, org: Organization):
         """Fetch price for addon execution minutes from external subscription app"""
-        if not org.subscription:
-            raise HTTPException(
-                status_code=404, detail="Organization has no subscription"
-            )
         if external_subs_app_api_url:
             try:
                 async with aiohttp.ClientSession() as session:
@@ -456,11 +452,7 @@ class SubOps:
         minutes: int | None,
     ):
         """Create checkout url for additional minutes"""
-        if not org.subscription:
-            raise HTTPException(
-                status_code=404, detail="Organization has no subscription"
-            )
-        subscription_id = org.subscription.subId
+        subscription_id = org.subscription.subId if org.subscription else None
         return_url = f"{get_origin(headers)}/orgs/{org.slug}/settings/billing"
 
         checkout_logger = logger.bind(oid=org.id)

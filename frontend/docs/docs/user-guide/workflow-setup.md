@@ -1,10 +1,12 @@
 # Crawl Workflow Settings
 
-One of the key features of Browsertrix is the ability to refine crawler settings to the exact specifications of your crawl and website.
+Browsertrix provides flexible, extensive configuration options that can be combined to set up crawls to your exact specifications.
 
-Changes to a setting will only apply to subsequent crawls.
+## Introduction { .invisible }
 
-Crawl settings are shown in the crawl workflow detail **Settings** tab and in the archived item **Crawl Settings** tab.
+---
+
+This guide documents each workflow configuration setting in detail.
 
 ## Scope
 
@@ -214,10 +216,12 @@ We recommend keeping this setting enabled to ensure that pages from social media
 
 Browsertrix provides smart scoping rules for the following sites:
 
-| **Platform Name** | **Page Host** | **Applicable Pages** |
-|-------------------|---------------|----------------------|
-| Facebook          | facebook.com  | Timeline             |
-| Instagram         | instagram.com | Profile              |
+| **Platform Name** | **Page Host**     | **Applicable Pages** |
+|-------------------|-------------------|----------------------|
+| Facebook          | facebook.com      | Timeline             |
+| Instagram         | instagram.com     | Profile              |
+| X/Twitter         | x.com/twitter.com | Profile, Posts       |
+| YouTube           | youtube.com       | Channel, Playlist    |
 
 ##### Custom Scoping Rules
 
@@ -247,7 +251,7 @@ When enabled, the crawler will check for a [Robots Exclusion Protocol](https://w
 
 #### Custom Exclusion Rules
 
-Exclusion rules instruct the crawler to ignores pages with URLs that match a specified pattern. Patterns can be written as plain text or a regular expression per selected _Exclusion Type_:
+Exclusion rules instruct the crawler to ignore pages with URLs that match a specified pattern. Patterns can be written as plain text or a regular expression per selected _Exclusion Type_:
 
 ##### Matches Text
 
@@ -349,15 +353,17 @@ Sets the [_Browser Profile_](browser-profiles/browser-profiles-overview.md) to b
 !!! Tip "Best Practices: Use login profiles dedicated to crawling"
     We highly recommend avoiding use of your personal accounts when logging into websites during the profile creation process. Crawling with a browser profile that uses your personal account may expose you to risks such as compromised private tokens and unwanted sharing of user preferences. Although accounts dedicated to crawling are not necessary to benefit from browser profiles, they can address these potential issues and more. [Continue reading about dedicated accounts](browser-profiles/browser-profiles-overview.md#use-logins-dedicated-to-web-archiving)
 
-### Fail Crawl if Not Logged In
+#### Fail Crawl if Not Logged In
 
-When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser is not logged in.
+This setting is made available if a browser profile is selected. When enabled, the crawl will fail if a [page behavior](#page-behavior) detects the presence or absence of content on supported pages indicating that the browser profile is not logged in.
 
 For details about which websites are supported and how to add this functionality to your own [custom behaviors](#use-custom-behaviors), see the [Browsertrix Crawler documentation for Fail on Content Check](https://crawler.docs.browsertrix.com/user-guide/behaviors/#fail-on-content-check).
 
 ### Include Browser Storage Data
 
-When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field. Enabling this option is recommended to properly archive and replay certain websites, as long as privacy and security implications have been reviewed.
+When enabled, instructs the crawler to save the browser's `localStorage` and `sessionStorage` data for each page in the web archive as part of the `WARC-JSON-Metadata` field.
+
+During a crawl, websites may store data in the browser itself, e.g. to persist logins. Including data from the browser’s local and session storage in the archive can improve replay quality, but may come with security implications. Enabling this option is recommended to properly archive and replay certain websites, as long as privacy and security implications have been reviewed.
 
 !!! Warning "Privacy & security implications when used with browser profiles"
     Websites can use browser storage to store arbitrary data. During the browser profile creation process, some websites may save sensitive data such as login information and user-identifying preferences in browser storage. Since every website can implement browser storage differently, Browsertrix does not attempt to detect whether the information stored is potentially sensitive.
@@ -485,7 +491,7 @@ Additionally, the following macros are supported:
 | Value | Description |
 | - | - |
 | `@yearly` | Run once a year at midnight of 1 January |
-| `@monthly` |  Run once a month at midnight of the first day of the month |
+| `@monthly` | Run once a month at midnight of the first day of the month |
 | `@weekly` | Run once a week at midnight on Sunday |
 | `@daily` | Run once a day at midnight |
 | `@hourly` | Run once an hour at the beginning of the hour |

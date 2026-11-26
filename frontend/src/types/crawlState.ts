@@ -38,6 +38,7 @@ export const SUCCESSFUL_STATES = [
   "stopped_storage_quota_reached",
   "stopped_time_quota_reached",
   "stopped_org_readonly",
+  "stopped_for_next_scheduled_crawl",
 ] as const;
 
 // Match backend TYPE_FAILED_STATES in models.py
@@ -59,9 +60,13 @@ export const SUCCESSFUL_AND_FAILED_STATES = [
   ...FAILED_STATES,
 ] as const;
 
+// Match backend TYPE_UPLOAD_STATES in models.py
+export const UPLOAD_STATES = ["processing-upload"] as const;
+
 export const CRAWL_STATES = [
   ...RUNNING_AND_WAITING_STATES,
   ...SUCCESSFUL_AND_FAILED_STATES,
+  ...UPLOAD_STATES,
 ] as const;
 
 export type CrawlState = (typeof CRAWL_STATES)[number];

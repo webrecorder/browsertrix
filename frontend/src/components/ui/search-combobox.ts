@@ -92,7 +92,6 @@ export class SearchCombobox<T> extends TailwindElement {
   protected fuse = new Fuse<T>(this.searchOptions, {
     ...defaultFuseOptions,
     keys: this.searchKeys,
-    shouldSort: true,
   });
 
   disconnectedCallback(): void {
@@ -127,7 +126,7 @@ export class SearchCombobox<T> extends TailwindElement {
 
   render() {
     return html`
-      <btrix-combobox
+      <btrix-autocomplete
         ?open=${this.searchResultsOpen}
         @request-close=${() => {
           this.searchResultsOpen = false;
@@ -177,7 +176,7 @@ export class SearchCombobox<T> extends TailwindElement {
                 slot="prefix"
                 size="small"
                 pill
-                style="margin-left: var(--sl-spacing-3x-small)"
+                class="ml-[--sl-spacing-3x-small]"
                 >${this.keyLabels![this.selectedKey!]}</sl-tag
               >`,
             () =>
@@ -187,7 +186,7 @@ export class SearchCombobox<T> extends TailwindElement {
           )}
         </sl-input>
         ${this.renderSearchResults()}
-      </btrix-combobox>
+      </btrix-autocomplete>
     `;
   }
 

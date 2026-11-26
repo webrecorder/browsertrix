@@ -61,7 +61,7 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
         ? breadcrumbs.map(
             (breadcrumb, i) => html`
               ${i !== 0 ? breadcrumbSeparator : nothing}
-              ${breadcrumbLink(breadcrumb, tw`max-w-[30ch]`)}
+              ${breadcrumbLink(breadcrumb, tw`max-w-[--btrix-name-max-width]`)}
             `,
           )
         : html`${skeleton} ${breadcrumbSeparator} ${skeleton}`}
@@ -72,13 +72,15 @@ function pageBreadcrumbs(breadcrumbs: Breadcrumb[]) {
 export function pageBack({ href, content }: Breadcrumb) {
   if (!href) return;
 
-  return breadcrumbLink({
-    href,
-    content: html`
-      <sl-icon name="chevron-left" class="size-4 text-neutral-500"></sl-icon>
-      ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
-    `,
-  });
+  return html`<div class="-ml-1 flex items-center">
+    ${breadcrumbLink({
+      href,
+      content: html`
+        <sl-icon name="chevron-left" class="size-4 text-neutral-500"></sl-icon>
+        ${content ? html` ${msg("Back to")} ${content}` : msg("Back")}
+      `,
+    })}
+  </div>`;
 }
 
 export function pageTitle(
@@ -125,12 +127,12 @@ export function pageHeader({
   return html`
     <header
       class=${clsx(
-        tw`mt-5 flex flex-row flex-wrap gap-3 pb-3`,
+        tw`mt-5 flex max-w-full flex-row flex-wrap gap-3 overflow-hidden pb-3`,
         border && tw`border-b`,
         classNames,
       )}
     >
-      <div class="flex min-w-72 flex-1 flex-col gap-2">
+      <div class="flex flex-1 flex-col gap-2 overflow-hidden lg:min-w-72">
         <div class="flex flex-wrap items-center gap-2.5">
           ${prefix}${pageTitle(title)}${suffix}
         </div>

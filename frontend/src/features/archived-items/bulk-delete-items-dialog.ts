@@ -1,0 +1,219 @@
+import { localized, msg } from "@lit/localize";
+import { html } from "lit";
+import { customElement, property, query } from "lit/decorators.js";
+import { when } from "lit/directives/when.js";
+
+import { BtrixElement } from "@/classes/BtrixElement";
+import { type GridColumn } from "@/components/ui/data-grid/types";
+import type { Dialog } from "@/components/ui/dialog";
+import { type BtrixConfirmEvent } from "@/events/btrix-confirm";
+import { pluralOfItems } from "@/plurals/items";
+import { pluralOfPages } from "@/plurals/pages";
+import { pluralOfSkippingItems } from "@/plurals/skipping-items";
+import { deleteConfirmation } from "@/strings/ui";
+import type { ListArchivedItem } from "@/types/crawler";
+import { pathForArchivedItem } from "@/utils/archived-items/pathForArchivedItem";
+import { renderName } from "@/utils/crawler";
+import { isNotEqual } from "@/utils/is-not-equal";
+import { tw } from "@/utils/tailwind";
+
+export type ConfirmBulkDeleteEvent = BtrixConfirmEvent<{
+  itemIds: string[] | null;
+}>;
+
+/**
+ * @fires btrix-cancel
+ * @fires btrix-confirm
+ */
+@customElement("btrix-bulk-delete-items-dialog")
+@localized()
+export class BulkDeleteItemsDialog extends BtrixElement {
+  @property({ type: Array, hasChanged: isNotEqual })
+  items?: ListArchivedItem[];
+
+  @property({ type: Boolean })
+  open = false;
+
+  @property({ type: Boolean })
+  inProgress = false;
+
+  @query("btrix-dialog")
+  readonly dialog?: Dialog | null;
+
+  private readonly columns = [
+    {
+      field: "id",
+      label: html`<span class="sr-only">${msg("Link")}</span>`,
+      renderCell: ({ item }) =>
+        html`<sl-tooltip
+          content=${msg("Open in New Tab")}
+          placement="left"
+          hoist
+        >
+          <sl-icon-button
+            class="text-sm"
+            name="arrow-up-right"
+            href="${this.navigate.orgBasePath}/${pathForArchivedItem(item)}"
+            target="_blank"
+          ></sl-icon-button>
+        </sl-tooltip>`,
+      renderCellClasses: () => tw`[--btrix-table-cell-padding:0]`,
+      width: `min-content`,
+    },
+    {
+      field: "name",
+      label: msg("Name"),
+      renderCell: ({ item }) => renderName(item),
+      width: `minmax(var(--btrix-name-max-width), 1fr)`,
+    },
+    {
+      field: "fileSize",
+      label: msg("Size"),
+      renderCell: ({ item }) => this.localize.bytes(item.fileSize || 0),
+      width: `minmax(max-content, 1fr)`,
+    },
+    {
+      field: "pageCount",
+      label: msg("Pages"),
+      renderCell: ({ item }) => pluralOfPages(item.pageCount || 0),
+      width: `minmax(max-content, 1fr)`,
+    },
+    {
+      field: "collectionIds",
+      label: msg("In Collections"),
+      renderCell: ({ item }) => this.localize.number(item.collectionIds.length),
+      renderCellClasses: ({ item }) =>
+        item.collectionIds.length > 0 && tw`bg-warning-50`,
+      width: `minmax(max-content, 1fr)`,
+    },
+  ] as const satisfies GridColumn<ListArchivedItem>[];
+
+  private readonly colsWithNotDeleteable = [
+    ...this.columns.slice(0, 2),
+    {
+      field: "userid",
+      label: msg("Reason"),
+      renderCell: ({ item }) => {
+        const isAdmin = this.appState.isAdmin;
+        const userId = this.userInfo?.id;
+
+        if (!isAdmin && userId !== item.userid) {
+          return msg("Item belongs to another org member");
+        }
+
+        return msg("Item is required by another item");
+      },
+      width: `minmax(max-content, 1fr)`,
+    },
+  ] as const satisfies GridColumn<ListArchivedItem>[];
+
+  render() {
+    return html`<btrix-dialog
+      class="[--width:40rem]"
+      .label=${msg("Delete Archived Items?")}
+      .open=${this.open}
+      @sl-request-close=${(e: CustomEvent) => {
+        if (this.inProgress) {
+          e.preventDefault();
+        }
+      }}
+    >
+      ${when(this.items, this.renderContent)}
+    </btrix-dialog>`;
+  }
+
+  private readonly renderContent = (items: ListArchivedItem[]) => {
+    const isAdmin = this.appState.isAdmin;
+    const userId = this.userInfo?.id;
+    const deletionRequirementsNotMet = true;
+    const deletionRequirementsMet = false;
+    const grouped = Map.groupBy(items, (item) =>
+      item.requiredByCrawls.length || (!isAdmin && item.userid !== userId)
+        ? deletionRequirementsNotMet
+        : deletionRequirementsMet,
+    );
+    const deleteable = grouped.get(deletionRequirementsMet);
+    const notDeleteable = grouped.get(deletionRequirementsNotMet);
+
+    return html`<div class="flex flex-col gap-3">
+        ${when(
+          deleteable,
+          (items) =>
+            html`<div>
+              <p class="max-w-prose text-pretty">
+                ${deleteConfirmation(pluralOfItems(items.length))}
+                ${when(
+                  items.some((item) => item.type === "crawl"),
+                  () =>
+                    msg(
+                      "Crawl runs associated with crawled items will also be deleted.",
+                    ),
+                )}
+              </p>
+              <btrix-data-grid
+                class="part-[body]:text-xs"
+                .columns=${this.columns}
+                .items=${items}
+              ></btrix-data-grid>
+            </div>`,
+        )}
+        ${when(notDeleteable, (items) =>
+          deleteable
+            ? html`<btrix-details>
+                <span slot="title">
+                  <sl-icon
+                    class="mr-0.5 align-[-.175em]"
+                    name="exclamation-triangle"
+                  ></sl-icon>
+                  ${pluralOfSkippingItems(items.length)}
+                </span>
+
+                <div class="mt-2">${this.renderItemsWithDependents(items)}</div>
+              </btrix-details>`
+            : this.renderItemsWithDependents(items),
+        )}
+      </div>
+
+      <div slot="footer" class="flex justify-between">
+        <sl-button
+          size="small"
+          .autofocus=${true}
+          @click=${() => {
+            void this.dialog?.hide();
+            this.dispatchEvent(new CustomEvent("btrix-cancel"));
+          }}
+          >${msg("Cancel")}</sl-button
+        >
+        <sl-button
+          size="small"
+          variant="danger"
+          ?disabled=${!deleteable || this.inProgress}
+          ?loading=${this.inProgress}
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent<ConfirmBulkDeleteEvent["detail"]>(
+                "btrix-confirm",
+                {
+                  detail: { itemIds: deleteable?.map(({ id }) => id) || null },
+                },
+              ),
+            );
+          }}
+        >
+          <sl-icon name="trash3" slot="prefix"></sl-icon>
+          ${msg("Delete Items")}
+        </sl-button>
+      </div>`;
+  };
+
+  private readonly renderItemsWithDependents = (items: ListArchivedItem[]) => {
+    return html` <p class="max-w-prose text-pretty">
+        ${msg("The following items cannot be deleted in bulk.")}
+      </p>
+      <btrix-data-grid
+        class="part-[body]:text-xs"
+        .columns=${this.colsWithNotDeleteable}
+        .items=${items}
+      ></btrix-data-grid>`;
+  };
+}

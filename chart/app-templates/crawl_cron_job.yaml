@@ -1,26 +1,26 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "{{ id }}"
+  name: {{ id }}
   labels:
-    btrix.crawlconfig: "{{ cid }}"
-    btrix.org: "{{ oid }}"
+    btrix.crawlconfig: {{ cid }}
+    btrix.org: {{ oid }}
 {% if userid %}
-    btrix.userid: "{{ userid }}"
+    btrix.userid: {{ userid }}
 {% endif %}
     role: "cron-job"
 
 spec:
-  concurrencyPolicy: Forbid
+  concurrencyPolicy: Allow
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 2
 
-  schedule: "{{ schedule }}"
+  schedule: {{ schedule }}
 
   jobTemplate:
     metadata:
       labels:
-        btrix.crawlconfig: "{{ cid }}"
+        btrix.crawlconfig: {{ cid }}
         role: "scheduled-crawljob"
 
     spec:

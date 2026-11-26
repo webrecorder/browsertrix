@@ -30,7 +30,6 @@ from .models import (
     ProfilePingResponse,
     ProfileSearchValuesResponse,
     ProfileUpdate,
-    StorageRef,
     SuccessResponse,
     SuccessResponseStorageQuota,
     TagsResponse,
@@ -351,10 +350,6 @@ class ProfileOps:
                 {"_id": profile.id}, {"$set": profile.to_dict()}, upsert=True
             )
 
-            await self.background_job_ops.create_replica_jobs(
-                org.id, profile_file, str(profileid), "profile"
-            )
-
             await self.orgs.inc_org_bytes_stored(
                 org.id, file_size - prev_file_size, "profile"
             )
@@ -377,7 +372,7 @@ class ProfileOps:
         return True
 
     async def update_profile_metadata(
-        self, profileid: UUID, update: ProfileUpdate, user: User
+        self, profileid: UUID, update: ProfileUpdate, user: User, org: Organization
     ) -> dict[str, bool]:
         """Update name and description metadata only on existing profile"""
         query = {
@@ -394,7 +389,7 @@ class ProfileOps:
             query["tags"] = update.tags
 
         if not await self.profiles.find_one_and_update(
-            {"_id": profileid}, {"$set": query}
+            {"_id": profileid, "oid": org.id}, {"$set": query}
         ):
             raise HTTPException(status_code=404, detail="profile_not_found")
 
@@ -450,14 +445,6 @@ class ProfileOps:
         if profile_file.hash == hash_:
             return True
 
-        profile_file.size = size
-        profile_file.hash = hash_
-
-        # update replica
-        await self.background_job_ops.create_replica_jobs(
-            org_id, profile_file, str(profileid), "profile"
-        )
-
         # update size stats, if changed
         if size != prev_file_size:
             await self.orgs.inc_org_bytes_stored(
@@ -472,6 +459,8 @@ class ProfileOps:
         userid: UUID | None = None,
         tags: list[str] | None = None,
         tag_match: ListFilterType | None = ListFilterType.AND,
+        origins: list[str] | None = None,
+        origin_match: ListFilterType | None = ListFilterType.AND,
         name: str | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -491,6 +480,9 @@ class ProfileOps:
         if tags:
             query_type = "$all" if tag_match == ListFilterType.AND else "$in"
             match_query["tags"] = {query_type: tags}
+        if origins:
+            query_type = "$all" if origin_match == ListFilterType.AND else "$in"
+            match_query["origins"] = {query_type: origins}
         if name:
             match_query["name"] = name
 
@@ -616,6 +608,8 @@ class ProfileOps:
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
+        await self.orgs.remove_profile_from_crawling_defaults(profileid, org)
+
         return {"success": True, "storageQuotaReached": quota_reached}
 
     async def delete_profile_browser(self, browserid: str) -> dict[str, bool]:
@@ -660,15 +654,6 @@ class ProfileOps:
 
         return data or {}
 
-    async def add_profile_file_replica(
-        self, profileid: UUID, filename: str, ref: StorageRef
-    ) -> dict[str, object]:
-        """Add replica StorageRef to existing ProfileFile"""
-        return await self.profiles.find_one_and_update(
-            {"_id": profileid, "resource.filename": filename},
-            {"$push": {"resource.replicas": {"name": ref.name, "custom": ref.custom}}},
-        )
-
     async def calculate_org_profile_file_storage(self, oid: UUID) -> int:
         """Calculate and return total size of profile files in org"""
         total_size = 0
@@ -700,9 +685,11 @@ class ProfileOps:
     async def get_profile_search_values(self, org: Organization):
         """Return profile names for use in search"""
         names = await self.profiles.distinct("name", {"oid": org.id})
+        origins = await self.profiles.distinct("origins", {"oid": org.id})
         # Remove empty strings
         names = [name for name in names if name]
-        return {"names": names}
+        origins = [origin for origin in origins if origin]
+        return {"names": names, "origins": origins}
 
 
 # ============================================================================
@@ -766,6 +753,15 @@ def init_profiles_api(
                 description='Defaults to `"and"` if omitted',
             ),
         ] = ListFilterType.AND,
+        origins: Annotated[list[str] | None, Query(title="Origins")] = None,
+        origin_match: Annotated[
+            ListFilterType | None,
+            Query(
+                alias="originMatch",
+                title="Origin Match Type",
+                description='Defaults to `"and"` if omitted',
+            ),
+        ] = ListFilterType.AND,
         name: str | None = None,
         pageSize: int = DEFAULT_PAGE_SIZE,
         page: int = 1,
@@ -777,6 +773,8 @@ def init_profiles_api(
             userid,
             tags=tags,
             tag_match=tag_match,
+            origins=origins,
+            origin_match=origin_match,
             name=name,
             page_size=pageSize,
             page=page,
@@ -818,7 +816,7 @@ def init_profiles_api(
         user: User = Depends(user_dep),
     ):
         if not browser_commit.browserid:
-            await ops.update_profile_metadata(profileid, browser_commit, user)
+            await ops.update_profile_metadata(profileid, browser_commit, user, org)
 
         else:
             metadata = await browser_get_metadata(browser_commit.browserid, org)

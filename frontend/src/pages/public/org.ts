@@ -47,7 +47,7 @@ export class PublicOrg extends BtrixElement {
     }
 
     return html`
-      <div class="flex min-h-full flex-col">
+      <div class="flex min-h-full flex-col @container/org">
         ${this.orgCollections.render({
           complete: (profile) =>
             profile
@@ -141,7 +141,7 @@ export class PublicOrg extends BtrixElement {
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/dashboard"
                   class="size-8 text-base"
-                  name="speedometer"
+                  name="speedometer2"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
@@ -149,7 +149,7 @@ export class PublicOrg extends BtrixElement {
                 <sl-icon-button
                   href="${this.navigate.orgBasePath}/settings"
                   class="size-8 text-base"
-                  name="gear"
+                  name="building-gear"
                   @click=${this.navigate.link}
                 ></sl-icon-button>
               </sl-tooltip>
@@ -212,7 +212,7 @@ export class PublicOrg extends BtrixElement {
               <sl-icon-button
                 href=${`${this.navigate.orgBasePath}/collections`}
                 class="size-8 text-base"
-                name="collection"
+                name="gear"
                 @click=${this.navigate.link}
               ></sl-icon-button>
             </sl-tooltip>`,
@@ -228,9 +228,7 @@ export class PublicOrg extends BtrixElement {
   }
 
   private renderSignUpCta(org: PublicOrgCollections["org"]) {
-    const { signUpUrl } = this.appState.settings || {};
-
-    if (!signUpUrl) return;
+    if (!this.env.signUpUrl) return;
 
     return html`
       <div class="w-full border-y p-6 px-3 text-center text-neutral-500">
@@ -245,7 +243,7 @@ export class PublicOrg extends BtrixElement {
             `,
           )}
           <span>${msg("Do you have web archives to share?")}</span>
-          <btrix-link href=${signUpUrl} variant="primary">
+          <btrix-link href=${this.env.signUpUrl} variant="primary">
             ${msg("Get started with Browsertrix")}
           </btrix-link>
         </p>

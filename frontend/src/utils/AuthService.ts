@@ -246,7 +246,7 @@ export default class AuthService {
     const timeoutPromise = new Promise<null>((resolve) => {
       window.setTimeout(() => {
         resolve(null);
-      }, 10);
+      }, 50);
     });
 
     return Promise.race([broadcastPromise, timeoutPromise]).then(

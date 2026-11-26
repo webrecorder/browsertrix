@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { html, nothing, type TemplateResult } from "lit";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
@@ -9,15 +10,17 @@ import { tw } from "@/utils/tailwind";
 export function pageHeading({
   content,
   level = 2,
+  classNames,
 }: {
   content?: string | TemplateResult | typeof nothing;
   level?: 2 | 3 | 4;
+  classNames?: typeof tw | string;
 }) {
   const tag = unsafeStatic(`h${level}`);
-  const classNames = tw`min-w-0 text-base font-medium leading-8 lg:text-lg`;
+  const classes = tw`min-w-0 text-base font-medium leading-8 lg:text-lg`;
 
   return staticHtml`
-    <${tag} class=${classNames}>
+    <${tag} class=${clsx(classes, classNames)}>
       ${
         content ||
         html`<sl-skeleton class="my-.5 h-5 w-60" effect="sheen"></sl-skeleton>`
@@ -29,6 +32,8 @@ export function pageHeading({
 export function page(
   header: Parameters<typeof pageHeader>[0] & {
     breadcrumbs?: Parameters<typeof pageNav>[0];
+    content?: TemplateResult;
+    aside?: TemplateResult;
   },
   render: () => TemplateResult,
 ) {
@@ -39,10 +44,20 @@ export function page(
     ></btrix-document-title>
 
     <div
-      class="mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 px-3 lg:px-10 lg:pb-10"
+      class=${clsx(
+        tw`mx-auto box-border flex min-h-full w-full max-w-screen-desktop flex-1 flex-col gap-3 p-3 lg:px-10 lg:pb-10`,
+        !header.breadcrumbs && tw`lg:py-10`,
+      )}
     >
-      ${header.breadcrumbs ? html` ${pageNav(header.breadcrumbs)} ` : nothing}
-      ${pageHeader(header)}
+      ${header.breadcrumbs || header.aside
+        ? html`<div
+            class="mb-7 flex flex-wrap items-start justify-between gap-2"
+          >
+            ${header.breadcrumbs ? pageNav(header.breadcrumbs) : nothing}
+            ${header.aside}
+          </div>`
+        : nothing}
+      ${header.content || pageHeader(header)}
       ${header.title
         ? html`<main class="flex flex-1 flex-col">${render()}</main>`
         : render()}

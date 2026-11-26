@@ -1,10 +1,18 @@
 # Running Crawls
 
-Running crawls can be modified from the crawl workflow **Latest Crawl** tab. You may want to modify a running crawl if you find that the workflow is crawling pages that you didn't intend to archive, or if you want a boost of speed.
+Monitor and interact with crawl runs in real-time: watch pages being crawled, update queued URLs on the fly to exclude unwanted pages, pause a crawl for inspection, and more.
 
-## Crawl Workflow Status
+## Introduction { .invisible }
+
+---
+
+The **Crawling** > **Crawl Runs** page lists all active crawls. Individual crawl runs can be viewed and modified from the crawl workflow **Latest Crawl** tab.
+
+## Crawl Status
 
 When a workflow run is initiated, the workflow status changes to <span class="status-violet-600">:bootstrap-hourglass-split: Waiting</span> or <span class="status-violet-600">:btrix-status-dot: Starting</span>, depending on whether the conditions for starting a crawl are in place (such as resource capacity.) The workflow status will change to <span class="status-green-600">:btrix-status-dot: Running</span> once the crawler loads the first crawl URL.
+
+A running crawl in the **Crawling** > **Crawl Runs** list and [workflow > **Crawls**](./crawl-workflows.md#crawl-run-history) list will display a progress indicator in the place of a finish date. The progress indicator is based on the ratio of crawled to found pages. The indicator should be used as a rough estimate for how far along the crawl is; the ratio may change over the course of the crawl as the crawler discovers more pages, or if [page exclusions change](#live-exclusion-editing).
 
 ## Watch Crawl
 
@@ -12,9 +20,9 @@ You can watch the current state of the browser windows as the crawler visits pag
 
 ## Live Exclusion Editing
 
-While [exclusions](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
+While [exclusion rules](workflow-setup.md#custom-exclusion-rules) can be set before running a crawl workflow, sometimes while crawling the crawler may find new parts of the site that weren't previously known about and shouldn't be crawled, or get stuck browsing parts of a website that automatically generate URLs known as ["crawler traps"](https://en.wikipedia.org/wiki/Spider_trap).
 
-If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusions_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
+If the crawl queue is filled with URLs that should not be crawled, use the _Edit Exclusion Rules_ button in the **Watch** tab to instruct the crawler what pages should be excluded from the queue.
 
 Exclusions added while crawling are applied to the same exclusion table saved in the workflow's settings and will be used the next time the crawl workflow is run unless they are manually removed.
 
@@ -48,14 +56,21 @@ If too many error pages are encountered, the crawler adapts by slowing down and 
 Unfortunately, there is not much Browsertrix can do to prevent being rate limited altogether. Adding a [browser profile](browser-profiles/browser-profiles-overview.md) or configuring a [proxy server](workflow-setup.md#crawler-proxy-server) may help reduce rate limits for certain sites, while other sites may need to provide explicit permission to be crawled, thus requiring the list of IP ranges used by Browsertrix.
 
 ???+ "Allow-listing Browsertrix on your website"
-    `Paid Feature`{ .badge-green }
-    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support](support@webrecorder.org) for assistance.
+    `Subscription Feature`{ .badge-green .btrix-embed-hidden }
+    If you subscribe to hosted Browsertrix and need help with being rate limited by your own website, please reach out to [support :material-email-outline:](mailto:support@webrecorder.org) for assistance.
 
 ### Rate Limited Workflow Status
 
 If the crawler can no longer continue by skipping error pages while being rate limited, it will switch to a time-delay-based strategy to continue running. The workflow status during this state will be <span class="status-amber-600">:btrix-status-dot: Running (Rate Limited)</span>. In this state, the crawler will slow down and retry the page URL at longer intervals, up to once every 5 minutes. Pages that were not captured before will be queued to be retried. Crawls in this state will only use a few seconds of crawl time to check that it is still rate limited, thus avoiding wasting execution minutes on error pages.
 
 If the crawl remains rate limited for an extended period of time (12 hours by default), the crawl may be automatically paused to avoid retrying indefinitely. The workflow status will then be <span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>.
+
+### Interrupting Rate Limited Crawls for New Scheduled Crawls
+
+If a workflow run is scheduled to start and the previous crawl run had been paused due to rate limiting (<span class="status-neutral-500">:bootstrap-pause-circle: Paused: Rate Limit Timeout</span>), the paused crawl will stop automatically to allow the next scheduled crawl to start.
+This way, even if the new crawl is also rate limited eventually, some pages can still be crawled on schedule.
+The status of the previous stopped crawl will be set to: <span class="status-amber-600">:bootstrap-dash-square-fill: Stopped: Next Crawl Started</span>.
+
 
 ## End a Crawl
 

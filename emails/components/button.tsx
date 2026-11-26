@@ -1,4 +1,4 @@
-import { Button as EmailButton } from "@react-email/components";
+import { Button as EmailButton } from "react-email";
 
 export const Button = ({
   children,
@@ -9,7 +9,7 @@ export const Button = ({
 }) => {
   return (
     <EmailButton
-      className="rounded-full px-6 text-base py-4 shadow bg-cyan-400 font-semibold text-white ring-1 ring-inset ring-cyan-600 hover:bg-cyan-500 dark:ring-cyan-300 shadow-cyan-700/25 hover:shadow-cyan-800/25 text-center transition"
+      className="rounded-full px-6 text-base py-4 shadow bg-cyan-400 font-semibold text-white border border-cyan-600 hover:bg-cyan-500 dark:border-cyan-300 shadow-cyan-700/25 hover:shadow-cyan-800/25 text-center"
       href={href}
       style={{
         boxShadow:

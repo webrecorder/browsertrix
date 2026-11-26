@@ -24,7 +24,6 @@ import {
 import type { ProfileUpdatedEvent } from "@/features/browser-profiles/types";
 import type { WorkflowColumnName } from "@/features/crawl-workflows/workflow-list";
 import { emptyMessage } from "@/layouts/emptyMessage";
-import { labelWithIcon } from "@/layouts/labelWithIcon";
 import { pageHeader, pageNav } from "@/layouts/pageHeader";
 import { panel, panelBody } from "@/layouts/panel";
 import { OrgTab, WorkflowTab } from "@/routes";
@@ -187,6 +186,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
         .config=${config}
         ?open=${this.openDialog === "browser" || duplicating}
         ?duplicating=${duplicating}
+        ?navigateOnSave=${duplicating}
         @btrix-updated=${duplicating ? undefined : this.onUpdated}
         @sl-after-hide=${this.closeBrowser}
       >
@@ -547,19 +547,6 @@ export class BrowserProfilesProfilePage extends BtrixElement {
                 : noData,
             )}
           </btrix-desc-list-item>
-          <btrix-desc-list-item label=${msg("Backup Status")}>
-            ${this.renderDetail((profile) => {
-              const isBackedUp =
-                profile.resource?.replicas &&
-                profile.resource.replicas.length > 0;
-              return labelWithIcon({
-                label: isBackedUp ? msg("Backed Up") : msg("Not Backed Up"),
-                icon: html`<sl-icon
-                  name=${isBackedUp ? "clouds-fill" : "cloud-slash-fill"}
-                ></sl-icon>`,
-              });
-            })}
-          </btrix-desc-list-item>
         </btrix-desc-list>
       `,
     });
@@ -775,6 +762,7 @@ export class BrowserProfilesProfilePage extends BtrixElement {
   }
 
   private readonly onUpdated = async (e: ProfileUpdatedEvent) => {
+    e.stopPropagation();
     this.updatedProfileParams = e.detail;
     void this.profileTask.run();
   };

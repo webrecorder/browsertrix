@@ -131,11 +131,6 @@ export type ListWorkflow = Omit<Workflow, "config" | "image"> & {
   config: Workflow["config"] | null;
 };
 
-export type ProfileReplica = {
-  name: string;
-  custom?: boolean;
-};
-
 export type Profile = {
   id: string;
   name: string;
@@ -151,16 +146,12 @@ export type Profile = {
   modifiedCrawlId: string | null;
   modifiedCrawlCid: string | null;
   origins: string[];
-  profileId: string;
-  baseProfileName: string;
   oid: string;
   inUse: boolean;
   resource?: {
-    name: string;
-    path: string;
+    filename: string;
     hash: string;
     size: number;
-    replicas: ProfileReplica[] | null;
   };
   crawlerChannel?: CrawlerChannelImage | AnyString;
   proxyId?: string;
@@ -188,13 +179,18 @@ type ArchivedItemBase = {
   fileSize?: number;
   collectionIds: string[];
   collections: { id: string; name: string }[];
-  stats: { done: string; found: string; size: string } | null;
+  // TODO Check if this is still ever a string
+  stats: {
+    done: string | number;
+    found: string | number;
+    size: string | number;
+  } | null;
   firstSeed: string | null;
   seedCount: number | null;
   tags: string[];
   crawlExecSeconds: number;
   qaCrawlExecSeconds: number;
-  reviewStatus?: ReviewStatus;
+  reviewStatus?: ReviewStatus | null;
   completions?: number;
   stopping: boolean | null;
   qaRunCount: number | null;
@@ -226,6 +222,7 @@ export type Crawl = ArchivedItemBase &
     scale: number;
     browserWindows: number;
     shouldPause: boolean | null;
+    rateLimitedAt: string | null;
     resources?: (StorageFile & {
       numReplicas: number;
       fromDependency: boolean;
@@ -236,7 +233,7 @@ export type CrawlReplay = Crawl & Pick<Workflow, "config" | "image">;
 
 export type Upload = ArchivedItemBase & {
   type: "upload";
-  cid: undefined;
+  cid: undefined | null;
   resources: undefined;
   crawlerChannel: CrawlerChannelImage.Default;
   image: null;
@@ -266,6 +263,9 @@ export type CrawlerChannelsAPIResponse = {
 };
 
 export type ArchivedItem = Crawl | Upload;
+
+export type ListArchivedItem = Omit<ArchivedItem, "collections">;
+export type ListCrawl = Omit<Crawl, "collections">;
 
 export type ArchivedItemPageComment = {
   id: string;

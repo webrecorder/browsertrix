@@ -129,6 +129,9 @@ class CrawlOps(BaseCrawlOps):
                 ("started", pymongo.ASCENDING),
             ]
         )
+        await self.crawls.create_index(
+            [("oid", pymongo.HASHED), ("state", pymongo.DESCENDING)]
+        )
         await self.crawls.create_index([("finished", pymongo.DESCENDING)])
         await self.crawls.create_index([("oid", pymongo.HASHED)])
         await self.crawls.create_index([("cid", pymongo.HASHED)])
@@ -664,7 +667,7 @@ class CrawlOps(BaseCrawlOps):
             for i in range(0, scale):
                 await redis.rpush(f"crawl-{crawl_id}-{i}:msg", query_str)
 
-        new_config = await self.crawl_configs.add_or_remove_exclusion(
+        new_exclude = await self.crawl_configs.add_or_remove_exclusion(
             regex, cid, org, user, add
         )
 
@@ -672,7 +675,7 @@ class CrawlOps(BaseCrawlOps):
 
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "type": "crawl", "oid": org.id},
-            {"$set": {"config": new_config.dict()}},
+            {"$set": {"config.exclude": new_exclude}},
         )
 
         return {"success": True}
@@ -909,6 +912,20 @@ class CrawlOps(BaseCrawlOps):
 
         raise HTTPException(status_code=404, detail="crawl_not_found")
 
+    async def set_rate_limited_at(self, crawl_id: str, oid: UUID, dt: datetime | None):
+        """mark crawl as rate limited or not rate limited by setting/unsetting rateLimitedAt"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl", "oid": oid},
+            {"$set": {"rateLimitedAt": dt}},
+        )
+
+    async def mark_crawl_stopping(self, crawl_id: str, oid: UUID):
+        """mark crawl as being stopped"""
+        await self.crawls.find_one_and_update(
+            {"_id": crawl_id, "type": "crawl", "oid": oid},
+            {"$set": {"stopping": True}},
+        )
+
     async def shutdown_crawl(
         self, crawl_id: str, org: Organization, graceful: bool
     ) -> dict[str, bool]:
@@ -925,10 +942,7 @@ class CrawlOps(BaseCrawlOps):
 
             if result.get("success"):
                 if graceful:
-                    await self.crawls.find_one_and_update(
-                        {"_id": crawl_id, "type": "crawl", "oid": org.id},
-                        {"$set": {"stopping": True}},
-                    )
+                    await self.mark_crawl_stopping(crawl_id, org.id)
                 return result
 
         except Exception as exc:
@@ -994,20 +1008,16 @@ class CrawlOps(BaseCrawlOps):
 
         self.orgs.can_write_data(org)
 
-        crawlconfig = await self.crawl_configs.get_crawl_config(crawl.cid, org.id)
-
         try:
             qa_run_id = await self.crawl_manager.create_qa_crawl_job(
-                crawlconfig,
+                crawl,
                 org.storage,
                 userid=str(user.id),
                 qa_source=crawl_id,
                 storage_filename=self.crawl_configs.default_filename_template,
             )
 
-            image = self.crawl_configs.get_channel_crawler_image(
-                crawlconfig.crawlerChannel
-            )
+            image = self.crawl_configs.get_channel_crawler_image(crawl.crawlerChannel)
 
             qa_run = QARun(
                 id=qa_run_id,
@@ -1064,6 +1074,9 @@ class CrawlOps(BaseCrawlOps):
         self, crawl_id: str, delete_list: DeleteQARunList, org: Organization
     ) -> dict[str, int]:
         """delete specified finished QA run"""
+        # ensure crawl belongs to the requesting org before any changes
+        await self.get_crawl(crawl_id, org)
+
         count = 0
         for qa_run_id in delete_list.qa_run_ids:
             await self.page_ops.delete_qa_run_from_pages(crawl_id, qa_run_id)

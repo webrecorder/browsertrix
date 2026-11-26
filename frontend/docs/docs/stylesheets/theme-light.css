@@ -1,0 +1,80 @@
+[data-md-color-scheme="webrecorder-light"] {
+  --md-primary-fg-color: var(--color-brand-green);
+  --md-primary-fg-color--light: var(--color-lime-500);
+  --md-primary-fg-color--dark: var(--color-lime-600);
+  --md-primary-bg-color: var(--sl-color-neutral-0);
+  --md-primary-bg-color--light: var(--color-lime-100);
+
+  --md-accent-fg-color: var(--color-cyan-500);
+  --md-accent-bg-color: var(--color-cyan-100);
+  --md-accent-bg-color--light: var(--color-cyan-50);
+
+  --md-default-fg-color: var(--sl-color-neutral-1000);
+  --md-default-fg-color--light: var(--sl-color-neutral-600);
+  --md-default-fg-color--lighter: var(--sl-color-neutral-500);
+  --md-default-fg-color--lightest: var(--sl-color-neutral-400);
+  --md-default-bg-color: var(--sl-color-neutral-0);
+  --md-default-bg-color--light: var(--sl-color-neutral-200);
+  --md-default-bg-color--lighter: var(--sl-color-neutral-100);
+  --md-default-bg-color--lightest: var(--sl-color-neutral-50);
+
+  --md-typeset-color: var(--md-default-fg-color);
+  --md-typeset-a-color: var(--color-cyan-600);
+
+  --md-code-fg-color: var(--sl-color-teal-700);
+  --md-code-bg-color: var(--color-earth-25);
+
+  --md-code-hl-number-color: var(--sl-color-rose-700);
+  --md-code-hl-special-color: var(--sl-color-fuchsia-700);
+  --md-code-hl-function-color: var(--sl-color-pink-700);
+  --md-code-hl-constant-color: var(--sl-color-violet-700);
+  --md-code-hl-keyword-color: var(--sl-color-blue-700);
+  --md-code-hl-string-color: var(--sl-color-teal-700);
+  --md-code-hl-comment-color: var(--md-default-fg-color--lightest);
+  --md-code-hl-operator-color: var(--md-default-fg-color--lighter);
+  --md-code-hl-name-color: var(--md-default-fg-color);
+
+  --md-typeset-table-color: var(--md-default-bg-color--light);
+  --md-typeset-table-color--light: var(--md-default-bg-color--lightest);
+
+  --md-footer-fg-color: var(--md-default-fg-color);
+  --md-footer-fg-color--light: var(--md-default-bg-color--light);
+  --md-footer-fg-color--lighter: var(--md-default-bg-color--lighter);
+  --md-footer-bg-color: var(--md-default-bg-color);
+  --md-footer-bg-color--dark: var(--color-stone-800);
+
+  /* Custom Webrecorder variables */
+  --wr-primary-fg-color--darker: var(--color-lime-800);
+  --wr-primary-bg-color--lighter: var(--color-lime-50);
+
+  --wr-accent-border-color: var(--color-cyan-200);
+
+  --wr-info-fg-color: var(--color-blue-800);
+  --wr-info-bg-color: var(--color-blue-50);
+  --wr-info-border-color: var(--color-blue-100);
+
+  --wr-border-color: var(--sl-color-neutral-200);
+
+  --wr-task-list-indicator-bg-color: var(--color-lime-400);
+
+  --wr-callout-blue-fg-color: var(--color-cyan-700);
+  --wr-callout-blue-bg-color: var(--color-cyan-200);
+  --wr-callout-green-fg-color: var(--color-lime-700);
+  --wr-callout-green-bg-color: var(--color-lime-200);
+  --wr-callout-orange-fg-color: var(--color-orange-700);
+  --wr-callout-orange-bg-color: var(--color-orange-200);
+}
+
+[data-md-color-scheme="webrecorder-light"] .md-typeset hr {
+  border-bottom: 1px solid var(--wr-border-color);
+}
+
+[data-md-color-scheme="webrecorder-light"] .md-typeset code {
+  border-color: var(--color-earth-100);
+}
+
+[data-md-color-scheme="webrecorder-light"]
+  .md-typeset
+  a:not([class*="-button"]):not([href^="#__tabbed"]) {
+  text-decoration-color: var(--sl-color-neutral-300);
+}

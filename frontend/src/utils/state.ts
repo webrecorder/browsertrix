@@ -1,13 +1,16 @@
 /**
  * Store and access application-wide state
  */
+import { differenceInDays } from "date-fns/fp";
 import { mergeDeep } from "immutable";
 import { locked, options, transaction, use } from "lit-shared-state";
 
 import { persist } from "./persist";
 
 import { authSchema, type Auth } from "@/types/auth";
+import { type Env } from "@/types/env";
 import type { FeatureFlags } from "@/types/featureFlags";
+import { type Onboarding } from "@/types/onboarding";
 import type { OrgData } from "@/types/org";
 import {
   userInfoSchema,
@@ -17,9 +20,19 @@ import {
   type UserPreferences,
 } from "@/types/user";
 import type { AppSettings } from "@/utils/app";
-import { isAdmin, isCrawler } from "@/utils/orgs";
+import { hasUsage, isAdmin, isCrawler, isTrialing } from "@/utils/orgs";
 
 export { use };
+
+const MAX_DAYS_ONBOARDING = 30;
+
+const DEFAULT_ENV = {
+  version: undefined,
+  registrationEnabled: undefined,
+  billingEnabled: undefined,
+  docsUrl: undefined,
+  signUpUrl: undefined,
+};
 
 export function makeAppStateService() {
   // Prevent state updates from any component
@@ -27,6 +40,10 @@ export function makeAppStateService() {
 
   @state()
   class AppState {
+    env: Env | typeof DEFAULT_ENV = DEFAULT_ENV;
+
+    // Default settings dependent on the API environment, like the maximum
+    // number of browser windows allowed by the Browsertrix instance.
     @options(persist(window.sessionStorage))
     settings: AppSettings | null = null;
 
@@ -35,6 +52,9 @@ export function makeAppStateService() {
 
     @options(persist(window.localStorage))
     userPreferences: UserPreferences | null = null;
+
+    @options(persist(window.localStorage))
+    onboarding: Onboarding | null = null;
 
     // TODO persist here
     auth: Auth | null = null;
@@ -48,6 +68,7 @@ export function makeAppStateService() {
     // Org details
     org: OrgData | null | undefined = undefined;
 
+    @options(persist(window.sessionStorage))
     userGuideOpen = false;
 
     // Since org slug is used to ID an org, use `userOrg`
@@ -84,6 +105,14 @@ export function makeAppStateService() {
       return false;
     }
 
+    get isTrialing() {
+      return isTrialing(this.org);
+    }
+
+    get hasUsage() {
+      return hasUsage(this.org);
+    }
+
     readonly featureFlags = {
       has: (flag: FeatureFlags) => this.org?.featureFlags[flag] ?? false,
       excludes: (flag: FeatureFlags) => !this.featureFlags.has(flag),
@@ -95,6 +124,11 @@ export function makeAppStateService() {
   class AppStateActions {
     get appState() {
       return appState;
+    }
+
+    @unlock()
+    updateEnv(env: AppState["env"]) {
+      appState.env = env;
     }
 
     @unlock()
@@ -146,15 +180,38 @@ export function makeAppStateService() {
 
     @transaction()
     @unlock()
+    partialUpdateOnboarding(onboarding: Partial<AppState["onboarding"]>) {
+      if (onboarding) {
+        if (appState.onboarding) {
+          appState.onboarding = mergeDeep(appState.onboarding, onboarding);
+        } else {
+          appState.onboarding = {
+            ...onboarding,
+            orgId: onboarding.orgId || "",
+          };
+        }
+      } else {
+        appState.onboarding = onboarding;
+      }
+    }
+
+    @transaction()
+    @unlock()
     updateOrgSlug(orgSlug: AppState["orgSlug"]) {
       appState.orgSlug = orgSlug;
     }
 
+    @transaction()
     @unlock()
     updateOrg(org: AppState["org"]) {
       appState.org = org;
+
+      if (org) {
+        this.updateOnboardingForOrg(org);
+      }
     }
 
+    @transaction()
     @unlock()
     partialUpdateOrg(org: { id: string } & Partial<OrgData>) {
       if (org.id && appState.org?.id === org.id) {
@@ -162,6 +219,8 @@ export function makeAppStateService() {
           ...appState.org,
           ...org,
         };
+
+        this.updateOnboardingForOrg(appState.org);
       } else {
         console.warn("no matching org in app state");
       }
@@ -175,6 +234,7 @@ export function makeAppStateService() {
     @transaction()
     @unlock()
     resetAll() {
+      appState.env = DEFAULT_ENV;
       appState.settings = null;
       this._resetUser();
     }
@@ -189,8 +249,33 @@ export function makeAppStateService() {
       appState.auth = null;
       appState.userInfo = null;
       appState.userPreferences = null;
+      appState.onboarding = null;
       appState.orgSlug = null;
       appState.org = undefined;
+    }
+
+    private updateOnboardingForOrg(org: OrgData) {
+      const trialing = isTrialing(org);
+      const showOnboarding =
+        trialing ||
+        !hasUsage(org) ||
+        (org.created
+          ? differenceInDays(new Date(org.created))(new Date()) <=
+            MAX_DAYS_ONBOARDING
+          : false);
+
+      if (appState.onboarding?.orgId === org.id) {
+        appState.onboarding = {
+          ...appState.onboarding,
+          showOnboarding: appState.onboarding.showOnboarding ?? showOnboarding,
+        };
+      } else {
+        // Reset onboarding
+        appState.onboarding = {
+          orgId: org.id,
+          showOnboarding: showOnboarding,
+        };
+      }
     }
   }
 

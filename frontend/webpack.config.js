@@ -26,12 +26,6 @@ require("dotenv").config({
   path: dotEnvPath,
 });
 
-const DOCS_URL = process.env.DOCS_URL
-  ? new URL(process.env.DOCS_URL)
-  : isDevServer
-    ? "https://docs.browsertrix.com/"
-    : "/docs/";
-
 const OPENGRAPH_BASE_URL = process.env.OPENGRAPH_BASE_URL
   ? new URL(process.env.OPENGRAPH_BASE_URL)
   : "https://app.browsertrix.com/";
@@ -218,11 +212,19 @@ const main = {
       templateParameters: {
         glitchtip_dsn: process.env.GLITCHTIP_DSN || "",
         environment: isDevServer ? "development" : "production",
-        docsUrl: DOCS_URL,
         openGraphBaseUrl: OPENGRAPH_BASE_URL,
         version,
         gitBranch,
         commitHash,
+        // In production, these values are provided by the nginx-init bash script during the Docker build:
+        registrationEnabled: isDevServer
+          ? process.env.REGISTRATION_ENABLED
+          : "",
+        billingEnabled: isDevServer ? process.env.BILLING_ENABLED : "",
+        docsUrl: isDevServer
+          ? process.env.DOCS_URL || "https://docs.browsertrix.com/"
+          : "",
+        signUpUrl: isDevServer ? process.env.SIGN_UP_URL : "",
       },
       // TODO this breaks shoelace forms, but seems HMR is broken anyway?
       // // Need to block during local development for HMR:

@@ -1,0 +1,8 @@
+rate_limit_max_duration_minutes: 1
+rate_limit_threshold: 1
+
+crawler_browser_instances: 1
+
+# needed to allow crawler to connect to host.k3d.internal in ci
+crawler_enable_network_policy: false
+

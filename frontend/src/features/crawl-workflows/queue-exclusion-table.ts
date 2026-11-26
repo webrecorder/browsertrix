@@ -30,7 +30,7 @@ export type ExclusionChangeEvent = CustomEvent<ExclusionChangeEventDetail>;
 
 export type ExclusionRemoveEvent = CustomEvent<ExclusionChangeEventDetail>;
 
-const MIN_LENGTH = 2;
+export const MIN_LENGTH = 2;
 
 function formatValue(type: Exclusion["type"], value: Exclusion["value"]) {
   return type == "text" ? regexEscape(value) : value;
@@ -181,10 +181,7 @@ export class QueueExclusionTable extends TailwindElement {
             </div>
           `
         : nothing}
-      <table
-        class="w-full border-separate leading-none"
-        style="border-spacing: 0;"
-      >
+      <table class="w-full border-separate border-spacing-0 leading-none">
         <thead class="text-xs text-neutral-600">
           <tr class="h-10 text-left">
             <th class="${typeColClass} w-40 bg-slate-50 px-2 font-normal">
@@ -232,7 +229,7 @@ export class QueueExclusionTable extends TailwindElement {
         <td class="${typeColClass} whitespace-nowrap">
           ${this.renderType({ exclusion, index })}
         </td>
-        <td class="${valueColClass}">
+        <td class="${valueColClass} break-all">
           ${this.renderValue({ exclusion, index })}
         </td>
         <td class="${actionColClass} text-center text-[1rem]">

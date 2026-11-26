@@ -5,11 +5,13 @@
     As of the current release, the feature is still in beta and may not be available to all users.
     If you don't see the options below, consult your admin or reach out to support to request access.
 
-## Overview
+Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling.
 
-Deduplication (or “dedupe”) is the process of preventing duplicate content from being stored during crawling. In Browsertrix, deduplication is facilitated through [collections](./collection.md), which allow arbitrary grouping of crawled content as needed.
+## Introduction { .invisible }
 
-After deduplication is enabled on a collection, a _deduplication index_ is created for the collection, containing all the unique content hashes for every URL in every archived item in the collection.
+---
+
+In Browsertrix, deduplication is facilitated through [collections](./collection.md){ data-preview }, which allow arbitrary grouping of crawled content as needed. After deduplication is enabled on a collection, a _deduplication index_ is created for the collection, containing all the unique content hashes for every URL in every archived item in the collection.
 
 When running a crawl with deduplication, the crawler will check a designated collection's deduplication index for each new URL discovered during the crawl. Content that is identical, even when found at a different URL, will be deduplicated by writing "revisit" records rather than the full resource in the resulting crawl WACZ files. This results in a smaller, space-saving WACZ files and smaller collections and crawls.
 
@@ -17,9 +19,7 @@ When running a crawl with deduplication, the crawler will check a designated col
 
 Deduplication can be enabled in two ways, from a crawl workflow, or from an existing collection.
 
-
 _From Crawl Workflow_: To enable deduplication, specify a collection to use as the deduplication source when creating or editing a workflow, from the workflows **Deduplication** section. The first time a crawl workflow is run with deduplication enabled, a deduplication index will be created for the collection and available to view in the collection’s **Deduplication** tab. The workflow UI allows providing a new collection that will be created for deduplication once the crawl workflow is saved and before the crawl starts.
-
 
 _From Collection_: It is also possible to create the deduplication index of the collection’s archived items before running crawl workflows from the collection’s **Deduplication** tab by selecting the _Create Dedupe Index_ button, which is visible if the index does not yet exist. This is useful for creating an index on an existing collection.
 

@@ -36,7 +36,11 @@ class Migration(BaseMigration):
         orgs_db = self.mdb["organizations"]
 
         match_query = {
-            "$or": [{"bytesStoredSeedFiles": None}, {"bytesStoredThumbnails": None}]
+            "$or": [
+                {"bytesStoredSeedFiles": None},
+                {"bytesStoredThumbnails": None},
+                {"bytesStoredDedupeIndex": None},
+            ]
         }
 
         async for org_dict in orgs_db.find(match_query):
@@ -46,7 +50,10 @@ class Migration(BaseMigration):
                 org = await self.org_ops.get_org_by_id(oid)
 
                 seed_file_size = await self.file_ops.calculate_seed_file_storage(oid)
-                thumbnail_size = await self.coll_ops.calculate_thumbnail_storage(oid)
+                (
+                    thumbnail_size,
+                    dedupe_index_size,
+                ) = await self.coll_ops.calculate_collection_storage(oid)
 
                 await orgs_db.find_one_and_update(
                     {"_id": oid},
@@ -54,9 +61,11 @@ class Migration(BaseMigration):
                         "$set": {
                             "bytesStored": org.bytesStored
                             + seed_file_size
-                            + thumbnail_size,
+                            + thumbnail_size
+                            + dedupe_index_size,
                             "bytesStoredSeedFiles": seed_file_size,
                             "bytesStoredThumbnails": thumbnail_size,
+                            "bytesStoredDedupeIndex": dedupe_index_size,
                         }
                     },
                 )

@@ -1,9 +1,11 @@
 """K8S API Access"""
 
+import json
 import os
 from typing import Any
 
 import structlog
+import jinja2
 import yaml
 from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
@@ -14,12 +16,21 @@ from kubernetes_asyncio.client.exceptions import ApiException
 from kubernetes_asyncio.client.models import V1CronJob
 from kubernetes_asyncio.stream import WsApiClient
 from kubernetes_asyncio.utils import create_from_dict
+from markupsafe import Markup
 from redis import asyncio as aioredis
 from redis.asyncio.client import Redis
 
 from .utils import dt_now, get_templates_dir
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
+
+
+def finalize_template_value(value: Any) -> Any:
+    """Render bare strings as JSON scalars, which YAML can parse losslessly."""
+    # safe returns Markup, so explicitly raw output is fine.
+    if isinstance(value, str) and not isinstance(value, Markup):
+        return json.dumps(value)
+    return value
 
 
 # ============================================================================
@@ -37,7 +48,11 @@ class K8sAPI:
         self.custom_resources = {}
 
         self.templates = Jinja2Templates(
-            directory=get_templates_dir(), autoescape=False
+            env=jinja2.Environment(
+                autoescape=False,
+                loader=jinja2.FileSystemLoader(get_templates_dir()),
+                finalize=finalize_template_value,
+            ),
         )
 
         config.load_incluster_config()
@@ -119,7 +134,7 @@ class K8sAPI:
         proxy_id: str = "",
         dedupe_coll_id: str = "",
         is_single_page: bool = False,
-        seed_file_url: str = "",
+        seed_file_id: str = "",
     ):
         """load job template from yaml"""
         if not crawl_id:
@@ -147,7 +162,7 @@ class K8sAPI:
             "proxy_id": proxy_id,
             "dedupe_coll_id": dedupe_coll_id,
             "is_single_page": "1" if is_single_page else "0",
-            "seed_file_url": seed_file_url,
+            "seed_file_id": seed_file_id,
         }
 
         data = self.templates.env.get_template("crawl_job.yaml").render(params)
@@ -174,7 +189,7 @@ class K8sAPI:
         proxy_id: str = "",
         dedupe_coll_id: str = "",
         is_single_page: bool = False,
-        seed_file_url: str = "",
+        seed_file_id: str = "",
     ) -> str:
         """load and init crawl job via k8s api"""
         crawl_id, data = self.new_crawl_job_yaml(
@@ -197,7 +212,7 @@ class K8sAPI:
             proxy_id=proxy_id,
             dedupe_coll_id=dedupe_coll_id,
             is_single_page=is_single_page,
-            seed_file_url=seed_file_url,
+            seed_file_id=seed_file_id,
         )
 
         # create job directly
@@ -341,27 +356,39 @@ class K8sAPI:
             )
             return {"error": str(exc)}
 
-    async def unsuspend_k8s_job(self, name) -> dict:
-        """unsuspend k8s Job"""
+    async def unsuspend_k8s_job_if_exists(self, name) -> None:
+        """unsuspend k8s job, if it exists, allowing it to complete.
+        if job doesn't exist/already gone, ignore"""
         try:
             await self.batch_api.patch_namespaced_job(
                 name=name, namespace=self.namespace, body={"spec": {"suspend": False}}
             )
-            return {"success": True}
-        # pylint: disable=broad-except
-        except Exception as exc:
-            logger.exception(
-                "unsuspend_k8s_job_failed",
-                name=name,
-                unstructured_message="Unsuspend k8s job failed",
-            )
-            return {"error": str(exc)}
 
-    async def has_job(self, name) -> bool:
+        except ApiException as exc:
+            # ignore 404, job already finished
+            if exc.status != 404:
+                raise
+
+    async def has_job(self, name: str) -> bool:
         """return true/false if job exists"""
         try:
             await self.batch_api.read_namespaced_job(
                 name=name, namespace=self.namespace
+            )
+            return True
+        # pylint: disable=bare-except
+        except:
+            return False
+
+    async def has_custom_object(self, name: str, type_plural: str) -> bool:
+        """return true/false if custom ojbect exists"""
+        try:
+            await self.custom_api.get_namespaced_custom_object(
+                group="btrix.cloud",
+                version="v1",
+                namespace=self.namespace,
+                plural=type_plural,
+                name=name,
             )
             return True
         # pylint: disable=bare-except
@@ -419,7 +446,7 @@ class K8sAPI:
             return True
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception(
+            logger.warning(
                 "pod_metrics_check_failed",
                 namespace=self.namespace,
             )
@@ -473,7 +500,7 @@ class K8sAPI:
 
         # pylint: disable=broad-except
         except Exception:
-            signal_logger.exception(
+            signal_logger.warning(
                 "send_signal_error",
                 unstructured_message="Send Signal Error",
             )

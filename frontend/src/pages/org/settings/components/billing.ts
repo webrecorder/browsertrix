@@ -17,6 +17,10 @@ import { columns } from "@/layouts/columns";
 import { SubscriptionStatus, type BillingPortal } from "@/types/billing";
 import type { Metrics, OrgData, OrgQuotas } from "@/types/org";
 import { humanizeExecutionSeconds } from "@/utils/executionTimeFormatter";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { pluralOf } from "@/utils/pluralize";
 import { tw } from "@/utils/tailwind";
 
@@ -67,11 +71,12 @@ export class OrgSettingsBilling extends BtrixElement {
 
   private readonly portalUrl = new Task(this, {
     task: async ([appState]) => {
-      if (!appState.settings?.billingEnabled || !appState.org?.subscription)
-        return;
+      if (!this.env.billingEnabled || !appState.org?.subscription) return;
 
       try {
         const { portalUrl } = await this.getPortalUrl();
+
+        completeOnboardingStep(OnboardingStep.ReviewPlan);
 
         if (portalUrl) {
           return portalUrl;
@@ -123,12 +128,7 @@ export class OrgSettingsBilling extends BtrixElement {
         ${columns([
           [
             html`
-              <div
-                class=${clsx(
-                  tw`mt-5 rounded-lg border px-4`,
-                  !this.org?.subscription && tw`pb-4`,
-                )}
-              >
+              <div class="mt-5 rounded-lg border px-4">
                 <div
                   class="mb-3 flex items-center justify-between border-b py-2"
                 >
@@ -239,7 +239,7 @@ export class OrgSettingsBilling extends BtrixElement {
                       ${this.renderExtraQuotas(this.org!.quotas)}`,
                 )}
                 ${when(
-                  this.org?.subscription,
+                  this.env.billingEnabled,
                   () =>
                     html`<btrix-org-settings-billing-addon-link
                       class="mt-3 flex items-center border-t py-2"

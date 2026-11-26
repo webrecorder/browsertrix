@@ -40,7 +40,6 @@ export const publicCollectionSchema = z.object({
       hash: z.string(),
       size: z.number(),
       crawlId: z.string().nullable(),
-      numReplicas: z.number(),
       expireAt: z.string().datetime().nullable(),
       fromDependency: z.boolean(),
     }),
@@ -103,9 +102,7 @@ export const collectionUpdateSchema = z
     description: z.string(),
     caption: z.string(),
     access: z.string(),
-    defaultThumbnailName: z.string().nullable(),
     allowPublicDownload: z.boolean(),
-    thumbnailSource: collectionThumbnailSourceSchema.nullable(),
   })
   .partial();
 

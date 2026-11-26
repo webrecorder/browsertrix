@@ -7,6 +7,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { BtrixElement } from "@/classes/BtrixElement";
 import type { TagCount, TagCounts } from "@/components/ui/tag-filter/types";
 import type { TagInputEvent, TagsChangeEvent } from "@/components/ui/tag-input";
+import { defaultFuseOptions } from "@/context/search-org/connectFuse";
 import type { BtrixChangeEvent } from "@/events/btrix-change";
 import { FormControl } from "@/mixins/FormControl";
 
@@ -28,8 +29,7 @@ export class ItemTagsInput extends FormControl(BtrixElement) {
 
   private readonly fuse = new Fuse<TagCount>([], {
     keys: ["tag"],
-    threshold: 0.3, // stricter; default is 0.6
-    shouldSort: false,
+    threshold: defaultFuseOptions.threshold,
   });
 
   private readonly orgTagsTask = new Task(this, {

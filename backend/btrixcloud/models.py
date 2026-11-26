@@ -39,6 +39,8 @@ from slugify import slugify
 from typing_extensions import deprecated
 
 # from fastapi_users import models as fastapi_users_models
+from .crawl_validator import validate_crawl_filename_template
+from .cron_validator import validate_cron_schedule
 from .db import LENIENT_ON_READ, BaseMongoModel
 from .utils import is_bool
 
@@ -111,6 +113,23 @@ CollectionCaption = Annotated[str | None, Field(max_length=1000), LENIENT_ON_REA
 
 OrgName = Annotated[str, Field(min_length=1, max_length=50), LENIENT_ON_READ]
 OrgPublicDescription = Annotated[str | None, Field(max_length=400), LENIENT_ON_READ]
+
+# ============================================================================
+# Input validation for crawl configuration values (schedules, filename
+# templates) that are persisted and used when creating scheduled crawls
+# and crawl storage files.
+# ============================================================================
+
+Schedule = Annotated[
+    str | None,
+    BeforeValidator(validate_cron_schedule),
+    LENIENT_ON_READ,
+]
+CrawlFilenameTemplate = Annotated[
+    str | None,
+    BeforeValidator(validate_crawl_filename_template),
+    LENIENT_ON_READ,
+]
 
 
 # pylint: disable=too-few-public-methods
@@ -290,6 +309,9 @@ TYPE_WAITING_NOT_PAUSED_STATES = Literal[
 ]
 WAITING_NOT_PAUSED_STATES = get_args(TYPE_WAITING_NOT_PAUSED_STATES)
 
+TYPE_UPLOAD_STATES = Literal["processing-upload"]
+UPLOAD_STATES = get_args(TYPE_UPLOAD_STATES)
+
 TYPE_WAITING_STATES = Literal[TYPE_PAUSED_STATES, TYPE_WAITING_NOT_PAUSED_STATES]
 WAITING_STATES = [*PAUSED_STATES, *WAITING_NOT_PAUSED_STATES]
 
@@ -305,6 +327,7 @@ FAILED_STATES = get_args(TYPE_FAILED_STATES)
 TYPE_SUCCESSFUL_STATES = Literal[
     "complete",
     "stopped_by_user",
+    "stopped_for_next_scheduled_crawl",
     "stopped_pause_expired",
     "stopped_storage_quota_reached",
     "stopped_time_quota_reached",
@@ -322,9 +345,9 @@ TYPE_NON_RUNNING_STATES = Literal[TYPE_FAILED_STATES, TYPE_SUCCESSFUL_STATES]
 NON_RUNNING_STATES = [*FAILED_STATES, *SUCCESSFUL_STATES]
 
 TYPE_ALL_CRAWL_STATES = Literal[
-    TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES
+    TYPE_RUNNING_AND_WAITING_STATES, TYPE_NON_RUNNING_STATES, TYPE_UPLOAD_STATES
 ]
-ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES]
+ALL_CRAWL_STATES = [*RUNNING_AND_WAITING_STATES, *NON_RUNNING_STATES, *UPLOAD_STATES]
 
 
 # ============================================================================
@@ -445,7 +468,7 @@ class RawCrawlConfig(BaseModel):
 class CrawlConfigIn(BaseModel):
     """CrawlConfig input model, submitted via API"""
 
-    schedule: str | None = ""
+    schedule: Schedule = ""
     runNow: bool = False
 
     config: RawCrawlConfig
@@ -473,7 +496,7 @@ class CrawlConfigIn(BaseModel):
     # Overrides scale if set
     browserWindows: BrowserWindowCount | None = None
 
-    crawlFilenameTemplate: str | None = None
+    crawlFilenameTemplate: CrawlFilenameTemplate = None
 
     shareable: bool = False
 
@@ -621,7 +644,7 @@ class UpdateCrawlConfig(BaseModel):
     updateRunning: bool = False
 
     # crawl data: revision tracked
-    schedule: str | None = None
+    schedule: Schedule = None
     profileid: UUID | EmptyStr | None = None
     crawlerChannel: str | None = None
     proxyId: str | None = None
@@ -629,7 +652,7 @@ class UpdateCrawlConfig(BaseModel):
     maxCrawlSize: int | None = None
     scale: Annotated[Scale | None, Field(deprecated=True)] = None
     browserWindows: BrowserWindowCount | None = None
-    crawlFilenameTemplate: str | None = None
+    crawlFilenameTemplate: CrawlFilenameTemplate = None
     config: RawCrawlConfig | None = None
     shareable: bool | None = None
 
@@ -688,6 +711,36 @@ class TagsResponse(BaseModel):
     """Response model for crawlconfig/crawl tags"""
 
     tags: list[TagCount]
+
+
+# ============================================================================
+class CrawlConfigRunningCountsResponse(BaseModel):
+    """Response model for counts of running workflows (total and by status)"""
+
+    totalRunningPausedWaiting: int = 0
+    totalRunning: int = 0
+    totalPaused: int = 0
+    totalWaiting: int = 0
+
+    # Running states
+    running: int = 0
+    pendingWait: int = 0
+    generateWACZ: int = 0
+    uploadingWACZ: int = 0
+    rateLimited: int = 0
+
+    # Paused states
+    paused: int = 0
+    pausedStorageQuotaReached: int = 0
+    pausedTimeQuotaReached: int = 0
+    pausedOrgReadOnly: int = 0
+    pausedRateLimitTimeReached: int = 0
+
+    # Waiting states
+    starting: int = 0
+    waitingCapacity: int = 0
+    waitingOrgLimit: int = 0
+    waitingDedupeIndex: int = 0
 
 
 # ============================================================================
@@ -811,7 +864,7 @@ class StorageRef(BaseModel):
             return self.name
         return "cs-" + self.name
 
-    def get_storage_secret_name(self, oid: str) -> str:
+    def get_storage_secret_name(self, oid: str = "") -> str:
         """get k8s secret name for this storage and oid"""
         if not self.custom:
             return "storage-" + self.name
@@ -844,8 +897,6 @@ class BaseFile(BaseModel):
     size: int
     storage: StorageRef
 
-    replicas: list[StorageRef] | None = []
-
 
 # ============================================================================
 class CrawlFile(BaseFile):
@@ -862,7 +913,6 @@ class CrawlFileOut(BaseModel):
     size: int
 
     crawlId: str | None = None
-    numReplicas: int = 0
     expireAt: str | None = None
     fromDependency: bool = False
 
@@ -994,6 +1044,7 @@ class CrawlOut(BaseMongoModel):
     stopping: bool | None = False
     shouldPause: bool | None = False
     pausedAt: datetime | None = None
+    rateLimitedAt: datetime | None = None
     manual: bool = False
     cid_rev: int | None = None
     scale: Annotated[Scale | None, Field(deprecated=True)] = None
@@ -1165,6 +1216,9 @@ class Crawl(BaseCrawl, CrawlConfigCore):
 
     stopping: bool | None = False
     shouldPause: bool | None = False
+    pausedAt: datetime | None = None
+
+    rateLimitedAt: datetime | None = None
 
     qaCrawlExecSeconds: int = 0
 
@@ -1214,6 +1268,7 @@ class UploadedCrawl(BaseCrawl):
 
     type: Literal["upload"] = "upload"
     image: None = None
+    deleted: bool = False
 
 
 # ============================================================================
@@ -1333,19 +1388,30 @@ class UserFile(BaseFile):
     created: datetime
 
     async def get_absolute_presigned_url(
-        self, org, storage_ops, headers: dict | None
-    ) -> str:
+        self, org, storage_ops, headers: dict | None, force_update: bool = False
+    ) -> tuple[str, datetime]:
         """Get presigned URL as absolute URL"""
-        presigned_url, _ = await storage_ops.get_presigned_url(org, self)
-        return storage_ops.resolve_relative_access_path(presigned_url, headers) or ""
+        presigned_url, expire_at = await storage_ops.get_presigned_url(
+            org, self, force_update
+        )
+        return storage_ops.resolve_relative_access_path(
+            presigned_url, headers
+        ) or "", expire_at
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
-    ) -> UserFileOut:
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
+    ) -> tuple[UserFileOut, datetime]:
         """Get UserFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers, force_update_presigned
+        )
         return UserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1353,19 +1419,22 @@ class UserFile(BaseFile):
             userid=self.userid,
             userName=self.userName,
             created=self.created,
-        )
+        ), expire_at
 
     async def get_public_file_out(
         self, org, storage_ops, headers: dict | None = None
-    ) -> PublicUserFileOut:
+    ) -> tuple[PublicUserFileOut, datetime]:
         """Get PublicUserFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers
+        )
         return PublicUserFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             mime=self.mime,
-        )
+        ), expire_at
 
 
 # ============================================================================
@@ -1435,12 +1504,19 @@ class SeedFile(UserFile, BaseMongoModel):
     seedCount: int | None = None
 
     async def get_file_out(
-        self, org, storage_ops, headers: dict | None = None
-    ) -> SeedFileOut:
+        self,
+        org,
+        storage_ops,
+        headers: dict | None = None,
+        force_update_presigned: bool = False,
+    ) -> tuple[SeedFileOut, datetime]:
         """Get SeedFileOut with new presigned url"""
+        path, expire_at = await self.get_absolute_presigned_url(
+            org, storage_ops, headers, force_update_presigned
+        )
         return SeedFileOut(
             name=self.filename,
-            path=await self.get_absolute_presigned_url(org, storage_ops, headers),
+            path=path,
             hash=self.hash,
             size=self.size,
             originalFilename=self.originalFilename,
@@ -1453,7 +1529,7 @@ class SeedFile(UserFile, BaseMongoModel):
             type=self.type,
             firstSeed=self.firstSeed,
             seedCount=self.seedCount,
-        )
+        ), expire_at
 
 
 # ============================================================================
@@ -1707,6 +1783,14 @@ class DedupeIndexStats(BaseModel):
     # for internal use for now
     uniqueHashes: int = 0
     estimatedRedundantSize: int = 0
+
+
+# ============================================================================
+class CollectionMissingRequiresCrawls(BaseModel):
+    """Crawl ids required by deduped crawls in a collection
+    that are no longer present in the org."""
+
+    missingRequiresCrawls: list[str] = []
 
 
 # ============================================================================
@@ -2247,7 +2331,7 @@ class CheckoutAddonMinutesRequest(BaseModel):
     """Request for additional minutes checkout session"""
 
     orgId: str
-    subId: str
+    subId: str | None = None
     minutes: int | None = None
     return_url: str
 
@@ -2502,6 +2586,8 @@ class OrgOut(BaseMongoModel):
     default: bool = False
     bytesStored: int
     bytesStoredCrawls: int
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int
     bytesStoredProfiles: int
     bytesStoredSeedFiles: int = 0
@@ -2572,6 +2658,8 @@ class Organization(BaseMongoModel):
 
     bytesStored: int = 0
     bytesStoredCrawls: int = 0
+    bytesStoredFinishedCrawls: int = 0
+    bytesStoredActiveCrawls: int = 0
     bytesStoredUploads: int = 0
     bytesStoredProfiles: int = 0
     bytesStoredSeedFiles: int = 0
@@ -2728,6 +2816,8 @@ class OrgMetrics(BaseModel):
 
     storageUsedBytes: int
     storageUsedCrawls: int
+    storageUsedFinishedCrawls: int
+    storageUsedActiveCrawls: int
     storageUsedUploads: int
     storageUsedProfiles: int
     storageUsedSeedFiles: int
@@ -2805,6 +2895,28 @@ class OrgImportResponse(BaseModel):
     """Model for org import response"""
 
     imported: bool
+
+
+# ============================================================================
+class OrgCrawlFileStorageResults(BaseModel):
+    """Model for org crawlfile storage calculation results, in bytes"""
+
+    total_crawlfiles: int = 0
+    crawls: int = 0
+    crawls_finished: int = 0
+    crawls_active: int = 0
+    uploads: int = 0
+
+
+# ============================================================================
+class OrgStorageResults(OrgCrawlFileStorageResults):
+    """Model for complete org storage calculation results, in bytes"""
+
+    total_org: int = 0
+    profiles: int = 0
+    seed_files: int = 0
+    thumbnails: int = 0
+    dedupe_indexes: int = 0
 
 
 # ============================================================================
@@ -2951,6 +3063,7 @@ class ProfileSearchValuesResponse(BaseModel):
     """Response model for profiles search values"""
 
     names: list[str]
+    origins: list[str]
 
 
 # ============================================================================
@@ -3182,7 +3295,6 @@ class WebhookNotification(BaseMongoModel):
 class BgJobType(StrEnum):
     """Background Job Types"""
 
-    CREATE_REPLICA = "create-replica"
     DELETE_REPLICA = "delete-replica"
     DELETE_ORG = "delete-org"
     RECALCULATE_ORG_STATS = "recalculate-org-stats"
@@ -3190,6 +3302,23 @@ class BgJobType(StrEnum):
     OPTIMIZE_PAGES = "optimize-pages"
     CLEANUP_SEED_FILES = "cleanup-seed-files"
     UPDATE_COLL_STATS = "update-coll-stats"
+    POSTPROCESS_UPLOAD = "postprocess-upload"
+    RETRY_STUCK_UPLOADS = "retry-stuck-uploads"
+    # Deprecated per-file replication jobs
+    CREATE_REPLICA = "create-replica"
+    # New replication job that spins up rclone copy jobs as needed
+    REPLICATE_FILES_CRON = "replicate-files-cron"
+    # Bulk per-bucket replication job
+    COPY_REPLICAS = "copy-replicas"
+
+
+# ============================================================================
+class BgJobExitCode(IntEnum):
+    """Background job exit codes"""
+
+    SUCCESS = 0
+    ERROR = 1
+    FATAL_DONT_RETRY = 2
 
 
 # ============================================================================
@@ -3267,12 +3396,43 @@ class CleanupSeedFilesJob(BackgroundJob):
 
 
 # ============================================================================
+class ReplicateFilesCronJob(BackgroundJob):
+    """Model for tracking cron jobs to replicate files"""
+
+    type: Literal[BgJobType.REPLICATE_FILES_CRON] = BgJobType.REPLICATE_FILES_CRON
+
+
+# ============================================================================
+class CopyReplicasJob(BackgroundJob):
+    """Model for tracking job to copy primary storage bucket to replica storage"""
+
+    type: Literal[BgJobType.COPY_REPLICAS] = BgJobType.COPY_REPLICAS
+    replica_storage: StorageRef
+
+
+# ============================================================================
 class UpdateCollStatsJob(BackgroundJob):
     """Model for tracking jobs to readd pages for an org or single crawl"""
 
     type: Literal[BgJobType.UPDATE_COLL_STATS] = BgJobType.UPDATE_COLL_STATS
     oid: UUID
     collection_id: UUID
+
+
+# ============================================================================
+class PostProcessUploadJob(BackgroundJob):
+    """Model for tracking jobs to post-process uploaded crawls"""
+
+    type: Literal[BgJobType.POSTPROCESS_UPLOAD] = BgJobType.POSTPROCESS_UPLOAD
+    oid: UUID
+    crawl_id: str
+
+
+# ============================================================================
+class RetryStuckUploadsJob(BackgroundJob):
+    """Model for tracking jobs to retry uploads stuck in processing"""
+
+    type: Literal[BgJobType.RETRY_STUCK_UPLOADS] = BgJobType.RETRY_STUCK_UPLOADS
 
 
 # ============================================================================
@@ -3288,6 +3448,10 @@ AnyJob = RootModel[
     | OptimizePagesJob
     | CleanupSeedFilesJob
     | UpdateCollStatsJob
+    | PostProcessUploadJob
+    | RetryStuckUploadsJob
+    | ReplicateFilesCronJob
+    | CopyReplicasJob
 ]
 
 

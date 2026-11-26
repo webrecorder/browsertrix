@@ -18,11 +18,26 @@ if (!process.env.API_BASE_URL) {
   );
 }
 
+const isDevServer = process.env.WEBPACK_SERVE === "true";
+
+const dotEnvPath = path.resolve(
+  process.cwd(),
+  `.env${isDevServer ? `.local` : ""}`,
+);
+require("dotenv").config({
+  path: dotEnvPath,
+});
+
+const DOCS_URL = process.env.DOCS_URL
+  ? new URL(process.env.DOCS_URL)
+  : "https://docs.browsertrix.com/";
+
 // for testing: for prod, using the version specified in Helm values.yaml
 const RWP_BASE_URL =
   process.env.RWP_BASE_URL || "https://cdn.jsdelivr.net/npm/replaywebpage/";
 
 const devBackendUrl = new URL(process.env.API_BASE_URL);
+const devDocsUrl = new URL(DOCS_URL);
 
 /** @type {import('webpack').Configuration['plugins']} */
 const plugins = [
@@ -57,6 +72,28 @@ if (process.env.WEBPACK_SERVE === "true") {
   }
 }
 
+/** @type {import('webpack-dev-server').Configuration['static']} */
+let extraStatic = [];
+
+if (!process.env.DOCS_DEV_ADDR) {
+  extraStatic.push({
+    directory: path.join(__dirname, "docs/site-embed"),
+    publicPath: "/docs-embed",
+  });
+}
+
+/** @type {import('webpack-dev-server').Configuration['proxy']} */
+let extraProxy = [];
+
+if (process.env.DOCS_DEV_ADDR) {
+  extraProxy.push({
+    context: "/docs-embed/",
+    target: `http://${process.env.DOCS_DEV_ADDR}/`,
+    changeOrigin: true,
+    secure: false,
+  });
+}
+
 module.exports = [
   merge(main, {
     devtool: "eval",
@@ -75,12 +112,12 @@ module.exports = [
           directory: path.join(__dirname, "dist/vendor"),
           publicPath: "/vendor",
         },
+        ...extraStatic,
       ],
       historyApiFallback: true,
       proxy: [
         {
           context: "/api",
-
           target: devBackendUrl.href,
           headers: {
             Host: devBackendUrl.host,
@@ -94,6 +131,13 @@ module.exports = [
             Host: devBackendUrl.host,
           },
         },
+        {
+          context: "/docs/",
+          target: `${devDocsUrl.href.replace(/\/$/, "")}/`,
+          pathRewrite: { "^/docs/": "/" },
+          changeOrigin: true,
+        },
+        ...extraProxy,
       ],
       setupMiddlewares: (middlewares, server) => {
         // Serve replay service worker file

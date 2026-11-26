@@ -1,3 +1,4 @@
+import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
 import { Task } from "@lit/task";
 import type { SlDialog } from "@shoelace-style/shoelace";
@@ -9,6 +10,7 @@ import { when } from "lit/directives/when.js";
 import queryString from "query-string";
 
 import { type ListWorkflow, type Seed, type Workflow } from "./types";
+import { EDIT_DIALOG_PARAM_NAME, EditDialogValues } from "./workflow-detail";
 
 import { BtrixElement } from "@/classes/BtrixElement";
 import type {
@@ -22,7 +24,12 @@ import {
 } from "@/components/ui/pagination";
 import type { BtrixSearchComboboxSelectEvent } from "@/components/ui/search-combobox";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
+import activeCrawlsCountContext, {
+  type ActiveCrawlsCountContext,
+} from "@/context/active-crawls-count";
+import { makeUpdateActiveCrawlsCountEvent } from "@/context/active-crawls-count/events";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import {
   Action,
   type BtrixSelectActionEvent,
@@ -34,25 +41,27 @@ import {
   WorkflowSearch,
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
+import { emptyMessage } from "@/layouts/emptyMessage";
+import { listControls } from "@/layouts/listControls";
 import { WorkflowTab } from "@/routes";
 import { deleteConfirmation } from "@/strings/ui";
 import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
 import { type CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import type { StorageSeedFile, WorkflowSearchValues } from "@/types/workflow";
 import { isApiError } from "@/utils/api";
 import { settingsForDuplicate } from "@/utils/crawl-workflows/settingsForDuplicate";
 import { renderName } from "@/utils/crawler";
 import { isNotEqual } from "@/utils/is-not-equal";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { tw } from "@/utils/tailwind";
 
 type SortField = "lastRun" | "name" | "firstSeed" | "created" | "modified";
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
-
 type Keys<T> = (keyof T)[];
 
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
@@ -60,36 +69,33 @@ const FILTER_BY_CURRENT_USER_STORAGE_KEY =
 const INITIAL_PAGE_SIZE = 10;
 const POLL_INTERVAL_SECONDS = 10;
 
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   lastRun: {
     label: msg("Latest Crawl"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   modified: {
     label: msg("Last Modified"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   name: {
     label: msg("Name"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   firstSeed: {
     label: msg("Crawl Start URL"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   created: {
     label: msg("Date Created"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
 
 const DEFAULT_SORT_BY = {
   field: "lastRun",
-  direction: sortableFields["lastRun"].defaultDirection!,
-} as const;
+  direction: sortableFields["lastRun"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 
 type FilterBy = {
   id?: string;
@@ -109,6 +115,9 @@ type FilterBy = {
 @customElement("btrix-workflows-list")
 @localized()
 export class WorkflowsList extends BtrixElement {
+  @consume({ context: activeCrawlsCountContext, subscribe: true })
+  activeCrawlsCount?: ActiveCrawlsCountContext;
+
   @state({ hasChanged: isNotEqual })
   private pagination: Required<APIPaginationQuery> = {
     page: parsePage(new URLSearchParams(location.search).get("page")),
@@ -127,36 +136,10 @@ export class WorkflowsList extends BtrixElement {
   @state()
   private workflowToDelete?: ListWorkflow;
 
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
 
   private readonly filterBy = new SearchParamsValue<FilterBy>(
@@ -402,10 +385,11 @@ export class WorkflowsList extends BtrixElement {
 
   render() {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-        ${this.renderControls()}
-      </div>
-
+      ${listControls({
+        renderSearchControl: this.renderSearch,
+        renderSortControl: this.renderSortControl,
+        renderFilterControl: this.renderFilterControl,
+      })}
       ${when(
         this.fetchErrorStatusCode,
         () => html`
@@ -476,76 +460,52 @@ export class WorkflowsList extends BtrixElement {
     `;
   }
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
+  private readonly renderSortControl = () => {
+    return html`<sl-select
+        id="sort-select"
+        class="flex-1 md:min-w-[9.2rem]"
+        size="small"
+        pill
+        value=${this.orderBy.value.field}
+        @sl-change=${(e: Event) => {
+          const field = (e.target as HTMLSelectElement).value as SortField;
+          this.orderBy.setValue({
+            field: field,
+            direction: sortableFields[field].defaultDirection,
+          });
+        }}
+      >
+        ${Object.entries(sortableFields).map(
+          ([value, { label }]) => html`
+            <sl-option value=${value}>${label}</sl-option>
+          `,
+        )}
+      </sl-select>
+      <sl-tooltip
+        content=${this.orderBy.value.direction === SortDirection.Ascending
+          ? msg("Sort in descending order")
+          : msg("Sort in ascending order")}
+      >
+        <sl-icon-button
+          name=${this.orderBy.value.direction === SortDirection.Ascending
+            ? "sort-up-alt"
+            : "sort-down"}
+          class="text-base"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
+            ? msg("Sort Descending")
+            : msg("Sort Ascending")}
+          @click=${() => {
+            this.orderBy.setValue({
+              ...this.orderBy.value,
+              direction: this.orderBy.value.direction * -1,
+            });
+          }}
+        ></sl-icon-button>
+      </sl-tooltip>`;
+  };
 
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
-          >
-            ${msg("Sort by:")}
-          </label>
-          <sl-select
-            id="sort-select"
-            class="flex-1 md:min-w-[9.2rem]"
-            size="small"
-            pill
-            value=${this.orderBy.value.field}
-            @sl-change=${(e: Event) => {
-              const field = (e.target as HTMLSelectElement).value as SortField;
-              this.orderBy.setValue({
-                field: field,
-                direction:
-                  sortableFields[field].defaultDirection ||
-                  this.orderBy.value.direction,
-              });
-            }}
-          >
-            ${Object.entries(sortableFields).map(
-              ([value, { label }]) => html`
-                <sl-option value=${value}>${label}</sl-option>
-              `,
-            )}
-          </sl-select>
-          <sl-tooltip
-            content=${this.orderBy.value.direction === "asc"
-              ? msg("Sort in descending order")
-              : msg("Sort in ascending order")}
-          >
-            <sl-icon-button
-              name=${this.orderBy.value.direction === "asc"
-                ? "sort-up-alt"
-                : "sort-down"}
-              class="text-base"
-              label=${this.orderBy.value.direction === "asc"
-                ? msg("Sort Descending")
-                : msg("Sort Ascending")}
-              @click=${() => {
-                this.orderBy.setValue({
-                  ...this.orderBy.value,
-                  direction:
-                    this.orderBy.value.direction === "asc" ? "desc" : "asc",
-                });
-              }}
-            ></sl-icon-button>
-          </sl-tooltip>
-        </div>
-
-        ${this.renderFilters()}
-      </div>
-    `;
-  }
-
-  private renderFilters() {
-    return html`<div class="flex flex-wrap items-center gap-2">
-      <span class="whitespace-nowrap text-sm text-neutral-500">
-        ${msg("Filter by:")}
-      </span>
-
-      <btrix-workflow-schedule-filter
+  private readonly renderFilterControl = () => {
+    return html`<btrix-workflow-schedule-filter
         .schedule=${this.filterBy.value.schedule}
         @btrix-change=${(e: BtrixChangeWorkflowScheduleFilterEvent) => {
           this.filterBy.setValue({
@@ -593,7 +553,7 @@ export class WorkflowsList extends BtrixElement {
           });
         }}
       >
-        ${msg("Running")}
+        ${msg("Active Crawl")}
       </btrix-filter-chip>
 
       <btrix-filter-chip
@@ -620,11 +580,10 @@ export class WorkflowsList extends BtrixElement {
             ${msg("Clear All")}
           </sl-button>
         `,
-      )}
-    </div>`;
-  }
+      )}`;
+  };
 
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-workflow-search
         .searchOptions=${this.searchOptions}
@@ -653,7 +612,7 @@ export class WorkflowsList extends BtrixElement {
       >
       </btrix-workflow-search>
     `;
-  }
+  };
 
   private renderWorkflowList() {
     if (!this.workflowsTask.value) return;
@@ -718,10 +677,7 @@ export class WorkflowsList extends BtrixElement {
               break;
             case Action.EditExclusions:
               this.navigate.to(
-                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}`,
-                {
-                  dialog: "exclusions",
-                },
+                `${this.navigate.orgBasePath}/workflows/${workflow.id}/${WorkflowTab.LatestCrawl}?${new URLSearchParams({ [EDIT_DIALOG_PARAM_NAME]: EditDialogValues.Exclusions }).toString()}`,
               );
               break;
             case Action.Duplicate:
@@ -748,7 +704,7 @@ export class WorkflowsList extends BtrixElement {
         <div class="rounded-lg border bg-neutral-50 p-4">
           <p class="text-center">
             <span class="text-neutral-400"
-              >${msg("No matching Workflows found.")}</span
+              >${msg("No matching workflows found.")}</span
             >
             <button
               class="font-medium text-neutral-500 underline hover:no-underline"
@@ -771,16 +727,63 @@ export class WorkflowsList extends BtrixElement {
       `;
     }
 
-    return html`
-      <div class="border-b border-t py-5">
-        <p class="text-center text-neutral-500">${msg("No Workflows yet.")}</p>
-      </div>
-    `;
+    const message = msg("Your org doesn’t have any crawl workflows yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "crawl-workflows" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
+
+    if (this.appState.isCrawler) {
+      return emptyMessage({
+        classNames: tw`border-y`,
+        message,
+        detail: msg("Schedule, run, and manage crawls with crawl workflows."),
+        actions: html`
+          <sl-button
+            href=${`${this.navigate.orgBasePath}/workflows/new`}
+            @click=${(e: MouseEvent) => {
+              if (e.metaKey) {
+                return;
+              }
+              e.preventDefault();
+
+              this.navigate.to((e.target as HTMLAnchorElement).href, {
+                scopeType: this.appState.userPreferences?.newWorkflowScopeType,
+              });
+            }}
+          >
+            <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+            ${msg("Create New Workflow")}
+          </sl-button>
+          ${guideButton}
+        `,
+      });
+    }
+
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   }
 
   private renderLoading() {
     return html`<div
-      class="my-24 flex w-full items-center justify-center text-3xl"
+      class="my-24 flex w-full items-center justify-center text-2xl"
     >
       <sl-spinner></sl-spinner>
     </div>`;
@@ -811,7 +814,7 @@ export class WorkflowsList extends BtrixElement {
         tagMatch: params.filterByTagsType,
         profileIds: params.filterByProfiles,
         sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: params.orderBy.direction,
       },
       {
         arrayFormat: "none", // For tags
@@ -898,15 +901,28 @@ export class WorkflowsList extends BtrixElement {
   private async cancel(crawlId: ListWorkflow["lastCrawlId"]) {
     if (!crawlId) return;
     if (window.confirm(msg("Are you sure you want to cancel the crawl?"))) {
-      const data = await this.api.fetch<{ success: boolean }>(
-        `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
-        {
-          method: "POST",
-        },
-      );
-      if (data.success) {
-        void this.workflowsTask.run();
-      } else {
+      try {
+        const data = await this.api.fetch<{ success: boolean }>(
+          `/orgs/${this.orgId}/crawls/${crawlId}/cancel`,
+          {
+            method: "POST",
+          },
+        );
+
+        if (data.success) {
+          // Make best guess until next tick
+          this.dispatchEvent(
+            makeUpdateActiveCrawlsCountEvent({
+              userOrg: Math.max(0, (this.activeCrawlsCount?.userOrg ?? 0) - 1),
+            }),
+          );
+          void this.workflowsTask.run();
+        } else {
+          throw data;
+        }
+      } catch (err) {
+        console.debug(err);
+
         this.notify.toast({
           message: msg("Something went wrong, couldn't cancel crawl."),
           variant: "danger",
@@ -926,6 +942,7 @@ export class WorkflowsList extends BtrixElement {
           method: "POST",
         },
       );
+
       if (data.success) {
         void this.workflowsTask.run();
       } else {
@@ -964,6 +981,13 @@ export class WorkflowsList extends BtrixElement {
         icon: "check2-circle",
         duration: 8000,
       });
+
+      // Make best guess until next tick
+      this.dispatchEvent(
+        makeUpdateActiveCrawlsCountEvent({
+          userOrg: (this.activeCrawlsCount?.userOrg ?? 0) + 1,
+        }),
+      );
 
       void this.workflowsTask.run();
       // Scroll to top of list

@@ -29,57 +29,61 @@ import {
   type SearchFields,
 } from "@/features/crawl-workflows/workflow-search";
 import { type BtrixChangeCrawlStateFilterEvent } from "@/features/crawls/crawl-state-filter";
+import { listControls } from "@/layouts/listControls";
 import { OrgTab, WorkflowTab } from "@/routes";
-import type { APIPaginatedList, APIPaginationQuery } from "@/types/api";
+import {
+  APIErrorDetail,
+  type APIPaginatedList,
+  type APIPaginationQuery,
+} from "@/types/api";
 import type { CrawlState } from "@/types/crawlState";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isActive, isSuccessfullyFinished, renderName } from "@/utils/crawler";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 
 type Crawls = APIPaginatedList<Crawl>;
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
-
 type Keys<T> = (keyof T)[];
 
 const POLL_INTERVAL_SECONDS = 5;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY = "btrix.filterByCurrentUser.crawls";
-const sortableFields: Record<
-  string,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   started: {
     label: msg("Date Started"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   finished: {
     label: msg("Date Finished"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   crawlExecSeconds: {
     label: msg("Execution Time"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   pageCount: {
-    label: msg("Pages"),
-    defaultDirection: "desc",
+    label: msg("Pages Crawled"),
+    defaultDirection: SortDirection.Descending,
   },
   fileSize: {
     label: msg("Size"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies Record<
+  string,
+  { label: string; defaultDirection?: SortDirection }
+>;
 
 type SortField = keyof typeof sortableFields;
 
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
-const DEFAULT_SORT_BY: SortBy = {
+const DEFAULT_SORT_BY = {
   field: "started",
-  direction: sortableFields["started"].defaultDirection!,
-};
+  direction: sortableFields["started"].defaultDirection,
+} as const satisfies SortBy<SortField>;
 
 type FilterBy = {
   id?: string;
@@ -108,38 +112,12 @@ export class OrgCrawls extends BtrixElement {
   @state()
   private searchOptions: Record<string, string>[] = [];
 
-  @state()
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy");
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
+
   private readonly filterByCurrentUser = new SearchParamsValue<boolean>(
     this,
     (value, params) => {
@@ -374,10 +352,11 @@ export class OrgCrawls extends BtrixElement {
   render() {
     return html`
       <main>
-        <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-          ${this.renderControls()}
-        </div>
-
+        ${listControls({
+          renderSearchControl: this.renderSearch,
+          renderSortControl: this.renderSortControl,
+          renderFilterControl: this.renderFilterControl,
+        })}
         ${this.crawlsTask.render({
           initial: () => html`
             <div class="my-12 flex w-full items-center justify-center text-2xl">
@@ -403,7 +382,7 @@ export class OrgCrawls extends BtrixElement {
     total,
     pageSize,
   }: APIPaginatedList<Crawl>) => html`
-    <section class="lg:mx-2">
+    <section class="lg:mx-1">
       ${items.length
         ? html`
             <btrix-crawl-list>
@@ -472,75 +451,55 @@ export class OrgCrawls extends BtrixElement {
     </btrix-delete-item-dialog>
   `;
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
+  private readonly renderFilterControl = () => {
+    return html`<btrix-crawl-state-filter
+        .states=${this.filterBy.value.state}
+        @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
+          this.filterBy.setValue({
+            ...this.filterBy.value,
+            state: e.detail.value,
+          });
+        }}
+      ></btrix-crawl-state-filter>
 
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
+      <btrix-tag-filter
+        tagType="workflow-crawl"
+        .tags=${this.filterByTags.value}
+        .type=${this.filterByTagsType.value}
+        @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
+          this.filterByTags.setValue(e.detail.value?.tags || []);
+          this.filterByTagsType.setValue(e.detail.value?.type || "or");
+        }}
+      ></btrix-tag-filter>
+
+      ${this.userInfo?.id
+        ? html`<btrix-filter-chip
+            ?checked=${this.filterByCurrentUser.value}
+            @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
+              const { checked } = e.target as FilterChip;
+              this.filterByCurrentUser.setValue(Boolean(checked));
+            }}
           >
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="whitespace-nowrap text-sm text-neutral-500">
-            ${msg("Filter by:")}
-          </span>
-          <btrix-crawl-state-filter
-            .states=${this.filterBy.value.state}
-            @btrix-change=${(e: BtrixChangeCrawlStateFilterEvent) => {
-              this.filterBy.setValue({
-                ...this.filterBy.value,
-                state: e.detail.value,
-              });
-            }}
-          ></btrix-crawl-state-filter>
+            ${msg("Mine")}
+          </btrix-filter-chip> `
+        : ""}
+      ${when(
+        this.hasFiltersSet,
+        () => html`
+          <sl-button
+            class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
+            size="small"
+            variant="text"
+            @click=${this.clearFilters}
+          >
+            <sl-icon slot="prefix" name="x-lg"></sl-icon>
+            ${msg("Clear All")}
+          </sl-button>
+        `,
+      )}`;
+  };
 
-          <btrix-tag-filter
-            tagType="workflow-crawl"
-            .tags=${this.filterByTags.value}
-            .type=${this.filterByTagsType.value}
-            @btrix-change=${(e: BtrixChangeTagFilterEvent) => {
-              this.filterByTags.setValue(e.detail.value?.tags || []);
-              this.filterByTagsType.setValue(e.detail.value?.type || "or");
-            }}
-          ></btrix-tag-filter>
-
-          ${this.userInfo?.id
-            ? html`<btrix-filter-chip
-                ?checked=${this.filterByCurrentUser.value}
-                @btrix-change=${(e: BtrixFilterChipChangeEvent) => {
-                  const { checked } = e.target as FilterChip;
-                  this.filterByCurrentUser.setValue(Boolean(checked));
-                }}
-              >
-                ${msg("Mine")}
-              </btrix-filter-chip> `
-            : ""}
-          ${when(
-            this.hasFiltersSet,
-            () => html`
-              <sl-button
-                class="[--sl-color-primary-600:var(--sl-color-neutral-500)] part-[label]:font-medium"
-                size="small"
-                variant="text"
-                @click=${this.clearFilters}
-              >
-                <sl-icon slot="prefix" name="x-lg"></sl-icon>
-                ${msg("Clear All")}
-              </sl-button>
-            `,
-          )}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSortControl() {
+  private readonly renderSortControl = () => {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
@@ -554,43 +513,40 @@ export class OrgCrawls extends BtrixElement {
         pill
         value=${this.orderBy.value.field}
         @sl-change=${(e: Event) => {
-          const field = (e.target as HTMLSelectElement).value;
+          const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
+        content=${this.orderBy.value.direction === SortDirection.Ascending
           ? msg("Sort in descending order")
           : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
+          name=${this.orderBy.value.direction === SortDirection.Ascending
             ? "sort-up-alt"
             : "sort-down"}
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
-              direction:
-                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+              direction: this.orderBy.value.direction * -1,
             });
           }}
         ></sl-icon-button>
       </sl-tooltip>
     `;
-  }
+  };
 
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-workflow-search
         .searchOptions=${this.searchOptions}
@@ -624,7 +580,7 @@ export class OrgCrawls extends BtrixElement {
       >
       </btrix-workflow-search>
     `;
-  }
+  };
 
   private readonly renderArchivedItem = (crawl: Crawl) => html`
     <btrix-crawl-list-item
@@ -798,7 +754,7 @@ export class OrgCrawls extends BtrixElement {
           : undefined,
         userid: params.filterByCurrentUser ? this.userInfo!.id : undefined,
         sortBy: params.orderBy.field,
-        sortDirection: params.orderBy.direction === "desc" ? -1 : 1,
+        sortDirection: params.orderBy.direction,
       },
       {
         arrayFormat: "none",
@@ -871,7 +827,7 @@ export class OrgCrawls extends BtrixElement {
       }
       let message = msg(str`Sorry, couldn't delete crawl at this time.`);
       if (isApiError(e)) {
-        if (e.details == "not_allowed") {
+        if (e.errorCode == APIErrorDetail.NotAllowed) {
           message = msg(str`Only org owners can delete other users' crawls.`);
         } else if (e.message) {
           message = e.message;

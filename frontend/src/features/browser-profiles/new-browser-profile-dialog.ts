@@ -1,5 +1,5 @@
 import { localized, msg } from "@lit/localize";
-import { type SlInput } from "@shoelace-style/shoelace";
+import clsx from "clsx";
 import { html, nothing, type PropertyValues } from "lit";
 import {
   customElement,
@@ -15,17 +15,26 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import type { Dialog } from "@/components/ui/dialog";
 import { type SelectCrawlerChangeEvent } from "@/components/ui/select-crawler";
 import { type SelectCrawlerProxyChangeEvent } from "@/components/ui/select-crawler-proxy";
+import type { UrlInput } from "@/components/ui/url-input";
 import {
   CrawlerChannelImage,
   type CrawlerChannel,
   type Proxy,
 } from "@/types/crawler";
+import { isSocialMediaPlatform } from "@/utils/socialMediaPlatform";
+import { tw } from "@/utils/tailwind";
 
+/**
+ * @fires btrix-updated
+ */
 @customElement("btrix-new-browser-profile-dialog")
 @localized()
 export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: String })
   defaultUrl?: string;
+
+  @property({ type: String })
+  defaultName?: string;
 
   @property({ type: String })
   defaultProxyId?: string;
@@ -42,6 +51,9 @@ export class NewBrowserProfileDialog extends BtrixElement {
   @property({ type: Boolean })
   open = false;
 
+  @property({ type: Boolean })
+  navigateOnSave = false;
+
   @state()
   browserOpen = false;
 
@@ -56,6 +68,15 @@ export class NewBrowserProfileDialog extends BtrixElement {
 
   @state()
   private proxyId: string | null = null;
+
+  @state()
+  private socialMediaPlatform = false;
+
+  @state()
+  private showBestPractices = false;
+
+  @query("btrix-url-input")
+  private readonly urlInput?: UrlInput;
 
   @query("btrix-dialog")
   private readonly dialog?: Dialog;
@@ -77,6 +98,18 @@ export class NewBrowserProfileDialog extends BtrixElement {
           this.crawlerChannel) ||
         this.defaultCrawlerChannel;
     }
+
+    if (changedProperties.has("defaultUrl") && this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
+  }
+
+  show() {
+    void this.dialog?.show();
+  }
+
+  hide() {
+    void this.dialog?.hide();
   }
 
   render() {
@@ -84,20 +117,34 @@ export class NewBrowserProfileDialog extends BtrixElement {
     const proxyServers = this.proxyServers;
     const showChannels = channels && channels.length > 1;
     const showProxies = proxyServers?.length;
+    const bestPracticesToggle = html`
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 font-medium"
+        aria-expanded=${this.showBestPractices}
+        aria-controls="profile-best-practices"
+        @click=${() => (this.showBestPractices = !this.showBestPractices)}
+      >
+        ${this.showBestPractices
+          ? html`${msg("Hide best practices")}
+              <sl-icon name="chevron-up"></sl-icon>`
+          : html` ${msg("Read best practices")}
+              <sl-icon name="chevron-down"></sl-icon>`}
+      </button>
+    `;
 
     return html`
       <btrix-dialog
         .label=${msg("New Browser Profile")}
         .open=${this.open}
         @sl-initial-focus=${async (e: CustomEvent) => {
-          const nameInput = (await this.form).querySelector<SlInput>(
-            "btrix-url-input",
-          );
-          if (nameInput) {
+          if (this.urlInput) {
             e.preventDefault();
-            nameInput.focus();
+            this.urlInput.focus();
           }
         }}
+        @sl-hide=${() => (this.open = false)}
+        @sl-after-hide=${async () => (await this.form).reset()}
       >
         <form
           id="browserProfileForm"
@@ -113,8 +160,44 @@ export class NewBrowserProfileDialog extends BtrixElement {
               "The first page of the site to load, like a login page.",
             )}
             required
+            @sl-input=${this.checkPlatformOnInput}
+            @paste=${this.checkPlatformOnInput}
           >
           </btrix-url-input>
+
+          <div
+            class=${clsx(
+              tw`form-help-text`,
+              this.socialMediaPlatform && tw`text-success`,
+            )}
+          >
+            ${this.socialMediaPlatform
+              ? msg("It looks like you’re visiting a social media site.")
+              : msg("Logging into a public site?")}
+            ${when(!this.showBestPractices, () => bestPracticesToggle)}
+          </div>
+
+          <div
+            id="profile-best-practices"
+            ?hidden=${!this.showBestPractices}
+            class="form-help-text"
+          >
+            <p class="mb-2">
+              ${msg(
+                "Avoid using your personal accounts when logging into public websites.",
+              )}
+              ${msg(
+                "While your username and password are never saved by Browsertrix, your finished web archive may still contain sensitive data like cookies and login tokens.",
+              )}
+            </p>
+            <p class="mb-2">
+              ${msg(
+                "Always use an account dedicated to archiving unless your intention is to archive private content accessible only from designated accounts.",
+              )}
+            </p>
+
+            ${bestPracticesToggle}
+          </div>
 
           ${showProxies
             ? html`
@@ -144,7 +227,11 @@ export class NewBrowserProfileDialog extends BtrixElement {
             label=${msg("Profile Name")}
             name="profile-name"
             placeholder=${msg("example.com")}
-            value=${ifDefined(this.defaultUrl)}
+            value=${ifDefined(
+              this.defaultName ??
+                (this.defaultUrl &&
+                  new URL(this.defaultUrl).hostname.slice(0, 50)),
+            )}
             help-text=${msg(
               "Defaults to the primary site's domain name if omitted.",
             )}
@@ -197,21 +284,37 @@ export class NewBrowserProfileDialog extends BtrixElement {
               proxyId: this.proxyId ?? undefined,
             }}
             ?open=${this.browserOpen}
-            @btrix-updated=${() => {}}
-            @sl-after-hide=${() => {}}
+            ?navigateOnSave=${this.navigateOnSave}
+            @sl-hide=${async (e: Event) => {
+              e.stopPropagation();
+              this.browserOpen = false;
+              this.open = false;
+              this.hide();
+            }}
           >
           </btrix-profile-browser-dialog>`,
       )}
     `;
   }
 
-  private async hideDialog() {
-    void (await this.form).closest<Dialog>("btrix-dialog")?.hide();
+  private onReset() {
+    this.urlInput?.setAttribute("value", this.defaultUrl ?? "");
+    this.urlInput?.setCustomValidity("");
+
+    if (this.defaultUrl) {
+      this.socialMediaPlatform = isSocialMediaPlatform(this.defaultUrl);
+    }
+
+    if (this.dialog?.open) {
+      this.hide();
+    }
   }
 
-  private onReset() {
-    void this.hideDialog();
-  }
+  private readonly checkPlatformOnInput = (e: Event) => {
+    const value = (e.target as UrlInput).value;
+
+    this.socialMediaPlatform = isSocialMediaPlatform(value);
+  };
 
   private async onSubmit(event: SubmitEvent) {
     event.preventDefault();

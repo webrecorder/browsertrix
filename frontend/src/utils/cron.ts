@@ -241,9 +241,9 @@ export function getUTCSchedule({
   localDate.setHours(+hour + periodOffset);
   localDate.setMinutes(+minute);
 
-  if (interval === "monthly" && dayOfMonth) {
+  if (interval === "monthly" && dayOfMonth !== undefined) {
     localDate.setDate(dayOfMonth);
-  } else if (interval == "weekly" && dayOfWeek) {
+  } else if (interval == "weekly" && dayOfWeek !== undefined) {
     localDate.setDate(localDate.getDate() + dayOfWeek - localDate.getDay());
   }
 

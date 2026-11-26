@@ -60,7 +60,8 @@ export class DetailPageTitle extends TailwindElement {
 
     const remainder = item.seedCount - 1;
 
-    return html`<span class="max-w-[30ch] truncate">${item.firstSeed}</span
+    return html`<span class="max-w-[--btrix-name-max-width] truncate"
+        >${item.firstSeed}</span
       >${remainder
         ? html` <span class="whitespace-nowrap text-neutral-500"
             >+${localize.number(remainder)} ${pluralOf("URLs", remainder)}</span

@@ -7,6 +7,7 @@ import {
   type ArchivedItem,
   type Crawl,
   type CrawlReplay,
+  type ListArchivedItem,
   type ProxiesAPIResponse,
   type Upload,
   type Workflow,
@@ -15,8 +16,11 @@ import {
   FAILED_STATES,
   PAUSED_STATES,
   RUNNING_AND_WAITING_STATES,
+  RUNNING_STATES,
   SUCCESSFUL_AND_FAILED_STATES,
   SUCCESSFUL_STATES,
+  UPLOAD_STATES,
+  type CrawlState,
 } from "@/types/crawlState";
 import type { OrgData } from "@/types/org";
 import type { QARun } from "@/types/qa";
@@ -25,9 +29,15 @@ import localize from "@/utils/localize";
 import { pluralOf } from "@/utils/pluralize";
 
 // Match backend TYPE_RUNNING_AND_WAITING_STATES in models.py
-export const activeCrawlStates = RUNNING_AND_WAITING_STATES;
-export const finishedCrawlStates = SUCCESSFUL_STATES;
+export const activeCrawlStates =
+  RUNNING_AND_WAITING_STATES as readonly CrawlState[];
+export const finishedCrawlStates = SUCCESSFUL_STATES as readonly CrawlState[];
 export const inactiveCrawlStates = SUCCESSFUL_AND_FAILED_STATES;
+export const uploadStates = [
+  "complete",
+  "failed",
+  ...UPLOAD_STATES,
+] as readonly CrawlState[];
 
 export const DEFAULT_MAX_SCALE = 8;
 
@@ -39,7 +49,7 @@ const DEPTH_SUPPORTED_SCOPES = [
   ScopeType.Any,
 ];
 
-export function isCrawl(item: Crawl | Upload): item is Crawl {
+export function isCrawl(item: ArchivedItem | ListArchivedItem): item is Crawl {
   return item.type === "crawl";
 }
 
@@ -49,8 +59,20 @@ export function isCrawlReplay(
   return isCrawl(item) && "config" in item;
 }
 
-export function isActive({ state }: Partial<Crawl | QARun>) {
-  return (activeCrawlStates as readonly (typeof state)[]).includes(state);
+export function isRunning({ state }: Partial<Crawl>) {
+  return (RUNNING_STATES as readonly (typeof state)[]).includes(state);
+}
+
+export function isRateLimited(
+  crawl: Crawl,
+): crawl is Crawl & { rateLimitedAt: string } {
+  return crawl.state === "rate-limited";
+}
+
+export function isActive({ state }: Partial<Crawl | Upload | QARun>) {
+  return (
+    [...activeCrawlStates, ...UPLOAD_STATES] as readonly (typeof state)[]
+  ).includes(state);
 }
 
 export function isSuccessfullyFinished({ state }: { state: string | null }) {
@@ -59,6 +81,12 @@ export function isSuccessfullyFinished({ state }: { state: string | null }) {
 
 export function isSkipped({ state }: { state: string | null }) {
   return state?.startsWith("skipped");
+}
+
+export function isFailed({ state }: { state: string | null }) {
+  return (
+    state && (FAILED_STATES as readonly string[]).some((str) => str === state)
+  );
 }
 
 export function isNotFailed({ state }: { state: string | null }) {
@@ -110,7 +138,7 @@ export function renderName(
     return html`<sl-skeleton class="inline-block h-8 w-60"></sl-skeleton>`;
 
   if (item.name)
-    return html`<div class=${clsx("truncate", className)}>${item.name}</div>`;
+    return html`<span class=${clsx("truncate", className)}>${item.name}</span>`;
   if (item.firstSeed && item.seedCount) {
     const remainder = item.seedCount - 1;
     let nameSuffix: string | TemplateResult<1> = "";
@@ -121,8 +149,13 @@ export function renderName(
       </span>`;
     }
     return html`
-      <span class="inline-flex overflow-hidden whitespace-nowrap">
-        <div class=${clsx("min-w-0 truncate", className)}>
+      <span class="inline-flex max-w-full overflow-hidden whitespace-nowrap">
+        <div
+          class=${clsx(
+            "min-w-0 truncate max-w-[--btrix-name-max-width]",
+            className,
+          )}
+        >
           ${item.firstSeed}
         </div>
         ${nameSuffix}

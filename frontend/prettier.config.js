@@ -4,6 +4,7 @@ module.exports = {
     "@ianvs/prettier-plugin-sort-imports",
     "@prettier/plugin-xml",
     "prettier-plugin-tailwindcss",
+    "prettier-plugin-ejs",
   ],
   tailwindFunctions: ["tw"],
   importOrder: [

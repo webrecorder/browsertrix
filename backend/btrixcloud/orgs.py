@@ -69,6 +69,7 @@ from .models import (
     OrgReadOnlyOnCancel,
     OrgReadOnlyUpdate,
     OrgSlugsResponse,
+    OrgStorageResults,
     OrgWebhookUrls,
     PageWithAllQA,
     PaginatedInvitePendingResponse,
@@ -1010,12 +1011,19 @@ class OrgOps(BaseOrgs):
                 org_owners.append(key)
         return org_owners
 
-    async def inc_org_bytes_stored(self, oid: UUID, size: int, type_="crawl") -> None:
+    async def inc_org_bytes_stored(
+        self, oid: UUID, size: int, type_="crawl", active_crawl: bool = False
+    ) -> None:
         """Increase org bytesStored count (pass negative value to subtract)."""
         if type_ == "crawl":
+            crawl_inc = {"bytesStored": size, "bytesStoredCrawls": size}
+            if active_crawl:
+                crawl_inc["bytesStoredActiveCrawls"] = size
+            else:
+                crawl_inc["bytesStoredFinishedCrawls"] = size
             await self.orgs.find_one_and_update(
                 {"_id": oid},
-                {"$inc": {"bytesStored": size, "bytesStoredCrawls": size}},
+                {"$inc": crawl_inc},
             )
         elif type_ == "upload":
             await self.orgs.find_one_and_update(
@@ -1027,6 +1035,31 @@ class OrgOps(BaseOrgs):
                 {"_id": oid},
                 {"$inc": {"bytesStored": size, "bytesStoredProfiles": size}},
             )
+
+    async def update_org_bytes_stored_finished_crawl(
+        self, crawl_id: str, oid: UUID
+    ) -> None:
+        """Move finished crawl's file size from active to finished crawl bytes stored on org"""
+        crawl = await self.base_crawl_ops.get_base_crawl(crawl_id)
+        if not crawl.fileSize > 0:
+            return
+
+        logger.debug(
+            "crawl_finished_active_to_finished_bytes",
+            oid=oid,
+            crawl_id=crawl_id,
+            size=crawl.fileSize,
+        )
+
+        await self.orgs.find_one_and_update(
+            {"_id": oid},
+            {
+                "$inc": {
+                    "bytesStoredActiveCrawls": -crawl.fileSize,
+                    "bytesStoredFinishedCrawls": crawl.fileSize,
+                }
+            },
+        )
 
     def can_write_data(self, org: Organization, include_time=True) -> None:
         """check crawl quotas and readOnly state, throw if can not run"""
@@ -1200,6 +1233,8 @@ class OrgOps(BaseOrgs):
         return {
             "storageUsedBytes": org.bytesStored,
             "storageUsedCrawls": org.bytesStoredCrawls,
+            "storageUsedFinishedCrawls": org.bytesStoredFinishedCrawls,
+            "storageUsedActiveCrawls": org.bytesStoredActiveCrawls,
             "storageUsedUploads": org.bytesStoredUploads,
             "storageUsedProfiles": org.bytesStoredProfiles,
             "storageUsedSeedFiles": org.bytesStoredSeedFiles or 0,
@@ -1376,6 +1411,7 @@ class OrgOps(BaseOrgs):
         stream_file_object,
         ignore_version: bool = False,
         storage_name: str | None = None,
+        pages_batch_size=100,
     ) -> None:
         """Import org from exported org JSON
 
@@ -1488,8 +1524,8 @@ class OrgOps(BaseOrgs):
                     workflow[userid_field] = user_id_map[old_userid]
 
             # Convert scale to browser windows and respect limits
-            workflow_scale = max(workflow.get("scale", 1), MAX_CRAWL_SCALE)
             if workflow.get("browserWindows") is None:
+                workflow_scale = max(workflow.get("scale") or 1, MAX_CRAWL_SCALE)
                 workflow_browser_windows = browser_windows_from_scale(workflow_scale)
                 workflow["browserWindows"] = max(
                     workflow_browser_windows, MAX_BROWSER_WINDOWS
@@ -1565,9 +1601,19 @@ class OrgOps(BaseOrgs):
             )
 
         # pages
+        pages_buffer: list[PageWithAllQA] = []
+
         for page in org_data.get("pages", []):
             page = json_stream.to_standard_types(page)
-            await self.pages_db.insert_one(PageWithAllQA.from_dict(page).to_dict())
+            pages_buffer.append(PageWithAllQA.from_dict(page))
+
+            if len(pages_buffer) % pages_batch_size == 0:
+                await self.page_ops.add_pages_to_db(pages_buffer, crawl_id=None)
+                pages_buffer = []
+
+        if pages_buffer:
+            await self.page_ops.add_pages_to_db(pages_buffer, crawl_id=None)
+            pages_buffer = []
 
         # collections
         for coll_raw in org_data.get("collections", []):
@@ -1629,8 +1675,14 @@ class OrgOps(BaseOrgs):
             await self.profile_ops.delete_profile(profile["_id"], org)
 
         # Delete collections
-        async for coll in self.colls_db.find({"oid": org.id}, projection=["_id"]):
-            await self.coll_ops.delete_collection(coll["_id"], org)
+        async for coll_raw in self.colls_db.find({"oid": org.id}, projection=["_id"]):
+            coll = await self.coll_ops.get_collection(coll_raw["_id"], org.id)
+
+            # delete_collection refuses to delete a collection with a dedupe index
+            if coll.indexState:
+                await self.coll_ops.delete_dedupe_index(coll, org)
+
+            await self.coll_ops.delete_collection(coll.id, org)
 
         # Delete users that only belong to this org
         for org_user_id in org.users.keys():
@@ -1647,48 +1699,37 @@ class OrgOps(BaseOrgs):
         # Delete invites
         await self.invites_db.delete_many({"oid": org.id})
 
-        # Delete org
-        await self.orgs.delete_one({"_id": org.id})
-
         # Delete all background jobs except this one from database,
         # so that we are left with some record of the org having
         # existed and successfully deleted
-        await self.orgs.delete_one(
-            {"_id": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
+        await self.jobs_db.delete_many(
+            {"oid": org.id, "type": {"$ne": BgJobType.DELETE_ORG}}
         )
 
-    async def recalculate_storage(self, org: Organization) -> dict[str, bool]:
-        """Recalculate org storage use"""
+        # Delete org last so that if the job fails at any point before
+        # this and need to be retried, the org still exists
+        await self.orgs.delete_one({"_id": org.id})
+
+    async def recalculate_and_update_storage(
+        self, org: Organization
+    ) -> dict[str, bool]:
+        """Recalculate storage totals for org and update database"""
         try:
-            (
-                total_crawl_size,
-                crawl_size,
-                upload_size,
-            ) = await self.base_crawl_ops.calculate_org_crawl_file_storage(
-                org.id,
-            )
-            profile_size = await self.profile_ops.calculate_org_profile_file_storage(
-                org.id
-            )
-
-            seed_file_size = await self.file_ops.calculate_seed_file_storage(org.id)
-
-            thumbnail_size = await self.coll_ops.calculate_thumbnail_storage(org.id)
-
-            user_file_size = seed_file_size + thumbnail_size
-
-            org_size = total_crawl_size + profile_size + user_file_size
+            org_storage = await self.recalculate_storage(org)
 
             await self.orgs.find_one_and_update(
                 {"_id": org.id},
                 {
                     "$set": {
-                        "bytesStored": org_size,
-                        "bytesStoredCrawls": crawl_size,
-                        "bytesStoredUploads": upload_size,
-                        "bytesStoredProfiles": profile_size,
-                        "bytesStoredSeedFiles": seed_file_size,
-                        "bytesStoredThumbnails": thumbnail_size,
+                        "bytesStored": org_storage.total_org,
+                        "bytesStoredCrawls": org_storage.crawls,
+                        "bytesStoredFinishedCrawls": org_storage.crawls_finished,
+                        "bytesStoredActiveCrawls": org_storage.crawls_active,
+                        "bytesStoredUploads": org_storage.uploads,
+                        "bytesStoredProfiles": org_storage.profiles,
+                        "bytesStoredSeedFiles": org_storage.seed_files,
+                        "bytesStoredThumbnails": org_storage.thumbnails,
+                        "bytesStoredDedupeIndexes": org_storage.dedupe_indexes,
                     }
                 },
             )
@@ -1699,6 +1740,38 @@ class OrgOps(BaseOrgs):
             )
 
         return {"success": True}
+
+    async def recalculate_storage(self, org: Organization) -> OrgStorageResults:
+        """Recalculate and return org storage totals"""
+
+        org_crawl_storage = await self.base_crawl_ops.calculate_org_crawl_file_storage(
+            org.id,
+        )
+
+        profile_size = await self.profile_ops.calculate_org_profile_file_storage(org.id)
+
+        seed_file_size = await self.file_ops.calculate_seed_file_storage(org.id)
+
+        (
+            thumbnail_size,
+            dedupe_index_size,
+        ) = await self.coll_ops.calculate_collection_storage(org.id)
+
+        user_file_size = seed_file_size + thumbnail_size + dedupe_index_size
+
+        org_size = org_crawl_storage.total_crawlfiles + profile_size + user_file_size
+
+        return OrgStorageResults(
+            total_org=org_size,
+            crawls=org_crawl_storage.crawls,
+            crawls_finished=org_crawl_storage.crawls_finished,
+            crawls_active=org_crawl_storage.crawls_active,
+            uploads=org_crawl_storage.uploads,
+            profiles=profile_size,
+            seed_files=seed_file_size,
+            thumbnails=thumbnail_size,
+            dedupe_indexes=dedupe_index_size,
+        )
 
     async def set_last_crawl_finished(self, oid: UUID):
         """Recalculate and set lastCrawlFinished field on org"""
@@ -1752,6 +1825,23 @@ class OrgOps(BaseOrgs):
                 coll_id=coll_id,
                 oid=org.id,
                 unstructured_message=f"Error removing coll {coll_id} from org {org.id} defaults",
+            )
+
+    async def remove_profile_from_crawling_defaults(
+        self, profileid: UUID, org: Organization
+    ):
+        """Remove profile from crawling defaults"""
+        try:
+            await self.orgs.find_one_and_update(
+                {"_id": org.id, "crawlingDefaults.profileid": profileid},
+                {"$set": {"crawlingDefaults.profileid": None}},
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            logger.exception(
+                "org_profile_defaults_remove_error",
+                profileid=profileid,
+                oid=org.id,
             )
 
     async def update_org_note(

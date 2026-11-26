@@ -139,7 +139,7 @@ export class SyntaxInput extends FormControl(TailwindElement) {
             const value = input.value;
 
             if (input.validity.customError) {
-              input.setCustomValidity("");
+              this.setCustomValidity("");
             }
 
             if (input.validity.valid) {

@@ -1,4 +1,12 @@
-# Change Your Name, Email, or Password
+# Change Your Name, Email, or Preferences
+
+Tap the **Account** button at the top every page to access your profile settings.
+
+!!! Tip "Browsertrix Subscribers"
+    You can access your account settings using this link: [app.browsertrix.com/account/settings](https://app.browsertrix.com/account/settings).
+
+!!! Question "Looking for billing information?"
+    Browsertrix billing is managed through the organization. See [Org Billing](org-settings.md#billing)
 
 ## Display Name
 
@@ -8,6 +16,6 @@ Specify how you want your name to be shown to other org members. For example, yo
 
 Update the email that you use to log in and receive Browsertrix emails from.
 
-## Password
+## Language
 
-Update the password that you use to login. For your security, we enforce strong passwords. For more information on we secure your account by enforcing strong passwords, see [zxcvbn](https://zxcvbn-ts.github.io/zxcvbn/guide/).
+Choose your preferred language for viewing Browsertrix. See [list of translated languages](https://hosted.weblate.org/projects/browsertrix/)

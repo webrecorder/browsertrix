@@ -33,6 +33,7 @@ from .models import (
     Collection,
     CollectionAddRemove,
     CollectionAllResponse,
+    CollectionMissingRequiresCrawls,
     CollectionSearchValuesResponse,
     CollectionThumbnailSource,
     CollIdName,
@@ -264,7 +265,7 @@ class CollectionOps:
 
         modified = dt_now()
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
+            {"_id": coll_id, "oid": org.id},
             {"$set": {"modified": modified}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -298,7 +299,7 @@ class CollectionOps:
         """Update collection after crawls are removed or deleted outright"""
         modified = dt_now()
         result = await self.collections.find_one_and_update(
-            {"_id": coll_id},
+            {"_id": coll_id, "oid": org.id},
             {"$set": {"modified": modified}},
             return_document=pymongo.ReturnDocument.AFTER,
         )
@@ -332,7 +333,9 @@ class CollectionOps:
     async def get_collection_raw(
         self, coll_id: UUID, oid: UUID, public_or_unlisted_only: bool = False
     ) -> dict[str, Any]:
-        """Get collection by id as dict from database"""
+        """Get collection by id as dict from database
+
+        If `public_or_unlisted_only`, only public or unlisted collections are returned"""
         query: dict[str, object] = {"_id": coll_id, "oid": oid}
         if public_or_unlisted_only:
             query["access"] = {"$in": ["public", "unlisted"]}
@@ -440,7 +443,7 @@ class CollectionOps:
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = UserFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_file_out(
+            result["thumbnail"], _ = await image_file.get_file_out(
                 org, self.storage_ops, headers
             )
 
@@ -488,7 +491,7 @@ class CollectionOps:
         thumbnail = result.get("thumbnail")
         if thumbnail:
             image_file = UserFile(**thumbnail)
-            result["thumbnail"] = await image_file.get_public_file_out(
+            result["thumbnail"], _ = await image_file.get_public_file_out(
                 org, self.storage_ops, headers
             )
 
@@ -511,7 +514,7 @@ class CollectionOps:
             raise HTTPException(status_code=404, detail="thumbnail_not_found")
 
         image_file = UserFile(**thumbnail)
-        image_file_out = await image_file.get_public_file_out(
+        image_file_out, _ = await image_file.get_public_file_out(
             org, self.storage_ops, headers
         )
 
@@ -628,11 +631,11 @@ class CollectionOps:
                 image_file = UserFile(**thumbnail)
 
                 if public_colls_out:
-                    res["thumbnail"] = await image_file.get_public_file_out(
+                    res["thumbnail"], _ = await image_file.get_public_file_out(
                         org, self.storage_ops, headers
                     )
                 else:
-                    res["thumbnail"] = await image_file.get_file_out(
+                    res["thumbnail"], _ = await image_file.get_file_out(
                         org, self.storage_ops, headers
                     )
 
@@ -691,13 +694,11 @@ class CollectionOps:
         public_or_unlisted_only=False,
     ) -> list[str]:
         """Return list of crawl ids in collection, including only public collections"""
-        crawl_ids = []
-        # ensure collection is public or unlisted, else throw here
-        if public_or_unlisted_only:
-            await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
+        await self.get_collection_raw(coll_id, oid, public_or_unlisted_only)
 
+        crawl_ids = []
         async for crawl_raw in self.crawls.find(
-            {"collectionIds": coll_id}, projection=["_id"]
+            {"collectionIds": coll_id, "oid": oid}, projection=["_id"]
         ):
             crawl_id = crawl_raw.get("_id")
             if crawl_id:
@@ -965,6 +966,30 @@ class CollectionOps:
             {"_id": coll_id, "oid": oid}, projection={"indexState"}
         )
         return coll and coll.get("indexState") is not None
+
+    async def get_missing_requires_crawls(
+        self, coll_id: UUID, org: Organization
+    ) -> list[str]:
+        """Return crawl ids required as dependencies by crawls in this
+        collection that are no longer present in the org."""
+        # 404 if collection doesn't exist or belongs to another org
+        await self.get_collection_raw(coll_id, org.id)
+
+        required = [
+            crawl_id
+            for crawl_id in await self.crawls.distinct(
+                "requiresCrawls",
+                {"oid": org.id, "collectionIds": coll_id},
+            )
+            if crawl_id is not None
+        ]
+
+        if not required:
+            return []
+
+        # only report dependencies that are gone from the org entirely; crawls
+        # that still exist but were merely removed from this collection are fine
+        return await self.crawl_ops.find_missing_crawls(required, org.id)
 
     # END DEDUPE OPS
 
@@ -1333,17 +1358,25 @@ class CollectionOps:
 
         return {"deleted": True}
 
-    async def calculate_thumbnail_storage(self, oid: UUID) -> int:
-        """Calculate storage for thumbnails in org"""
-        total_size = 0
+    async def calculate_collection_storage(self, oid: UUID) -> tuple[int, int]:
+        """Calculate storage for thumbnails and dedupe indexes in org
+
+        Returns tuple of (thumbnail_size, dedupe_index_size), in bytes.
+        """
+        thumbnail_size = 0
+        dedupe_index_size = 0
 
         cursor = self.collections.find({"oid": oid})
         async for coll_dict in cursor:
-            file_ = coll_dict.get("thumbnail")
-            if file_:
-                total_size += file_.get("size", 0)
+            thumbnail_file = coll_dict.get("thumbnail")
+            if thumbnail_file:
+                thumbnail_size += thumbnail_file.get("size", 0)
 
-        return total_size
+            dedupe_index_file = coll_dict.get("indexFile")
+            if dedupe_index_file:
+                dedupe_index_size += dedupe_index_file.get("size", 0)
+
+        return thumbnail_size, dedupe_index_size
 
     async def get_running_updates_count(self, coll_id: UUID, org: Organization) -> int:
         """Return count of running collection stats update background jobs"""
@@ -1726,6 +1759,19 @@ def init_collections_api(
         return await colls.delete_thumbnail(coll, org)
 
     # DEDUPE API
+
+    @app.get(
+        "/orgs/{oid}/collections/{coll_id}/dedupeIndex/missingRequiresCrawls",
+        tags=["collections", "dedupe"],
+        response_model=CollectionMissingRequiresCrawls,
+    )
+    async def get_missing_dependencies(
+        coll_id: UUID,
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return CollectionMissingRequiresCrawls(
+            missingRequiresCrawls=await colls.get_missing_requires_crawls(coll_id, org)
+        )
 
     @app.post(
         "/orgs/{oid}/collections/{coll_id}/dedupeIndex/create",

@@ -1,4 +1,5 @@
 import { localized, msg, str } from "@lit/localize";
+import { type LocalizeController } from "@shoelace-style/localize";
 import type { SlAlert, SlIcon } from "@shoelace-style/shoelace";
 import { differenceInHours } from "date-fns/fp";
 import { html, type TemplateResult } from "lit";
@@ -6,10 +7,28 @@ import { customElement } from "lit/decorators.js";
 import { when } from "lit/directives/when.js";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { type NavigateController } from "@/controllers/navigate";
 import { SubscriptionStatus } from "@/types/billing";
-import { OrgReadOnlyReason } from "@/types/org";
+import { OrgReadOnlyReason, type OrgData } from "@/types/org";
+import globalLocalize, { type Localize } from "@/utils/localize";
+import appState from "@/utils/state";
+
+export enum OrgStatusName {
+  DeletionPending = "deletion-pending",
+  TrialCancelPending = "trial-cancel-pending",
+  TrialEnding = "trial-ending",
+  Trialing = "trialing",
+  SubscriptionEnding = "subscription-ending",
+  SubscriptionPaused = "subscription-paused",
+  SubscriptionCanceled = "subscription-canceled",
+  SubscriptionReadonly = "readonly",
+  StorageQuotaReached = "storage-quota-reached",
+  ExecMinutesQuotaReachedPro = "exec-minutes-quota-reached-pro",
+  ExecMinutesQuotaReached = "exec-minutes-quota-reached",
+}
 
 type Alert = {
+  name: OrgStatusName;
   test: () => boolean;
   variant?: SlAlert["variant"];
   content: () => {
@@ -34,11 +53,44 @@ const iconForVariant = (
 };
 
 // show banner as warning if <= this many days of trial is left
-const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
+export const TRIAL_DAYS_LEFT_SHOW_WARNING = 4;
 
 @customElement("btrix-org-status-banner")
 @localized()
 export class OrgStatusBanner extends BtrixElement {
+  static trialInfo(
+    org: OrgData,
+    localize: LocalizeController | Localize = globalLocalize,
+  ) {
+    let hoursUntilTrialEnd = 0;
+    let daysUntilTrialEnd = 0;
+    let trialEndDate = "";
+    const futureCancelDate = org.subscription?.futureCancelDate || null;
+
+    if (futureCancelDate) {
+      hoursUntilTrialEnd = differenceInHours(
+        new Date(),
+        new Date(futureCancelDate),
+      );
+      daysUntilTrialEnd = Math.ceil(hoursUntilTrialEnd / 24);
+
+      trialEndDate = localize.date(futureCancelDate, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        timeZoneName: "short",
+      });
+    }
+
+    return {
+      hoursUntilTrialEnd,
+      daysUntilTrialEnd,
+      trialEndDate,
+      futureCancelDate,
+    };
+  }
+
   render() {
     if (!this.org) return;
 
@@ -62,16 +114,24 @@ export class OrgStatusBanner extends BtrixElement {
     `;
   }
 
-  /**
-   * Alerts ordered by priority
-   */
   private get alerts(): Alert[] {
     if (!this.org) return [];
 
+    return OrgStatusBanner.alerts(this.org, this.localize, this.navigate);
+  }
+
+  /**
+   * Alerts ordered by priority
+   */
+  static alerts(
+    org: OrgData,
+    localize: LocalizeController | Localize = globalLocalize,
+    navigate?: NavigateController,
+  ): Alert[] {
     const billingTabLink = html`<a
       class="underline hover:no-underline"
-      href=${`${this.navigate.orgBasePath}/settings/billing`}
-      @click=${this.navigate.link}
+      href=${`${navigate?.orgBasePath ?? ""}/settings/billing`}
+      @click=${navigate?.link}
       >${msg("billing settings")}</a
     >`;
 
@@ -81,38 +141,29 @@ export class OrgStatusBanner extends BtrixElement {
       subscription,
       storageQuotaReached,
       execMinutesQuotaReached,
-    } = this.org;
+    } = org;
     const readOnlyOnCancel =
-      subscription?.readOnlyOnCancel ?? this.org.readOnlyOnCancel;
+      subscription?.readOnlyOnCancel ?? org.readOnlyOnCancel;
 
-    let hoursUntilTrialEnd = 0;
-    let daysUntilTrialEnd = 0;
-    let trialEndDate = "";
-    const futureCancelDate = subscription?.futureCancelDate || null;
+    const {
+      hoursUntilTrialEnd,
+      daysUntilTrialEnd,
+      trialEndDate,
+      futureCancelDate,
+    } = OrgStatusBanner.trialInfo(org, localize);
 
-    if (futureCancelDate) {
-      hoursUntilTrialEnd = differenceInHours(
-        new Date(),
-        new Date(futureCancelDate),
-      );
-      daysUntilTrialEnd = Math.ceil(hoursUntilTrialEnd / 24);
-
-      trialEndDate = this.localize.date(futureCancelDate, {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        timeZoneName: "short",
-      });
-    }
+    const billingEnabled = !!appState.env.billingEnabled;
 
     const isCancelingTrial =
       subscription?.status == SubscriptionStatus.TrialingCanceled;
     const isTrial =
       subscription?.status === SubscriptionStatus.Trialing || isCancelingTrial;
 
+    const sales_email_address = appState.settings?.salesEmail;
+
     return [
       {
+        name: OrgStatusName.DeletionPending,
         test: () =>
           !readOnly && !readOnlyOnCancel && !!futureCancelDate && !isTrial,
 
@@ -144,6 +195,11 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
+        name: isCancelingTrial
+          ? OrgStatusName.TrialCancelPending
+          : isTrial && daysUntilTrialEnd <= TRIAL_DAYS_LEFT_SHOW_WARNING
+            ? OrgStatusName.TrialEnding
+            : OrgStatusName.Trialing,
         test: () =>
           !readOnly && !readOnlyOnCancel && !!futureCancelDate && isTrial,
         variant: isCancelingTrial
@@ -192,6 +248,7 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
+        name: OrgStatusName.SubscriptionEnding,
         test: () =>
           !readOnly && (readOnlyOnCancel ?? false) && !!futureCancelDate,
 
@@ -220,6 +277,7 @@ export class OrgStatusBanner extends BtrixElement {
         },
       },
       {
+        name: OrgStatusName.SubscriptionPaused,
         test: () =>
           !!readOnly && readOnlyReason === OrgReadOnlyReason.SubscriptionPaused,
 
@@ -232,6 +290,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        name: OrgStatusName.SubscriptionCanceled,
         test: () =>
           !!readOnly &&
           readOnlyReason === OrgReadOnlyReason.SubscriptionCancelled,
@@ -244,6 +303,7 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        name: OrgStatusName.SubscriptionReadonly,
         test: () => !!readOnly,
 
         content: () => ({
@@ -252,33 +312,40 @@ export class OrgStatusBanner extends BtrixElement {
         }),
       },
       {
+        name: OrgStatusName.StorageQuotaReached,
         test: () => !readOnly && !!storageQuotaReached,
         content: () => ({
           title: msg(str`Your org has reached its storage limit`),
-          detail: msg(
-            str`To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact ${this.appState.settings?.salesEmail || msg("Browsertrix host administrator")} to upgrade your storage plan.`,
-          ),
+          detail: sales_email_address
+            ? msg(
+                str`To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact ${sales_email_address} to upgrade your storage plan.`,
+              )
+            : msg(
+                str`To add archived items again, delete unneeded items and unused browser profiles to free up space, or contact your Browsertrix administrator to upgrade your storage plan.`,
+              ),
         }),
       },
       {
-        test: () => !readOnly && !!execMinutesQuotaReached && !subscription,
-        content: () => ({
-          title: msg(
-            str`Your org has reached its monthly execution minutes limit`,
-          ),
-          detail: msg(
-            str`Contact ${this.appState.settings?.salesEmail || msg("Browsertrix host administrator")} to purchase additional monthly execution minutes or upgrade your plan.`,
-          ),
-        }),
-      },
-      {
-        test: () => !readOnly && !!execMinutesQuotaReached && !!subscription,
+        name: OrgStatusName.ExecMinutesQuotaReached,
+        test: () => !readOnly && !!execMinutesQuotaReached && billingEnabled,
         content: () => ({
           title: msg(`Your org is out of execution minutes`),
           detail: msg(
             html`Any running crawls have been paused. To resume crawling, you
-            can purchase additional minutes or upgrade your monthly plan from
+            can purchase additional minutes or upgrade your plan from
             ${billingTabLink}.`,
+          ),
+        }),
+      },
+      {
+        name: OrgStatusName.ExecMinutesQuotaReachedPro,
+        test: () => !readOnly && !!execMinutesQuotaReached && !billingEnabled,
+        content: () => ({
+          title: msg(`Your org is out of execution minutes`),
+          detail: msg(
+            html`Any running crawls have been paused. To resume crawling, speak
+            to your Browsertrix administrator about increasing your org’s
+            quotas.`,
           ),
         }),
       },

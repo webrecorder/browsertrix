@@ -14,6 +14,8 @@ data:
 
   LOG_FORMAT: "{{ .Values.log_format }}"
 
+  LOG_USE_COLORS: "{{ .Values.log_colors }}"
+
   CRAWLER_NAMESPACE: {{ .Values.crawler_namespace }}
 
   DEFAULT_NAMESPACE: {{ .Release.Namespace }}
@@ -63,6 +65,10 @@ data:
   MAX_CRAWL_SCALE: "{{ .Values.max_crawl_scale | default 3 }}"
   MAX_BROWSER_WINDOWS: "{{ .Values.max_browser_windows | default 8 }}"
 
+  MAX_WACZ_FILE_SIZE_BYTES: "{{ .Values.max_wacz_file_size_bytes | default 50000000000000 }}"
+
+  MAX_CONCURRENT_SPLITS: "{{ .Values.max_concurrent_splits | default 4 }}"
+
   LOG_FAILED_CRAWL_LINES: "{{ .Values.log_failed_crawl_lines | default 0 }}"
 
   IS_LOCAL_MINIO: "{{ .Values.minio_local }}"
@@ -95,11 +101,15 @@ data:
 
   BILLING_ENABLED: "{{ .Values.billing_enabled }}"
 
+  DOCS_URL: "{{ .Values.docs_url }}"
+
   SIGN_UP_URL: "{{ .Values.sign_up_url }}"
 
   SALES_EMAIL: "{{ .Values.sales_email }}"
 
   USER_SURVEY_URL: "{{ .Values.user_survey_url }}"
+
+  ROBOTS_DISALLOW: "{{ .Values.robots_disallow }}"
 
   LOG_SENT_EMAILS: "{{ .Values.email.log_sent_emails }}"
 
@@ -117,7 +127,11 @@ data:
 
   CLEANUP_JOB_CRON_SCHEDULE: "{{ .Values.cleanup_job_cron_schedule }}"
 
+  REPLICATION_JOB_CRON_SCHEDULE: "{{ .Values.replication_job_cron_schedule }}"
+
   CLEANUP_FILES_AFTER_MINUTES: "{{ .Values.cleanup_files_after_minutes | default 1440 }}"
+
+  RETRY_STUCK_UPLOADS_CRON_SCHEDULE: "{{ .Values.stuck_uploads_cron_schedule }}"
 
   DEDUPE_IMPORTER_CHANNEL: "{{ .Values.dedupe.importer_channel }}"
 
@@ -140,12 +154,12 @@ metadata:
   namespace: {{ .Values.crawler_namespace }}
 
 data:
-  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --rateLimitInterruptCount {{ .Values.rate_limit_threshold }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail {{ .Values.crawler_extra_args }} {{- end }}
+  {{- define "btrix.crawler_args" }} --sizeLimit {{ .Values.crawler_session_size_limit_bytes }} --timeLimit {{ .Values.crawler_session_time_limit_seconds }} --maxPageLimit {{ .Values.max_pages_per_crawl | default 0 }} --healthCheckPort {{ .Values.crawler_liveness_port }} --diskUtilization {{ .Values.disk_utilization_threshold }} --logging {{ .Values.crawler_logging_opts }} --text {{ .Values.crawler_extract_full_text }} --rateLimitInterruptCount {{ .Values.rate_limit_threshold }} --generateWACZ --collection thecrawl --screencastPort 9037 --logErrorsToRedis --logBehaviorsToRedis --writePagesToRedis --restartsOnError --headless --screenshot view,thumbnail --saveState never {{ .Values.crawler_extra_args }} {{- end }}
 
   CRAWL_ARGS: {{- include "btrix.crawler_args" . }}
 
   # disable behaviors for QA runs, otherwise use same args
-  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=siteSpecific
+  QA_ARGS: {{- include "btrix.crawler_args" . }} --behaviors=siteSpecific {{ .Values.qa_crawler_extra_args }}
 
 ---
 apiVersion: v1

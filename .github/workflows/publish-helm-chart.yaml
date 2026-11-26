@@ -57,5 +57,6 @@ jobs:
           generateReleaseNotes: true
           name: Browsertrix v${{ env.version }}
           skipIfReleaseExists: true
+          commit: ${{ github.ref_name }}
           tag: v${{ env.version }}
           updateOnlyUnreleased: true

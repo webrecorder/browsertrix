@@ -1,0 +1,7 @@
+# Every minute, for use in testing cleaning up seed files
+cleanup_job_cron_schedule: "* * * * *"
+
+# Clean up files > 1 minute old in testing
+cleanup_files_after_minutes: 1
+
+

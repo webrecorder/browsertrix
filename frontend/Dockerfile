@@ -4,8 +4,11 @@ FROM --platform=$BUILDPLATFORM docker.io/library/node:24-alpine as build_deps
 WORKDIR /app
 RUN corepack enable yarn
 COPY .yarnrc.yml yarn.lock package.json ./
+
+COPY --link .yarn ./.yarn/
+
 # Uses a cache mount for the Yarn cache so that it's not included in subsequent steps
-RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn install --immutable --network-timeout 1000000 && yarn workspaces focus --production
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn workspaces focus --production
 
 COPY --link config ./config/
 COPY --link lit-localize.json \
@@ -32,26 +35,34 @@ ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
     GIT_BRANCH_NAME=${GIT_BRANCH_NAME} \
     VERSION=${VERSION}
 
-# Prevent Docker image including node_modules to save space
-RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn build && \
-    rm -rf ./node_modules
+RUN --mount=type=cache,target=/root/.yarn \
+    --mount=type=cache,target=/app/node_modules/.cache \
+    YARN_CACHE_FOLDER=/root/.yarn \
+    yarn build
 
 FROM --platform=$BUILDPLATFORM docker.io/library/python:3.12-slim as build_docs
 
 WORKDIR /docs
 
-RUN pip install mkdocs-material mkdocs-redirects
+COPY --link ./docs/requirements.txt .
 
-COPY --link ./docs/mkdocs.yml .
+RUN pip install -r requirements.txt
+
+COPY --link ./docs/config ./config
+COPY --link ./docs/mkdocs.yml \
+  ./docs/mkdocs.embed.yml \
+  ./
 COPY --link ./docs/docs ./docs
 
-RUN API_DOCS_URL=/api/redoc mkdocs build
+RUN API_DOCS_URL=/api/redoc zensical build
+RUN zensical build --config-file mkdocs.embed.yml
 
-FROM docker.io/library/nginx:1.23.2
+FROM docker.io/library/nginx:1.31.9
 
 COPY --link --from=build_deps /app/dist /usr/share/nginx/html
 
 COPY --link --from=build_docs /docs/site /usr/share/nginx/html/docs
+COPY --link --from=build_docs /docs/site-embed /usr/share/nginx/html/docs-embed
 
 #COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY --link ./frontend.conf.template /etc/nginx/templates/

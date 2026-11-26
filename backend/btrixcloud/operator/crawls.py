@@ -43,6 +43,7 @@ from .baseoperator import BaseOperator, Redis
 from .models import (
     BTRIX_API,
     CMAP,
+    JOB,
     POD,
     PVC,
     CrawlSpec,
@@ -82,6 +83,31 @@ MEM_SOFT_OOM_THRESHOLD = 1.0
 
 # set memory limit to this much of request for extra padding
 MEM_LIMIT_PADDING = 1.2
+
+
+# ============================================================================
+# pylint: disable=too-few-public-methods
+class ExitCodes:
+    """All known crawler exit code values"""
+
+    SUCCESS = 0
+    GENERIC_ERROR = 1
+    OUT_OF_SPACE = 3
+    INVALID_CONFIG = 4
+    REDIS_UNAVAILABLE = 8
+    FAILED = 9
+    CRASHED = 10
+    SIG_INT = 11
+    FAILED_LIMIT_REACHED = 12
+    SIG_INT_FORCE = 13
+    SIZE_LIMIT_REACHED = 14
+    TIME_LIMIT_REACHED = 15
+    DISK_USE_LIMIT_REACHED = 16
+    FATAL_ERROR = 17
+    RATE_LIMITED = 18
+    PROXY_ERROR = 21
+    UPLOAD_FAILED = 22
+    OOM = 137
 
 
 # pylint: disable=too-many-public-methods, too-many-locals, too-many-branches, too-many-statements
@@ -204,7 +230,7 @@ class CrawlOperator(BaseOperator):
             scheduled=spec.get("manual") != "1",
             qa_source_crawl_id=spec.get("qaSourceCrawlId"),
             is_single_page=spec.get("isSinglePage") == "1",
-            seed_file_url=spec.get("seedFileUrl", ""),
+            seed_file_id=spec.get("seedFileId", ""),
         )
 
         # if finalizing, crawl is being deleted
@@ -302,9 +328,18 @@ class CrawlOperator(BaseOperator):
         if (
             status.rateLimitedAtTime
             and status.state != "rate-limited"
-            and (is_paused or (status.state in RUNNING_STATES))
+            and (is_paused or status.state == "running")
         ):
             status.rateLimitedAtTime = ""
+            await self.crawl_ops.set_rate_limited_at(crawl.id, crawl.oid, None)
+
+        # should preempt paused crawl
+        if self.is_preempt_state(status.state):
+            scheduled_jobs = data.related.get(JOB, {})
+            for key in scheduled_jobs.keys():
+                if key != str(crawl.id):
+                    self.request_stop_crawl(crawl, status)
+                    break
 
         # setup scale
         status.scale = len(pods)
@@ -366,6 +401,15 @@ class CrawlOperator(BaseOperator):
                 )
                 stop_reason = "stopped_pause_expired"
                 state = "stopped_pause_expired"
+
+            # stopping for next crawl
+            elif crawl.stopping and status.stopForNextCrawl:
+                logger.info(
+                    "paused_crawl_stopped_for_next_scheduled_crawl",
+                    crawl_id=crawl.id,
+                )
+                state = "stopped_for_next_scheduled_crawl"
+                stop_reason = "stopped_for_next_scheduled_crawl"
 
             # Check if paused crawl was stopped manually
             elif crawl.stopping:
@@ -444,17 +488,33 @@ class CrawlOperator(BaseOperator):
         config_update_needed = (
             spec.get("lastConfigUpdate", "") != status.lastConfigUpdate
         )
+
+        # Update config to refresh seed file presigned url if it has
+        # already expired or will within the next few minutes
+        seed_file_presigned_update_needed = bool(crawl.seed_file_id) and (
+            status.seed_file_presigned_expiry is None
+            or (status.seed_file_presigned_expiry <= (dt_now() + timedelta(minutes=5)))
+        )
+        if seed_file_presigned_update_needed:
+            logger.debug(
+                "seed_file_presigned_url_update_needed",
+                expire_at=status.seed_file_presigned_expiry,
+            )
+        config_update_needed = config_update_needed or seed_file_presigned_update_needed
+
         status.lastConfigUpdate = spec.get("lastConfigUpdate", "")
 
         children.extend(
             await self._load_crawl_configmap(
-                crawl, data.children, params, config_update_needed
+                crawl, data.children, params, status, config_update_needed
             )
         )
 
         if crawl.qa_source_crawl_id:
             params["qa_source_crawl_id"] = crawl.qa_source_crawl_id
-            children.extend(await self._load_qa_configmap(params, data.children))
+            params["qa_source_url"] = self.crawl_ops.get_internal_replay_json_url(
+                crawl.qa_source_crawl_id, f"crawljob-{crawl.id}", crawl.oid
+            )
 
         for i in range(0, status.desiredScale):
             if status.pagesFound < i * num_browsers_per_pod:
@@ -536,7 +596,12 @@ class CrawlOperator(BaseOperator):
         return behaviors
 
     async def _load_crawl_configmap(
-        self, crawl: CrawlSpec, children, params, config_update_needed: bool
+        self,
+        crawl: CrawlSpec,
+        children,
+        params,
+        status: CrawlStatus,
+        config_update_needed: bool,
     ):
         name = f"crawl-config-{crawl.id}"
 
@@ -555,6 +620,7 @@ class CrawlOperator(BaseOperator):
         crawlconfig = await self.crawl_config_ops.get_crawl_config(crawl.cid, crawl.oid)
 
         self.crawl_config_ops.ensure_quota_page_limit(crawlconfig, crawl.org)
+        self.crawl_config_ops.ensure_timeout_defaults(crawlconfig)
 
         crawler_image = params["crawler_image"]
 
@@ -565,8 +631,19 @@ class CrawlOperator(BaseOperator):
             raw_config["behaviors"], crawler_image
         )
 
-        if crawl.seed_file_url:
-            raw_config["seedFile"] = crawl.seed_file_url
+        if crawl.seed_file_id:
+            seed_file_out, expire_at = await self.file_ops.get_seed_file_out(
+                UUID(crawl.seed_file_id), crawl.org, force_update_presigned=True
+            )
+            status.seed_file_presigned_expiry = expire_at
+            logger.debug(
+                "seed_file_presigned_url_generated",
+                crawl_id=crawl.id,
+                seed_file_url=seed_file_out.path,
+                seed_file_id=crawl.seed_file_id,
+                expire_at=expire_at,
+            )
+            raw_config["seedFile"] = seed_file_out.path
         raw_config.pop("seedFileId", None)
 
         params["config"] = json.dumps(raw_config)
@@ -578,36 +655,6 @@ class CrawlOperator(BaseOperator):
             )
 
         return self.load_from_yaml("crawl_configmap.yaml", params)
-
-    async def _load_qa_configmap(self, params, children):
-        qa_source_crawl_id = params["qa_source_crawl_id"]
-        name = f"qa-replay-{qa_source_crawl_id}"
-
-        configmap = children[CMAP].get(name)
-        if configmap and self.is_configmap_update_needed("qa-config.json", configmap):
-            logger.debug(
-                "qa_configmap_refreshed",
-                name=name,
-                unstructured_message=f"Refreshing QA configmap for QA run: {name}",
-            )
-            configmap = None
-
-        if configmap:
-            metadata = configmap["metadata"]
-            configmap["metadata"] = {
-                "name": metadata["name"],
-                "namespace": metadata["namespace"],
-                "labels": metadata["labels"],
-            }
-            return [configmap]
-
-        crawl_replay = await self.crawl_ops.get_internal_crawl_out(
-            qa_source_crawl_id, with_dependencies=True
-        )
-
-        params["name"] = name
-        params["qa_source_replay_json"] = crawl_replay.json(include={"resources"})
-        return self.load_from_yaml("qa_configmap.yaml", params)
 
     # pylint: disable=too-many-arguments
     def _load_crawler(
@@ -878,17 +925,29 @@ class CrawlOperator(BaseOperator):
 
     def get_related(self, data: MCBaseRequest):
         """return objects related to crawl pods"""
+        spec = data.parent.get("spec", {})
+        coll_id = spec.get("dedupeCollId")
+        oid = spec.get("oid")
+        cid = spec.get("cid")
+        crawl_id = spec["id"]
+
         related_resources = [
             {
                 "apiVersion": "v1",
                 "resource": "configmaps",
                 "labelSelector": {"matchLabels": {"role": "has-proxy-match-hosts"}},
-            }
+            },
+            {
+                "apiVersion": "batch/v1",
+                "resource": "jobs",
+                "labelSelector": {
+                    "matchLabels": {
+                        "btrix.crawlconfig": cid,
+                        "role": "scheduled-crawljob",
+                    },
+                },
+            },
         ]
-        spec = data.parent.get("spec", {})
-        coll_id = spec.get("dedupeCollId")
-        oid = spec.get("oid")
-        crawl_id = spec["id"]
 
         if coll_id:
             related_resources.append(
@@ -984,6 +1043,25 @@ class CrawlOperator(BaseOperator):
             status.canceled = True
 
         return status.canceled
+
+    async def rate_limit_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
+        """mark crawl as rate limited"""
+        # ensure rate-limited state is actually set, return otherwise, just in case
+        if not await self.set_state(
+            "rate-limited",
+            status,
+            crawl,
+            allowed_from=RUNNING_AND_WAITING_STATES,
+        ):
+            return status
+
+        if not status.rateLimitedAtTime:
+            now = dt_now()
+            status.rateLimitedAtTime = date_to_str(now)
+            await self.crawl_ops.set_rate_limited_at(crawl.id, crawl.oid, now)
+
+        status.resync_after = self.fast_retry_secs
+        return status
 
     async def fail_crawl(
         self,
@@ -1273,7 +1351,7 @@ class CrawlOperator(BaseOperator):
                         # - in 'terminated' state with non-zero exit code (will be brief)
                         all_crashed = all_crashed and bool(
                             pod_status.backoffWait
-                            or (terminated and pod_status.exitCode != 0)
+                            or (terminated and pod_status.exitCode != ExitCodes.SUCCESS)
                         )
 
                 if role == "crawler":
@@ -1322,9 +1400,9 @@ class CrawlOperator(BaseOperator):
             status.anyCrawlPodNewExit = True
             status.lastCrawlPodExitCode = exit_code
 
-        if exit_code == 0:
+        if exit_code == ExitCodes.SUCCESS:
             pod_status.reason = "done"
-        elif terminated.get("reason") == "OOMKilled" or exit_code == 137:
+        elif terminated.get("reason") == "OOMKilled" or exit_code == ExitCodes.OOM:
             pod_status.reason = "oom"
         else:
             pod_status.reason = "interrupt: " + str(exit_code)
@@ -1605,10 +1683,16 @@ class CrawlOperator(BaseOperator):
             # - 0 is success / intended shutdown
             # - 11 is default interrupt / intended restart
             # - 13 is force interrupt / intended restart
-            if not pod.isNewExit or pod.exitCode in (0, 11, 13):
+            if not pod.isNewExit or pod.exitCode in (
+                ExitCodes.SUCCESS,
+                ExitCodes.SIG_INT,
+                ExitCodes.SIG_INT_FORCE,
+            ):
                 continue
 
-            reason = self.get_crawler_exit_reason(pod.exitCode or 1)
+            reason = self.get_crawler_exit_reason(
+                pod.exitCode or ExitCodes.GENERIC_ERROR
+            )
 
             log = self.get_log_line(
                 f"Crawler Instance Exited: {reason}",
@@ -1633,24 +1717,25 @@ class CrawlOperator(BaseOperator):
     def get_crawler_exit_reason(self, exit_code: int) -> str:
         """Get reason for crawler exit based on status code"""
         exit_codes = {
-            0: "Success",
-            1: "Generic Error",
-            3: "Out of Space",
-            8: "Redis Unavailable",
-            9: "Failed",
-            10: "Browser Crashed",
-            11: "Signal Interrupted",
-            12: "Failed Pages Limit Reached",
-            13: "Signal Interrupted (Force)",
-            14: "Size Limit Reached",
-            15: "Time Limit Reached",
-            16: "Disk Utilization Limit Reached",
-            17: "Fatal Error",
-            18: "Rate Limited",
-            21: "Proxy Error",
-            22: "Upload Failed",
+            ExitCodes.SUCCESS: "Success",
+            ExitCodes.GENERIC_ERROR: "Generic Error",
+            ExitCodes.OUT_OF_SPACE: "Out of Space",
+            ExitCodes.INVALID_CONFIG: "Invalid Crawl Config Option",
+            ExitCodes.REDIS_UNAVAILABLE: "Redis Unavailable",
+            ExitCodes.FAILED: "Failed",
+            ExitCodes.CRASHED: "Browser Crashed",
+            ExitCodes.SIG_INT: "Signal Interrupted",
+            ExitCodes.FAILED_LIMIT_REACHED: "Failed Pages Limit Reached",
+            ExitCodes.SIG_INT_FORCE: "Signal Interrupted (Force)",
+            ExitCodes.SIZE_LIMIT_REACHED: "Size Limit Reached",
+            ExitCodes.TIME_LIMIT_REACHED: "Time Limit Reached",
+            ExitCodes.DISK_USE_LIMIT_REACHED: "Disk Utilization Limit Reached",
+            ExitCodes.FATAL_ERROR: "Fatal Error",
+            ExitCodes.RATE_LIMITED: "Rate Limited",
+            ExitCodes.PROXY_ERROR: "Proxy Error",
+            ExitCodes.UPLOAD_FAILED: "Upload Failed",
             # From Kuberentes
-            137: "Out of Memory",
+            ExitCodes.OOM: "Out of Memory",
         }
         try:
             return exit_codes[exit_code]
@@ -1691,7 +1776,12 @@ class CrawlOperator(BaseOperator):
             crawl.db_crawl_id, crawl.is_qa, crawl_file, filecomplete.size
         )
 
-        await self.org_ops.inc_org_bytes_stored(crawl.oid, filecomplete.size, "crawl")
+        # Don't count QA WACZs against storage quota for now, same as
+        # execution minutes
+        if not crawl.is_qa:
+            await self.org_ops.inc_org_bytes_stored(
+                crawl.oid, filecomplete.size, "crawl", active_crawl=True
+            )
 
         return filecomplete.size
 
@@ -1771,6 +1861,20 @@ class CrawlOperator(BaseOperator):
         )
         run_async_task(self.crawl_ops.pause_crawl(crawl.id, crawl.org, pause=True))
         return None
+
+    def request_stop_crawl(self, crawl: CrawlSpec, status: CrawlStatus):
+        """Request a crawl to be stopped, equivalent to use clicking 'stop' button"""
+        logger.info("crawl_stop_requested", craw_id=crawl.id)
+        # need new field here as stopReason may already be used
+        status.stopForNextCrawl = True
+
+        # already marked as stopping
+        if crawl.stopping:
+            return
+
+        run_async_task(
+            self.crawl_ops.shutdown_crawl(crawl.id, crawl.org, graceful=True)
+        )
 
     async def get_redis_crawl_stats(
         self, redis: Redis, crawl_id: str, status: CrawlStatus
@@ -1867,7 +1971,11 @@ class CrawlOperator(BaseOperator):
                     increase_storage = True
 
             # out of storage
-            if pod_info and pod_info.isNewExit and pod_info.exitCode == 3:
+            if (
+                pod_info
+                and pod_info.isNewExit
+                and pod_info.exitCode == ExitCodes.OUT_OF_SPACE
+            ):
                 pod_info.used.storage = pod_info.allocated.storage
                 increase_storage = True
 
@@ -1897,20 +2005,18 @@ class CrawlOperator(BaseOperator):
             status.stopReason = await self.is_crawl_stopping(crawl, status, stats)
             status.stopping = status.stopReason is not None
 
+        # if fatal error exit code, fail crawl right away
+        if status.allCrashed and status.lastCrawlPodExitCode in (
+            ExitCodes.FATAL_ERROR,
+            ExitCodes.INVALID_CONFIG,
+        ):
+            await self.fail_crawl(crawl, status, pods, stats, redis)
+            return status
+
         # if all crashed and last exit was rate-limit exit code (18),
         # set to rate limited state now and return
-        if status.allCrashed and status.lastCrawlPodExitCode == 18:
-            if not status.rateLimitedAtTime:
-                status.rateLimitedAtTime = date_to_str(dt_now())
-
-            await self.set_state(
-                "rate-limited",
-                status,
-                crawl,
-                allowed_from=RUNNING_STATES,
-            )
-            status.resync_after = self.fast_retry_secs
-            return status
+        if status.allCrashed and status.lastCrawlPodExitCode == ExitCodes.RATE_LIMITED:
+            return await self.rate_limit_crawl(crawl, status)
 
         # mark crawl as pausing or stopping
         if status.stopping:
@@ -2001,6 +2107,8 @@ class CrawlOperator(BaseOperator):
             state: TYPE_NON_RUNNING_STATES
             if status.stopReason == "stopped_by_user":
                 state = "stopped_by_user"
+            elif status.stopReason == "stopped_for_next_scheduled_crawl":
+                state = "stopped_for_next_scheduled_crawl"
             elif status.stopReason == "stopped_storage_quota_reached":
                 state = "stopped_storage_quota_reached"
             elif status.stopReason == "stopped_time_quota_reached":
@@ -2022,18 +2130,19 @@ class CrawlOperator(BaseOperator):
 
         # check for other statuses, default to "running"
         else:
-            new_status: TYPE_RUNNING_STATES = "running"
+            new_status: TYPE_RUNNING_STATES = (
+                "running" if not stats.rate_limited else "rate-limited"
+            )
 
-            if stats.rate_limited:
-                new_status = "rate-limited"
-                if not status.rateLimitedAtTime:
-                    status.rateLimitedAtTime = date_to_str(dt_now())
             if status_count.get("generate-wacz"):
                 new_status = "generate-wacz"
             elif status_count.get("uploading-wacz"):
                 new_status = "uploading-wacz"
             elif status_count.get("pending-wait"):
                 new_status = "pending-wait"
+
+            if new_status == "rate-limited":
+                return await self.rate_limit_crawl(crawl, status)
 
             await self.set_state(
                 new_status, status, crawl, allowed_from=RUNNING_AND_WAITING_STATES
@@ -2129,6 +2238,17 @@ class CrawlOperator(BaseOperator):
         stats: OpCrawlStats | None,
     ) -> None:
         """Run tasks after crawl completes in asyncio.task coroutine."""
+        # The crawl may have been deleted while this task was queued. Skip
+        # stats and cleanup so the deletion isn't undone.
+        try:
+            db_crawl = await self.crawl_ops.get_crawl_raw(crawl.db_crawl_id)
+        except HTTPException:
+            db_crawl = None
+
+        if not db_crawl or db_crawl.get("deleted"):
+            await self.k8s.delete_crawl_job(crawl.id)
+            return
+
         if state in SUCCESSFUL_STATES:
             # do this first, in case dedupe index may become idle
             # and redis pod will be shut down eventually
@@ -2144,10 +2264,12 @@ class CrawlOperator(BaseOperator):
             )
             await self.page_ops.set_archived_item_page_counts(crawl.id)
             await self.org_ops.set_last_crawl_finished(crawl.oid)
+            await self.org_ops.update_org_bytes_stored_finished_crawl(
+                crawl.id, crawl.oid
+            )
             await self.coll_ops.add_successful_crawl_to_collections(
                 crawl.id, crawl.cid, crawl.oid
             )
-            await self.crawl_ops.replicate_crawl_files(crawl.id, crawl.org, "crawl")
 
             if stats and stats.profile_update and crawl.profileid:
                 await self.crawl_config_ops.profiles.update_profile_from_crawl_upload(

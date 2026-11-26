@@ -16,6 +16,10 @@ export class BtrixElement extends TailwindElement {
   readonly navigate = new NavigateController(this);
   readonly localize = new LocalizeController(this);
 
+  protected get env() {
+    return this.appState.env;
+  }
+
   protected get authState() {
     return this.appState.auth;
   }

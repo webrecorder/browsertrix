@@ -13,4 +13,4 @@ metadata:
     cid: {{ cid }}
 
 data:
-  crawl-config.json: {{ config | tojson }}
+  crawl-config.json: {{ config }}

@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 
 import structlog
 import aiohttp
+import cssselect
 import pymongo
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from motor.motor_asyncio import (
@@ -26,6 +27,7 @@ from motor.motor_asyncio import (
 )
 
 from .models import (
+    ALL_CRAWL_STATES,
     SUCCESSFUL_STATES,
     TYPE_ALL_CRAWL_STATES,
     ConfigRevision,
@@ -34,6 +36,7 @@ from .models import (
     CrawlConfigDeletedResponse,
     CrawlConfigIn,
     CrawlConfigOut,
+    CrawlConfigRunningCountsResponse,
     CrawlConfigSearchValues,
     CrawlConfigUpdateResponse,
     CrawlerChannel,
@@ -122,6 +125,12 @@ class CrawlConfigOps:
     crawler_images_map: dict[str, str]
     crawler_image_pull_policy_map: dict[str, str]
 
+    default_filename_template: str
+    default_crawler_image_pull_policy: str
+
+    default_behavior_timeout: int
+    default_page_load_timeout: int
+
     paused_expiry_delta: timedelta
 
     def __init__(
@@ -152,6 +161,13 @@ class CrawlConfigOps:
         self.default_filename_template = os.environ["DEFAULT_CRAWL_FILENAME_TEMPLATE"]
         self.default_crawler_image_pull_policy = os.environ.get(
             "DEFAULT_CRAWLER_IMAGE_PULL_POLICY", "IfNotPresent"
+        )
+
+        self.default_behavior_timeout = int(
+            os.environ.get("DEFAULT_BEHAVIOR_TIME_SECONDS", 300)
+        )
+        self.default_page_load_timeout = int(
+            os.environ.get("DEFAULT_PAGE_LOAD_TIME_SECONDS", 120)
         )
 
         self.min_seed_file_crawler_image = os.environ.get("MIN_SEED_FILE_CRAWLER_IMAGE")
@@ -260,6 +276,15 @@ class CrawlConfigOps:
         user: User,
     ) -> CrawlConfigAddedResponse:
         """Add new crawl config"""
+
+        # don't allow new crawlconfigs if in read-only mode
+        self.org_ops.can_write_data(org)
+
+        # max number of workflows = max pages * concurrent crawls
+        max_workflows = org.quotas.maxPagesPerCrawl * org.quotas.maxConcurrentCrawls
+        if max_workflows:
+            if await self.get_num_active_workflows(org.id) >= max_workflows:
+                raise HTTPException(status_code=403, detail="too_many_crawl_workflows")
 
         # ensure crawlChannel is valid
         if not self.get_channel_crawler_image(config_in.crawlerChannel):
@@ -442,8 +467,6 @@ class CrawlConfigOps:
 
         Ensure at least one link selector is set and that all the link slectors passed
         follow expected syntax: selector->attribute/property.
-
-        We don't yet check the validity of the CSS selector itself.
         """
         if not link_selectors:
             raise HTTPException(status_code=400, detail="invalid_link_selector")
@@ -454,6 +477,12 @@ class CrawlConfigOps:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
             if not parts[0] or not parts[1]:
                 raise HTTPException(status_code=400, detail="invalid_link_selector")
+            try:
+                cssselect.parse(parts[0])
+            except cssselect.parser.SelectorSyntaxError as exc:
+                raise HTTPException(
+                    status_code=400, detail="invalid_link_selector"
+                ) from exc
 
     def _validate_custom_behavior_url_syntax(self, url: str) -> tuple[bool, list[str]]:
         """Validate custom behaviors are valid URLs after removing custom git syntax"""
@@ -482,6 +511,15 @@ class CrawlConfigOps:
             else:
                 crawlconfig.config.limit = org.quotas.maxPagesPerCrawl
 
+    def ensure_timeout_defaults(self, crawlconfig: CrawlConfig):
+        """ensure timeouts are set to configured defaults"""
+        config = crawlconfig.config
+        if config.behaviorTimeout is None:
+            config.behaviorTimeout = self.default_behavior_timeout
+
+        if config.pageLoadTimeout is None:
+            config.pageLoadTimeout = self.default_page_load_timeout
+
     async def add_new_crawl(
         self,
         crawl_id: str,
@@ -495,6 +533,7 @@ class CrawlConfigOps:
         started = dt_now()
 
         self.ensure_quota_page_limit(crawlconfig, org)
+        self.ensure_timeout_defaults(crawlconfig)
 
         inc = self.inc_crawl_count(crawlconfig.id)
         add = self.crawl_ops.add_new_crawl(
@@ -511,6 +550,12 @@ class CrawlConfigOps:
         await self.crawl_configs.find_one_and_update(
             {"_id": cid, "inactive": {"$ne": True}},
             {"$inc": {"crawlAttemptCount": 1}},
+        )
+
+    async def get_num_active_workflows(self, oid: UUID) -> int:
+        """return number of active workflows for an org"""
+        return await self.crawl_configs.count_documents(
+            {"oid": oid, "inactive": {"$ne": True}}
         )
 
     def check_attr_changed(
@@ -1160,9 +1205,16 @@ class CrawlConfigOps:
         return config_cls.from_dict(res)
 
     async def get_crawl_config_revs(
-        self, cid: UUID, page_size: int = DEFAULT_PAGE_SIZE, page: int = 1
+        self,
+        cid: UUID,
+        oid: UUID,
+        page_size: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         """return all config revisions for crawlconfig"""
+        # ensure config belongs to the requesting org, else 404
+        await self.get_crawl_config(cid, oid, active_only=False)
+
         # Zero-index page for query
         page = page - 1
         skip = page_size * page
@@ -1240,7 +1292,9 @@ class CrawlConfigOps:
 
         return {"success": True, "status": status}
 
-    async def add_or_remove_exclusion(self, regex, cid, org, user, add=True):
+    async def add_or_remove_exclusion(
+        self, regex, cid, org, user, add=True
+    ) -> list[str]:
         """added or remove regex to crawl config"""
         # get crawl config
         crawl_config = await self.get_crawl_config(cid, org.id, active_only=False)
@@ -1267,7 +1321,7 @@ class CrawlConfigOps:
 
         await self.update_crawl_config(cid, org, user, update_config)
 
-        return crawl_config.config
+        return crawl_config.config.exclude
 
     async def remove_collection_from_all_configs(
         self, coll_id: UUID, org: Organization
@@ -1365,7 +1419,6 @@ class CrawlConfigOps:
             crawlconfig.crawlFilenameTemplate or self.default_filename_template
         )
 
-        seed_file_url = ""
         if crawlconfig.config.seedFileId:
             crawler_image = self.get_channel_crawler_image(crawlconfig.crawlerChannel)
             if (
@@ -1379,11 +1432,6 @@ class CrawlConfigOps:
                     status_code=400, detail="seed_file_not_supported_by_crawler"
                 )
 
-            seed_file_out = await self.file_ops.get_seed_file_out(
-                crawlconfig.config.seedFileId, org
-            )
-            seed_file_url = seed_file_out.path
-
         try:
             crawl_id = await self.crawl_manager.create_crawl_job(
                 crawlconfig,
@@ -1394,7 +1442,9 @@ class CrawlConfigOps:
                 profile_filename=profile_filename or "",
                 profileid=str(crawlconfig.profileid) if crawlconfig.profileid else "",
                 is_single_page=self.is_single_page(crawlconfig.config),
-                seed_file_url=seed_file_url,
+                seed_file_id=str(crawlconfig.config.seedFileId)
+                if crawlconfig.config.seedFileId
+                else "",
             )
             await self.add_new_crawl(crawl_id, crawlconfig, user, org, manual=True)
             return crawl_id
@@ -1677,6 +1727,103 @@ class CrawlConfigOps:
 
         return {"success": True}
 
+    async def get_running_counts(
+        self, org: Organization | None = None
+    ) -> CrawlConfigRunningCountsResponse:
+        """Return counts of running workflows, total and status, optionally by org"""
+
+        state_count_logger = logger.bind(oid=org.id if org else None)
+
+        try:
+            match_query: dict[str, UUID | str] = {}
+            if org:
+                match_query["oid"] = org.id
+
+            res = await self.crawls.aggregate(
+                [
+                    {"$match": match_query},
+                    {"$group": {"_id": "$state", "count": {"$count": {}}}},
+                ]
+            ).to_list()
+
+            state_counts: dict[str, int] = {}
+
+            for state_dict in res:
+                state = state_dict["_id"]
+                count = state_dict.get("count", 0)
+                if state not in ALL_CRAWL_STATES:
+                    state_count_logger.error(
+                        "unexpected_crawl_state_found", state=state, count=count
+                    )
+                else:
+                    state_counts[state] = count
+
+            # Running states
+            running = state_counts.get("running", 0)
+            pending_wait = state_counts.get("pending-wait", 0)
+            generate_wacz = state_counts.get("generate-wacz", 0)
+            uploading_wacz = state_counts.get("uploading-wacz", 0)
+            rate_limited = state_counts.get("rate-limited", 0)
+            total_running = (
+                running + pending_wait + generate_wacz + uploading_wacz + rate_limited
+            )
+
+            # Paused states
+            paused = state_counts.get("paused", 0)
+            paused_storage = state_counts.get("paused_storage_quota_reached", 0)
+            paused_time = state_counts.get("paused_time_quota_reached", 0)
+            paused_read_only = state_counts.get("paused_org_readonly", 0)
+            paused_rate_limit = state_counts.get("paused_rate_limit_time_reached", 0)
+
+            total_paused = (
+                paused
+                + paused_storage
+                + paused_time
+                + paused_read_only
+                + paused_rate_limit
+            )
+
+            # Waiting states
+            starting = state_counts.get("starting", 0)
+            waiting_capacity = state_counts.get("waiting_capacity", 0)
+            waiting_org_limit = state_counts.get("waiting_org_limit", 0)
+            waiting_dedupe = state_counts.get("waiting_dedupe", 0)
+            total_waiting = (
+                starting + waiting_capacity + waiting_org_limit + waiting_dedupe
+            )
+
+            total = total_running + total_paused + total_waiting
+
+            return CrawlConfigRunningCountsResponse(
+                totalRunningPausedWaiting=total,
+                totalRunning=total_running,
+                totalPaused=total_paused,
+                totalWaiting=total_waiting,
+                # Running states
+                running=running,
+                pendingWait=pending_wait,
+                generateWACZ=generate_wacz,
+                uploadingWACZ=uploading_wacz,
+                rateLimited=rate_limited,
+                # Paused states
+                paused=paused,
+                pausedStorageQuotaReached=paused_storage,
+                pausedTimeQuotaReached=paused_time,
+                pausedOrgReadOnly=paused_read_only,
+                pausedRateLimitTimeReached=paused_rate_limit,
+                # Waiting states
+                starting=starting,
+                waitingCapacity=waiting_capacity,
+                waitingOrgLimit=waiting_org_limit,
+                waitingDedupeIndex=waiting_dedupe,
+            )
+        except Exception:
+            state_count_logger.exception(
+                "running_workflow_counts_calculation_failed",
+            )
+            # pylint: disable=raise-missing-from
+            raise HTTPException(status_code=400, detail="calculation_failure")
+
 
 # ============================================================================
 # pylint: disable=too-many-locals
@@ -1907,13 +2054,13 @@ def init_crawl_config_api(
     @router.get("/crawler-channels", response_model=CrawlerChannels)
     async def get_crawler_channels(
         # pylint: disable=unused-argument
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return ops.crawler_channels
 
     @router.get("/crawler-proxies", response_model=CrawlerProxies)
     async def get_crawler_proxies(
-        org: Organization = Depends(org_crawl_dep),
+        org: Organization = Depends(org_viewer_dep),
     ):
         return CrawlerProxies(
             default_proxy_id=DEFAULT_PROXY_ID,
@@ -1932,6 +2079,24 @@ def init_crawl_config_api(
             raise HTTPException(status_code=403, detail="Not Allowed")
 
         return ops.get_crawler_proxies()
+
+    @router.get("/running", response_model=CrawlConfigRunningCountsResponse)
+    async def get_org_crawl_config_running_counts(
+        org: Organization = Depends(org_viewer_dep),
+    ):
+        return await ops.get_running_counts(org)
+
+    @app.get(
+        "/orgs/all/crawlconfigs/running",
+        response_model=CrawlConfigRunningCountsResponse,
+    )
+    async def get_all_crawl_config_running_counts(
+        user: User = Depends(user_dep),
+    ):
+        if not user.is_superuser:
+            raise HTTPException(status_code=403, detail="Not Allowed")
+
+        return await ops.get_running_counts()
 
     @app.get(
         "/orgs/{oid}/crawlconfigs/{cid}/public/replay.json",
@@ -1983,14 +2148,16 @@ def init_crawl_config_api(
 
     @router.get(
         "/{cid}/revs",
-        dependencies=[Depends(org_viewer_dep)],
         response_model=PaginatedConfigRevisionResponse,
     )
     async def get_crawl_config_revisions(
-        cid: UUID, pageSize: int = DEFAULT_PAGE_SIZE, page: int = 1
+        cid: UUID,
+        org: Organization = Depends(org_viewer_dep),
+        pageSize: int = DEFAULT_PAGE_SIZE,
+        page: int = 1,
     ):
         revisions, total = await ops.get_crawl_config_revs(
-            cid, page_size=pageSize, page=page
+            cid, org.id, page_size=pageSize, page=page
         )
         return paginated_format(revisions, total, page, pageSize)
 

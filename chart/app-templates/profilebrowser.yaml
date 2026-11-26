@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: browser-{{ id }}
+  name: {{ "browser-" ~ id }}
   namespace: {{ namespace }}
   labels:
     browser: {{ id }}
@@ -10,14 +10,16 @@ metadata:
     network-policy: limit-crawler-egress
 
 spec:
-  hostname: browser-{{ id }}
+  # Browser profiles render untrusted sites and never call the Kubernetes API.
+  automountServiceAccountToken: false
+  hostname: {{ "browser-" ~ id }}
   subdomain: browser
 
   securityContext:
     runAsNonRoot: true
-    runAsUser: {{ crawler_uid}}
-    runAsGroup: {{ crawler_gid}}
-    fsGroup: {{ crawler_fsgroup }}
+    runAsUser: {{ crawler_uid | int }}
+    runAsGroup: {{ crawler_gid | int }}
+    fsGroup: {{ crawler_fsgroup | int }}
 
   volumes:
     - name: tmpdir
@@ -50,7 +52,7 @@ spec:
             - key: nodeType
               operator: In
               values:
-                - "{{ crawler_node_type }}"
+                - {{ crawler_node_type }}
 {% endif %}
 
   tolerations:
@@ -80,11 +82,11 @@ spec:
         - {{ url }}
       {%- if profile_filename %}
         - --profile
-        - "@{{ profile_filename }}"
+        - {{ "@" ~ profile_filename }}
       {%- endif %}
       {% if proxy_id %}
         - --proxyServer
-        - "{{ proxy_url }}"
+        - {{ proxy_url }}
       {% if proxy_ssh_private_key %}
         - --sshProxyPrivateKeyFile
         - /tmp/ssh-proxy/private-key
@@ -102,13 +104,13 @@ spec:
       {% if proxy_ssh_private_key %}
         - name: proxies
           mountPath: /tmp/ssh-proxy/private-key
-          subPath: {{ proxy_id }}-private-key
+          subPath: {{ proxy_id ~ "-private-key" }}
           readOnly: true
       {% endif %}
       {% if proxy_ssh_host_public_key %}
         - name: proxies
           mountPath: /tmp/ssh-proxy/known-hosts
-          subPath: {{ proxy_id }}-known-hosts
+          subPath: {{ proxy_id ~ "-known-hosts" }}
           readOnly: true
       {% endif %}
         - name: force-user-and-group-name
@@ -137,16 +139,16 @@ spec:
 
       {% if crawler_socks_proxy_host %}
         - name: CHROME_FLAGS
-          value: "--proxy-server=socks5://{{ crawler_socks_proxy_host }}:{{ crawler_socks_proxy_port | default('9050') }}"
+          value: {{ "--proxy-server=socks5://" ~ crawler_socks_proxy_host ~ ":" ~ (crawler_socks_proxy_port | default("9050")) }}
       {% endif %}
 
       resources:
         limits:
-          memory: "{{ memory_limit }}"
+          memory: "{{ memory_limit | safe }}"
 
         requests:
-          cpu: "{{ profile_cpu }}"
-          memory: "{{ profile_memory }}"
+          cpu: "{{ profile_cpu | safe }}"
+          memory: "{{ profile_memory | safe }}"
 
       securityContext:
         allowPrivilegeEscalation: false

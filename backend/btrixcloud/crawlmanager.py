@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timedelta
 
 import structlog
+import yaml
 from fastapi import HTTPException
 
 from .auth import create_custom_jwt_token
@@ -12,6 +13,7 @@ from .k8sapi import ApiException, K8sAPI
 from .models import (
     TYPE_INDEX_JOB_TYPES,
     BgJobType,
+    Crawl,
     CrawlConfig,
     ProfileBrowserMetadata,
     StorageRef,
@@ -80,20 +82,56 @@ class CrawlManager(K8sAPI):
 
         return browserid
 
-    async def run_replica_job(
+    async def run_copy_replicas_job(
+        self,
+        primary_storage: StorageRef,
+        replica_storage: StorageRef,
+        primary_endpoint: str,
+        primary_bucket_suffix: str,
+        replica_endpoint: str,
+        replica_bucket_suffix: str,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """run job to replicate primary storage to replica location"""
+        job_type = BgJobType.COPY_REPLICAS.value
+
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"{job_type}-{secrets.token_hex(5)}"
+
+        params: dict[str, object] = {
+            "id": job_id,
+            "primary_secret_name": primary_storage.get_storage_secret_name(),
+            "primary_file_path": primary_bucket_suffix,
+            "primary_endpoint": primary_endpoint,
+            "replica_secret_name": replica_storage.get_storage_secret_name(),
+            "replica_file_path": replica_bucket_suffix,
+            "replica_endpoint": replica_endpoint,
+            "job_type": job_type,
+            "BgJobType": BgJobType,
+        }
+
+        data = self.templates.env.get_template("replica_bulk_copy_job.yaml").render(
+            params
+        )
+
+        await self.create_from_yaml(data)
+
+        return job_id
+
+    async def run_delete_replica_job(
         self,
         oid: str,
-        job_type: str,
         replica_storage: StorageRef,
         replica_file_path: str,
         replica_endpoint: str,
         delay_days: int = 0,
-        primary_storage: StorageRef | None = None,
-        primary_file_path: str | None = None,
-        primary_endpoint: str | None = None,
         existing_job_id: str | None = None,
     ) -> tuple[str, str | None]:
         """run job to replicate file from primary storage to replica storage"""
+
+        job_type = BgJobType.DELETE_REPLICA.value
 
         if existing_job_id:
             job_id = existing_job_id
@@ -108,23 +146,16 @@ class CrawlManager(K8sAPI):
             "replica_secret_name": replica_storage.get_storage_secret_name(oid),
             "replica_file_path": replica_file_path,
             "replica_endpoint": replica_endpoint,
-            "primary_secret_name": (
-                primary_storage.get_storage_secret_name(oid)
-                if primary_storage
-                else None
-            ),
-            "primary_file_path": primary_file_path if primary_file_path else None,
-            "primary_endpoint": primary_endpoint if primary_endpoint else None,
             "BgJobType": BgJobType,
         }
 
-        if job_type == BgJobType.DELETE_REPLICA.value and delay_days > 0:
+        if delay_days > 0:
             # If replica deletion delay is configured, schedule as cronjob
             return await self.create_replica_deletion_scheduled_job(
                 job_id, params, delay_days
             )
 
-        data = self.templates.env.get_template("replica_job.yaml").render(params)
+        data = self.templates.env.get_template("delete_replica_job.yaml").render(params)
 
         await self.create_from_yaml(data)
 
@@ -219,6 +250,26 @@ class CrawlManager(K8sAPI):
             collection_id=collection_id,
         )
 
+    async def run_postprocess_upload_job(
+        self,
+        oid: str,
+        crawl_id: str,
+        existing_job_id: str | None = None,
+    ) -> str:
+        """run job to post-process uploaded crawl"""
+        if existing_job_id:
+            job_id = existing_job_id
+        else:
+            job_id = f"postprocess-upload-{crawl_id}"
+
+        return await self._run_bg_job_with_ops_classes(
+            job_id,
+            job_type=BgJobType.POSTPROCESS_UPLOAD.value,
+            oid=oid,
+            crawl_type="upload",
+            crawl_id=crawl_id,
+        )
+
     async def _run_bg_job_with_ops_classes(
         self,
         job_id: str,
@@ -309,7 +360,7 @@ class CrawlManager(K8sAPI):
         if obj_type == "job":
             return await self.has_job(name)
 
-        return False
+        return await self.has_custom_object(name, obj_type + "s")
 
     async def delete_dedupe_index_resources(self, oid: str, coll_id: str) -> None:
         """Delete dedupe index-related jobs and index itself"""
@@ -320,67 +371,108 @@ class CrawlManager(K8sAPI):
     async def ensure_cleanup_seed_file_cron_job_exists(self):
         """ensure cron background job to clean up unused seed files weekly exists"""
 
-        job_id = "cleanup-seed-files-cron"
-
         # Default schedule is midnight every Sunday
         default_schedule = "0 0 * * 0"
         job_schedule = os.environ.get("CLEANUP_JOB_CRON_SCHEDULE", default_schedule)
 
-        # Don't create a duplicate cron job if already exists
-        cleanup_logger = logger.bind(schedule=job_schedule)
+        await self._ensure_bg_cron_job_exists(
+            "cleanup-seed-files-cron",
+            BgJobType.CLEANUP_SEED_FILES.value,
+            job_schedule,
+            larger_resources=True,
+        )
 
+    async def ensure_retry_stuck_uploads_cron_job_exists(self):
+        """ensure cron background job to retry stuck uploads exists"""
+
+        default_schedule = "0 * * * *"
+        job_schedule = os.environ.get(
+            "RETRY_STUCK_UPLOADS_CRON_SCHEDULE", default_schedule
+        )
+
+        await self._ensure_bg_cron_job_exists(
+            "retry-stuck-uploads-cron",
+            BgJobType.RETRY_STUCK_UPLOADS.value,
+            job_schedule,
+        )
+
+    async def ensure_file_replication_cron_job_exists(
+        self, replicas_configured: bool = False
+    ):
+        """ensure cron background job to replica default storages exists"""
+
+        # Default schedule is every 2 hours
+        default_schedule = "0 */2 * * *"
+        job_schedule = os.environ.get("REPLICATION_JOB_CRON_SCHEDULE", default_schedule)
+
+        job_id = "replicate-files-cron"
+
+        if replicas_configured:
+            return await self._ensure_bg_cron_job_exists(
+                job_id,
+                BgJobType.REPLICATE_FILES_CRON.value,
+                job_schedule,
+            )
+
+        # If no replica locations are configured, make sure no replication cron
+        # job exists, as one could have been previously configured.
         try:
-            cron_job = await self.batch_api.read_namespaced_cron_job(
+            await self.batch_api.delete_namespaced_cron_job(
                 name=job_id,
                 namespace=DEFAULT_NAMESPACE,
             )
-            if cron_job:
-                cleanup_logger.info(
-                    "cleanup_cron_job_exists",
-                    unstructured_message="Cron job to clean up unused seed files already exists",
-                )
+            logger.info(
+                "bg_cron_job_deleting", job_id=job_id, replicas_configured=False
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
 
-                if cron_job.spec.schedule != job_schedule:
-                    cron_job.spec.schedule = job_schedule
+    async def _ensure_bg_cron_job_exists(
+        self,
+        job_id: str,
+        job_type: str,
+        job_schedule: str,
+        larger_resources: bool = False,
+    ):
+        """ensure cron background job with given schedule exists, creating or
+        updating it if needed"""
 
-                    await self.batch_api.patch_namespaced_cron_job(
-                        name=cron_job.metadata.name,
-                        namespace=DEFAULT_NAMESPACE,
-                        body=cron_job,
-                    )
-                    cleanup_logger.info(
-                        "cleanup_cron_job_updated",
-                        unstructured_message=(
-                            f"Cron job to clean up unused seed files updated,"
-                            f" schedule: {job_schedule}"
-                        ),
-                    )
-                return
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            pass
-
-        cleanup_logger.info(
-            "cleanup_cron_job_creating",
-            unstructured_message=(
-                f"Creating cron job to clean up unused seed files,"
-                f" schedule: {job_schedule}"
-            ),
-        )
+        cron_logger = logger.bind(job_id=job_id, schedule=job_schedule)
 
         params = {
             "id": job_id,
-            "job_type": BgJobType.CLEANUP_SEED_FILES.value,
+            "job_type": job_type,
             "backend_image": os.environ.get("BACKEND_IMAGE", ""),
             "pull_policy": os.environ.get("BACKEND_IMAGE_PULL_POLICY", ""),
             "schedule": job_schedule,
-            "larger_resources": True,
+            "larger_resources": larger_resources,
         }
 
         data = self.templates.env.get_template("background_cron_job.yaml").render(
             params
         )
 
+        try:
+            await self.batch_api.read_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+            )
+        except ApiException as exc:
+            if exc.status != 404:
+                raise
+        else:
+            # Replace with the freshly rendered cron job so that schedule
+            # and template changes are applied on backend restart
+            cron_logger.info("bg_cron_job_updating")
+            await self.batch_api.replace_namespaced_cron_job(
+                name=job_id,
+                namespace=DEFAULT_NAMESPACE,
+                body=yaml.safe_load(data),
+            )
+            return
+
+        cron_logger.info("bg_cron_job_creating")
         await self.create_from_yaml(data, namespace=DEFAULT_NAMESPACE)
 
     async def create_crawl_job(
@@ -393,7 +485,7 @@ class CrawlManager(K8sAPI):
         profile_filename: str,
         profileid: str,
         is_single_page: bool,
-        seed_file_url: str,
+        seed_file_id: str,
     ) -> str:
         """create new crawl job from config"""
         cid = str(crawlconfig.id)
@@ -423,7 +515,7 @@ class CrawlManager(K8sAPI):
                 str(crawlconfig.dedupeCollId) if crawlconfig.dedupeCollId else ""
             ),
             is_single_page=is_single_page,
-            seed_file_url=seed_file_url,
+            seed_file_id=seed_file_id,
         )
 
     async def reload_running_crawl_config(self, crawl_id: str):
@@ -454,16 +546,16 @@ class CrawlManager(K8sAPI):
 
     async def create_qa_crawl_job(
         self,
-        crawlconfig: CrawlConfig,
+        crawl: Crawl,
         storage: StorageRef,
         userid: str,
         storage_filename: str,
         qa_source: str,
     ) -> str:
         """create new QA Run crawl job with qa source crawl id"""
-        cid = str(crawlconfig.id)
+        cid = str(crawl.cid)
 
-        storage_secret = storage.get_storage_secret_name(str(crawlconfig.oid))
+        storage_secret = storage.get_storage_secret_name(str(crawl.oid))
 
         await self.has_storage_secret(storage_secret)
 
@@ -473,9 +565,9 @@ class CrawlManager(K8sAPI):
         return await self.new_crawl_job(
             cid,
             userid,
-            str(crawlconfig.oid),
+            str(crawl.oid),
             str(storage),
-            crawlconfig.crawlerChannel,
+            crawl.crawlerChannel,
             1,
             0,
             0,
@@ -645,7 +737,9 @@ class CrawlManager(K8sAPI):
         if not crawlconfig.schedule:
             if cron_job:
                 await self.batch_api.delete_namespaced_cron_job(
-                    name=cron_job.metadata.name, namespace=self.namespace
+                    name=cron_job.metadata.name,
+                    namespace=self.namespace,
+                    propagation_policy="Orphan",
                 )
             return None
 

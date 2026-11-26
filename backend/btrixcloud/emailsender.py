@@ -36,6 +36,8 @@ _INVITE_UUID_RE = re.compile(
     re.IGNORECASE,
 )
 
+billing_enabled = is_bool(os.environ.get("BILLING_ENABLED"))
+
 
 def _redact_email_text(text: str) -> str:
     """Redact sensitive tokens from rendered email text before logging"""
@@ -347,4 +349,5 @@ class EmailSender:
             org_url=org_url,
             workflow_url=workflow_url,
             support_email=self.support_email,
+            additional_minutes_available=billing_enabled,
         )

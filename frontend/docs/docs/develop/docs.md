@@ -1,6 +1,6 @@
 # Writing Documentation
 
-Our documentation is built with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) and configured via `mkdocs.yml` in the project root.
+Our documentation is built with [Zensical](https://zensical.org/) and configured via `mkdocs.yml` in the project root.
 
 The docs can be found in the `frontend/docs` subdirectory.
 
@@ -10,30 +10,30 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
 
 === "pip"
 
-    Install Material for MkDocs:
+    Install Zensical:
 
     ```sh
-    pip install mkdocs-material
+    pip install zensical
     ```
 
     Start the docs development server:
     
     ```sh
-    mkdocs serve
+    zensical serve
     ```
 
 === "pipx"
 
-    Install Material for MkDocs:
+    Install Zensical:
 
     ```sh
-    pipx install mkdocs-material --include-deps
+    pipx install zensical
     ```
 
     Start the docs development server:
     
     ```sh
-    mkdocs serve
+    zensical serve
     ```
 
 === "uvx"
@@ -41,7 +41,7 @@ First, change your working directory to `frontend/docs`. Then, to run the docs l
     Install and start the docs development server:
 
     ```sh
-    uvx --with mkdocs-material --with mkdocs-redirects mkdocs serve
+    uvx zensical serve
     ```
 
 You can now view a local version of the docs at [localhost:8000](http://localhost:8000).
@@ -58,9 +58,13 @@ You can now view a local version of the docs at [localhost:8000](http://localhos
 
 We typically use the [Bootstrap icon set](https://icons.getbootstrap.com/) with our projects. This set is quite expansive, and we don't add the entire set into our docs folder as most icons go unused. If you wish to use an icon when writing documentation to refer to an icon present in part of the app, you may have to download the SVG file and add it to the repo.
 
-Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, MKDocs must be restarted. For more information, see the [Material for MKDocs page on Changing the logo and icons](https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#customization).
+Icons are placed in the `docs/overrides/.icons/iconsetname/icon-name.svg` directory, and can be added in markdown files as `:iconsetname-icon-name:` accordingly. After adding icons to the folder, Zensical must be restarted. For more information, see the [Zensical page on Changing the logo and icons](https://zensical.org/docs/setup/logo-and-icons/#customization).
 
-## Docs Style Guide
+## Link Behavior
+
+Externals links will open in a new tab by default.
+
+## Writing Style Guide
 
 ### American English
 
@@ -77,7 +81,7 @@ In a list of three or more items, the list item proceeding the word "and" should
 
 ##### Example
 
-| Use                        | Don't use                 |
+| Do                         | Don’t                     |
 | -------------------------- | ------------------------- |
 | One, two, three, and four. | One, two, three and four. |
 | Charles, Ada, and Alan.    | Charles, Ada and Alan.    |
@@ -98,10 +102,6 @@ In the middle of a sentence:
 
 Webrecorder's software packages are all proper nouns and should always be capitalized. Examples include: Browsertrix, ReplayWeb.page, ArchiveWeb.Page, and PYWB. Specific pages such as the Archived Items page should also be capitalized as they are not referencing the concept of archived items and are instead referencing the page in question that happens to share the same name.
 
-### Be Concise, Avoid "You" Statements
-
-Generally, people don't want to have to read documentation. When writing, try to explain concepts simply and with clear objective language. Do not use "we" to refer to communication between the author and the reader, use "we" to refer to Webrecorder. "You can" or "you may" can be used, but preferably when giving supplemental advice and generally not when providing instructions that should be followed to achieve a successful outcome. Otherwise, avoid spending time referring to the reader, instead tell them what they should know.
-
 ##### Example
 
 > If you want to do x, you can click on y.
@@ -120,11 +120,37 @@ Avoid using acronyms when reuse is not frequent enough to warrant space savings.
 
 ### Headings
 
-All headings should be in [MLA style title case](https://capitalizemytitle.com/style/MLA/).
+Titles and primary headings should be in [MLA style title case](https://capitalizemytitle.com/style/MLA/).
 
 ##### Example
 
-> Indiana Jones and the Raiders of the Lost Ark
+> Create a New Browser Profile
+
+Secondary and tertiary headings can use sentence case.
+
+##### Example
+
+> Reset previous configuration on save
+
+### Hyphenation & Dashes
+
+Em dashes (—) are always surrounded by spaces when used in sentences. They’re used to separate thoughts without breaking sentences, to indicate a new direction, as an alternative to brackets or commas, etc.
+
+##### Example
+
+> Once a crawl has been analyzed — either fully, or partially — it can be reviewed by pressing the _Review Crawl_ button.
+
+En dashes (–) are used between two values, e.g. 5pm–10pm. They are usually used without spaces surrounding them, though when separating words spaces can be appropriate.
+
+Hyphens (-) are used to link words, e.g. “owner-operator” or “high-fidelity”. They’re only used when needed — when a term would be ambiguously grouped without one, or where not using one would cause a sentence to feel awkward. A good clue is if the term formed by the linked words is acting as an adjective.
+
+Certain terms, such as the ones listed below, should be preferred as hyphenated, rather than not. This is not a strict rule, however — use your best judgment!
+
+| Do             | Don’t          |
+|----------------|----------------|
+| real-time      | real time      |
+| cloud-based    | cloud based    |
+| logged-in user | logged in user |
 
 ### Referencing Features and Their Options
 
@@ -138,9 +164,18 @@ Actions with text (buttons in the app) should also be Title Cased and set in _it
 
 > Sets the day of the week for which crawls scheduled with a `Weekly` _Frequency_ will run.
 
+Page names should be Title Cased and **bolded**.
+
+##### Example
+
+> Navigate to your **Dashboard**.  
+> These settings and more can be found in the **Settings** page.
+
 ### Manual Word Wrapping
 
 Do not manually wrap words by adding newlines when writing documentation.
+
+## Authoring
 
 ### Code Block Syntax Highlighting
 
@@ -164,21 +199,21 @@ For in-line code blocks, syntax highlighting should be added for all code-relate
 
 Renders to: `#!python range()`
 
-### Paid features
+### Subscription Feature
 
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 
 Some features of Browsertrix only pertain to those paying for the software on a hosted plan. Denote these with the following:
 
 ```markdown
-`Paid Feature`{ .badge-green }
+`Subscription Feature`{ .badge-green .btrix-embed-hidden }
 ```
 
 ### Admonitions
 
-We use [Admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
+We use [Admonitions](https://zensical.org/docs/authoring/admonitions/) in their collapsed state to offer additional context or tips that aren't relevant to all users reading the section. We use standard un-collapsible ones when we need to call attention to a specific point.
 
-There are a lot of different options provided by Material for MkDocs — So many in fact that we try to pair down their usage into the following categories.
+There are a lot of different options provided by Zensical — So many in fact that we try to pair down their usage into the following categories.
 
 ???+ Note
     The default call-out, used to highlight something if there isn't a more relevant one — should generally be expanded by default but can be collapsible by the user if the note is long.
@@ -200,3 +235,55 @@ There are a lot of different options provided by Material for MkDocs — So many
 
 !!! Danger "Danger: Must have a title stating the warning"
     Used to deliver information about serious unrecoverable actions such as deleting large amounts of data or resetting things — should always be expanded.
+
+### Images
+
+To style an image, add the `.wr-image` class.
+
+![Image alt text](https://dummyimage.com/600x400/){ .wr-image }
+/// caption
+Image caption
+///
+
+```markdown
+![Image alt text](https://dummyimage.com/600x400/){ .wr-image }
+/// caption
+Image caption
+///
+```
+
+### Hide in Browsertrix Embed
+
+The user guide is embedded in the Browsertrix web application. You may want to hide certain elements in the embed. To do so, add the `btrix-embed-hidden` class.
+
+```markdown
+<!-- Hide heading -->
+## Special Heading { .btrix-embed-hidden }
+
+<!-- Hide paragraph -->
+This paragraph will be hidden in Browsertrix.
+{ .btrix-embed-hidden }
+
+<!-- Hide list item -->
+- I'm visible
+- I'm visible
+- I'm hidden!
+{ .btrix-embed-hidden }
+- I'm visible
+
+<!-- Hide inline HTML -->
+<hr class="btrix-embed-hidden" />
+```
+
+### Show in Browsertrix Embed
+
+The `btrix-embed-visible` class will show elements only in the Browsertrix embed:
+
+```markdown
+<!-- Show heading -->
+## Special Heading { .btrix-embed-visible }
+
+<!-- Show paragraph -->
+This paragraph will be visible only in Browsertrix.
+{ .btrix-embed-visible }
+```

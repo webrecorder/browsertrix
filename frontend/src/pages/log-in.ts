@@ -215,8 +215,6 @@ export class LogInPage extends BtrixElement {
       `;
     }
 
-    const { registrationEnabled, signUpUrl } = this.appState.settings || {};
-
     return html`
       <div class="flex w-full flex-1 items-center justify-center pb-4 pt-16">
         <article class="flex w-full max-w-md flex-col gap-5">
@@ -228,13 +226,16 @@ export class LogInPage extends BtrixElement {
           <footer class="text-center">${link}</footer>
         </article>
       </div>
-      ${registrationEnabled || signUpUrl
+      ${this.env.registrationEnabled || this.env.signUpUrl
         ? html`
             <div
               class="w-full gap-4 border-y bg-white/30 p-6 px-3 text-center text-neutral-500"
             >
               <span>${msg("Need an account?")}</span>
-              <btrix-link href=${signUpUrl || "/sign-up"} variant="primary">
+              <btrix-link
+                href=${this.env.signUpUrl || "/sign-up"}
+                variant="primary"
+              >
                 ${msg("Sign Up")}
               </btrix-link>
             </div>

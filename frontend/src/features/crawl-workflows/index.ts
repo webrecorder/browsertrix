@@ -1,5 +1,6 @@
 import("./custom-behaviors-table");
 import("./exclusion-editor");
+import("./exclusion-editor-dialog");
 import("./live-workflow-status");
 import("./link-selector-table");
 import("./new-workflow-dialog");

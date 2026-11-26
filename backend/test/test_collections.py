@@ -1,13 +1,14 @@
 import os
 import time
 from tempfile import TemporaryFile
+from urllib.parse import quote
 from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
 import requests
 
 from .conftest import API_PREFIX, NON_DEFAULT_ORG_NAME, NON_DEFAULT_ORG_SLUG
-from .utils import read_in_chunks
+from .utils import read_in_chunks, wait_for_upload_processed_sync
 
 COLLECTION_NAME = "Test collection"
 COLLECTION_SLUG = "test-collection"
@@ -716,6 +717,61 @@ def test_collection_wrong_org(admin_auth_headers, non_default_org_id):
     assert r.status_code == 404
 
 
+def test_collection_pages_wrong_org(admin_auth_headers, non_default_org_id):
+    # collection belongs to the default org; requesting its pages through
+    # another org's path must not return cross-org page data
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/pages",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{_coll_id}/pageUrlCounts",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+
+
+def test_collection_add_remove_wrong_org(
+    admin_auth_headers,
+    crawler_auth_headers,
+    default_org_id,
+    non_default_org_id,
+    crawler_crawl_id,
+):
+    # create a collection in the non-default org, then attempt to add/remove
+    # crawls to it through the default org's path
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections",
+        headers=admin_auth_headers,
+        json={"name": "wrong-org-target"},
+    )
+    assert r.status_code == 200
+    foreign_coll_id = r.json()["id"]
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{foreign_coll_id}/add",
+        headers=crawler_auth_headers,
+        json={"crawlIds": [crawler_crawl_id]},
+    )
+    assert r.status_code == 404
+
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{foreign_coll_id}/remove",
+        headers=crawler_auth_headers,
+        json={"crawlIds": [crawler_crawl_id]},
+    )
+    assert r.status_code == 404
+
+    # cleanup
+    r = requests.delete(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/collections/{foreign_coll_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+
+
 def test_collection_public_make_private(crawler_auth_headers, default_org_id):
     # make private again
     r = requests.patch(
@@ -770,6 +826,10 @@ def test_add_upload_to_collection(crawler_auth_headers, default_org_id):
 
     global upload_id
     upload_id = r.json()["id"]
+
+    # Upload post-processing runs in a background job - wait for it to complete
+    # so the collection stats and downloads below include the upload's pages
+    wait_for_upload_processed_sync(crawler_auth_headers, default_org_id, upload_id)
 
     # Add upload
     r = requests.post(
@@ -988,13 +1048,21 @@ def test_list_pages_in_collection(crawler_auth_headers, default_org_id):
     data = r.json()
 
     assert len(data["items"]) >= 1
-
-    found_matching_page = False
     for page in data["items"]:
-        if page["id"] == coll_page_id and page["url"] == coll_page_url:
-            found_matching_page = True
+        assert page["url"].startswith(url_prefix)
 
-    assert found_matching_page
+    # Test urlRegex filter
+    url_regex = quote(r"webrecorder\.net")
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/collections/{_coll_id}/pages?urlRegex={url_regex}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert len(data["items"]) >= 1
+    for page in data["items"]:
+        assert "webrecorder.net" in page["url"]
 
     # Test isSeed filter
     r = requests.get(

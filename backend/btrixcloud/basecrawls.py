@@ -10,10 +10,12 @@ from uuid import UUID
 
 import structlog
 import pymongo
-from fastapi import Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorDatabase
 
+from .auth import create_custom_jwt_token, get_custom_jwt_token
+from .crawlmanager import CrawlManager
 from .models import (
     CRAWL_TYPES,
     RUNNING_AND_WAITING_STATES,
@@ -30,8 +32,10 @@ from .models import (
     DeletedResponseQuota,
     ListFilterType,
     Organization,
+    OrgCrawlFileStorageResults,
     PaginatedCrawlOutResponse,
     QARun,
+    ResourcesOnly,
     StorageRef,
     TagsResponse,
     UpdateCrawl,
@@ -76,6 +80,8 @@ class BaseCrawlOps:
     crawl_log_ops: CrawlLogOps
     page_ops: PageOps
 
+    backend_origin: str
+
     def __init__(
         self,
         mdb: AsyncIOMotorDatabase,
@@ -99,6 +105,8 @@ class BaseCrawlOps:
         self.background_job_ops = background_job_ops
         self.crawl_log_ops = crawl_log_ops
         self.page_ops = cast(PageOps, None)
+
+        self.backend_origin = os.environ.get("BACKEND_ORIGIN", "")
 
     def set_page_ops(self, page_ops):
         """set page ops reference"""
@@ -238,18 +246,32 @@ class BaseCrawlOps:
 
         return crawl
 
-    async def get_internal_crawl_out(
-        self, crawl_id: str, with_dependencies: bool = False
+    def get_internal_replay_json_url(self, crawl_id: str, job_id: str, oid: UUID):
+        """get internal crawl replay url, accessible only from crawl/qa run"""
+        auth_bearer = create_custom_jwt_token(
+            crawl_id,
+            {"sub_type": "crawl", "scope_type": "crawljob", "scope": job_id},
+        )
+        return (
+            f"{self.backend_origin}/api/orgs/{oid}/all-crawls/{crawl_id}"
+            + f"/internal/replay.json?withDependencies=1&auth_bearer={auth_bearer}"
+        )
+
+    async def get_internal_crawl_resources(
+        self, crawl_id: str, oid: UUID, with_dependencies: bool = False
     ):
         """add internal prefix for relative paths"""
+
+        org = await self.orgs.get_org_by_id(oid)
+
         crawl_out = await self.get_crawl_out(
-            crawl_id, with_dependencies=with_dependencies
+            crawl_id, org=org, with_dependencies=with_dependencies
         )
         resources = crawl_out.resources or []
         for file_ in resources:
             file_.path = self.storage_ops.resolve_internal_access_path(file_.path)
 
-        return crawl_out
+        return ResourcesOnly(resources=resources)
 
     async def find_missing_crawls(self, crawl_ids: list[str], oid: UUID) -> list[str]:
         """returns a list of crawl ids that are no longer in the db from a given list"""
@@ -344,47 +366,6 @@ class BaseCrawlOps:
             {"userid": userid}, {"$set": {"userName": updated_name}}
         )
 
-    async def replicate_crawl_files(
-        self, crawl_id: str, org: Organization, type_: TYPE_CRAWL_TYPES
-    ):
-        """Replicate crawl files to configured replica locations"""
-        repl_logger = logger.bind(crawl_id=crawl_id, oid=org.id, type=type_)
-
-        try:
-            crawl = await self.get_base_crawl(crawl_id, org, type_)
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            repl_logger.warning(
-                "crawl_replicate_skipped_not_found",
-                unstructured_message=f"Not replicating files for crawl {crawl_id}: crawl not found",
-            )
-            return
-
-        for crawl_file in crawl.files:
-            try:
-                await self.background_job_ops.create_replica_jobs(
-                    crawl.oid, crawl_file, crawl.id, type_
-                )
-            # pylint: disable=broad-exception-caught
-            except Exception as exc:
-                repl_logger.exception(
-                    "crawl_replicate_failed",
-                    unstructured_message=f"Replicate Exception {exc}",
-                )
-
-    async def add_crawl_file_replica(
-        self, crawl_id: str, filename: str, ref: StorageRef
-    ) -> dict[str, object]:
-        """Add replica StorageRef to existing CrawlFile"""
-        return await self.crawls.find_one_and_update(
-            {"_id": crawl_id, "files.filename": filename},
-            {
-                "$addToSet": {
-                    "files.$.replicas": {"name": ref.name, "custom": ref.custom}
-                }
-            },
-        )
-
     async def shutdown_crawl(self, crawl_id: str, org: Organization, graceful: bool):
         """placeholder, implemented in crawls, base version does nothing"""
 
@@ -401,6 +382,7 @@ class BaseCrawlOps:
         colls_to_update: dict[UUID, list[str]] = {}
 
         size = 0
+        all_file_failures: list[str] = []
 
         for crawl_id in delete_list.crawl_ids:
             crawl = await self.get_base_crawl(crawl_id, org)
@@ -412,6 +394,13 @@ class BaseCrawlOps:
             # - Org owners can delete any crawls in org
             if user and (crawl.userid != user.id) and not org.is_owner(user):
                 raise HTTPException(status_code=403, detail="not_allowed")
+
+            # Mark as deleted before removing files so in-flight background
+            # processing (e.g. upload post-processing) aborts
+            await self.crawls.find_one_and_update(
+                {"_id": crawl_id, "oid": org.id, "type": type_},
+                {"$set": {"deleted": True}},
+            )
 
             if type_ == "crawl" and not crawl.finished:
                 try:
@@ -435,8 +424,9 @@ class BaseCrawlOps:
             if type_ == "crawl":
                 await self.delete_all_crawl_qa_files(crawl_id, org)
 
-            crawl_size = await self._delete_crawl_files(crawl, org)
+            crawl_size, file_failures = await self._delete_crawl_files(crawl, org)
             size += crawl_size
+            all_file_failures.extend(file_failures)
 
             cid = crawl.cid
             successful = crawl.state in SUCCESSFUL_STATES
@@ -480,28 +470,51 @@ class BaseCrawlOps:
 
         quota_reached = self.orgs.storage_quota_reached(org)
 
+        if all_file_failures:
+            raise HTTPException(status_code=400, detail="file_deletion_error")
+
         return res.deleted_count, cids_to_update, quota_reached
 
-    async def _delete_crawl_files(self, crawl: BaseCrawl | QARun, org: Organization):
-        """Delete files associated with crawl from storage."""
+    async def _delete_crawl_files(
+        self, crawl: BaseCrawl | QARun, org: Organization
+    ) -> tuple[int, list[str]]:
+        """Delete files associated with crawl from storage.
+
+        Attempts to delete every file even if some fail. Returns the total
+        size of successfully deleted files and a list of filenames that
+        could not be deleted.
+        """
+        delete_logger = logger.bind(crawl_id=crawl.id, oid=org.id)
         size = 0
+        failures: list[str] = []
         for file_ in crawl.files:
-            size += file_.size
-            if not await self.storage_ops.delete_file_object(org, file_):
-                raise HTTPException(status_code=400, detail="file_deletion_error")
-            # Not replicating QA run WACZs yet
+            delete_logger = delete_logger.bind(filename=file_.filename)
+            try:
+                if await self.storage_ops.delete_file_object(org, file_):
+                    delete_logger.debug("crawl_file_delete_success")
+                    size += file_.size
+                else:
+                    delete_logger.warning("crawl_file_delete_failed")
+                    failures.append(file_.filename)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                delete_logger.exception("crawl_file_delete_exception")
+                failures.append(file_.filename)
+
+            # Schedule replica deletion regardless of primary deletion success
+            # (replicas may still exist even if primary delete failed)
             if not isinstance(crawl, QARun):
                 await self.background_job_ops.create_delete_replica_jobs(
                     org, file_, crawl.id, crawl.type
                 )
 
-        return size
+        return size, failures
 
     async def delete_failed_crawl_files(self, crawl_id: str, oid: UUID):
         """Delete crawl files for failed crawl"""
         crawl = await self.get_base_crawl(crawl_id)
         org = await self.orgs.get_org_by_id(oid)
-        deleted_file_size = await self._delete_crawl_files(crawl, org)
+        deleted_file_size, _ = await self._delete_crawl_files(crawl, org)
         await self.crawls.find_one_and_update(
             {"_id": crawl_id, "oid": oid},
             {
@@ -512,7 +525,13 @@ class BaseCrawlOps:
                 }
             },
         )
-        await self.orgs.inc_org_bytes_stored(oid, -deleted_file_size, "crawl")
+        if deleted_file_size != 0:
+            logger.debug(
+                "crawl_failed_removing_from_org_active_bytes", size=deleted_file_size
+            )
+            await self.orgs.inc_org_bytes_stored(
+                oid, -deleted_file_size, "crawl", active_crawl=True
+            )
 
     async def delete_all_crawl_qa_files(self, crawl_id: str, org: Organization):
         """Delete files for all qa runs in a crawl"""
@@ -520,7 +539,9 @@ class BaseCrawlOps:
         qa_finished = crawl_raw.get("qaFinished", {})
         for qa_run_raw in qa_finished.values():
             qa_run = QARun(**qa_run_raw)
-            await self._delete_crawl_files(qa_run, org)
+            await self._delete_crawl_files(
+                qa_run, org
+            )  # failures logged, not raised here
 
     async def _resolve_crawl_refs(
         self,
@@ -641,7 +662,6 @@ class BaseCrawlOps:
                                 hash=file["hash"],
                                 size=file["size"],
                                 crawlId=file["crawl_id"],
-                                numReplicas=len(file.get("replicas") or []),
                                 expireAt=date_to_str(
                                     presigned["signedAt"]
                                     + self.storage_ops.signed_duration_delta
@@ -683,7 +703,6 @@ class BaseCrawlOps:
                         hash=file["hash"],
                         size=file["size"],
                         crawlId=file["crawl_id"],
-                        numReplicas=len(file.get("replicas") or []),
                         expireAt=date_to_str(expire_at),
                     )
                 )
@@ -1114,31 +1133,67 @@ class BaseCrawlOps:
 
     async def calculate_org_crawl_file_storage(
         self, oid: UUID, type_: TYPE_CRAWL_TYPES | None = None
-    ) -> tuple[int, int, int]:
+    ) -> OrgCrawlFileStorageResults:
         """Calculate and return total size of crawl files in org.
 
-        Returns tuple of (total, crawls only, uploads only)
+        Optionally filterable by crawl type.
         """
-        total_size = 0
         crawls_size = 0
+        crawls_finished_size = 0
+        crawls_active_size = 0
         uploads_size = 0
 
-        cursor = self.crawls.find({"oid": oid})
-        async for crawl_dict in cursor:
-            files = crawl_dict.get("files", [])
-            type_ = crawl_dict.get("type")
+        match_query: dict[str, UUID | str] = {"oid": oid}
 
-            item_size = 0
-            for file_ in files:
-                item_size += file_.get("size", 0)
+        calc_logger = logger.bind(oid=oid, crawl_type=type_)
 
-            total_size += item_size
-            if type_ == "crawl":
-                crawls_size += item_size
-            if type_ == "upload":
-                uploads_size += item_size
+        # Calculate crawls
+        if type_ != "upload":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "crawl"}},
+                        {"$group": {"_id": "$state", "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list()
 
-        return total_size, crawls_size, uploads_size
+                for state_dict in res:
+                    state = state_dict["_id"]
+                    size = state_dict.get("size", 0)
+
+                    crawls_size += size
+                    if state in RUNNING_AND_WAITING_STATES:
+                        crawls_active_size += size
+                    else:
+                        crawls_finished_size += size
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_crawl_bytes_stored_calculation_error")
+
+        # Calculate uploads
+        if type_ != "crawl":
+            try:
+                res = await self.crawls.aggregate(
+                    [
+                        {"$match": {**match_query, "type": "upload"}},
+                        {"$group": {"_id": None, "size": {"$sum": "$fileSize"}}},
+                    ]
+                ).to_list(length=1)
+                if res:
+                    uploads_size = res[0].get("size", 0)
+            # pylint: disable=broad-exception-caught
+            except Exception:
+                calc_logger.exception("org_upload_bytes_stored_calculation_error")
+
+        total_size = crawls_size + uploads_size
+
+        return OrgCrawlFileStorageResults(
+            total_crawlfiles=total_size,
+            crawls=crawls_size,
+            crawls_finished=crawls_finished_size,
+            crawls_active=crawls_active_size,
+            uploads=uploads_size,
+        )
 
     async def get_org_last_crawl_finished(self, oid: UUID) -> datetime | None:
         """Get last crawl finished time for org"""
@@ -1182,7 +1237,10 @@ class BaseCrawlOps:
 
 # ============================================================================
 def init_base_crawls_api(
-    app, user_dep: Callable[[str], AsyncGenerator[User, None]], *args
+    crawl_manager: CrawlManager,
+    app: APIRouter,
+    user_dep: Callable[[str], AsyncGenerator[User, None]],
+    *args,
 ):
     """base crawls api"""
     # pylint: disable=invalid-name, duplicate-code, too-many-arguments, too-many-locals
@@ -1191,6 +1249,20 @@ def init_base_crawls_api(
 
     org_viewer_dep = ops.orgs.org_viewer_dep
     org_crawl_dep = ops.orgs.org_crawl_dep
+
+    async def crawl_internal_access_dep(
+        crawl_id: str, token_data: dict[str, str] = Depends(get_custom_jwt_token)
+    ) -> str:
+        # first, check that this is a valid crawl
+        if token_data.get("sub_type") == "crawl" and token_data.get("sub") == crawl_id:
+            # second, check that the k8s object access is scoped to exists
+            if await crawl_manager.validate_k8s_obj_exists(
+                token_data.get("scope_type", ""), token_data.get("scope", "")
+            ):
+                return crawl_id
+
+        # otherwise, deny access
+        raise HTTPException(status_code=403, detail="access_denied")
 
     @app.get(
         "/orgs/{oid}/all-crawls",
@@ -1364,6 +1436,20 @@ def init_base_crawls_api(
             org,
             headers=dict(request.headers),
             with_dependencies=withDependencies,
+        )
+
+    @app.get(
+        "/orgs/{oid}/all-crawls/{crawl_id}/internal/replay.json",
+        tags=["all-crawls"],
+        response_model=ResourcesOnly,
+    )
+    async def get_internal_replay(
+        oid: UUID,
+        crawl_id: str = Depends(crawl_internal_access_dep),
+        withDependencies: bool = False,
+    ):
+        return await ops.get_internal_crawl_resources(
+            crawl_id, oid, with_dependencies=withDependencies
         )
 
     @app.get(

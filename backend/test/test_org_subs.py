@@ -347,6 +347,32 @@ def test_get_addon_minutes_checkout_url(admin_auth_headers, echo_server):
     assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
 
 
+def test_get_addon_minutes_price_and_checkout_url_no_subscription(
+    admin_auth_headers, default_org_id, echo_server
+):
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/price/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {"value": 1.0, "currency": "usd"}
+
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/checkout/execution-minutes",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json() == {"checkoutUrl": "https://checkout.example.com/path/"}
+
+    # verify the request forwarded to the external subs app omits subId
+    # for orgs without a subscription
+    r = requests.get("http://127.0.0.1:18080/")
+    assert r.status_code == 200
+    post_bodies = r.json()["post_bodies"]
+    assert post_bodies[-1]["orgId"] == str(default_org_id)
+    assert post_bodies[-1]["subId"] is None
+
+
 def test_cancel_sub_and_delete_org(admin_auth_headers):
     # cancel, resulting in org deletion
     r = requests.post(

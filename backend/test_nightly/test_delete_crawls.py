@@ -94,12 +94,25 @@ def test_delete_replica_job_run(admin_auth_headers, default_org_id):
     time.sleep(20)
 
     # Verify delete replica job was successful
-    r = requests.get(
-        f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete-replica",
-        headers=admin_auth_headers,
-    )
-    assert r.status_code == 200
-    latest_job = r.json()["items"][0]
+    latest_job = None
+
+    attempts = 0
+    while attempts < 5:
+        r = requests.get(
+            f"{API_PREFIX}/orgs/{default_org_id}/jobs?sortBy=started&sortDirection=-1&jobType=delete-replica",
+            headers=admin_auth_headers,
+        )
+        assert r.status_code == 200
+        jobs = r.json()["items"]
+        if len(jobs) == 0:
+            attempts += 1
+            time.sleep(10)
+            continue
+
+        latest_job = jobs[0]
+        break
+
+    assert latest_job
     assert latest_job["type"] == "delete-replica"
     job_id = latest_job["id"]
 

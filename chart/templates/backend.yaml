@@ -26,6 +26,8 @@ spec:
         {{- end }}
 
     spec:
+      # The backend doesn't need the auto-mounted, world-readable token
+      automountServiceAccountToken: false
       {{- if .Values.main_node_type }}
       nodeSelector:
         nodeType: {{ .Values.main_node_type }}
@@ -42,20 +44,59 @@ spec:
         - name: ops-configs
           secret:
             secretName: ops-configs
+            # contains storage access keys; readable by uid 0 only
+            defaultMode: 0400
 
         - name: ops-proxy-configs
           secret:
             secretName: ops-proxy-configs
             optional: true
+            # contains proxy credentials; readable by uid 0 only
+            defaultMode: 0400
 
         - name: app-templates
           configMap:
             name: app-templates
 
+        # Replacement for the default service-account mount, with 0400 files
+        - name: kube-api-access
+          projected:
+            defaultMode: 0400
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3607
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+
+        # readOnlyRootFilesystem leaves no writable /tmp
+        - name: tmp-migrations
+          emptyDir: {}
+        - name: tmp-api
+          emptyDir: {}
+        - name: tmp-op
+          emptyDir: {}
+
       initContainers:
         - name: migrations
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command: ["python3", "-m", "btrixcloud.main_migrations"]
 
           envFrom:
@@ -71,6 +112,13 @@ spec:
               value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
+            - name: tmp-migrations
+              mountPath: /tmp
+
             - name: config-volume
               mountPath: /config
 
@@ -95,6 +143,17 @@ spec:
         - name: api
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          # uid 0 is required so the git subprocess can drop to nobody
+          # (btrixcloud.utils.drop_privileges). SETUID/SETGID are the only
+          # capabilities that drop needs; everything else is removed.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["SETUID", "SETGID"]
+            seccompProfile:
+              type: RuntimeDefault
           command:
               - gunicorn
               - btrixcloud.main:app_root
@@ -106,6 +165,9 @@ spec:
               - "{{ .Values.backend_workers | default 1 }}"
               - --worker-class
               - uvicorn.workers.UvicornWorker
+              # Control socket (gunicornc) is unused; disabling avoids needing
+              # a writable ~/.gunicorn path with a read-only rootfs.
+              - --no-control-socket
 
           envFrom:
             - configMapRef:
@@ -134,6 +196,13 @@ spec:
                   optional: true
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
+            - name: tmp-api
+              mountPath: /tmp
+
             - name: ops-configs
               mountPath: /ops-configs/
 
@@ -180,6 +249,14 @@ spec:
         - name: op
           image: {{ .Values.backend_image }}
           imagePullPolicy: {{ .Values.backend_pull_policy }}
+          # Serves metacontroller hooks only, never spawns subprocesses.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           command:
               - gunicorn
               - btrixcloud.main_op:app_root
@@ -191,6 +268,9 @@ spec:
               - "{{ .Values.backend_workers | default 1 }}"
               - --worker-class
               - uvicorn.workers.UvicornWorker
+              # Control socket (gunicornc) is unused; disabling avoids needing
+              # a writable ~/.gunicorn path with a read-only rootfs.
+              - --no-control-socket
 
           envFrom:
             - configMapRef:
@@ -205,6 +285,13 @@ spec:
               value: "{{ .Values.backend_mongodb_workers | default 1 }}"
 
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+
+            - name: tmp-op
+              mountPath: /tmp
+
             - name: config-volume
               mountPath: /config
 

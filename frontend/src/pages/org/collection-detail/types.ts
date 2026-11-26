@@ -1,3 +1,5 @@
+import type { Collection } from "@/types/collection";
+
 export enum Tab {
   Replay = "replay",
   About = "about",
@@ -8,7 +10,6 @@ export enum Tab {
 export type Dialog =
   | "delete"
   | "edit"
-  | "replaySettings"
   | "removeItem"
   | "createIndex"
   | "purgeIndex"
@@ -23,3 +24,7 @@ export enum CollectionSearchParam {
 export enum EditingSearchParamValue {
   Items = "items",
 }
+
+export type CollectionSavedEvent = CustomEvent<
+  { id: string } & Partial<Collection>
+>;

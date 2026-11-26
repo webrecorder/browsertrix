@@ -1,6 +1,5 @@
 import { consume } from "@lit/context";
 import { localized, msg, str } from "@lit/localize";
-import { Task } from "@lit/task";
 import type {
   SlBlurEvent,
   SlChangeEvent,
@@ -69,7 +68,6 @@ import {
   SmartScopeSites,
   type SmartScopeSite,
 } from "@/constants/smart-scope-sites";
-import { docsUrlContext, type DocsUrlContext } from "@/context/docs-url";
 import {
   orgCrawlerChannelsContext,
   type OrgCrawlerChannelsContext,
@@ -110,7 +108,6 @@ import {
   Behavior,
   CrawlerChannelImage,
   ScopeType,
-  type Profile,
   type Seed,
   type WorkflowSettings,
 } from "@/types/crawler";
@@ -124,7 +121,8 @@ import {
 } from "@/types/workflow";
 import { track } from "@/utils/analytics";
 import { isApiError, isApiErrorDetail } from "@/utils/api";
-import { unescapeCustomPrefix } from "@/utils/crawl-workflows/unescapeCustomPrefix";
+import { unescapeCustomPrefix } from "@/utils/crawl-scope/unescapeCustomPrefix";
+import { urlPrefixToRegex } from "@/utils/crawl-scope/urlPrefixToRegex";
 import { getDefaultProxyId, isDepthSupportedScopeType } from "@/utils/crawler";
 import {
   getUTCSchedule,
@@ -136,11 +134,14 @@ import { makeCurrentTargetHandler, stopProp } from "@/utils/events";
 import { formValidator, maxLengthValidator } from "@/utils/form";
 import { isNotEqual } from "@/utils/is-not-equal";
 import localize from "@/utils/localize";
+import {
+  completeOnboardingStep,
+  OnboardingStep,
+} from "@/utils/onboarding/onboardingEvents";
 import { isArchivingDisabled } from "@/utils/orgs";
 import { pluralOf } from "@/utils/pluralize";
 import slugifyStrict from "@/utils/slugify";
 import { AppStateService } from "@/utils/state";
-import { regexEscape } from "@/utils/string";
 import { tw } from "@/utils/tailwind";
 import {
   apiScopeType,
@@ -261,6 +262,7 @@ const urlListToArray = flow(
   (str?: string) => (str?.length ? str.trim().split(/\s+/g) : []),
   trimArray,
 );
+const urlToRegex = (url: string) => urlPrefixToRegex(url);
 
 //todo: make this customizable, perhaps at deploy time
 const URL_LIST_MAX_URLS = 100;
@@ -306,9 +308,6 @@ export class WorkflowEditor extends BtrixElement {
 
   @consume({ context: orgCrawlerChannelsContext, subscribe: true })
   private readonly crawlerChannels?: OrgCrawlerChannelsContext;
-
-  @consume({ context: docsUrlContext })
-  private readonly docsUrl?: DocsUrlContext;
 
   @property({ type: String })
   configId?: string;
@@ -445,15 +444,6 @@ export class WorkflowEditor extends BtrixElement {
   // CSS parser should ideally match the parser used in browsertrix-crawler.
   // https://github.com/webrecorder/browsertrix-crawler/blob/v1.5.8/package.json#L23
   private readonly cssParser = createParser();
-
-  private readonly profileTask = new Task(this, {
-    task: async ([formState], { signal }) => {
-      if (!formState.browserProfile) return;
-
-      return this.getProfile(formState.browserProfile.id, signal);
-    },
-    args: () => [this.formState] as const,
-  });
 
   connectedCallback(): void {
     this.initializeEditor();
@@ -1105,6 +1095,11 @@ export class WorkflowEditor extends BtrixElement {
           value=${this.formState.seedListFormat}
           name="seedListFormat"
           size="small"
+          @sl-change=${(e: Event) =>
+            this.updateFormState({
+              seedListFormat: (e.target as SlRadioGroup)
+                .value as SeedListFormat,
+            })}
         >
           <sl-radio-button value=${SeedListFormat.JSON}>
             ${msg("Enter URLs")}
@@ -2221,6 +2216,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         <btrix-select-browser-profile
           .profileId=${this.formState.browserProfile?.id}
           .profileName=${this.formState.browserProfile?.name}
+          defaultProxyId=${ifDefined(this.formState.proxyId ?? undefined)}
+          defaultCrawlerChannel=${ifDefined(this.formState.crawlerChannel)}
           .suggestOrigins=${guard(
             [this.formState.primarySeedUrl, this.formState.urlList],
             priorityOrigins,
@@ -2237,6 +2234,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
                   : this.formState.saveStorage,
             });
           }}
+          allowNew
         ></btrix-select-browser-profile>
       `)}
       ${this.renderHelpTextCol(html`
@@ -2259,11 +2257,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
             </sl-checkbox>
           `)}
           ${this.renderHelpTextCol(
-            html`${infoTextFor["failOnContentCheck"]}
-            ${this.renderUserGuideLink({
-              hash: "fail-crawl-if-not-logged-in",
-              content: msg("More details"),
-            })}`,
+            html`${infoTextFor["failOnContentCheck"]}`,
             false,
           )}
         `,
@@ -2273,14 +2267,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
           ${labelFor["saveStorage"]}
         </sl-checkbox>
       `)}
-      ${this.renderHelpTextCol(
-        html`${infoTextFor["saveStorage"]}
-        ${this.renderUserGuideLink({
-          hash: "include-browser-storage-data",
-          content: msg("More details"),
-        })}`,
-        false,
-      )}
+      ${this.renderHelpTextCol(html`${infoTextFor["saveStorage"]}`, false)}
       ${proxies?.servers.length
         ? [
             inputCol(html`
@@ -2290,14 +2277,15 @@ https://archiveweb.page/images/${"logo.svg"}`}
                 )}
                 .proxyServers=${proxies.servers}
                 .proxyId=${profileProxyId || this.formState.proxyId || ""}
-                .profileProxyId=${profileProxyId}
+                .profileProxyId=${this.formState.browserProfile?.proxyId}
+                ?disabled=${!!this.formState.browserProfile}
                 @btrix-change=${(e: SelectCrawlerProxyChangeEvent) =>
                   this.updateFormState({
                     proxyId: e.detail.value,
                   })}
               >
                 ${when(
-                  profileProxyId,
+                  this.formState.browserProfile,
                   () => html`
                     <span
                       slot="suffix"
@@ -2915,7 +2903,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     const path = `workflow-setup/#${hash}`;
 
     return html`<a
-      href="${this.docsUrl}user-guide/${path}"
+      href="${this.env.docsUrl}user-guide/${path}"
       class="text-blue-600 hover:text-blue-500"
       target="_blank"
       @click=${(e: MouseEvent) => {
@@ -3062,7 +3050,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         formState.customIncludeList = urlListToArray(
           this.formState.customIncludeList,
         )
-          .map((url) => `^${regexEscape(url)}`)
+          .map(urlToRegex)
           .join("\n");
       } else {
         formState.customIncludeList = this.customIncludeListFromSeed(
@@ -3097,7 +3085,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
     }
 
     return this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
-      ? `^${regexEscape(prefixUrl)}`
+      ? urlPrefixToRegex(prefixUrl)
       : prefixUrl;
   }
 
@@ -3339,7 +3327,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
         value = (elem as SlCheckbox).checked;
         break;
       case "sl-textarea":
-      case "sl-radio-group":
         value = elem.value;
         break;
       case "sl-input": {
@@ -3579,6 +3566,8 @@ https://archiveweb.page/images/${"logo.svg"}`}
         icon: "check2-circle",
         id: "workflow-created-status",
       });
+
+      completeOnboardingStep(OnboardingStep.CreateWorkflow);
 
       this.navigate.to(
         `${this.navigate.orgBasePath}/workflows/${this.configId || data.id}/${
@@ -3832,7 +3821,10 @@ https://archiveweb.page/images/${"logo.svg"}`}
       },
       crawlerChannel:
         this.formState.crawlerChannel || CrawlerChannelImage.Default,
-      proxyId: this.formState.browserProfile?.proxyId || this.formState.proxyId,
+      proxyId:
+        (this.formState.browserProfile
+          ? this.formState.browserProfile.proxyId
+          : this.formState.proxyId) || null,
     };
 
     return config;
@@ -3908,7 +3900,7 @@ https://archiveweb.page/images/${"logo.svg"}`}
         this.formState.scopeType === NewWorkflowOnlyScopeType.Regex
           ? includeUrlList
           : this.formState.scopeType === ScopeType.Custom
-            ? includeUrlList.map((url) => "^" + regexEscape(url))
+            ? includeUrlList.map(urlToRegex)
             : [],
       extraHops: this.formState.includeLinkedPages ? 1 : 0,
     };
@@ -3982,15 +3974,6 @@ https://archiveweb.page/images/${"logo.svg"}`}
     } catch (e) {
       console.debug(e);
     }
-  }
-
-  private async getProfile(profileId: string, signal: AbortSignal) {
-    const data = await this.api.fetch<Profile>(
-      `/orgs/${this.orgId}/profiles/${profileId}`,
-      { signal },
-    );
-
-    return data;
   }
 
   private async createCollection(

@@ -1,8 +1,10 @@
-import { localized, msg } from "@lit/localize";
+import { localized, msg, str } from "@lit/localize";
+import { Task } from "@lit/task";
 import { html, nothing, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 import { repeat } from "lit/directives/repeat.js";
+import { when } from "lit/directives/when.js";
 
 import { collectionStatusIcon } from "../templates/collection-status-icon";
 
@@ -12,10 +14,11 @@ import { BtrixElement } from "@/classes/BtrixElement";
 import { dedupeIcon } from "@/features/collections/templates/dedupe-icon";
 import { dedupeStatusText } from "@/features/collections/templates/dedupe-status-text";
 import type { ArchivedItemSectionName } from "@/pages/org/archived-item-detail/archived-item-detail";
+import { pluralOfDependencies } from "@/plurals/dependencies";
 import { OrgTab, WorkflowTab } from "@/routes";
 import type { ArchivedItem } from "@/types/crawler";
 import { isCrawl, renderName } from "@/utils/crawler";
-import { pluralOf } from "@/utils/pluralize";
+import { pluralize } from "@/utils/pluralize";
 
 const styles = unsafeCSS(stylesheet);
 
@@ -36,6 +39,50 @@ export class ItemDependencyList extends BtrixElement {
     string,
     ArchivedItem | undefined
   >();
+
+  private readonly missingDependenciesTask = new Task(this, {
+    task: async ([collectionId], { signal }) => {
+      const { missingRequiresCrawls } = await this.api.fetch<{
+        missingRequiresCrawls: string[];
+      }>(
+        `/orgs/${this.orgId}/collections/${collectionId}/dedupeIndex/missingRequiresCrawls`,
+        { signal },
+      );
+
+      return new Set(missingRequiresCrawls);
+    },
+    args: () => [this.collectionId] as const,
+  });
+
+  private readonly pluralizeMissingDeps = (total: number) => {
+    const count = this.localize.number(total);
+    return pluralize(total, {
+      zero: msg("Includes 0 missing dependencies", {
+        desc: "plural form of 'Includes X missing dependencies' for zero dependencies",
+        id: "includes_x_missing_dependencies.plural.zero",
+      }),
+      one: msg("Includes 1 missing dependency", {
+        desc: "plural form of 'Includes X missing dependencies' for one dependency",
+        id: "includes_x_missing_dependencies.plural.one",
+      }),
+      two: msg("Includes 2 missing dependencies", {
+        desc: "plural form of 'Includes X missing dependencies' for two dependencies",
+        id: "includes_x_missing_dependencies.plural.two",
+      }),
+      few: msg(str`Includes ${count} missing dependencies`, {
+        desc: "plural form of 'Includes X missing dependencies' for few dependencies",
+        id: "includes_x_missing_dependencies.plural.few",
+      }),
+      many: msg(str`Includes ${count} missing dependencies`, {
+        desc: "plural form of 'Includes X missing dependencies' for many dependencies",
+        id: "includes_x_missing_dependencies.plural.many",
+      }),
+      other: msg(str`Includes ${count} missing dependencies`, {
+        desc: "plural form of 'Includes X missing dependencies' for other dependencies",
+        id: "includes_x_missing_dependencies.plural.other",
+      }),
+    });
+  };
 
   disconnectedCallback(): void {
     this.timerIds.forEach(window.clearTimeout);
@@ -92,6 +139,8 @@ export class ItemDependencyList extends BtrixElement {
   };
 
   private readonly renderContent = (item: ArchivedItem) => {
+    const deps = new Set(item.requiresCrawls);
+    const missingDeps = this.missingDependenciesTask.value?.intersection(deps);
     const numDependencies = item.requiresCrawls.length;
     const crawled = isCrawl(item);
     const collectionId = this.collectionId;
@@ -121,6 +170,21 @@ export class ItemDependencyList extends BtrixElement {
         </a>
       </btrix-table-cell>
       <btrix-table-cell class="flex items-center gap-1.5 truncate tabular-nums">
+        ${when(
+          missingDeps?.size,
+          (total: number) =>
+            html`<btrix-popover
+              content=${this.pluralizeMissingDeps(total)}
+              placement="bottom-start"
+              hoist
+            >
+              <sl-icon
+                name="exclamation-diamond"
+                label=${msg("Warning")}
+                class="text-warning-700"
+              ></sl-icon>
+            </btrix-popover>`,
+        )}
         <btrix-popover
           content=${ifDefined(
             dedupeStatusText(item.requiredByCrawls.length, numDependencies),
@@ -128,18 +192,17 @@ export class ItemDependencyList extends BtrixElement {
           placement="bottom-start"
           hoist
         >
-          ${
-            numDependencies
-              ? html`
-                  ${dedupeIcon({
-                    hasDependencies: true,
-                    hasDependents: !!item.requiredByCrawls.length,
-                  })}
-                  ${this.localize.number(numDependencies)}
-                  ${pluralOf("dependencies", numDependencies)}
-                `
-              : nothing
-          }
+        ${
+          numDependencies
+            ? html`
+                ${dedupeIcon({
+                  hasDependencies: true,
+                  hasDependents: !!item.requiredByCrawls.length,
+                })}
+                ${pluralOfDependencies(numDependencies)}
+              `
+            : nothing
+        }
         </btrix-popover>
       </btrix-table-cell>
 

@@ -55,7 +55,11 @@ default_crawl_filename_template: "@ts-@hostsuffix.wacz"
 # advanced: additional args to be passed to the crawler
 # this is mostly for testing of new/experimental crawler flags
 # standard crawler options are covered with other options above
+# included in both crawler and QA runs
 crawler_extra_args: ""
+
+# advanced: additional flags to be passed to the crawler, included only in QA runs
+qa_crawler_extra_args: ""
 
 # max allowed browser windows per crawl
 max_browser_windows: 8
@@ -119,7 +123,7 @@ replica_deletion_delay_days: 0
 
 # API Image
 # =========================================
-backend_image: "docker.io/webrecorder/browsertrix-backend:1.24.0"
+backend_image: "docker.io/webrecorder/browsertrix-backend:1.27.0"
 backend_pull_policy: "IfNotPresent"
 
 backend_password_secret: "PASSWORD!"
@@ -129,6 +133,8 @@ backend_password_secret: "PASSWORD!"
 
 # log format: uses a human-readable text format by default, set to "json" to emit structured JSON instead
 # log_format: "json"
+
+# log_colors: false
 
 # number of workers per pod
 backend_workers: 1
@@ -188,9 +194,17 @@ cleanup_job_cron_schedule: "0 0 * * 0"
 # for cleanup. defaults to 1 day (1440 minutes)
 cleanup_files_after_minutes: 1440
 
+# Cron schedule for checking for uploads stuck in processing
+# without a running background job and retrying them
+stuck_uploads_cron_schedule: "0 * * * *"
+
+# Cron schedule for periodically syncing replica storage from primary
+# Defaults to every two hours
+replication_job_cron_schedule: "0 */2 * * *"
+
 # Emails Image
 # =========================================
-emails_image: "docker.io/webrecorder/browsertrix-emails:1.24.0"
+emails_image: "docker.io/webrecorder/browsertrix-emails:1.27.0"
 emails_pull_policy: "IfNotPresent"
 
 emails_cpu: "10m"
@@ -204,7 +218,7 @@ local_emails_port: 30872
 
 # Nginx Image
 # =========================================
-frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.24.0"
+frontend_image: "docker.io/webrecorder/browsertrix-frontend:1.27.0"
 frontend_pull_policy: "IfNotPresent"
 
 frontend_cpu: "10m"
@@ -407,6 +421,13 @@ crawler_min_avail_storage_ratio: 2.5
 # max size at which crawler will commit current crawl session
 crawler_session_size_limit_bytes: "10000000000"
 
+# max uncompressed size (bytes) for individual WACZ entries in a multi-WACZ upload;
+# entries exceeding this are rejected before streaming to guard against zip bombs
+max_wacz_file_size_bytes: "50000000000000"
+
+# max number of multi-WACZ files to split simultaneously when processing multi-WACZ uploads
+max_concurrent_splits: 4
+
 # max time in seconds after which crawler will restart, if set
 crawler_session_time_limit_seconds: 18000
 
@@ -447,12 +468,82 @@ btrix-proxies:
 # optional: enable/disable crawler network policy, prevents crawler pods from accessing internal services
 crawler_enable_network_policy: true
 
+# optional: egress policy for the application namespace (backend, frontend,
+# emails, metacontroller and job pods). Allows DNS, the chart's own services,
+# public web on 80/443 and the Kubernetes API. Ports for an external MongoDB
+# and non-80/443 storage endpoints are added automatically.
+namespace_network_policy_enabled: false
+
+# optional: additional egress rules, same format as
+# crawler_network_policy_additional_egress
+#
+# namespace_network_policy_extra_egress:
+#   # example private vpn address
+#   - to:
+#       - ipBlock:
+#           cidr: 10.0.0.5/32
+#     ports:
+#       - port: 3128
+#         protocol: TCP
+#
+#   # example custom minio
+#   - to:
+#       - podSelector:
+#           matchLabels:
+#             app: my-custom-minio
+#     ports:
+#       - port: 9000
+#         protocol: TCP
+#
+#   # example custom namespace app
+#   - to:
+#       - namespaceSelector:
+#           matchLabels:
+#             kubernetes.io/metadata.name: my-namespace
+#     ports:
+#       - port: 443
+#         protocol: TCP
+
+# optional: Kubernetes API endpoint ports after service DNAT (443 on managed
+# clusters, 6443 on kubeadm). Add your cluster's port if it differs.
+namespace_network_policy_api_ports:
+  - 443
+  - 6443
+
+# optional: additional egress rules for destinations a NetworkPolicy cannot
+# express, such as Cilium entity selectors (host, remote-node, kube-apiserver).
+#
+# namespace_network_policy_extra_egress_cilium:
+#   - toEntities:
+#       - host
+#       - remote-node
+#     toPorts:
+#       - ports:
+#           - port: "9100"
+#             protocol: TCP
+namespace_network_policy_extra_egress_cilium: []
+
 # optional: add additional egress rules to the default crawler network policy (See chart/templates/networkpolicies.yaml for an example)
 # crawler_network_policy_additional_egress: []
 
 # optional: replace the default crawler egress policy with your own egress rules (See chart/templates/networkpolicies.yaml for an example)
 # see chart/templates/networkpolicies.yaml for an example
 # crawler_network_policy_egress: []
+
+# optional: additional crawler egress rules for destinations a NetworkPolicy
+# cannot express, such as Cilium entity selectors (host, remote-node).
+#
+# crawler_network_policy_extra_egress_cilium:
+#   - toEntities:
+#       - host
+#       - remote-node
+#     toPorts:
+#       - ports:
+#           - port: "53"
+#             protocol: UDP
+#           - port: "53"
+#             protocol: TCP
+crawler_network_policy_extra_egress_cilium: []
 
 # time to wait for graceful stop
 grace_period: 1000
@@ -468,7 +559,7 @@ minio_local: true
 minio_scheme: "http"
 minio_host: "local-minio:9000"
 
-minio_image: docker.io/minio/minio:RELEASE.2022-10-24T18-35-07Z
+minio_image: docker.io/webrecorder/minio:RELEASE.2022-10-24T18-35-07Z
 minio_pull_policy: "IfNotPresent"
 
 minio_local_bucket_name: &local_bucket_name "btrix-data"
@@ -558,20 +649,26 @@ ingress_class: nginx
 # This runs as a blocking script on the frontend, so usually you'll want to have it just add a single script tag to the page with the `defer` attribute. Useful for things like analytics and bug tracking.
 # inject_extra: // your front-end injected script
 
+# Optional: Path to disallow in robots.txt
+# robots_disallow: "/"
+
 # Signing Options
 # =========================================
 # optionally enable signer
 signer:
   enabled: false
-  image: webrecorder/authsign:0.5.2
+  image: webrecorder/authsign:0.6.1
   # host: <set to signer domain>
   # cert_email: "test@example.com
   # image_pull_policy: "IfNotPresent"
   # auth_token: <set to custom value>
 
+  # optional: set to use a custom timestamping service
+  # tsr_signing_url: http://timestamp.digicert.com/
+
 signer_cpu: "5m"
 
-signer_memory: "50Mi"
+signer_memory: "75Mi"
 
 # Migration Options (Advanced)
 # =========================================

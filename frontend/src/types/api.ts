@@ -48,6 +48,7 @@ export enum APIErrorDetail {
   NoDedupeIndex = "no_dedupe_index",
   DedupeIndexNotReady = "dedupe_index_not_ready",
   DedupeIndexInUse = "dedupe_index_is_in_use",
+  NotAllowed = "not_allowed",
 }
 export const APIErrorDetailEnum = z.nativeEnum(APIErrorDetail);
 export type APIErrorDetailEnum = z.infer<typeof APIErrorDetailEnum>;

@@ -1,6 +1,7 @@
 import { css, html, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 /**
  * Styled <dl>, <dt> and <dd> for displaying data
@@ -59,11 +60,19 @@ export class DescListItem extends LitElement {
   @property({ type: String })
   label = "";
 
+  /**
+   * Value will update intermittently after page load
+   */
+  @property({ type: Boolean })
+  live = false;
+
   render() {
     return html`<div class="item">
       <div class="content">
         <dt>${this.label}<slot name="label"></slot></dt>
-        <dd><slot></slot></dd>
+        <dd aria-live=${ifDefined(this.live ? "polite" : undefined)}>
+          <slot></slot>
+        </dd>
       </div>
     </div>`;
   }

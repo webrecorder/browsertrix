@@ -7,8 +7,9 @@ import structlog
 import pytest
 import requests
 
+from test.utils import read_in_chunks, wait_for_upload_processed_sync
+
 from .conftest import API_PREFIX
-from .utils import read_in_chunks
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
@@ -16,13 +17,14 @@ _webhook_event_id = None
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-ECHO_SERVER_URL = "http://localhost:18080"
+ECHO_SERVER_URL = "http://localhost:18080/webhooks"
 
 # Pull address to echo server running on host from CI env var.
 # If not set, default to host.docker.internal (for local testing with
 # Docker Desktop).
-ECHO_SERVER_URL_FROM_K8S = os.environ.get(
-    "ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080"
+ECHO_SERVER_URL_FROM_K8S = (
+    os.environ.get("ECHO_SERVER_HOST_URL", "http://host.docker.internal:18080")
+    + "/webhooks"
 )
 
 FAILED_STATES = ["canceled", "failed", "skipped_quota_reached"]
@@ -399,6 +401,10 @@ def test_webhooks_sent(
     data = r.json()
     assert data["added"]
     webhooks_upload_id = data["id"]
+
+    wait_for_upload_processed_sync(
+        admin_auth_headers, default_org_id, webhooks_upload_id
+    )
 
     # Remove upload from collection
     r = requests.post(

@@ -10,6 +10,7 @@ import { CollectionThumbnail } from "./collection-thumbnail";
 import { SelectCollectionAccess } from "./select-collection-access";
 
 import { BtrixElement } from "@/classes/BtrixElement";
+import { emptyMessage } from "@/layouts/emptyMessage";
 import { textSeparator } from "@/layouts/separator";
 import { RouteNamespace } from "@/routes";
 import { CollectionAccess, type PublicCollection } from "@/types/collection";
@@ -44,7 +45,7 @@ export class CollectionsGrid extends BtrixElement {
   pagination!: Node[];
 
   render() {
-    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3`;
+    const gridClassNames = tw`grid flex-1 grid-cols-1 gap-10 @md/org:grid-cols-2 @lg/org:grid-cols-3`;
 
     if (!this.collections || !this.slug) {
       const thumb = html`
@@ -55,21 +56,17 @@ export class CollectionsGrid extends BtrixElement {
       `;
 
       return html`
-        <div class=${gridClassNames}>${thumb}${thumb}${thumb}${thumb}</div>
+        <div class=${gridClassNames}>${thumb}${thumb}${thumb}</div>
       `;
     }
 
     if (!this.collections.length) {
-      return html`
-        <div class="flex flex-col items-center justify-center gap-3 px-3 py-10">
-          <p class="text-base text-neutral-500">
-            <slot name="empty-text">
-              ${msg("No public collections yet.")}
-            </slot>
-          </p>
-          <slot name="empty-actions"></slot>
-        </div>
-      `;
+      return emptyMessage({
+        message: html`<slot name="empty-text">
+          ${msg("No public collections yet.")}
+        </slot>`,
+        actions: html`<slot name="empty-actions"></slot>`,
+      });
     }
 
     const showActions = !this.navigate.isPublicPage && this.appState.isCrawler;
@@ -171,7 +168,11 @@ export class CollectionsGrid extends BtrixElement {
       </ul>
 
       <slot
-        class=${clsx("justify-center flex", this.pagination.length && "mt-10")}
+        class=${clsx(
+          tw`flex justify-center`,
+          this.pagination.filter((node) => node.nodeName !== "SLOT").length &&
+            tw`mt-10`,
+        )}
         name="pagination"
       ></slot>
     `;
@@ -182,7 +183,7 @@ export class CollectionsGrid extends BtrixElement {
       <div class="pointer-events-auto absolute bottom-2 right-2">
         ${this.renderActions
           ? this.renderActions(collection)
-          : html`<sl-tooltip content=${msg("Edit Collection Settings")}>
+          : html`<sl-tooltip content=${msg("Share Collection")}>
               <btrix-button
                 raised
                 size="small"
@@ -194,7 +195,7 @@ export class CollectionsGrid extends BtrixElement {
                   );
                 }}
               >
-                <sl-icon name="pencil"></sl-icon>
+                <sl-icon name="box-arrow-up"></sl-icon>
               </btrix-button>
             </sl-tooltip>`}
       </div>

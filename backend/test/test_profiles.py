@@ -1,4 +1,5 @@
 import time
+from urllib.parse import urlencode
 from uuid import UUID
 
 import pytest
@@ -62,7 +63,6 @@ def test_get_profile(admin_auth_headers, default_org_id, profile_id, profile_con
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             assert "crawlconfigs" not in data
             assert data["inUse"] == True
@@ -118,7 +118,6 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             # First profile should be listed second by default because it was
             # modified less recently
@@ -145,7 +144,6 @@ def test_list_profiles(admin_auth_headers, default_org_id, profile_id, profile_2
             assert resource["size"]
             assert resource["storage"]
             assert resource["storage"]["name"]
-            assert "replicas" in resource and isinstance(resource["replicas"], list)
 
             break
         except:
@@ -260,10 +258,30 @@ def test_update_profile_metadata(crawler_auth_headers, default_org_id, profile_i
     assert data["modified"] > original_modified
     assert data["modifiedBy"]
     assert data["modifiedByName"] == "new-crawler"
-
     assert data["created"] == original_created
     assert data["createdBy"]
     assert data["createdByName"] == "admin"
+
+
+def test_update_profile_metadata_wrong_org(
+    admin_auth_headers, default_org_id, non_default_org_id, profile_id
+):
+    # profile belongs to the default org; patching it through another org's
+    # path must not modify it
+    r = requests.patch(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+        json={"name": "should-not-stick"},
+    )
+    assert r.status_code == 404
+
+    # profile unchanged in the default org
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/profiles/{profile_id}",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == PROFILE_NAME_UPDATED
 
 
 def test_commit_browser_to_existing_profile(
@@ -336,6 +354,95 @@ def test_commit_browser_to_existing_profile(
         "https://old.webrecorder.net",
         "https://example-com.webrecorder.net",
     ]
+
+
+@pytest.mark.parametrize(
+    "origins,origin_match,expected_profile_ids",
+    [
+        # Origin in one profile, default filter match (AND)
+        (["https://example-com.webrecorder.net"], None, [1]),
+        # Origin in both profiles, default filter match (AND)
+        (["https://old.webrecorder.net"], None, [1]),
+        (["https://specs.webrecorder.net"], None, [2]),
+        # Origin in both profiles, explicit filter match (AND)
+        (["https://old.webrecorder.net"], "and", [1]),
+        # Origin in both profiles, explicit filter match (OR)
+        (["https://old.webrecorder.net"], "or", [1]),
+        # Two origins, default filter match (AND)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            None,
+            [1],
+        ),
+        (
+            ["https:/specs.webrecorder.net", "https://example-com.webrecorder.net"],
+            None,
+            [],
+        ),
+        # Two origins, explicit filter match (AND)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            "and",
+            [1],
+        ),
+        (
+            ["https://specs.webrecorder.net", "https://example-com.webrecorder.net"],
+            "and",
+            [],
+        ),
+        # Two origins, explicit filter match (OR)
+        (
+            ["https://old.webrecorder.net", "https://example-com.webrecorder.net"],
+            "or",
+            [1],
+        ),
+        (
+            ["https://specs.webrecorder.net", "https://example-com.webrecorder.net"],
+            "or",
+            [1, 2],
+        ),
+        # No match (added www. prefix, which endpoint is not yet agnostic to)
+        (["https://www.example-com.webrecorder.net"], None, []),
+        # No match (origin not visited in any profiles)
+        (["https://webrecorder.net"], None, []),
+    ],
+)
+def test_list_profiles_filter_by_origins(
+    admin_auth_headers,
+    default_org_id,
+    profile_id,
+    profile_2_id,
+    origins,
+    origin_match,
+    expected_profile_ids,
+):
+    base_url = f"{API_PREFIX}/orgs/{default_org_id}/profiles"
+    params = {"origins": origins}
+    if origin_match is not None:
+        params["originMatch"] = origin_match
+
+    request_url = f"{base_url}?{urlencode(params, doseq=True)}"
+
+    r = requests.get(
+        request_url,
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["total"] == len(expected_profile_ids)
+
+    actual_ids = [profile["id"] for profile in data.get("items", [])]
+
+    # Hack to avoid having to do complicated setup to use fixtures values
+    # in the test parametrization
+    expected_ids = []
+    for expected_id in expected_profile_ids:
+        if expected_id == 1:
+            expected_ids.append(profile_id)
+        elif expected_id == 2:
+            expected_ids.append(profile_2_id)
+
+    assert sorted(actual_ids) == sorted(expected_ids)
 
 
 def test_commit_reset_browser_to_existing_profile(
@@ -471,6 +578,10 @@ def test_profile_search_values(admin_auth_headers, default_org_id):
     assert r.status_code == 200
     data = r.json()
     assert sorted(data["names"]) == sorted([PROFILE_NAME_UPDATED, PROFILE_2_NAME])
+    assert sorted(data["origins"]) == [
+        "https://example-com.webrecorder.net",
+        "https://specs.webrecorder.net",
+    ]
 
 
 def test_delete_profile(admin_auth_headers, default_org_id, profile_2_id):

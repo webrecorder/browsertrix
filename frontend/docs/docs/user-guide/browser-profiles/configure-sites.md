@@ -1,10 +1,12 @@
 # Configure Sites
 
+## How it Works
+
 Websites are configured through a temporary browser that is embedded directly in the Browsertrix interface. Every website that is visited using the embedded browser is added to the list of _Saved Sites_. When the embedded browser session ends, personalized data from the sites are collected into a profile. This profile of preconfigured sites can then be saved and used by multiple [crawl workflows](../crawl-workflows.md).
 
 The embedded browser is used during the process of [creating a new browser profile](./create-browser-profile.md) and when [editing an existing profile](./edit-browser-profile.md).
 
-## Use Cases
+## Guides for Common Use Cases
 
 ### Website Sign In
 
@@ -13,6 +15,10 @@ To crawl content as a logged in user, load the website you intend to archive in 
 !!! tip "Tip: Crawl regularly to stay logged in"
 
     Regularly running crawl workflows that use a browser profile can help to reduce the frequency with which logouts occur on some websites. Data such as cookies and sessions may be refreshed during crawling, and Browsertrix will automatically update the browser profile with this data when each crawl successfully finishes.
+
+!!! tip "Tip: Fail crawls early to identify logged-out profiles"
+
+    Enabling [_Fail Crawl If Not Logged In_](../workflow-setup.md#fail-crawl-if-not-logged-in) on a workflow can help identify which profiles need attention and prevent archiving unwanted logged-out content.
 
 ### Hide Popups
 

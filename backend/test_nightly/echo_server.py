@@ -14,9 +14,28 @@ post_bodies = []
 
 class EchoServerHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(json.dumps({"post_bodies": post_bodies}).encode("utf-8"))
+        if self.path.endswith("/webhooks"):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(json.dumps({"post_bodies": post_bodies}).encode("utf-8"))
+
+        # link to rate limited page
+        elif self.path.endswith("/rl-index.html"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<html><body><a href='/rl.html'>Link</a></body></html>")
+
+        # rate limit test
+        elif self.path.endswith("/rl.html"):
+            self.send_response(429)
+            self.end_headers()
+            self.wfile.write(b"429 Error")
+
+        else:
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Error")
 
     def do_POST(self):
         content_length = int(self.headers.get("content-length", 0))

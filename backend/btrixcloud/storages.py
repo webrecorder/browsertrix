@@ -287,6 +287,23 @@ class StorageOps:
             refs.append(StorageRef(name=name, custom=True))
         return refs
 
+    def get_default_primary(self) -> StorageRef:
+        """return default primary storageref"""
+        if not self.default_primary:
+            raise HTTPException(status_code=400, detail="no_primary_storage")
+        return self.default_primary
+
+    def get_default_replicas(self) -> list[StorageRef]:
+        """return default replica storage locations"""
+        return self.default_replicas
+
+    def get_default_s3_storage(self, ref: StorageRef) -> S3Storage:
+        """return s3storage object for default storage ref (not org specific)"""
+        storage = self.default_storages.get(ref.name)
+        if not storage:
+            raise KeyError(f"Storage ref {ref.name} not found")
+        return storage
+
     @asynccontextmanager
     async def get_s3_client(
         self, storage: S3Storage, for_presign=False
@@ -666,10 +683,22 @@ class StorageOps:
         self, wacz_files: list[CrawlFileOut], num_retries=5
     ) -> Iterator[dict[Any, Any]]:
         """Return stream of pages specified WACZ"""
+
+        logger.debug(
+            "sync_stream_wacz_pages",
+            status="starting",
+            num_wacz=len(wacz_files),
+        )
         loop = asyncio.get_event_loop()
 
         resp = await loop.run_in_executor(
             None, self._sync_get_pages, wacz_files, num_retries
+        )
+
+        logger.debug(
+            "sync_stream_wacz_pages",
+            status="complete",
+            num_wacz=len(wacz_files),
         )
 
         return resp

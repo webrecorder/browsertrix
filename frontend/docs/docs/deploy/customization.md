@@ -79,11 +79,25 @@ storages:
 ```
 
 
-When using an external S3 provider, a custom `access_endpoint_url` can be provided, and the `bucket_name` need to be specified separately.
-This URL is used for direct access to WACZ files, and can be used to specify a custom domain to access the bucket.
-
 The `endpoint_url` should be provided in 'path prefix' form (with the bucket after the path), eg:
 `https://s3provider.example.com/bucket/path/`.
+
+An optional `bucket_name` can also be provided. This can be used as a shortcut when storing in the root of the bucket, but is otherwise not required.
+
+For example, the following:
+
+```
+...
+endpoint_url: https://s3provider.example.com/
+bucket_name: bucket_name
+...
+```
+
+is equivalent to:
+
+```
+endpoint_url: https://s3provider.example.com/bucket_name/
+```
 
 Browsertrix will handle presigning S3 URLs so that WACZ files (and other data) can be accessed directly, using URLs of the form: `https://s3provider.example.com/bucket/path/to/files/crawl.wacz?signature...`
 
@@ -92,9 +106,15 @@ Since the local Minio service is not used, `minio_local: false` can be set to sa
 
 ### Custom Access Endpoint URL
 
-It may be useful to provide a custom access endpoint for accessing WACZ files and other data. If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
+To provide replay and download, WACZ files and other data are accessed directly in the browser from the S3 bucket.
+If the S3 bucket `endpoint_url` can be accessed directly in the browser, no other configuration is required.
 
-Here are two example of the addressing modes:
+However, if it is an internal URL, a different access point URL is needed.
+It may also be desirable to have the browser connect to the S3 bucket through a custom domain or CDN.
+This can be done via the `access_endpoint_url` setting, which is the URL provided to the browser to access the data.
+If the `access_endpoint_url` is provided, it can be in either the 'virtual host' or 'path' form, while the `endpoint_url` should always be in path-prefix form.
+
+Since the `access_endpoint_url` may use either path or virtual host addressing, the bucket name is not automatically appended the URL.
 
 #### Virtual Host vs Path Addressing for Access Endpoints
 
@@ -310,3 +330,64 @@ crawler_network_policy_additional_egress:
 ```
 
 Refer to the [default networkpolicies.yaml](https://github.com/webrecorder/browsertrix/blob/main/chart/templates/networkpolicies.yaml) for additional examples and the [official Kubernetes documentation for Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+
+## Application Namespace Egress Policy
+
+The application namespace policy limits what the backend, frontend, emails and job pods can reach, including the custom behavior URLs the backend fetches on a user's behalf.
+
+```yaml
+namespace_network_policy_enabled: true
+```
+
+The examples in `chart/examples/` enable the policy with the API server port for their cluster.
+
+The policy allows DNS, the chart's own services, public web on 80/443, the Kubernetes API, the port of an external MongoDB server (if `mongo_local` is `false`), non-80/443 ports in `storages[].endpoint_url` or `access_endpoint_url`, and `email.smtp_port` when `email.smtp_host` is set. On Cilium clusters the chart also creates a `CiliumNetworkPolicy` for the Kubernetes API, because a `NetworkPolicy` cannot select the API server's cluster entity.
+
+Three settings might need attention:
+
+- `namespace_network_policy_api_ports` is the Kubernetes API endpoint port after service DNAT, not the service port. The defaults are `443` on managed clusters and `6443` on kubeadm. OrbStack uses `26443`.
+- `namespace_network_policy_extra_egress` takes rules in the same format as `crawler_network_policy_additional_egress` for anything else the deployment reaches, such as an HTTPS proxy:
+
+    ```yaml
+    namespace_network_policy_extra_egress:
+      - to:
+          - ipBlock:
+              cidr: 10.0.0.5/32 # example: HTTPS proxy (separate from proxies used by the crawler)
+        ports:
+          - port: 3128
+            protocol: TCP
+      # only needed with NodeLocal DNSCache, see below
+      - to:
+          - ipBlock:
+              cidr: 169.254.20.10/32 # example: local DNS cache listen address
+        ports:
+          - port: 53
+            protocol: UDP
+          - port: 53
+            protocol: TCP
+    ```
+
+    The second entry in this example applies only to clusters running [NodeLocal DNSCache](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/). There, pods resolve through a node-local address rather than the `kube-dns` pods that the default rule targets.
+  
+    Crawl pods run in the crawler namespace under their own policy (`crawler_enable_network_policy`, enabled by default) with the same DNS rule. If you're using NodeLocal DNSCache, add the entry there too using `crawler_network_policy_additional_egress`, or `crawler_network_policy_extra_egress_cilium` on Cilium. Without it, crawls might fail to resolve hostnames.
+
+- `namespace_network_policy_extra_egress_cilium` takes [Cilium egress rules](https://docs.cilium.io/en/stable/security/policy/) for outgoing connections that a `NetworkPolicy` cannot express, such as the `host`, `remote-node` and `kube-apiserver` entities. This doesn't do anything on clusters without the Cilium CRDs. Cilium policy takes ports as strings, and these rules become the policy's `egress` list. On Cilium, handle NodeLocal DNSCache with this setting instead of an `ipBlock`, because the cache's node-local address is a host identity:
+
+    ```yaml
+    namespace_network_policy_extra_egress_cilium:
+      - toEntities:
+          - host
+          - remote-node
+        toPorts:
+          - ports:
+              - port: "53"
+                protocol: UDP
+              - port: "53"
+                protocol: TCP
+    ```
+
+    Crawl pods need the same rules in `crawler_network_policy_extra_egress_cilium`.
+  
+    Whether the cache address resolves to the `host` entity depends on how Cilium maps that address, so check for dropped DNS traffic after applying the rule with `hubble observe --verdict DROPPED`. If the rule does not match, use `toCIDR: ["169.254.20.10/32"]` in place of `toEntities`.
+
+Rules are additive and apply to the whole namespace, so every pod can reach every allowed destination. After you enable the policy, confirm that crawls start and complete. A missing rule can block traffic without a clear error in the UI.

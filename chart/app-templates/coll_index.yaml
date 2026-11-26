@@ -1,7 +1,9 @@
 apiVersion: btrix.cloud/v1
 kind: CollIndex
 metadata:
-  name: collindex-{{ id }}
+  name: {{ "collindex-" ~ id }}
+  finalizers:
+    - metacontroller.io/compositecontroller-collindexes-operator
   labels:
     role: "collindex"
     oid: {{ oid }}
@@ -10,7 +12,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      coll: "{{ id }}"
+      coll: {{ id }}
 
-  id: "{{ id }}"
-  oid: "{{ oid }}"
+  id: {{ id }}
+  oid: {{ oid }}

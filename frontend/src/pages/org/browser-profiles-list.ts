@@ -20,8 +20,10 @@ import { parsePage, type PageChangeEvent } from "@/components/ui/pagination";
 import type { BtrixChangeTagFilterEvent } from "@/components/ui/tag-filter/types";
 import { ClipboardController } from "@/controllers/clipboard";
 import { SearchParamsValue } from "@/controllers/searchParamsValue";
+import { type BtrixUserGuideShowEvent } from "@/events/btrix-user-guide-show";
 import { originsWithRemainder } from "@/features/browser-profiles/templates/origins-with-remainder";
 import { emptyMessage } from "@/layouts/emptyMessage";
+import { listControls } from "@/layouts/listControls";
 import { pageHeader } from "@/layouts/pageHeader";
 import { OrgTab } from "@/routes";
 import type {
@@ -29,45 +31,43 @@ import type {
   APIPaginationQuery,
   APISortQuery,
 } from "@/types/api";
-import { SortDirection as SortDirectionEnum } from "@/types/utils";
+import { SortDirection } from "@/types/utils";
 import { isApiError } from "@/utils/api";
 import { isArchivingDisabled } from "@/utils/orgs";
+import {
+  orderByDecoder,
+  orderByEncoder,
+  type SortableFields,
+  type SortBy,
+} from "@/utils/searchParams/sortBy";
 import { toSearchItem, type SearchValues } from "@/utils/searchValues";
+import { tw } from "@/utils/tailwind";
 
-const SORT_DIRECTIONS = ["asc", "desc"] as const;
-type SortDirection = (typeof SORT_DIRECTIONS)[number];
 type SortField = "name" | "url" | "modified" | "created";
-type SortBy = {
-  field: SortField;
-  direction: SortDirection;
-};
 
-const sortableFields: Record<
-  SortField,
-  { label: string; defaultDirection?: SortDirection }
-> = {
+const sortableFields = {
   name: {
     label: msg("Name"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   url: {
     label: msg("Primary Site"),
-    defaultDirection: "asc",
+    defaultDirection: SortDirection.Ascending,
   },
   modified: {
     label: msg("Modified By User"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
   created: {
     label: msg("Date Created"),
-    defaultDirection: "desc",
+    defaultDirection: SortDirection.Descending,
   },
-};
+} as const satisfies SortableFields<SortField>;
 
 const DEFAULT_SORT_BY = {
   field: "modified",
-  direction: sortableFields.modified.defaultDirection || "desc",
-} as const satisfies SortBy;
+  direction: sortableFields.modified.defaultDirection,
+} as const satisfies SortBy<SortField>;
 const INITIAL_PAGE_SIZE = 20;
 const FILTER_BY_CURRENT_USER_STORAGE_KEY =
   "btrix.filterByCurrentUser.browserProfiles";
@@ -105,36 +105,10 @@ export class BrowserProfilesList extends BtrixElement {
     pageSize: INITIAL_PAGE_SIZE,
   };
 
-  private readonly orderBy = new SearchParamsValue<SortBy>(
+  private readonly orderBy = new SearchParamsValue<SortBy<SortField>>(
     this,
-    (value, params) => {
-      if (value.field === DEFAULT_SORT_BY.field) {
-        params.delete("sortBy");
-      } else {
-        params.set("sortBy", value.field);
-      }
-      if (value.direction === sortableFields[value.field].defaultDirection) {
-        params.delete("sortDir");
-      } else {
-        params.set("sortDir", value.direction);
-      }
-      return params;
-    },
-    (params) => {
-      const field = params.get("sortBy") as SortBy["field"] | null;
-      if (!field) {
-        return DEFAULT_SORT_BY;
-      }
-      let direction = params.get("sortDir");
-      if (
-        !direction ||
-        (SORT_DIRECTIONS as readonly string[]).includes(direction)
-      ) {
-        direction =
-          sortableFields[field].defaultDirection || DEFAULT_SORT_BY.direction;
-      }
-      return { field, direction: direction as SortDirection };
-    },
+    orderByEncoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
+    orderByDecoder<SortField>({ defaultSort: DEFAULT_SORT_BY, sortableFields }),
   );
 
   private readonly filterBy = new SearchParamsValue<FilterBy>(
@@ -216,10 +190,7 @@ export class BrowserProfilesList extends BtrixElement {
           tags: filterBy.tags,
           tagMatch: filterBy.tagsType,
           sortBy: orderBy.field,
-          sortDirection:
-            orderBy.direction === "desc"
-              ? SortDirectionEnum.Descending
-              : SortDirectionEnum.Ascending,
+          sortDirection: orderBy.direction,
         },
         signal,
       );
@@ -280,10 +251,11 @@ export class BrowserProfilesList extends BtrixElement {
 
   private readonly renderPage = () => {
     return html`
-      <div class="sticky top-2 z-10 mb-3 rounded-lg border bg-neutral-50 p-3">
-        ${this.renderControls()}
-      </div>
-
+      ${listControls({
+        renderSearchControl: this.renderSearch,
+        renderSortControl: this.renderSortControl,
+        renderFilterControl: this.renderFilterControls,
+      })}
       ${when(
         this.profilesTask.value,
         ({ items, total, page, pageSize }) => html`
@@ -316,10 +288,16 @@ export class BrowserProfilesList extends BtrixElement {
               `
             : this.renderEmpty()}
         `,
+        this.renderLoading,
       )}
       ${when(this.selectedProfile, this.renderDuplicateDialog)}
     `;
   };
+
+  private readonly renderLoading = () =>
+    html`<div class="my-24 flex w-full items-center justify-center text-2xl">
+      <sl-spinner></sl-spinner>
+    </div>`;
 
   private readonly renderDuplicateDialog = (profile: Profile) => {
     return html`<btrix-profile-browser-dialog
@@ -332,6 +310,7 @@ export class BrowserProfilesList extends BtrixElement {
       }}
       ?open=${this.openDialog === "duplicate"}
       duplicating
+      navigateOnSave
       @sl-after-hide=${() => {
         this.selectedProfile = undefined;
         this.openDialog = undefined;
@@ -352,9 +331,28 @@ export class BrowserProfilesList extends BtrixElement {
     }
 
     const message = msg("Your org doesn’t have any browser profiles yet.");
+    const guideButton = html`<sl-button
+      variant="text"
+      @click=${() => {
+        this.dispatchEvent(
+          new CustomEvent<BtrixUserGuideShowEvent["detail"]>(
+            "btrix-user-guide-show",
+            {
+              detail: { path: "browser-profiles" },
+              bubbles: true,
+              composed: true,
+            },
+          ),
+        );
+      }}
+    >
+      <sl-icon slot="prefix" name="book"></sl-icon>
+      ${msg("Read Guide")}
+    </sl-button>`;
 
     if (this.isCrawler) {
       return emptyMessage({
+        classNames: tw`border-y`,
         message,
         detail: msg(
           "Browser profiles let you crawl pages behind paywalls and logins.",
@@ -375,39 +373,19 @@ export class BrowserProfilesList extends BtrixElement {
             <sl-icon slot="prefix" name="plus-lg"></sl-icon>
             ${msg("Create Browser Profile")}
           </sl-button>
+          ${guideButton}
         `,
       });
     }
 
-    return emptyMessage({ message });
+    return emptyMessage({
+      classNames: tw`border-y`,
+      message,
+      actions: guideButton,
+    });
   }
 
-  private renderControls() {
-    return html`
-      <div class="flex flex-wrap items-center gap-2 md:gap-3">
-        <div class="grow basis-2/3">${this.renderSearch()}</div>
-
-        <div class="flex items-center">
-          <label
-            class="mr-2 whitespace-nowrap text-sm text-neutral-500"
-            for="sort-select"
-          >
-            ${msg("Sort by:")}
-          </label>
-          ${this.renderSortControl()}
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="whitespace-nowrap text-neutral-500">
-            ${msg("Filter by:")}
-          </span>
-          ${this.renderFilterControls()}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderSearch() {
+  private readonly renderSearch = () => {
     return html`
       <btrix-search-combobox
         .searchKeys=${SEARCH_KEYS}
@@ -429,9 +407,9 @@ export class BrowserProfilesList extends BtrixElement {
       >
       </btrix-search-combobox>
     `;
-  }
+  };
 
-  private renderFilterControls() {
+  private readonly renderFilterControls = () => {
     const filterBy = this.filterBy.value;
 
     return html`
@@ -476,9 +454,9 @@ export class BrowserProfilesList extends BtrixElement {
         `,
       )}
     `;
-  }
+  };
 
-  private renderSortControl() {
+  private readonly renderSortControl = () => {
     const options = Object.entries(sortableFields).map(
       ([value, { label }]) => html`
         <sl-option value=${value}>${label}</sl-option>
@@ -487,7 +465,7 @@ export class BrowserProfilesList extends BtrixElement {
     return html`
       <sl-select
         id="sort-select"
-        class="md:min-w-[9.2rem]"
+        class="flex-1 md:min-w-[9.2rem]"
         size="small"
         pill
         value=${this.orderBy.value.field}
@@ -495,42 +473,39 @@ export class BrowserProfilesList extends BtrixElement {
           const field = (e.target as HTMLSelectElement).value as SortField;
           this.orderBy.setValue({
             field: field,
-            direction:
-              sortableFields[field].defaultDirection ||
-              this.orderBy.value.direction,
+            direction: sortableFields[field].defaultDirection,
           });
         }}
       >
         ${options}
       </sl-select>
       <sl-tooltip
-        content=${this.orderBy.value.direction === "asc"
+        content=${this.orderBy.value.direction === SortDirection.Ascending
           ? msg("Sort in descending order")
           : msg("Sort in ascending order")}
       >
         <sl-icon-button
-          name=${this.orderBy.value.direction === "asc"
+          name=${this.orderBy.value.direction === SortDirection.Ascending
             ? "sort-up-alt"
             : "sort-down"}
           class="text-base"
-          label=${this.orderBy.value.direction === "asc"
+          label=${this.orderBy.value.direction === SortDirection.Ascending
             ? msg("Sort Descending")
             : msg("Sort Ascending")}
           @click=${() => {
             this.orderBy.setValue({
               ...this.orderBy.value,
-              direction:
-                this.orderBy.value.direction === "asc" ? "desc" : "asc",
+              direction: this.orderBy.value.direction * -1,
             });
           }}
         ></sl-icon-button>
       </sl-tooltip>
     `;
-  }
+  };
 
   private readonly renderTable = (profiles: Profile[]) => {
     return html`<btrix-overflow-scroll
-      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-5"
+      class="-mx-3 part-[content]:px-3 lg:part-[content]:px-4"
     >
       <btrix-table
         style="--btrix-table-grid-template-columns: ${columnsCss}"

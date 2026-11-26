@@ -4,16 +4,20 @@ import menuItemStyles from "@shoelace-style/shoelace/dist/components/menu-item/m
 import { html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { TailwindElement } from "@/classes/TailwindElement";
 import type { OverflowDropdown } from "@/components/ui/overflow-dropdown";
 import { NavigateController } from "@/controllers/navigate";
+import { type BtrixSelectEvent } from "@/events/btrix-select";
 
 /**
  * Enables `href` on menu items
  * See https://github.com/shoelace-style/shoelace/discussions/1629
  *
  * Based on https://github.com/shoelace-style/shoelace/blob/d0b71adb81e21687a5ef036565dad44bc609bcce/src/components/menu-item/menu-item.component.ts
+ *
+ * @fires btrix-select
  */
 @customElement("btrix-menu-item-link")
 @localized()
@@ -26,8 +30,14 @@ export class MenuItemLink extends TailwindElement {
   @property({ type: Boolean })
   download: boolean | string = false;
 
+  @property({ type: String })
+  target?: HTMLAnchorElement["target"];
+
   @property({ type: Boolean })
   disabled = false;
+
+  @property({ type: Boolean })
+  checked = false;
 
   @property({ type: Boolean })
   loading = false;
@@ -41,11 +51,13 @@ export class MenuItemLink extends TailwindElement {
       part="base"
       class=${classMap({
         "menu-item": true,
+        "menu-item--checked": this.checked,
         "menu-item--disabled": this.disabled,
         "menu-item--loading": this.loading,
       })}
       download=${this.download}
       aria-disabled=${this.disabled}
+      target=${ifDefined(this.target)}
       @click=${(e: MouseEvent) => {
         if (this.disabled || this.loading) {
           e.preventDefault();
@@ -60,9 +72,17 @@ export class MenuItemLink extends TailwindElement {
           if (dropdown) {
             void dropdown.hide();
           }
-        } else {
+        } else if (this.target !== "_blank") {
           this.navigate.link(e);
         }
+
+        this.dispatchEvent(
+          new CustomEvent<BtrixSelectEvent["detail"]>("btrix-select", {
+            detail: { item: this.href },
+            composed: true,
+            bubbles: true,
+          }),
+        );
       }}
     >
       <span part="checked-icon" class="menu-item__check">

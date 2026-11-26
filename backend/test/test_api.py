@@ -47,9 +47,11 @@ def test_api_settings():
         "numBrowsersPerInstance": 2,
         "defaultPageLoadTimeSeconds": 120,
         "billingEnabled": True,
+        "docsUrl": "",
         "signUpUrl": "",
         "salesEmail": "",
         "supportEmail": "",
         "localesEnabled": None,
         "pausedExpiryMinutes": 10080,
+        "rateLimitDurationMinutes": 720,
     }

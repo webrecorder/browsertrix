@@ -76,6 +76,14 @@ def failed_qa_run_id(qa_crawl_id, crawler_auth_headers, default_org_id):
     failed_qa_run_id = data["started"]
     assert failed_qa_run_id
 
+    # Ensure internal replay endpoint is not accessible by user
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{qa_crawl_id}/internal/replay.json",
+        headers=crawler_auth_headers,
+    )
+
+    assert r.status_code == 403
+
     # Wait until it's properly running
     count = 0
     while count < MAX_ATTEMPTS:

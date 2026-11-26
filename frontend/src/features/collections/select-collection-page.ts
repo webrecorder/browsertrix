@@ -80,7 +80,7 @@ export class SelectCollectionPage extends BtrixElement {
   @state()
   private pageUrlError?: string;
 
-  @query("btrix-combobox")
+  @query("btrix-autocomplete")
   private readonly combobox?: Combobox | null;
 
   @query("#pageUrlInput")
@@ -258,7 +258,7 @@ export class SelectCollectionPage extends BtrixElement {
     }
 
     return html`
-      <btrix-combobox
+      <btrix-autocomplete
         @request-close=${() => {
           // Because there are situations where the input might be blurred and
           // then immediate refocused (e.g. clicking on the thumbnail preview in
@@ -313,7 +313,7 @@ export class SelectCollectionPage extends BtrixElement {
           </div>
         </sl-input>
         ${this.renderSearchResults()}
-      </btrix-combobox>
+      </btrix-autocomplete>
     `;
   }
 

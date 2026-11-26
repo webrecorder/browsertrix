@@ -7,6 +7,8 @@ import re
 import time
 import zipfile
 from tempfile import TemporaryFile
+from urllib.parse import quote
+from uuid import uuid4
 from zipfile import ZIP_STORED, ZipFile
 
 import structlog
@@ -175,6 +177,43 @@ def test_remove_exclusion(admin_auth_headers, default_org_id):
     assert r.json()["success"] == True
 
 
+def test_running_workflow_counts(
+    admin_auth_headers, crawler_auth_headers, default_org_id
+):
+    # Verify running workflow counts are updated
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawlconfigs/running",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["totalRunningPausedWaiting"] >= 1
+    assert data["totalRunning"] >= 1
+    assert (
+        data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
+    )
+
+    # Verify again but from non-org-specific endpoint
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawlconfigs/running",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["totalRunningPausedWaiting"] >= 1
+    assert data["totalRunning"] >= 1
+    assert (
+        data["running"] >= 1 or data["generateWACZ"] >= 1 or data["uploadingWACZ"] >= 1
+    )
+
+    # Check that non-org-specific endpoint is only available to superadmins
+    r = requests.get(
+        f"{API_PREFIX}/orgs/all/crawlconfigs/running",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 403
+
+
 def test_wait_for_complete(admin_auth_headers, default_org_id):
     state = None
     data = None
@@ -199,6 +238,10 @@ def test_wait_for_complete(admin_auth_headers, default_org_id):
         f"/orgs/{default_org_id}/crawls/{curr_admin_crawl_id}/pagesSearch"
     )
     assert data["downloadUrl"] is None
+
+    # default timeouts
+    assert data["config"]["pageLoadTimeout"] == 120
+    assert data["config"]["behaviorTimeout"] == 300
 
     # ensure filename matches specified pattern
     # set in default_crawl_filename_template
@@ -852,13 +895,21 @@ def test_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
     data = r.json()
 
     assert data["total"] >= 1
-
-    found_matching_page = False
     for page in data["items"]:
-        if page["id"] == page_id and page["url"] == test_page_url:
-            found_matching_page = True
+        assert page["url"].startswith(url_prefix)
 
-    assert found_matching_page
+    # Test urlRegex filter
+    url_regex = quote(r"old\.webrecorder")
+    r = requests.get(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}/pages?urlRegex={url_regex}",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.json()
+
+    assert data["total"] >= 1
+    for page in data["items"]:
+        assert "old.webrecorder" in page["url"]
 
     # Test isSeed filter
     r = requests.get(
@@ -1050,7 +1101,13 @@ def test_crawl_pages_qa_filters(crawler_auth_headers, default_org_id, crawler_cr
     assert r.json()["total"] == 2
 
 
-def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_id):
+def test_re_add_crawl_pages(
+    crawler_auth_headers,
+    default_org_id,
+    crawler_crawl_id,
+    admin_auth_headers,
+    non_default_org_id,
+):
     # Store page counts to compare against after re-adding
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{crawler_crawl_id}",
@@ -1108,6 +1165,23 @@ def test_re_add_crawl_pages(crawler_auth_headers, default_org_id, crawler_crawl_
         headers=crawler_auth_headers,
     )
     assert r.status_code == 403
+
+    # Crawl ids that do not exist are rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{default_org_id}/crawls/{uuid4()}/pages/reAdd",
+        headers=crawler_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "crawl_not_found"
+
+    # Crawl ids belonging to another org are rejected
+    r = requests.post(
+        f"{API_PREFIX}/orgs/{non_default_org_id}/all-crawls/"
+        f"{crawler_crawl_id}/pages/reAdd",
+        headers=admin_auth_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "crawl_not_found"
 
     # Check that crawl page counts were recalculated properly
     r = requests.get(

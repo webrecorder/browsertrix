@@ -134,10 +134,14 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
         "runNow": True,
         "name": "Fail Crawl Not Logged In",
         "config": {
-            "seeds": [{"url": "https://x.com/webrecorder_io"}],
+            "seeds": [{"url": "https://example-com.webrecorder.net"}],
             "scopeType": "page",
             "limit": 1,
             "failOnContentCheck": True,
+            "behaviors": "siteSpecific",
+            "customBehaviors": [
+                "https://raw.githubusercontent.com/webrecorder/browsertrix/refs/heads/main/backend/test/data/example-com.js"
+            ],
         },
         "profileid": profile_id,
     }
@@ -163,6 +167,10 @@ def fail_not_logged_in_crawl_id(admin_auth_headers, default_org_id, profile_id):
             # Give crawl time to start properly
             time.sleep(30)
             return crawl_id
+        if data["state"] in ("failed_not_logged_in", "failed", "complete"):
+            # The crawl can detect the login failure and reach its terminal
+            # state in under one poll interval, so "running" may never be seen.
+            return crawl_id
         time.sleep(5)
 
 
@@ -184,6 +192,7 @@ def failed_crawl_finished(
         time.sleep(5)
 
 
+@pytest.mark.timeout(1200)
 def test_fail_crawl_not_logged_in(
     admin_auth_headers,
     default_org_id,

@@ -23,16 +23,33 @@
     --font-monospace-variation: "MONO" 1, "CASL" 0, "slnt" 0, "CRSV" 0;
     --font-size-base: 1rem;
 
-    /* Custom screen widths */
-    --btrix-screen-desktop: 82.5rem; /* Should match tailwind.config.screens.desktop */
-
     /* Offset toast notification stack */
     --btrix-toast-stack-offset: 0;
 
+    /* Default border */
+    --btrix-border: 1px solid var(--sl-panel-border-color);
+
+    /* Replay */
+    --btrix-rwp-height: calc(100vh - 4rem);
+
+    /* Layout */
+    --btrix-page-width: 82.5rem; /* 14 4.5rem columns with 1.5rem gutter (1320px) */
+    --btrix-page-extra-width: 96.5rem; /* 14 5.5rem columns with 1.5rem gutter (1544px) */
+    --btrix-user-guide-width: 31rem;
+    --btrix-full-without-user-guide-width: calc(
+      100vw - var(--btrix-user-guide-width)
+    );
+    --btrix-3xl-with-user-guide-margin: calc(
+      calc(
+          var(--btrix-full-without-user-guide-width) - var(--btrix-page-width)
+        ) /
+        2
+    );
+    --btrix-name-max-width: 30ch;
+
     /*
      * Shoelace Theme Tokens
-     */
-    /* Primary */
+     */ /* Primary */
     --sl-color-primary-50: theme(colors.primary.50);
     --sl-color-primary-100: theme(colors.primary.100);
     --sl-color-primary-200: theme(colors.primary.200);
@@ -81,11 +98,13 @@
      */
 
     /* Fonts */
-    --sl-font-mono: "Recursive var", SFMono-Regular, Consolas, "Liberation Mono",
-      Menlo, monospace;
-    --sl-font-sans: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI",
-      Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
-      "Segoe UI Emoji", "Segoe UI Symbol";
+    --sl-font-mono:
+      "Recursive var", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+      monospace;
+    --sl-font-sans:
+      "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+      "Segoe UI Symbol";
 
     /* Font sizes */
     --sl-font-size-medium: 0.875rem; /* 14px */
@@ -156,6 +175,10 @@
 }
 
 @layer components {
+  sl-tooltip {
+    --show-delay: 300;
+  }
+
   sl-skeleton {
     --border-radius: var(--sl-border-radius-small);
     --color: var(--sl-color-neutral-50);
@@ -210,7 +233,7 @@
   sl-input::part(form-control-help-text),
   sl-textarea::part(form-control-help-text),
   sl-select::part(form-control-help-text) {
-    margin-top: var(--sl-spacing-x-small);
+    margin-top: var(--sl-spacing-2x-small);
     font-weight: 400;
     /* Enable controlling help text text alignment from parent */
     text-align: var(--help-text-align, left);
@@ -293,18 +316,24 @@
 
   /* Add border to menu */
   sl-menu {
-    border: 1px solid var(--sl-panel-border-color);
+    border: var(--btrix-border);
   }
 
   /* Adjust menu item hover and focus styles */
-  sl-option:not([aria-selected="true"]):not(:disabled),
+  sl-option:not([aria-selected="true"]):not(:disabled):not([tabindex="0"]),
   sl-menu-item:not([disabled]),
   btrix-menu-item-link {
     @apply part-[base]:bg-white part-[base]:text-neutral-700 part-[base]:hover:bg-cyan-50/50 part-[base]:hover:text-cyan-700 part-[base]:focus:text-cyan-700 part-[base]:focus-visible:bg-cyan-50/50;
   }
 
-  sl-option[aria-selected="true"] {
-    @apply part-[base]:bg-cyan-50 part-[base]:text-cyan-700;
+  /* Current option styles */
+  sl-option[tabindex="0"] {
+    @apply part-[base]:bg-cyan-50/50 part-[base]:text-cyan-700;
+  }
+
+  sl-option[aria-selected="true"],
+  sl-menu-item[aria-selected="true"] {
+    @apply part-[base]:bg-cyan-50 part-[base]:text-cyan-600;
   }
 
   /* Add menu item variants */
@@ -587,7 +616,7 @@
   }
 
   sl-drawer::part(footer) {
-    border-top: 1px solid var(--sl-panel-border-color);
+    border-top: var(--btrix-border);
   }
 
   sl-button.button-card {
@@ -664,4 +693,8 @@ html {
 [class^="hover\:text-"]::part(base):hover,
 [class*=" hover\:text-"]::part(base):hover {
   color: inherit;
+}
+
+replay-web-page {
+  --rwp-replay-theme: light;
 }

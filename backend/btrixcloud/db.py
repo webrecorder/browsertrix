@@ -39,7 +39,7 @@ else:
     ) = object
 
 
-CURR_DB_VERSION = "0058"
+CURR_DB_VERSION = "0060"
 
 MIN_DB_VERSION = 7.0
 
@@ -173,6 +173,7 @@ async def update_and_prepare_db(
         file_ops,
         crawl_log_ops,
         crawl_config_ops,
+        crawl_ops,
         crawl_manager,
     ):
         await drop_indexes(mdb)
@@ -210,6 +211,7 @@ async def run_db_migrations(
     file_ops: FileUploadOps,
     crawl_log_ops: CrawlLogOps,
     crawl_config_ops: CrawlConfigOps,
+    crawl_ops: CrawlOps,
     crawl_manager: CrawlManager,
 ):
     """Run database migrations."""
@@ -254,6 +256,7 @@ async def run_db_migrations(
                 file_ops=file_ops,
                 crawl_log_ops=crawl_log_ops,
                 crawl_config_ops=crawl_config_ops,
+                crawl_ops=crawl_ops,
                 crawl_manager=crawl_manager,
             )
             if await migration.run():
@@ -345,6 +348,15 @@ async def create_indexes(
 _LENIENT_CTX = contextvars.ContextVar[Literal[False] | dict[str, Any]](
     "_lenient_ctx", default=False
 )
+
+
+def is_lenient_read() -> bool:
+    """Return True if currently validating data read from the database.
+
+    Validators that may reject legacy data should skip validation when this
+    returns True, so that old documents remain readable.
+    """
+    return bool(_LENIENT_CTX.get())
 
 
 def _lenient_str(v, handler, info):

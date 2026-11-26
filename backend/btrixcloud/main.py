@@ -123,6 +123,7 @@ class SettingsResponse(BaseModel):
 
     billingEnabled: bool
 
+    docsUrl: str = ""
     signUpUrl: str = ""
 
     salesEmail: str = ""
@@ -131,6 +132,7 @@ class SettingsResponse(BaseModel):
     localesEnabled: list[str] | None
 
     pausedExpiryMinutes: int
+    rateLimitDurationMinutes: int
 
 
 # ============================================================================
@@ -162,6 +164,7 @@ def main() -> None:
         numBrowsersPerInstance=int(os.environ.get("NUM_BROWSERS", 1)),
         maxBrowserWindows=int(os.environ.get("MAX_BROWSER_WINDOWS", 8)),
         billingEnabled=is_bool(os.environ.get("BILLING_ENABLED")),
+        docsUrl=os.environ.get("DOCS_URL", ""),
         signUpUrl=os.environ.get("SIGN_UP_URL", ""),
         salesEmail=os.environ.get("SALES_EMAIL", ""),
         supportEmail=os.environ.get("EMAIL_SUPPORT", ""),
@@ -171,6 +174,9 @@ def main() -> None:
             else None
         ),
         pausedExpiryMinutes=int(os.environ.get("PAUSED_CRAWL_LIMIT_MINUTES", 10080)),
+        rateLimitDurationMinutes=int(
+            os.environ.get("RATE_LIMIT_DURATION_MINUTES", 720)
+        ),
     )
 
     invites = init_invites(mdb, email)
@@ -271,7 +277,7 @@ def main() -> None:
         crawl_log_ops,
     )
 
-    base_crawl_ops = init_base_crawls_api(*base_crawl_init)
+    base_crawl_ops = init_base_crawls_api(crawl_manager, *base_crawl_init)
 
     crawls = init_crawls_api(crawl_manager, *base_crawl_init)
 
@@ -314,7 +320,7 @@ def main() -> None:
     # await db init, migrations should have already completed in init containers
     run_async_task(await_db_and_migrations(mdb, db_inited))
 
-    run_async_task(background_job_ops.ensure_cron_cleanup_jobs_exist())
+    run_async_task(background_job_ops.ensure_cron_jobs_exist())
 
     app.include_router(org_ops.router)
 

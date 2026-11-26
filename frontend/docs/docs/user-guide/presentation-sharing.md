@@ -1,55 +1,55 @@
 # Presentation & Sharing
 
-<video autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
-  <source src="https://webrecorder.net/assets/video/collection-editing-av1.mp4"/>
-  <source src="https://webrecorder.net/assets/video/collection-editing-h264.mp4"/>
-</video>
+To present a collection to viewers outside of your organization, you can enable a shareable link.
+
+[Live Demo :octicons-arrow-up-right-16:](https://app.browsertrix.com/explore/webrecorder/collections/webrecorder-websites){ .md-button target="_blank" }
+
+---
 
 ## Share a Collection
 
-A Collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover. Sharing settings can be found within the **Sharing** tab of the Collection.
+A collection is private by default, but can be made sharable either with an unlisted link, or displayed in your org's public gallery for everyone to discover.
 
-1. Click the edit button :bootstrap-pencil: on the specific Collection you want to share
+### From Org Dashboard
 
-2. In that Collection's **Sharing** tab, change its visibility from the default **Private** to **Public** and save
+To access share settings for a collection from **Dashboard**:
 
-3. Click on the edit button :bootstrap-pencil: again, and now in the Collection's **Sharing** tab, there will be a new section, **Link to Share**, with a URL for this specific Collection that you can share and circulate to your community
+1. Select the asterisk icon :bootstrap-asterisk: in order to see all your collections.
+2. Select the share icon :bootstrap-box-arrow-up: on the specific collection you want to share.
 
-4. Optional: If you want to allow other viewers to download the Collection, confirm that the **Show download button** is enabled. If not, toggle it so that others would not be able to download it and only view.
+### From Collections List
 
-## Customize a Collection
+To access share settings for a collection from **Collections**, open the action menu :bootstrap-three-dots-vertical: for the collection and choose :bootstrap-box-arrow-up: **Share Collection**.
 
-You can customize how your Collection appears to the public by making edits within the **Presentation** tab of Collection.
+### From Collection Management Page
 
-You can access this tab via the edit button :bootstrap-pencil: of a Collection from the Public Collection Gallery or via the kebab icon of a Collection from your account's Collections tab.
+To access share settings from the collection management page, open the _Actions_ menu and choose :bootstrap-box-arrow-up: **Share Collection**.
 
-From the Collections tab:
+### Share Settings Dialog
 
-1. Click the Collections tab from your account
+Once you've opened the share settings dialog from one of these three locations, you can make the collection shareable with the following steps:
 
-2. Click the kebab icon :bootstrap-three-dots-vertical: for options
+1. Change the visibility to _Unlisted_ or _Public_.
+2. Optional: Viewers can download the collection by default. To disable downloads, toggle _Show download button_ off.
+3. Save.
 
-3. Click Edit Collection Settings
+The collection will now have a _Link to Share_ that can be given to anyone, even those without a Browsertrix account.
 
-4. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
+## Edit a Collection
 
-From the Public Collection Gallery. When Public Collection Gallery is enabled, you can view Collections from your dashboard. To customize the Collection:
+You can customize how your collection appears to the public by making edits from the collection management page. This is same page from which you configure archived items and deduplication settings.
 
-1. Click on the edit button :bootstrap-pencil: of the Collection you want to edit
-
-2. Edit any of the following information from the **Presentation** tab: Name, Summary, Thumbnail, and set Initial View
+Every aspect of the collection with a :bootstrap-pencil: icon next to it, like collection name, is editable in-place.
 
 ### Name
 
-A **Name** is always required, so by default, your Collection's name is determined by the name of your crawl workflow.
-
-You can edit the **Name** as long as its within 50 characters, which is roughly between 7 words and 13 words with spaces included in the character count.
+You can change the **Name** as long as it is within 50 characters, which is roughly between 7 words and 13 words with spaces included in the character count.
 
 ### Summary
 
-A **Summary** describing your Collection is not required, but it is useful information to others to summarize the Collection and caption collection thumbnails.
+A summary describing your collection is not required, but it is useful information to others to summarize the collection and caption collection thumbnails in the gallery.
 
-You can edit the **Summary** as long as its within 150 characters, which is roughly between 90 words and 150 words with spaces included in the character count.
+URLs in the summary will be displayed as clickable links.
 
 ### Thumbnail
 
@@ -57,15 +57,25 @@ Choose a thumbnail image to represent this collection in your org's dashboard an
 
 To choose a screenshot:
 
-1. Click the _Enter a Page URL to preview it_ for a Page URL dropdown to appear
+1. Click on the thumbnail.
+2. Select one of the page screenshots or search for a specific URL from the collection.
 
-2. Select one of the URLs or search for a specific URL from the Collection
-
-3. Optional: You can choose a specific captured URL based on its Page Timestamp.
+The collection thumbnail will be updated upon selecting a screenshot.
 
 ??? question "Why isn't there a thumbnail preview for my page?"
     If you have uploaded archived items captured with tools other than Browsertrix, some of the pages in your collection may not have screenshots available to use as thumbnails. To fix this, either re-crawl a page you wish to use as a thumbnail with Browsertrix and add it to the collection, or choose a placeholder thumbnail.
 
 ### Initial View
 
-The **Initial View** is the first view visitors see first when viewing a Collection. The initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.
+The homepage is the first view visitors see first when browsing a collection. This initial view can either be a list of pages, which is the default when replaying using ReplayWeb.page, or a single page from your collection such as a crawl start URL or index page.
+
+To update the initial view, select _Set Homepage_ and choose an option:
+
+- **Current Page** — The page that is currently open in your replay view.
+- **Page List** — A list of all crawl URLs.
+
+If the _Current Page_ option is chosen, the collection thumbnail will automatically be updated to a screenshot of that page.
+
+## Un-share a Collection
+
+To disable the shareable link to a collection, follow the steps in [Share a Collection](#share-a-collection) but choose _Private_ for _Visibility_. Visitors to the link will no longer be able to browse, download, or view the collection.
