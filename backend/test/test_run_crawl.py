@@ -1455,14 +1455,24 @@ def test_delete_crawls_org_owner(
     assert r.status_code == 404
 
     # Test that org owner can delete another org user's crawls
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": [wr_specs_crawl_id]},
-    )
-    assert r.status_code == 200
-    data = r.json()
-    assert data["deleted"] == 1
+    # Make several attempts to test deletion idempotency
+    crawls_deleted = 0
+    for _ in range(5):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/crawls/delete",
+            headers=admin_auth_headers,
+            json={"crawl_ids": [wr_specs_crawl_id]},
+        )
+        assert r.status_code == 200
+
+        data = r.json()
+        if data.get("deleted"):
+            crawls_deleted += int(data.get("deleted", 0))
+        assert data.get("storageQuotaReached") in (False, None)
+
+        time.sleep(0.1)
+
+    assert crawls_deleted == 1
 
     r = requests.get(
         f"{API_PREFIX}/orgs/{default_org_id}/crawls/{wr_specs_crawl_id}",

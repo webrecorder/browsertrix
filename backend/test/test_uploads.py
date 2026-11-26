@@ -4,6 +4,7 @@ from tempfile import TemporaryFile
 from urllib.parse import urljoin
 from zipfile import ZIP_STORED, ZipFile
 
+import structlog
 import pytest
 import requests
 
@@ -11,6 +12,8 @@ from .conftest import API_PREFIX
 from .utils import read_in_chunks, wait_for_upload_processed_sync
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)
 
 MAX_ATTEMPTS = 24
 
@@ -491,14 +494,24 @@ def test_delete_stream_upload(
     assert r.json()["detail"] == "not_allowed"
 
     # Verify user who created upload can delete it
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": [upload_id]},
-    )
-    data = r.json()
-    assert data["deleted"]
-    assert data["storageQuotaReached"] is False
+    # Make several attempts to test deletion idempotency
+    upload_deleted = False
+    for _ in range(5):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/uploads/delete",
+            headers=admin_auth_headers,
+            json={"crawl_ids": [upload_id]},
+        )
+        assert r.status_code == 200
+
+        data = r.json()
+        if data.get("deleted"):
+            upload_deleted = True
+        assert data.get("storageQuotaReached") in (False, None)
+
+        time.sleep(0.1)
+
+    assert upload_deleted
 
 
 def test_ensure_deleted(admin_auth_headers, default_org_id, upload_id):
@@ -1783,14 +1796,24 @@ def test_delete_form_upload_and_crawls_from_all_crawls(
     assert r.json()["detail"] == "not_allowed"
 
     # Delete mixed type archived items
-    r = requests.post(
-        f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
-        headers=admin_auth_headers,
-        json={"crawl_ids": crawls_to_delete},
-    )
-    data = r.json()
-    assert data["deleted"]
-    assert data["storageQuotaReached"] is False
+    # Make several attempts to test deletion idempotency
+    crawls_deleted = False
+    for _ in range(5):
+        r = requests.post(
+            f"{API_PREFIX}/orgs/{default_org_id}/all-crawls/delete",
+            headers=admin_auth_headers,
+            json={"crawl_ids": crawls_to_delete},
+        )
+        assert r.status_code == 200
+
+        data = r.json()
+        if data.get("deleted"):
+            crawls_deleted = True
+        assert data.get("storageQuotaReached") in (False, None)
+
+        time.sleep(0.1)
+
+    assert crawls_deleted
 
     # Check that org and workflow size figures are as expected
     count = 0
