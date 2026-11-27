@@ -1581,9 +1581,12 @@ class PageNote(BaseModel):
 class PageQACompare(BaseModel):
     """Model for updating pages from QA run"""
 
-    screenshotMatch: float | None = None
-    textMatch: float | None = None
-    resourceCounts: dict[str, int] | None = None
+    # screenshotMatch: float | None = None
+    # textMatch: float | None = None
+    # resourceCounts: dict[str, int] | None = None
+
+    rawTextMatch: float | None = None
+    csrClues: dict[str, dict[str, int]] | None = None
 
 
 # ============================================================================
