@@ -37,46 +37,47 @@ jobs:
           echo GIT_BRANCH_NAME=`git rev-parse --abbrev-ref HEAD` >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         with:
           driver-opts: network=host
 
       - name: Wait for registry to be available
         run: curl --retry 20 --retry-delay 10 --retry-connrefused http://localhost:32000/v2/
 
-      - name: Build Backend
-        uses: docker/build-push-action@v3
-        with:
-          context: backend
-          push: true
-          build-args: |
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: localhost:32000/webrecorder/browsertrix-backend:latest
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,scope=backend,mode=max
+      - parallel:
+          - name: Build Backend
+            uses: docker/build-push-action@v7
+            with:
+              context: backend
+              push: true
+              build-args: |
+                GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+                GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+              tags: localhost:32000/webrecorder/browsertrix-backend:latest
+              cache-from: type=gha,scope=backend
+              cache-to: type=gha,scope=backend,mode=max
 
-      - name: Build Emails
-        uses: docker/build-push-action@v3
-        with:
-          context: emails
-          push: true
-          build-args: |
-            VERSION=${{ env.VERSION }}
-            GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
-            GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
-          tags: localhost:32000/webrecorder/browsertrix-emails:latest
-          cache-from: type=gha,scope=emails
-          cache-to: type=gha,scope=emails,mode=max
+          - name: Build Emails
+            uses: docker/build-push-action@v7
+            with:
+              context: emails
+              push: true
+              build-args: |
+                VERSION=${{ env.VERSION }}
+                GIT_COMMIT_HASH=${{ env.GIT_COMMIT_HASH }}
+                GIT_BRANCH_NAME=${{ env.GIT_BRANCH_NAME }}
+              tags: localhost:32000/webrecorder/browsertrix-emails:latest
+              cache-from: type=gha,scope=emails
+              cache-to: type=gha,scope=emails,mode=max
 
-      - name: Build Frontend
-        uses: docker/build-push-action@v3
-        with:
-          context: frontend
-          push: true
-          tags: localhost:32000/webrecorder/browsertrix-frontend:latest
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,scope=frontend,mode=max
+          - name: Build Frontend
+            uses: docker/build-push-action@v7
+            with:
+              context: frontend
+              push: true
+              tags: localhost:32000/webrecorder/browsertrix-frontend:latest
+              cache-from: type=gha,scope=frontend
+              cache-to: type=gha,scope=frontend,mode=max
 
       - name: Create Secret
         run: sudo microk8s kubectl create secret generic btrix-subs-app-secret --from-literal=BTRIX_SUBS_APP_URL=${{ env.ECHO_SERVER_HOST_URL }}
