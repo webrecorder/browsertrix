@@ -323,6 +323,47 @@ class EmailSender:
             support_email=self.support_email,
         )
 
+    async def send_storage_addon_change_reverted(
+        self,
+        user_name: str,
+        receiver_email: str,
+        requested_gb: int,
+        retained_gb: int,
+        org: Organization,
+        headers=None,
+    ):
+        """Email to say a storage add-on reduction was cancelled because the
+        org is using more storage than the reduced amount would allow.
+
+        The change was made outside Browsertrix (in the Stripe portal)."""
+
+        origin = get_origin(headers)
+        # Where the org's archived items are listed and can be deleted to free up
+        # space. The add-on itself is not managed on a storage page, so point the
+        # reader at the place that actually helps them meet the lower limit.
+        items_url = f"{origin}/orgs/{org.slug}/items"
+
+        await self._send_encrypted(
+            receiver_email,
+            "storageAddonReverted",
+            user_name=user_name,
+            org_name=org.name,
+            items_url=items_url,
+            # The org's own storage allowance, without any add-on. This is what
+            # is left if the add-on is cancelled, and the base the add-on is
+            # added to. It can differ from the plan's default if it was set for
+            # this org specifically.
+            plan_storage_gb=org.quotas.storageQuota // 1_000_000_000,
+            requested_gb=requested_gb,
+            retained_gb=retained_gb,
+            # Round usage UP, not down. The guard fires only when the org is
+            # using *more* than the new limit, so rounding down could show a
+            # usage figure equal to (or below) the limit we just quoted, making
+            # the email contradict itself.
+            used_gb=(org.bytesStored + 999_999_999) // 1_000_000_000,
+            support_email=self.support_email,
+        )
+
     async def send_crawl_auto_paused(
         self,
         user_name: str,

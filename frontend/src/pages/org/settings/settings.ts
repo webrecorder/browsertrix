@@ -27,6 +27,7 @@ import "./components/general";
 import "./components/billing";
 import "./components/crawling-defaults";
 import "./components/billing-addon-link";
+import "./components/billing-storage-addon";
 import "./components/deduplication";
 
 const styles = unsafeCSS(stylesheet);
