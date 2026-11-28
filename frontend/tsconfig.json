@@ -42,6 +42,9 @@
       "esnext.collection",
       "ES2023.Array"
     ],
+    "types": [
+      "mocha"
+    ]
   },
   "include": [
     "**/*.ts"

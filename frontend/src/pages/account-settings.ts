@@ -134,10 +134,6 @@ export class AccountSettings extends BtrixElement {
     };
   }
 
-  protected firstUpdated() {
-    void PasswordService.setOptions();
-  }
-
   render() {
     return html`
       <btrix-document-title
